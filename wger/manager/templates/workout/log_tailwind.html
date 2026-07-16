@@ -1,0 +1,92 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}Active Workout - Onyx{% endblock %}
+
+{% block content %}
+<main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-3xl mx-auto pb-24">
+    <!-- Top Progress Bar & Workout Name -->
+    <div class="w-full flex flex-col pt-4 px-6 pb-4">
+        <div class="w-full h-1 bg-[#262626] rounded-full overflow-hidden mb-4">
+            <div class="h-full bg-[#caf300] shadow-[0_0_12px_rgba(202,243,0,0.8)] transition-all duration-1000 w-1/2"></div>
+        </div>
+        <div class="w-full text-center flex justify-between items-center">
+            <span class="font-label-caps text-xs text-gray-400 uppercase tracking-widest font-bold">{{ day.routine.name }} - {{ day.name }}</span>
+            <a href="{% url 'manager:routine:view' day.routine.pk %}" class="text-xs text-red-400 font-bold hover:text-red-300 transition-colors uppercase tracking-wider">{% translate "QUIT" %}</a>
+        </div>
+    </div>
+
+    <!-- Timer / Rep Counter Core -->
+    <div class="flex flex-col items-center justify-center flex-grow w-full px-6 py-8">
+        <div class="font-display text-[80px] sm:text-[100px] leading-none text-[#caf300] font-black tracking-tighter tabular-nums mb-8 w-full text-center drop-shadow-[0_0_15px_rgba(202,243,0,0.2)]">
+            00:45
+        </div>
+
+        <!-- Exercise & Set Logging Grid -->
+        <div class="w-full bg-[#161616]/60 backdrop-blur-md border border-[#262626] rounded-[24px] p-6 mb-6 shadow-xl">
+            <h2 class="font-headline-lg-mobile text-lg text-white tracking-widest uppercase mb-6 text-center font-bold">{% translate "Active Exercises" %}</h2>
+            
+            <div class="flex flex-col gap-6">
+                {% for slot in day.slots.all %}
+                    <div class="border-b border-[#262626]/40 pb-5 last:border-0 last:pb-0">
+                        <h3 class="text-white font-bold text-base mb-3">{{ slot.obj.get_translation.name }}</h3>
+                        
+                        <div class="flex flex-col gap-3">
+                            {% for slot_entry in slot.entries.all %}
+                                <div class="flex items-center justify-between py-2 border-b border-[#262626]/20 last:border-0">
+                                    <span class="text-sm text-gray-400 font-medium">Set {{ forloop.counter }}</span>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        {% if slot_entry.id in logged_set_ids %}
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] text-[#caf300] font-bold bg-[#caf300]/10 border border-[#caf300]/30 px-3 py-1 rounded-full uppercase tracking-wider">
+                                                    {% translate "Completed" %}
+                                                </span>
+                                                <div class="w-8 h-8 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center font-bold shadow-[0_0_8px_rgba(202,243,0,0.4)]">
+                                                    ✓
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" class="flex items-center gap-2">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="exercise_id" value="{{ slot.obj.id }}">
+                                                <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id }}">
+                                                
+                                                <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] hover:border-[#caf300]/50 rounded-full px-3 py-1 transition-colors">
+                                                    <input type="number" name="repetitions" value="{{ slot_entry.reps_config.reps }}" class="w-10 bg-transparent border-0 p-0 text-center font-bold text-white focus:ring-0 text-sm">
+                                                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{% translate "reps" %}</span>
+                                                </div>
+                                                
+                                                <span class="text-xs text-gray-500">@</span>
+                                                
+                                                <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] hover:border-[#caf300]/50 rounded-full px-3 py-1 transition-colors">
+                                                    <input type="number" step="0.5" name="weight" value="{{ slot_entry.weight_config.weight }}" class="w-12 bg-transparent border-0 p-0 text-center font-bold text-white focus:ring-0 text-sm">
+                                                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{% translate "kg" %}</span>
+                                                </div>
+                                                
+                                                <button type="submit" class="w-8 h-8 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_10px_rgba(202,243,0,0.3)]">
+                                                    <span class="material-symbols-outlined text-sm font-bold">check</span>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-xs text-gray-500 text-center py-4">{% translate "No exercises configured for this day." %}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Finish Session Button -->
+    <div class="w-full flex justify-center items-center pb-16 pt-8 gap-8 px-6 mt-auto">
+        <a href="{% url 'core:dashboard' %}" class="w-full bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(202,243,0,0.4)] transition-all duration-300">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">done_all</span>
+            {% translate "FINISH WORKOUT" %}
+        </a>
+    </div>
+</main>
+{% endblock %}

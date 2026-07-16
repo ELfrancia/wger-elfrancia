@@ -75,6 +75,7 @@ patterns_user = [
     path('registration', user.WgerSignupView.as_view(), name='registration'),
     path('preferences', user.preferences, name='preferences'),
     path('api-key', user.api_key, name='api-key'),
+    path('log-daily-activity', user.log_daily_activity, name='log-daily-activity'),
     path('app-auth/', user.app_auth_handoff, name='app-auth-handoff'),
     path('demo-entries', misc.demo_entries, name='demo-entries'),
     path('<int:pk>/activate', user.UserActivateView.as_view(), name='activate'),
@@ -189,7 +190,8 @@ patterns_weight_units = [
 urlpatterns = [
     # The landing page
     path('', misc.index, name='index'),
-    path('dashboard', ReactView.as_view(login_required=True), name='dashboard'),
+    path('dashboard', user.dashboard_tailwind, name='dashboard'),
+    path('profile', user.profile_tailwind, name='profile_tailwind'),
     path(
         'imprint',
         TemplateView.as_view(template_name='misc/about.html'),

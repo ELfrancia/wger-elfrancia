@@ -1,34 +1,50 @@
-{% extends "base.html" %}
-{% load i18n wger_extras crispy_forms_tags %}
+{% extends "template_tailwind.html" %}
+{% load i18n wger_extras %}
 
-{% block title %}{% translate "Register" %}{% endblock %}
-
-
-{% block header %}
-{% endblock %}
-
+{% block title %}{% translate "Register" %} - ONYX{% endblock %}
 
 {% block content %}
-    <form method="post" action="{% url 'core:user:registration' %}">
-        {% csrf_token %}
-        {% if redirect_field_value %}
-            <input type="hidden"
-                   name="{{ redirect_field_name }}"
-                   value="{{ redirect_field_value }}">
-        {% endif %}
-        {% crispy form %}
-    </form>
-{% endblock %}
+<main class="max-w-md mx-auto px-4 mt-12 flex flex-col gap-6">
+    <div class="text-center flex flex-col gap-2">
+        <h1 class="font-headline-lg text-headline-lg tracking-tighter font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#caf300]">ONYX ATHLETIC</h1>
+        <p class="text-neutral-400 font-body-md">{% translate "Create a new performance account." %}</p>
+    </div>
 
+    <div class="bg-[#161616]/80 backdrop-blur-md border border-[#262626] rounded-[32px] p-8 flex flex-col gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        <form method="post" action="{% url 'core:user:registration' %}" class="flex flex-col gap-4">
+            {% csrf_token %}
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+            {% endif %}
 
-{% block sidebar %}
-    {% if user.is_anonymous %}
-        <h4>{% translate "Already have an account?" %}</h4>
-        <p>
-            <a href="{% url 'core:user:login' %}">
-                <span class="{% fa_class 'sign-in-alt' %}"></span>
-                {% translate "Login" %}
-            </a>
-        </p>
-    {% endif %}
+            {% for field in form %}
+                <div class="flex flex-col gap-2">
+                    <label for="{{ field.id_for_label }}" class="text-xs text-neutral-400 uppercase tracking-widest font-bold px-2">
+                        {{ field.label }}
+                    </label>
+                    <input type="{% if 'password' in field.html_name %}password{% elif 'email' in field.html_name %}email{% else %}text{% endif %}" 
+                           name="{{ field.html_name }}" id="{{ field.id_for_label }}" required
+                           value="{{ field.value|default:'' }}"
+                           class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-[0_0_15px_rgba(202,243,0,0.15)] transition-all duration-300 outline-none placeholder-neutral-600 text-sm">
+                    {% for error in field.errors %}
+                        <span class="text-red-400 text-xs px-2 mt-1 font-medium block">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#b8dd00] text-[#131313] h-14 rounded-full flex items-center justify-center font-extrabold tracking-wider hover:shadow-[0_0_20px_rgba(202,243,0,0.3)] transition-all duration-300 mt-2">
+                {% translate "CREATE ACCOUNT" %}
+            </button>
+        </form>
+
+        <div class="flex items-center gap-4 text-neutral-500 text-xs">
+            <hr class="flex-1 border-[#262626]">
+            <span>{% translate "Already have an account?" %}</span>
+            <hr class="flex-1 border-[#262626]">
+        </div>
+        <a href="{% url 'core:user:login' %}" class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-[0_0_15px_rgba(202,243,0,0.05)] transition-all duration-300">
+            {% translate "LOG IN" %}
+        </a>
+    </div>
+</main>
 {% endblock %}

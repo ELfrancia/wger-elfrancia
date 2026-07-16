@@ -26,7 +26,7 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
 )
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 
 # wger
 from wger.manager.models import (
@@ -112,3 +112,285 @@ def copy_routine(request, pk):
                 copy_config(current_entry.maxsetsconfig_set.all(), slot_entry_copy)
 
     return HttpResponseRedirect(routine_copy.get_absolute_url())
+
+
+@login_required
+def overview_tailwind(request):
+    routines = Routine.objects.filter(user=request.user)
+    return render(request, 'routines/overview_tailwind.html', {
+        'routines': routines
+    })
+
+
+@login_required
+def view_tailwind(request, pk):
+    routine = get_object_or_404(Routine, pk=pk)
+    if routine.user != request.user and not routine.is_public:
+        return HttpResponseForbidden()
+    return render(request, 'routines/view_tailwind.html', {
+        'routine': routine
+    })
+
+
+# New Tailwind + HTMX views for Onyx
+from django.shortcuts import redirect
+from django.db import models as django_models
+from django.http import HttpResponse
+from wger.manager.forms import RoutineForm, DayForm, AddExerciseForm
+from wger.manager.models import Day, Slot, SlotEntry, SetsConfig, RepetitionsConfig, WeightConfig
+
+
+@login_required
+def add_routine_tailwind(request):
+    import datetime
+    if request.method == 'POST':
+        form = RoutineForm(request.POST)
+        if form.is_valid():
+            routine = form.save(commit=False)
+            routine.user = request.user
+            duration_weeks = form.cleaned_data['duration_weeks']
+            routine.end = routine.start + datetime.timedelta(weeks=duration_weeks)
+            routine.save()
+            return redirect('manager:routine:view', pk=routine.pk)
+    else:
+        form = RoutineForm(initial={'start': datetime.date.today(), 'duration_weeks': 6})
+    
+    return render(request, 'routines/add_tailwind.html', {
+        'form': form
+    })
+
+
+@login_required
+def edit_routine_tailwind(request, pk):
+    import datetime
+    routine = get_object_or_404(Routine, pk=pk, user=request.user)
+    initial_duration = max(1, round((routine.end - routine.start).days / 7))
+    
+    if request.method == 'POST':
+        form = RoutineForm(request.POST, instance=routine)
+        if form.is_valid():
+            routine = form.save(commit=False)
+            duration_weeks = form.cleaned_data['duration_weeks']
+            routine.end = routine.start + datetime.timedelta(weeks=duration_weeks)
+            routine.save()
+            return redirect('manager:routine:view', pk=routine.pk)
+    else:
+        form = RoutineForm(instance=routine, initial={'duration_weeks': initial_duration})
+        
+    return render(request, 'routines/edit_tailwind.html', {
+        'form': form,
+        'routine': routine
+    })
+
+
+@login_required
+def delete_routine_tailwind(request, pk):
+    routine = get_object_or_404(Routine, pk=pk, user=request.user)
+    routine.delete()
+    return redirect('manager:routine:overview')
+
+
+@login_required
+def add_day_tailwind(request, routine_pk):
+    routine = get_object_or_404(Routine, pk=routine_pk, user=request.user)
+    if request.method == 'POST':
+        form = DayForm(request.POST)
+        if form.is_valid():
+            day = form.save(commit=False)
+            day.routine = routine
+            max_order = routine.days.aggregate(django_models.Max('order'))['order__max']
+            day.order = (max_order or 0) + 1
+            day.save()
+            
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = routine.get_absolute_url()
+                return response
+            return redirect('manager:routine:view', pk=routine.pk)
+    else:
+        form = DayForm()
+    return render(request, 'routines/add_day_tailwind.html', {
+        'form': form,
+        'routine': routine
+    })
+
+
+@login_required
+def delete_day_tailwind(request, routine_pk, day_pk):
+    day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
+    day.delete()
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+@login_required
+def add_exercise_tailwind(request, routine_pk, day_pk):
+    day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
+    if request.method == 'POST':
+        form = AddExerciseForm(request.POST)
+        if form.is_valid():
+            exercise = form.cleaned_data['exercise']
+            sets = form.cleaned_data['sets']
+            reps = form.cleaned_data['reps']
+            weight = form.cleaned_data['weight']
+            
+            max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+            slot = Slot.objects.create(
+                day=day,
+                order=(max_order or 0) + 1
+            )
+            
+            slot_entry = SlotEntry.objects.create(
+                slot=slot,
+                exercise=exercise,
+                order=1
+            )
+            
+            SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=sets)
+            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
+            WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight)
+            
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = day.routine.get_absolute_url()
+                return response
+            return redirect('manager:routine:view', pk=day.routine.pk)
+    else:
+        form = AddExerciseForm()
+        
+    # Build exercises list with prefetching to avoid N+1 queries
+    exercise_qs = form.fields['exercise'].queryset.prefetch_related('muscles', 'translations')
+    
+    from wger.exercises.models import CalisthenicsExercise
+    calisthenics_map = {
+        str(cal.id): cal for cal in CalisthenicsExercise.objects.all()
+    }
+    
+    exercises_list = []
+    muscles_set = set()
+    skills_set = set()
+    
+    for ex in exercise_qs:
+        translation = ex.get_translation()
+        name = translation.name if translation else "Unnamed Exercise"
+        cal = calisthenics_map.get(str(ex.uuid))
+        
+        preview_url = None
+        skill_family = 'Other'
+        if cal:
+            preview_url = cal.demo_media_url
+            if cal.skill_family:
+                skill_family = cal.skill_family.replace('_', ' ').title()
+                
+        if not preview_url:
+            img = ex.exerciseimage_set.first()
+            if img:
+                preview_url = img.image.url
+                
+        muscles = [m.name for m in ex.muscles.all()]
+        for m in muscles:
+            muscles_set.add(m)
+        if skill_family:
+            skills_set.add(skill_family)
+            
+        exercises_list.append({
+            'id': ex.id,
+            'name': name,
+            'preview_url': preview_url or '',
+            'muscles': ','.join(muscles),
+            'muscles_display': ' • '.join(muscles),
+            'skill_family': skill_family,
+        })
+        
+    muscles_list = sorted(list(muscles_set))
+    skills_list = sorted(list(skills_set))
+        
+    return render(request, 'routines/add_exercise_tailwind.html', {
+        'form': form,
+        'day': day,
+        'exercises_list': exercises_list,
+        'muscles_list': muscles_list,
+        'skills_list': skills_list,
+    })
+
+
+@login_required
+def delete_exercise_tailwind(request, routine_pk, day_pk, slot_pk):
+    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    slot.delete()
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+@login_required
+def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
+    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    if request.method == 'POST':
+        reps = request.POST.get('reps')
+        weight = request.POST.get('weight')
+        first_entry = slot.entries.first()
+        if first_entry and reps and weight:
+            max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
+            slot_entry = SlotEntry.objects.create(
+                slot=slot,
+                exercise=first_entry.exercise,
+                order=(max_order or 0) + 1
+            )
+            SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
+            WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight)
+            
+            from wger.manager.helpers import reset_routine_cache
+            reset_routine_cache(slot.day.routine)
+            
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+@login_required
+def delete_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
+    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    entry = get_object_or_404(SlotEntry, pk=entry_pk, slot=slot)
+    
+    if slot.entries.count() <= 1:
+        slot.delete()
+    else:
+        entry.delete()
+        
+    from wger.manager.helpers import reset_routine_cache
+    reset_routine_cache(slot.day.routine)
+    
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+@login_required
+def update_notes_tailwind(request, routine_pk, day_pk, slot_pk):
+    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    if request.method == 'POST':
+        notes = request.POST.get('notes', '').strip()
+        slot.comment = notes
+        slot.save()
+        
+        from wger.manager.helpers import reset_routine_cache
+        reset_routine_cache(slot.day.routine)
+        
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+

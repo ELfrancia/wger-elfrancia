@@ -304,6 +304,29 @@ class UserProfile(models.Model):
     )
     """Basic caloric intake based on physical activity"""
 
+    steps_goal = models.PositiveIntegerField(
+        verbose_name=_('Daily steps goal'),
+        default=16000,
+        blank=False,
+        null=False,
+    )
+
+    calories_goal = models.PositiveIntegerField(
+        verbose_name=_('Daily burned calories goal'),
+        default=680,
+        blank=False,
+        null=False,
+    )
+
+    water_goal = models.DecimalField(
+        verbose_name=_('Daily water goal (L)'),
+        max_digits=5,
+        decimal_places=2,
+        default=2.5,
+        blank=False,
+        null=False,
+    )
+
     #
     # Others
     #

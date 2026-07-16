@@ -25,3 +25,4 @@ from .image import ExerciseImage
 from .muscle import Muscle
 from .translation import Translation
 from .video import ExerciseVideo
+from .calisthenics import ExerciseImportRaw, CalisthenicsExercise, ExerciseTag

@@ -517,6 +517,23 @@ class RoutineTestCase(WgerTestCase):
         self.assertLessEqual(ttl, 24 * 60 * 60)
         self.assertLess(ttl, settings.WGER_SETTINGS['ROUTINE_CACHE_TTL'])
 
+    def test_duration_weeks(self):
+        """
+        Test that duration_weeks returns duration in weeks, rounded, min 1
+        """
+        # 10 days = 1.43 weeks -> rounds to 1 week
+        self.routine.start = datetime.date(2024, 1, 1)
+        self.routine.end = datetime.date(2024, 1, 11)
+        self.assertEqual(self.routine.duration_weeks, 1)
+
+        # 11 days = 1.57 weeks -> rounds to 2 weeks
+        self.routine.end = datetime.date(2024, 1, 12)
+        self.assertEqual(self.routine.duration_weeks, 2)
+
+        # 1 day = 0.14 weeks -> rounds to 0 -> min 1 week
+        self.routine.end = datetime.date(2024, 1, 2)
+        self.assertEqual(self.routine.duration_weeks, 1)
+
 
 class RoutineApiTestCase(ApiBaseResourceTestCase):
     """

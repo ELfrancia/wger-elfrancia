@@ -808,3 +808,119 @@ class WgerLoginView(AllauthLoginView):
         context = super().get_context_data(**kwargs)
         context['use_social_auth'] = bool(settings.WGER_SOCIAL_PROVIDERS)
         return context
+
+
+@login_required
+def dashboard_tailwind(request):
+    from wger.trophies.models import UserStatistics
+    from wger.core.models import DailyActivity
+    from django.utils import timezone
+    stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
+    latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date').first()
+    activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
+    profile = request.user.userprofile
+    return render(request, 'user/dashboard_tailwind.html', {
+        'stats': stats,
+        'latest_session': latest_session,
+        'activity': activity,
+        'profile': profile,
+    })
+
+
+@login_required
+def profile_tailwind(request):
+    from wger.trophies.models import UserStatistics
+    from decimal import Decimal, InvalidOperation
+    stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
+    profile = request.user.userprofile
+
+    if request.method == 'POST':
+        steps_goal = request.POST.get('steps_goal')
+        calories_goal = request.POST.get('calories_goal')
+        water_goal = request.POST.get('water_goal')
+
+        updated = False
+        if steps_goal is not None and steps_goal != '':
+            try:
+                profile.steps_goal = max(1, int(steps_goal))
+                updated = True
+            except (ValueError, TypeError):
+                pass
+        if calories_goal is not None and calories_goal != '':
+            try:
+                profile.calories_goal = max(1, int(calories_goal))
+                updated = True
+            except (ValueError, TypeError):
+                pass
+        if water_goal is not None and water_goal != '':
+            try:
+                water_val_str = str(water_goal).replace(',', '.')
+                profile.water_goal = max(Decimal('0.1'), Decimal(water_val_str))
+                updated = True
+            except (ValueError, TypeError, InvalidOperation):
+                pass
+
+        if updated:
+            profile.save()
+            messages.success(request, _('Goals successfully updated.'))
+            return redirect('core:profile_tailwind')
+
+    return render(request, 'user/profile_tailwind.html', {
+        'stats': stats,
+        'profile': profile,
+    })
+
+
+@login_required
+@require_POST
+def log_daily_activity(request):
+    import decimal
+    from decimal import Decimal
+    from django.utils import timezone
+    from wger.core.models import DailyActivity
+
+    activity, created_activity = DailyActivity.objects.get_or_create(
+        user=request.user,
+        date=timezone.localdate()
+    )
+
+    activity_type = request.POST.get('activity_type')
+    amount = request.POST.get('amount')
+    value = request.POST.get('value')
+
+    if activity_type == 'steps':
+        try:
+            if value is not None and value != '':
+                activity.steps = max(0, int(value))
+            elif amount is not None and amount != '':
+                activity.steps = max(0, activity.steps + int(amount))
+            activity.save()
+        except (ValueError, TypeError):
+            pass
+    elif activity_type == 'calories':
+        try:
+            if value is not None and value != '':
+                activity.calories = max(0, int(value))
+            elif amount is not None and amount != '':
+                activity.calories = max(0, activity.calories + int(amount))
+            activity.save()
+        except (ValueError, TypeError):
+            pass
+    elif activity_type == 'water':
+        try:
+            if value is not None and value != '':
+                val_str = str(value).replace(',', '.')
+                activity.water = max(Decimal('0.0'), Decimal(val_str))
+            elif amount is not None and amount != '':
+                amt_str = str(amount).replace(',', '.')
+                activity.water = max(Decimal('0.0'), activity.water + Decimal(amt_str))
+            activity.save()
+        except (ValueError, TypeError, decimal.InvalidOperation):
+            pass
+
+    profile = request.user.userprofile
+    return render(request, 'user/daily_activity_fragment.html', {
+        'activity': activity,
+        'profile': profile,
+    })
+

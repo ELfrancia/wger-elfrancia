@@ -45,7 +45,7 @@ def index(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect(reverse('core:dashboard'))
     else:
-        return HttpResponseRedirect(reverse('software:features'))
+        return HttpResponseRedirect(reverse('core:user:login'))
 
 
 def demo_entries(request):

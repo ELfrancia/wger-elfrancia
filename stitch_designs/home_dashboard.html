@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/><meta content="#131313" name="theme-color"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "error-container": "#93000a",
+                "primary-fixed": "#caf300",
+                "on-surface-variant": "#c5c9ac",
+                "surface": "#131313",
+                "on-error-container": "#ffdad6",
+                "on-error": "#690005",
+                "surface-container": "#201f1f",
+                "background": "#131313",
+                "surface-container-high": "#2a2a2a",
+                "surface-container-lowest": "#0e0e0e",
+                "primary-fixed-dim": "#b0d500",
+                "primary-container": "#caf300",
+                "on-tertiary": "#303030",
+                "on-primary-fixed": "#171e00",
+                "on-tertiary-fixed": "#1b1c1c",
+                "on-secondary": "#2f3131",
+                "inverse-surface": "#e5e2e1",
+                "error": "#ffb4ab",
+                "on-primary": "#2a3400",
+                "surface-variant": "#353534",
+                "surface-dim": "#131313",
+                "inverse-primary": "#536600",
+                "on-secondary-fixed": "#1a1c1c",
+                "on-tertiary-fixed-variant": "#474746",
+                "surface-tint": "#b0d500",
+                "secondary-fixed": "#e2e2e2",
+                "inverse-on-surface": "#313030",
+                "on-background": "#e5e2e1",
+                "secondary-container": "#454747",
+                "tertiary": "#ffffff",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "on-secondary-container": "#b4b5b5",
+                "surface-container-highest": "#353534",
+                "on-primary-fixed-variant": "#3e4c00",
+                "tertiary-fixed": "#e4e2e1",
+                "primary": "#ffffff",
+                "on-primary-container": "#596c00",
+                "on-surface": "#e5e2e1",
+                "secondary": "#c6c6c7",
+                "outline-variant": "#444932",
+                "tertiary-container": "#e4e2e1",
+                "on-secondary-fixed-variant": "#454747",
+                "surface-bright": "#3a3939",
+                "outline": "#8f9378",
+                "on-tertiary-container": "#656464",
+                "surface-container-low": "#1c1b1b",
+                "secondary-fixed-dim": "#c6c6c7"
+        },
+        "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "grid-gutter": "1rem",
+                "stack-xs": "0.25rem",
+                "stack-md": "1rem",
+                "grid-margin": "2rem",
+                "stack-lg": "2rem",
+                "stack-sm": "0.5rem",
+                "section-gap": "4rem"
+        },
+        "fontFamily": {
+                "display": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "label-caps": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "caption": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "display": [
+                        "72px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "0",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg": [
+                        "40px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-caps": [
+                        "12px",
+                        {
+                                "lineHeight": "1",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "1.3",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "caption": [
+                        "13px",
+                        {
+                                "lineHeight": "1.4",
+                                "letterSpacing": "0",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "1.6",
+                                "letterSpacing": "0",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script></head><body class="bg-[#131313] text-on-surface font-body-md antialiased overflow-x-hidden pb-[calc(100px+env(safe-area-inset-bottom))]">
+<!-- TopAppBar (Web & Mobile) -->
+<header class="w-full sticky top-0 z-50 bg-[#131313]/95 backdrop-blur-sm flex justify-between items-center px-4 py-4 pt-[max(env(safe-area-inset-top),16px)]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-surface-container-high bg-surface-container">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Close-up professional headshot of an athletic individual with intense focus, set against a dark, moody background with subtle rim lighting. The lighting highlights sharp facial features and determination, fitting a premium, high-performance fitness aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTlNq37AWCmbknikJ2aRaq2nJmhumxxRJohrSA31WKWqYtLQgZz0XabPw9Fhsudy17VJuf2hjE_9Zb3NzdJt99DagivCZ7bGY5eIk6BmuMT8gkCSUY-ZGAlEFH9Qd4Rot7aZAn3PSZl3AanTg71MxQO35Xd3y1sg4BfKFRHRnWEZtk42I0PUaXrXX9_9ZRHFkjVH988-mB2TXMcGalOeUFLStSDJ8WYY95mphs_2S9oe-OIHOMrg"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight font-extrabold uppercase">PERFORMANCE</h1>
+</div>
+<button class="min-w-[44px] min-h-[44px] flex items-center justify-center hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary text-2xl">notifications</span>
+</button>
+</header>
+<main class="max-w-3xl mx-auto px-4 mt-2 flex flex-col gap-6"><section class="mt-2"><h2 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold tracking-tight text-primary">Good morning, Alex</h2><p class="text-on-surface-variant font-body-md mt-1">Ready to crush your goals today?</p></section>
+<!-- Daily Activity Hero Section (Bento Grid Style) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Large Activity Ring -->
+<div class="grid grid-cols-1 gap-4 h-full"><div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-4 flex items-center justify-between"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary-fixed" style="font-variation-settings: 'FILL' 1;">directions_walk</span><div><div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold">Steps</div><div class="font-headline-md text-headline-md font-extrabold text-primary">8,432</div></div></div><div class="w-24 h-2 rounded-full bg-surface-container-high"><div class="h-full rounded-full bg-primary-fixed w-3/4"></div></div></div><div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-4 flex items-center justify-between"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">local_fire_department</span><div><div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold">Calories</div><div class="font-headline-md text-headline-md font-extrabold text-primary">2,140 <span class="text-sm font-medium opacity-50">kcal</span></div></div></div><div class="w-24 h-2 rounded-full bg-surface-container-high"><div class="h-full rounded-full bg-error w-5/6"></div></div></div><div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-4 flex items-center justify-between"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">water_drop</span><div><div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold">Hydration</div><div class="font-headline-md text-headline-md font-extrabold text-primary">2.4 <span class="text-sm font-medium opacity-50">L</span></div></div></div><div class="w-24 h-2 rounded-full bg-surface-container-high"><div class="h-full rounded-full bg-tertiary w-1/2"></div></div></div></div>
+</section>
+<!-- Workout Summary -->
+<section>
+<h3 class="font-headline-md text-headline-md font-bold tracking-tight text-primary mb-4">Last Session</h3>
+<div class="bg-surface-container-low border border-surface-container-high rounded-[24px] overflow-hidden flex flex-col gap-0 items-center">
+<div class="w-full aspect-video md:aspect-[2/1] overflow-hidden bg-[#131313] relative border-b border-surface-container-high">
+<img alt="Workout Image" class="w-full h-full object-cover opacity-50 grayscale" data-alt="A high-contrast, moody shot of heavy matte-black dumbbells resting on a textured gym floor, illuminated by a harsh overhead spotlight. The surrounding environment is bathed in deep shadows, emphasizing the raw, professional nature of the fitness equipment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTWyBRYvnT6UQNPS41hlHk3uwwVvRkvOx768hTkGfCVwwGPPTMl9USaDA62NH1zKMOsoiY719vazyc3FtekOKtMifN9J-GJnbbsSP0nMQjCysaRYGajgC8IkhkaYC92tuMLz86rAB0MxChPdqge6J0T6VU_2hd9-ayN3hRer8cUN6Z2AGOEjreaNheUEI208_1iVG2FwBPVFrTo7Zb7cQh5qsxnEf_vJjApPbgrk6PcI5UuKhcow"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 w-full p-5">
+<div>
+<div class="font-label-caps text-label-caps text-primary-fixed uppercase font-bold tracking-widest mb-1">Strength Training</div>
+<h4 class="font-headline-md text-headline-md font-bold tracking-tight text-primary">Upper Body Power</h4>
+</div>
+<div class="grid grid-cols-3 gap-4 border-t border-surface-container-high pt-4">
+<div>
+<div class="font-label-caps text-[10px] text-on-surface-variant mb-1 uppercase font-bold tracking-wider">Duration</div>
+<div class="text-xl font-extrabold tracking-tight">45m</div>
+</div>
+<div>
+<div class="font-label-caps text-[10px] text-on-surface-variant mb-1 uppercase font-bold tracking-wider">Volume</div>
+<div class="text-xl font-extrabold tracking-tight">12.4k</div>
+</div>
+<div>
+<div class="font-label-caps text-[10px] text-on-surface-variant mb-1 uppercase font-bold tracking-wider">Intensity</div>
+<div class="text-xl font-extrabold tracking-tight text-primary-fixed">High</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA -->
+<section class="mt-2 mb-8">
+<button class="w-full bg-primary-fixed text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-body-lg text-body-lg font-extrabold tracking-tight hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                START NEXT SESSION
+            </button>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden bg-[#131313] border-t border-surface-container-high flex justify-around items-center h-[calc(80px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-2">
+<a class="flex flex-col items-center justify-center text-primary-fixed min-w-[64px] min-h-[64px]" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="#">
+<span class="material-symbols-outlined mb-1">search</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Browse</span>
+</a>
+<div class="-mt-8">
+<button class="w-[60px] h-[60px] rounded-full bg-primary-fixed text-[#131313] flex items-center justify-center shadow-[0_0_20px_rgba(202,243,0,0.2)]">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="#">
+<span class="material-symbols-outlined mb-1">insights</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Progress</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Profile</span>
+</a>
+</nav>
+</body></html>

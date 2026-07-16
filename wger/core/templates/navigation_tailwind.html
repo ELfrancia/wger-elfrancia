@@ -1,0 +1,38 @@
+{% load static %}
+<!-- TopAppBar (Web & Mobile) -->
+<header class="w-full sticky top-0 z-50 bg-[#131313]/95 backdrop-blur-sm flex justify-between items-center px-4 py-4 pt-[max(env(safe-area-inset-top),16px)] border-b border-surface-container-high">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full overflow-hidden border border-surface-container-high bg-surface-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary-fixed text-2xl">person</span>
+        </div>
+        <h1 class="font-headline-md text-headline-md text-primary tracking-tight font-extrabold uppercase">ONYX ATHLETIC</h1>
+    </div>
+    <button class="min-w-[44px] min-h-[44px] flex items-center justify-center hover:opacity-80 transition-opacity">
+        <span class="material-symbols-outlined text-primary text-2xl">notifications</span>
+    </button>
+</header>
+
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#131313] border-t border-surface-container-high flex justify-around items-center h-[calc(80px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-2">
+    <a class="flex flex-col items-center justify-center text-primary-fixed min-w-[64px] min-h-[64px]" href="{% url 'core:dashboard' %}">
+        <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+        <span class="text-[10px] uppercase tracking-widest font-bold">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="{% url 'manager:routine:overview' %}">
+        <span class="material-symbols-outlined mb-1">fitness_center</span>
+        <span class="text-[10px] uppercase tracking-widest font-bold">Routines</span>
+    </a>
+    <div class="-mt-8">
+        <a href="{% url 'manager:routine:add' %}" class="w-[60px] h-[60px] rounded-full bg-primary-fixed text-[#131313] flex items-center justify-center shadow-[0_0_20px_rgba(202,243,0,0.2)] hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined text-3xl font-extrabold" style="font-variation-settings: 'FILL' 1;">add</span>
+        </a>
+    </div>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="{% url 'weight:overview' %}">
+        <span class="material-symbols-outlined mb-1">insights</span>
+        <span class="text-[10px] uppercase tracking-widest font-bold">Progress</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="{% url 'core:profile_tailwind' %}">
+        <span class="material-symbols-outlined mb-1">person</span>
+        <span class="text-[10px] uppercase tracking-widest font-bold">Profile</span>
+    </a>
+</nav>

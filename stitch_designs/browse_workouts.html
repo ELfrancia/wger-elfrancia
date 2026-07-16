@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-primary-fixed-variant": "#3e4c00",
+                "surface-container-lowest": "#0e0e0e",
+                "surface": "#131313",
+                "on-error": "#690005",
+                "on-surface-variant": "#c5c9ac",
+                "outline": "#8f9378",
+                "on-tertiary-container": "#656464",
+                "on-background": "#e5e2e1",
+                "on-error-container": "#ffdad6",
+                "surface-container-low": "#1c1b1b",
+                "tertiary-fixed": "#e4e2e1",
+                "outline-variant": "#444932",
+                "secondary-fixed-dim": "#c6c6c7",
+                "error": "#ffb4ab",
+                "on-secondary-fixed-variant": "#454747",
+                "tertiary-container": "#e4e2e1",
+                "surface-container": "#201f1f",
+                "on-primary-fixed": "#171e00",
+                "inverse-primary": "#536600",
+                "surface-variant": "#353534",
+                "surface-container-high": "#2a2a2a",
+                "on-tertiary": "#303030",
+                "on-primary-container": "#596c00",
+                "on-secondary": "#2f3131",
+                "primary-container": "#caf300",
+                "on-primary": "#2a3400",
+                "inverse-on-surface": "#313030",
+                "surface-tint": "#b0d500",
+                "on-tertiary-fixed": "#1b1c1c",
+                "on-surface": "#e5e2e1",
+                "primary-fixed": "#caf300",
+                "on-secondary-container": "#b4b5b5",
+                "primary": "#ffffff",
+                "surface-dim": "#131313",
+                "error-container": "#93000a",
+                "surface-container-highest": "#353534",
+                "surface-bright": "#3a3939",
+                "tertiary": "#ffffff",
+                "on-tertiary-fixed-variant": "#474746",
+                "inverse-surface": "#e5e2e1",
+                "on-secondary-fixed": "#1a1c1c",
+                "secondary": "#c6c6c7",
+                "secondary-fixed": "#e2e2e2",
+                "secondary-container": "#454747",
+                "background": "#0a0a0a",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "primary-fixed-dim": "#b0d500"
+        },
+        "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "stack-lg": "2rem",
+                "section-gap": "4rem",
+                "stack-xs": "0.25rem",
+                "grid-margin": "2rem",
+                "stack-sm": "0.5rem",
+                "grid-gutter": "1rem",
+                "stack-md": "1rem"
+        },
+        "fontFamily": {
+                "body-lg": [
+                        "Inter"
+                ],
+                "caption": [
+                        "Inter"
+                ],
+                "label-caps": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "display": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "1.6",
+                                "letterSpacing": "0",
+                                "fontWeight": "400"
+                        }
+                ],
+                "caption": [
+                        "13px",
+                        {
+                                "lineHeight": "1.4",
+                                "letterSpacing": "0",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-caps": [
+                        "12px",
+                        {
+                                "lineHeight": "1",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "1.3",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display": [
+                        "72px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "headline-lg": [
+                        "40px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "0",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+}catch(_e){}</script></head><body class="bg-background text-primary font-body-md min-h-screen flex flex-col md:pb-0 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 z-50 bg-background/95 backdrop-blur-md flex justify-between items-center px-4 md:px-8 py-stack-md pt-[max(env(safe-area-inset-top),1rem)]">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-[#161616] overflow-hidden border border-[#262626]">
+<img class="w-full h-full object-cover" data-alt="A close up portrait of an athletic individual in high contrast lighting, matching the premium dark mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAW8h-gjPlvvYgHz87WvCypDJR2OE2mxdNHTechTGz-N015GQpFqjrSh0cbGqg-S6n1UMrA9hFKXtgKQmooorxhZpQItv0q-gphFgWVY_oC0GftwdJV51vYtmsHjCjKDDD5RuG7brOOAlvyjnu8Ya5pwa8mRNHHXgPBt2FWdje9TUqJT28ke78aJA6x4ynlLPX40-OZY6PEUhpHjX07vktTdIENTBc3FTLbePKEVYS3oz3VDBE-yA"/>
+</div>
+<h1 class="font-display text-display text-primary tracking-tighter hidden md:block">PERFORMANCE</h1>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter md:hidden">PERFORMANCE</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-[#161616] hover:bg-[#262626] border border-[#262626] transition-colors">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[1280px] mx-auto px-4 md:px-8 py-stack-lg md:py-16">
+<!-- Search and Filter Header -->
+<div class="mb-8">
+<div class="flex flex-col gap-6">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary mb-1 hidden md:block font-bold tracking-tighter">Explore Workouts</h2>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-1 md:hidden font-bold tracking-tighter">Explore Workouts</h2>
+<p class="font-body-md text-body-md text-[#888888]">Find the perfect session for your goals.</p>
+</div>
+<div class="flex flex-col gap-4">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-[#888888]">search</span>
+<input class="w-full bg-[#161616] border border-[#262626] rounded-full h-14 pl-14 pr-6 text-primary focus:ring-1 focus:ring-white font-body-md text-body-md placeholder-[#888888] outline-none" placeholder="Search workouts..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex-1 bg-[#161616] border border-[#262626] rounded-full h-14 flex items-center justify-center gap-2 hover:bg-[#262626] transition-colors">
+<span class="material-symbols-outlined text-primary">tune</span>
+<span class="font-label-caps text-label-caps text-primary">Filters</span>
+</button>
+<button class="flex-1 bg-[#161616] border border-[#262626] rounded-full h-14 flex items-center justify-center gap-2 hover:bg-[#262626] transition-colors">
+<span class="material-symbols-outlined text-primary">swap_vert</span>
+<span class="font-label-caps text-label-caps text-primary">Sort</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Categories (Pills) -->
+<div class="flex overflow-x-auto hide-scroll gap-3 mb-10 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+<button class="bg-white text-[#0a0a0a] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:bg-gray-200 transition-colors uppercase font-bold tracking-widest">All</button>
+<button class="bg-[#161616] text-primary border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:bg-[#262626] transition-colors uppercase font-bold tracking-widest">Strength</button>
+<button class="bg-[#161616] text-primary border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:bg-[#262626] transition-colors uppercase font-bold tracking-widest">HIIT</button>
+<button class="bg-[#161616] text-primary border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:bg-[#262626] transition-colors uppercase font-bold tracking-widest">Yoga</button>
+<button class="bg-[#161616] text-primary border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:bg-[#262626] transition-colors uppercase font-bold tracking-widest">Mobility</button>
+<button class="bg-[#161616] text-primary border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:bg-[#262626] transition-colors uppercase font-bold tracking-widest">Cardio</button></div>
+<!-- Featured Workout (Bento Grid Style) -->
+<!-- Workout Grid -->
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-6 font-bold tracking-tighter">Trending Sessions</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"><!-- Card 1: Titan Protocol -->
+<div class="workout-card h-[440px] group cursor-pointer relative overflow-hidden rounded-[2rem]">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAHUsF3fKuQKovnjU2a0K2pT91WslA_7A5KAcjCIy9L9BVY13sl1teFwVtHhHzwWZRAbaqtb2S-VrLPQo1DnPZHLq6PTGtMUxN34vo_FGg1-UDpQ-aCP41jIeam4e-vVSuMJqMJG8hbdVg-t0T96ACAkPdxgFO9DCc3-igUi2qrqsLfmYwrbkmNmwpmaIJgPfqWRtRssBUiv8fAvcjNvuxHG7Buq-XiQBUdMXkKIFOLgIe5VwbGyg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
+<div class="absolute inset-0 workout-overlay flex flex-col justify-end p-8">
+<div class="flex gap-2 mb-3">
+<span class="bg-white text-[#0a0a0a] px-3 py-1 rounded-full font-label-caps text-[10px] uppercase tracking-widest font-bold">Strength</span>
+</div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold mb-2 tracking-tight">Titan Protocol</h4>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary/80 tracking-widest">60M • ADV</span>
+<div class="w-12 h-12 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[#0a0a0a] text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Metabolic Burn -->
+<div class="workout-card h-[440px] group cursor-pointer relative overflow-hidden rounded-[2rem]">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDmQDH061WSnxNKaguyiC7z-Gt66EMDNry1hccU2MsNS97nxL1tJdGLdRSJElFUVPqq6IrulGNq2xo51zxUAFGG1RzchhC5sjSb6JWilRCa0bPknBSbOUZEgTO2_JKR9BqnvYQwN8Mr9EwK3k9dNjdfaFIEi914UyU-ZwmhjWOqawnHkOoKwo0wt7ckqqnR3cHWLMKYj5sDlKIyfXvjt4LG8FWIrIzAlimVAmHkTFZ-kaIy4FYzcw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
+<div class="absolute inset-0 workout-overlay flex flex-col justify-end p-8">
+<div class="flex gap-2 mb-3">
+<span class="bg-white text-[#0a0a0a] px-3 py-1 rounded-full font-label-caps text-[10px] uppercase tracking-widest font-bold">HIIT</span>
+</div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold mb-2 tracking-tight">Metabolic Burn</h4>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary/80 tracking-widest">30M • INT</span>
+<div class="w-12 h-12 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[#0a0a0a] text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Kettlebell Core -->
+<div class="workout-card h-[440px] group cursor-pointer relative overflow-hidden rounded-[2rem]">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDZWRUP9-BJyM0Eyf8fQ01unbgp02H9rlosWLsWvuwrWwxpqoR91qGB4UzUa68kM98lng-T1rr98cpj84OyFf1NAFLBQny2xnZ3013EDSwVysONlBVZFdNzwRbvwI4fxSxCWJKtx9aA3iY-9P2hW4NWuDTVnTlDvUx6SXjiwHvurPfR0MQzupgHLeq1wdVZcawi05Rq6utqi8qgga-Lgh5K1DbKnjnJJPZSCCyZ-VFWiADT2tFz2A')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
+<div class="absolute inset-0 workout-overlay flex flex-col justify-end p-8">
+<div class="flex gap-2 mb-3">
+<span class="bg-white text-[#0a0a0a] px-3 py-1 rounded-full font-label-caps text-[10px] uppercase tracking-widest font-bold">Strength</span>
+</div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold mb-2 tracking-tight">Kettlebell Core</h4>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary/80 tracking-widest">45M • INT</span>
+<div class="w-12 h-12 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[#0a0a0a] text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Active Recovery -->
+<div class="workout-card h-[440px] group cursor-pointer relative overflow-hidden rounded-[2rem]">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYKl95MLDY6wr9CgDCOIuvQ5xXpGPDcpCucM3IW6rb9wYvPrOjoRK4vbQUMjbzsLmgHjawpRn4JFF-t-ffiC1CuQbUD7U3xmuU4bHyG1Wa9d9Mjczde1qywVXpSZ6OGUfXwKSSBtMTy6LvtQ-1MWt0znkwFMM6MYf6dbKyx2BoKwG_yKUcK2lQgYl8GANjjYXYJUveR8ld_szkftWcNW2jQAqv8cQdbo8qHMlfb56IIqiA_RYl2A')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
+<div class="absolute inset-0 workout-overlay flex flex-col justify-end p-8">
+<div class="flex gap-2 mb-3">
+<span class="bg-white text-[#0a0a0a] px-3 py-1 rounded-full font-label-caps text-[10px] uppercase tracking-widest font-bold">Mobility</span>
+</div>
+<h4 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold mb-2 tracking-tight">Active Recovery</h4>
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary/80 tracking-widest">20M • BEG</span>
+<div class="w-12 h-12 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[#0a0a0a] text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</div></div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 border-t border-[#262626] bg-[#0a0a0a]/95 backdrop-blur-md flex justify-around items-center h-[calc(5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-4">
+<a class="flex flex-col items-center justify-center text-[#888888] hover:text-primary transition-colors scale-102 transition-transform duration-200 h-full w-16" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-caps text-[10px] tracking-wider uppercase">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white font-bold scale-102 transition-transform duration-200 h-full w-16" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">search</span>
+<span class="font-label-caps text-[10px] tracking-wider uppercase">Browse</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#888888] hover:text-primary transition-colors scale-102 transition-transform duration-200 h-full w-16" href="#">
+<span class="material-symbols-outlined mb-1">insights</span>
+<span class="font-label-caps text-[10px] tracking-wider uppercase">Progress</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#888888] hover:text-primary transition-colors scale-102 transition-transform duration-200 h-full w-16" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-caps text-[10px] tracking-wider uppercase">Profile</span>
+</a>
+</nav>
+<!-- Desktop Side Nav Overlay / Setup (Hidden on mobile, represents the destination layout-->
+<div class="hidden md:flex fixed left-0 top-0 h-full w-20 flex-col items-center py-8 bg-[#0a0a0a] border-r border-[#262626] z-40 mt-16">
+<a class="w-12 h-12 flex flex-col items-center justify-center text-[#888888] hover:text-primary transition-colors mb-8 rounded-full hover:bg-[#161616] border border-transparent hover:border-[#262626]" href="#">
+<span class="material-symbols-outlined">home</span>
+</a>
+<a class="w-12 h-12 flex flex-col items-center justify-center text-[#0a0a0a] bg-white rounded-full mb-8 font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
+</a>
+<a class="w-12 h-12 flex flex-col items-center justify-center text-[#888888] hover:text-primary transition-colors mb-8 rounded-full hover:bg-[#161616] border border-transparent hover:border-[#262626]" href="#">
+<span class="material-symbols-outlined">insights</span>
+</a>
+</div></body></html>

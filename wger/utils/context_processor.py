@@ -108,6 +108,7 @@ def get_custom_header(request):
 
     # Put the custom header together
     custom_header = None
-    if current_gym and current_gym.config.show_name:
+    if current_gym and hasattr(current_gym, 'config') and current_gym.config.show_name:
         custom_header = current_gym.name
     return custom_header
+

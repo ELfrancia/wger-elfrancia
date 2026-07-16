@@ -1,0 +1,53 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+{% block title %}{% translate "Add Day" %} - Onyx{% endblock %}
+{% block content %}
+<section class="mb-6">
+    <div class="flex items-center gap-2">
+        <a href="{% url 'manager:routine:view' routine.pk %}" class="text-primary-fixed hover:underline flex items-center text-xs font-bold gap-1">
+            <span class="material-symbols-outlined text-sm">arrow_back</span> BACK TO ROUTINE
+        </a>
+    </div>
+    <div class="mt-4">
+        <span class="text-xs text-primary-fixed uppercase font-bold tracking-wider">Routine: {{ routine.name }}</span>
+        <h2 class="text-2xl font-extrabold text-primary mt-1">{% translate "Add Training Day" %}</h2>
+        <p class="text-on-surface-variant text-sm mt-1">Add a new workout session (e.g. Push, Pull, Legs) to this program.</p>
+    </div>
+</section>
+
+<section class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-6 mb-12">
+    <form method="post" class="flex flex-col gap-6" hx-boost="true">
+        {% csrf_token %}
+        
+        <div class="flex flex-col gap-2">
+            <label for="{{ form.name.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                {% translate "Day Name" %}
+            </label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <span class="text-xs text-error font-medium">{{ form.name.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="{{ form.description.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                {% translate "Description / Focus" %}
+            </label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <span class="text-xs text-error font-medium">{{ form.description.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3 mt-4">
+            <button type="submit" class="flex-1 bg-primary-fixed text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+                {% translate "ADD DAY" %}
+            </button>
+            <a href="{% url 'manager:routine:view' routine.pk %}" class="flex-1 border border-surface-container-high text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:bg-surface-container transition-colors">
+                {% translate "CANCEL" %}
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}

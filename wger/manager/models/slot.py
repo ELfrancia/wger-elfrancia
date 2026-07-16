@@ -134,3 +134,9 @@ class Slot(models.Model):
                     result.append(slot.data)
                     sets[i] -= 1
         return result
+
+    @property
+    def obj(self):
+        first_entry = self.entries.first()
+        return first_entry.exercise if first_entry else None
+

@@ -612,3 +612,20 @@ class SlotEntry(models.Model):
                 self.get_configuration_entries(ConfigType.MAXREST, iteration),
             )
         )
+
+    @property
+    def reps_config(self):
+        config_data = self.get_config_data(1)
+        class ConfigWrapper:
+            def __init__(self, reps):
+                self.reps = reps
+        return ConfigWrapper(config_data.repetitions)
+
+    @property
+    def weight_config(self):
+        config_data = self.get_config_data(1)
+        class ConfigWrapper:
+            def __init__(self, weight):
+                self.weight = weight
+        return ConfigWrapper(config_data.weight)
+

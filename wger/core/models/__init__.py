@@ -21,3 +21,5 @@ from .license import License
 from .profile import UserProfile
 from .rep_unit import RepetitionUnit
 from .weight_unit import WeightUnit
+from .daily_activity import DailyActivity
+

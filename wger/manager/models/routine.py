@@ -163,6 +163,14 @@ class Routine(models.Model):
         return self.end - self.start
 
     @property
+    def duration_weeks(self) -> int:
+        """
+        Returns the duration of the routine in weeks, rounded to the nearest week.
+        Guarantees at least 1 week.
+        """
+        return max(1, round((self.end - self.start).days / 7))
+
+    @property
     def label_dict(self) -> dict[datetime.date, str]:
         out = defaultdict(str)
         for label in self.labels.all():

@@ -109,7 +109,7 @@ DBCONFIG_PG = {
 
 DBCONFIG_SQLITE = {
     'ENGINE': 'django_prometheus.db.backends.sqlite3',
-    'NAME': BASE_DIR.parent / 'db' / 'database.sqlite',
+    'NAME': BASE_DIR.parent / 'database.sqlite',
 }
 
 DATABASES = {

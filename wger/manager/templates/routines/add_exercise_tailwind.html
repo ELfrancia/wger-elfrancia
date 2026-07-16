@@ -1,0 +1,244 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+{% block title %}{% translate "Add Exercise" %} - Onyx{% endblock %}
+{% block content %}
+<section class="mb-6">
+    <div class="flex items-center gap-2">
+        <a href="{% url 'manager:routine:view' day.routine.pk %}" class="text-primary-fixed hover:underline flex items-center text-xs font-bold gap-1">
+            <span class="material-symbols-outlined text-sm">arrow_back</span> BACK TO ROUTINE
+        </a>
+    </div>
+    <div class="mt-4">
+        <span class="text-xs text-primary-fixed uppercase font-bold tracking-wider">Day: {{ day.name }}</span>
+        <h2 class="text-2xl font-extrabold text-primary mt-1">{% translate "Add Exercise" %}</h2>
+        <p class="text-on-surface-variant text-sm mt-1">Select an exercise and configure the initial target sets, repetitions, and weight.</p>
+    </div>
+</section>
+
+<section class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-6 mb-12">
+    <form method="post" class="flex flex-col gap-6" hx-boost="true">
+        {% csrf_token %}
+        
+        <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                {% translate "Exercise" %}
+            </label>
+            <div class="hidden">
+                {{ form.exercise }}
+            </div>
+            
+            <!-- Custom Exercise Selector UI -->
+            <div id="exercise-picker" class="flex flex-col gap-4">
+                <!-- Search & Filters -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+                        <input type="text" id="exercise-search" placeholder="{% translate 'Search exercises...' %}" 
+                               class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl pl-11 pr-4 py-3 text-primary placeholder-on-surface-variant/50 focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed text-sm font-medium">
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="filter-muscle" class="bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-4 py-3 text-primary text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed">
+                            <option value="">{% translate "All Muscles" %}</option>
+                            {% for muscle in muscles_list %}
+                                <option value="{{ muscle }}">{{ muscle }}</option>
+                            {% endfor %}
+                        </select>
+                        <select id="filter-skill" class="bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-4 py-3 text-primary text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed">
+                            <option value="">{% translate "All Skills" %}</option>
+                            {% for skill in skills_list %}
+                                <option value="{{ skill }}">{{ skill }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Exercise List -->
+                <div class="max-h-[380px] overflow-y-auto pr-1 flex flex-col gap-2 rounded-2xl border border-surface-container-high p-2 bg-[#131313] custom-scrollbar">
+                    {% for ex in exercises_list %}
+                        <div class="exercise-item flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-surface-container-highest hover:bg-surface-container-low transition-all cursor-pointer select-none" 
+                             data-id="{{ ex.id }}" 
+                             data-name="{{ ex.name }}" 
+                             data-muscles="{{ ex.muscles }}" 
+                             data-skill="{{ ex.skill_family }}">
+                            <div class="flex items-center gap-3">
+                                <!-- Circular preview container -->
+                                <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
+                                    {% if ex.preview_url %}
+                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy">
+                                    {% else %}
+                                        <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-bold text-primary">{{ ex.name }}</span>
+                                    <span class="text-xs text-on-surface-variant">
+                                        {% if ex.muscles_display %}
+                                            {{ ex.muscles_display }}
+                                        {% else %}
+                                            {% translate "No muscle info" %}
+                                        {% endif %}
+                                        {% if ex.skill_family and ex.skill_family != 'Other' %}
+                                             • {{ ex.skill_family }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- Selection Checkmark -->
+                            <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity">
+                                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8 text-on-surface-variant text-sm font-medium">
+                            {% translate "No exercises found." %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            {% if form.exercise.errors %}
+                <span class="text-xs text-error font-medium">{{ form.exercise.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+            <div class="flex flex-col gap-2">
+                <label for="{{ form.sets.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">
+                    {% translate "Sets" %}
+                </label>
+                {{ form.sets }}
+                {% if form.sets.errors %}
+                    <span class="text-xs text-error font-medium block text-center">{{ form.sets.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="{{ form.reps.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">
+                    {% translate "Reps" %}
+                </label>
+                {{ form.reps }}
+                {% if form.reps.errors %}
+                    <span class="text-xs text-error font-medium block text-center">{{ form.reps.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="{{ form.weight.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">
+                    {% translate "Weight (kg)" %}
+                </label>
+                {{ form.weight }}
+                {% if form.weight.errors %}
+                    <span class="text-xs text-error font-medium block text-center">{{ form.weight.errors.0 }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3 mt-4">
+            <button type="submit" class="flex-1 bg-primary-fixed text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                {% translate "ADD EXERCISE" %}
+            </button>
+            <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 border border-surface-container-high text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:bg-surface-container transition-colors">
+                {% translate "CANCEL" %}
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_body %}
+<style>
+    /* Custom thin scrollbar for exercise list */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #353534;
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('exercise-search');
+    const muscleSelect = document.getElementById('filter-muscle');
+    const skillSelect = document.getElementById('filter-skill');
+    const items = document.querySelectorAll('.exercise-item');
+    const selectEl = document.getElementById('id_exercise');
+
+    // 1. Filtering Logic
+    function filterExercises() {
+        const query = searchInput.value.toLowerCase().trim();
+        const muscle = muscleSelect.value;
+        const skill = skillSelect.value;
+        
+        items.forEach(item => {
+            const name = item.dataset.name.toLowerCase();
+            const muscles = item.dataset.muscles.split(',');
+            const itemSkill = item.dataset.skill;
+            
+            const matchesQuery = !query || name.includes(query);
+            const matchesMuscle = !muscle || muscles.includes(muscle);
+            const matchesSkill = !skill || itemSkill === skill;
+            
+            if (matchesQuery && matchesMuscle && matchesSkill) {
+                item.classList.remove('hidden');
+                item.classList.add('flex');
+            } else {
+                item.classList.remove('flex');
+                item.classList.add('hidden');
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', filterExercises);
+    muscleSelect.addEventListener('change', filterExercises);
+    skillSelect.addEventListener('change', filterExercises);
+
+    // 2. Selection Logic
+    function selectItem(item) {
+        // Clear all previous selections
+        items.forEach(i => {
+            i.classList.remove('border-primary-fixed', 'bg-surface-container/60');
+            i.classList.add('border-transparent');
+            const check = i.querySelector('.selected-indicator');
+            if (check) check.classList.add('opacity-0');
+        });
+
+        // Set new selection
+        item.classList.remove('border-transparent');
+        item.classList.add('border-primary-fixed', 'bg-surface-container/60');
+        const check = item.querySelector('.selected-indicator');
+        if (check) check.classList.remove('opacity-0');
+
+        // Update hidden select
+        if (selectEl) {
+            selectEl.value = item.dataset.id;
+            selectEl.dispatchEvent(new Event('change'));
+        }
+    }
+
+    items.forEach(item => {
+        item.addEventListener('click', function() {
+            selectItem(item);
+        });
+    });
+
+    // 3. Initial state
+    if (selectEl && selectEl.value) {
+        const initialItem = document.querySelector(`.exercise-item[data-id="${selectEl.value}"]`);
+        if (initialItem) {
+            selectItem(initialItem);
+            setTimeout(() => {
+                initialItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }, 100);
+        }
+    }
+});
+</script>
+{% endblock %}

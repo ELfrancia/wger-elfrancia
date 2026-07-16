@@ -25,6 +25,7 @@ from wger.manager.views import (
     ical,
     pdf,
     routine,
+    workout,
 )
 
 
@@ -51,7 +52,7 @@ patterns_templates = [
 patterns_days = [
     path(
         '<int:day_pk>/add-logs',
-        ReactView.as_view(),
+        workout.log_tailwind,
         name='overview',
     ),
 ]
@@ -60,18 +61,58 @@ patterns_days = [
 patterns_routine = [
     path(
         'overview',
-        ReactView.as_view(login_required=True),
+        routine.overview_tailwind,
         name='overview',
     ),
     path(
         'add',
-        ReactView.as_view(login_required=True),
+        routine.add_routine_tailwind,
         name='add',
     ),
     path(
         '<int:pk>/edit',
-        ReactView.as_view(login_required=True),
+        routine.edit_routine_tailwind,
         name='edit',
+    ),
+    path(
+        '<int:pk>/delete',
+        routine.delete_routine_tailwind,
+        name='delete',
+    ),
+    path(
+        '<int:routine_pk>/day/add',
+        routine.add_day_tailwind,
+        name='add-day',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/delete',
+        routine.delete_day_tailwind,
+        name='delete-day',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/add',
+        routine.add_exercise_tailwind,
+        name='add-exercise',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/delete',
+        routine.delete_exercise_tailwind,
+        name='delete-exercise',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/set/add',
+        routine.add_set_tailwind,
+        name='add-set',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/set/<int:entry_pk>/delete',
+        routine.delete_set_tailwind,
+        name='delete-set',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/notes/update',
+        routine.update_notes_tailwind,
+        name='update-notes',
     ),
     path(
         '<int:pk>/edit/progression/<int:progression_pk>',
@@ -90,7 +131,7 @@ patterns_routine = [
     ),
     path(
         '<int:pk>/view',
-        ReactView.as_view(login_required=True),
+        routine.view_tailwind,
         name='view',
     ),
     path(

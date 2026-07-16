@@ -1,0 +1,88 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% translate "Explore Routines" %}{% endblock %}
+
+{% block content %}
+<main class="flex-1 w-full max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-16">
+    <!-- Search and Filter Header -->
+    <div class="mb-8">
+        <div class="flex flex-col gap-6">
+            <div>
+                <h2 class="font-headline-lg text-headline-lg text-white mb-1 hidden md:block font-bold tracking-tighter">{% translate "Explore Routines" %}</h2>
+                <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-white mb-1 md:hidden font-bold tracking-tighter">{% translate "Explore Routines" %}</h2>
+                <p class="font-body-md text-body-md text-[#888888]">{% translate "Find the perfect program for your calisthenics goals." %}</p>
+            </div>
+            <div class="flex flex-col gap-4">
+                <div class="relative w-full">
+                    <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-[#888888]">search</span>
+                    <input class="w-full bg-transparent border border-[#262626] hover:border-[#caf300]/50 focus:border-[#caf300] focus:ring-1 focus:ring-[#caf300] rounded-full h-14 pl-14 pr-6 text-white font-body-md text-body-md placeholder-[#888888] outline-none transition-all duration-300" placeholder="{% translate "Search routines..." %}" type="text"/>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="flex-1 bg-transparent border border-[#262626] rounded-full h-14 flex items-center justify-center gap-2 hover:border-[#caf300] hover:text-[#caf300] text-white transition-all duration-300">
+                        <span class="material-symbols-outlined">tune</span>
+                        <span class="font-label-caps text-label-caps">{% translate "Filters" %}</span>
+                    </button>
+                    <button class="flex-1 bg-transparent border border-[#262626] rounded-full h-14 flex items-center justify-center gap-2 hover:border-[#caf300] hover:text-[#caf300] text-white transition-all duration-300">
+                        <span class="material-symbols-outlined">swap_vert</span>
+                        <span class="font-label-caps text-label-caps">{% translate "Sort" %}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories (Pills) -->
+    <div class="flex overflow-x-auto hide-scroll gap-3 mb-10 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+        <button class="bg-[#caf300] text-[#131313] border border-[#caf300] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap transition-colors uppercase font-bold tracking-widest">{% translate "All" %}</button>
+        <button class="bg-transparent text-[#888888] border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:text-white hover:border-[#444444] transition-colors uppercase font-bold tracking-widest">{% translate "Calisthenics" %}</button>
+        <button class="bg-transparent text-[#888888] border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:text-white hover:border-[#444444] transition-colors uppercase font-bold tracking-widest">{% translate "Strength" %}</button>
+        <button class="bg-transparent text-[#888888] border border-[#262626] px-8 h-12 rounded-full font-label-caps text-label-caps whitespace-nowrap hover:text-white hover:border-[#444444] transition-colors uppercase font-bold tracking-widest">{% translate "Mobility" %}</button>
+    </div>
+
+    <!-- Workout Grid -->
+    <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-white mb-6 font-bold tracking-tighter">{% translate "Your Programs" %}</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-5xl">
+        {% for routine in routines %}
+            <!-- Card -->
+            <a href="{% url 'manager:routine:view' routine.pk %}" class="workout-card h-[440px] group cursor-pointer relative overflow-hidden rounded-[2rem] border border-white/[0.05] hover:border-[#caf300]/40 bg-[#161616] transition-all duration-500 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)] block">
+                <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-80" 
+                     style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAHUsF3fKuQKovnjU2a0K2pT91WslA_7A5KAcjCIy9L9BVY13sl1teFwVtHhHzwWZRAbaqtb2S-VrLPQo1DnPZHLq6PTGtMUxN34vo_FGg1-UDpQ-aCP41jIeam4e-vVSuMJqMJG8hbdVg-t0T96ACAkPdxgFO9DCc3-igUi2qrqsLfmYwrbkmNmwpmaIJgPfqWRtRssBUiv8fAvcjNvuxHG7Buq-XiQBUdMXkKIFOLgIe5VwbGyg')">
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#131313] via-[#131313]/30 to-transparent"></div>
+                
+                <!-- Translucent backdrop-blur panel -->
+                <div class="absolute inset-x-4 bottom-4 bg-[#131313]/75 backdrop-blur-lg border border-white/[0.08] hover:border-white/[0.15] rounded-[1.5rem] p-5 flex flex-col justify-between gap-3 transition-all duration-300">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex flex-col min-w-0">
+                            <span class="bg-[#caf300] text-[#131313] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest w-max mb-2">{% translate "Calisthenics" %}</span>
+                            <h4 class="font-headline-lg-mobile text-lg text-white font-bold tracking-tight line-clamp-1 group-hover:text-[#caf300] transition-colors duration-300">{{ routine.name }}</h4>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center group-hover:scale-110 group-hover:bg-[#d4ff00] transition-all duration-300 flex-shrink-0 shadow-[0_0_20px_rgba(202,243,0,0.35)] group-hover:shadow-[0_0_25px_rgba(202,243,0,0.6)]">
+                            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 text-xs text-gray-400 border-t border-white/[0.08] pt-3">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="material-symbols-outlined text-base text-[#caf300] flex-shrink-0">calendar_today</span>
+                            <span class="truncate whitespace-nowrap font-medium text-gray-300">{% blocktranslate with duration=routine.duration_weeks %}{{ duration }} WEEKS{% endblocktranslate %}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="material-symbols-outlined text-base text-[#caf300] flex-shrink-0">fitness_center</span>
+                            <span class="truncate whitespace-nowrap font-medium text-gray-300">{% translate "Intermediate" %}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        {% empty %}
+            <div class="col-span-full bg-[#161616]/40 backdrop-blur-sm border border-[#262626] rounded-[2rem] p-12 text-center">
+                <span class="material-symbols-outlined text-5xl text-[#caf300] mb-4">fitness_center</span>
+                <p class="font-body-md text-body-md text-[#888888]">{% translate "You don't have any routines yet. Start by creating one!" %}</p>
+                <a href="{% url 'manager:routine:add' %}" class="mt-6 inline-flex items-center justify-center px-8 h-12 rounded-full bg-[#caf300] text-[#131313] font-bold text-sm tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_15px_rgba(202,243,0,0.3)]">
+                    {% translate "CREATE ROUTINE" %}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

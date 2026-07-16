@@ -1,0 +1,110 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}ONYX - Profile{% endblock %}
+
+{% block content %}
+<main class="max-w-3xl mx-auto px-4 mt-6 flex flex-col gap-6 pb-24">
+    <!-- User Avatar & Profile Card -->
+    <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6 flex flex-col items-center gap-4 text-center">
+        <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-fixed bg-surface-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary-fixed text-5xl">person</span>
+        </div>
+        <div>
+            <h2 class="font-headline-md text-headline-md font-bold text-primary">{{ user.username }}</h2>
+            <p class="text-on-surface-variant font-body-md mt-1">{{ user.email }}</p>
+        </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-5">
+            <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold mb-1">{% translate "Workouts" %}</div>
+            <div class="font-headline-md text-headline-md font-extrabold text-primary">{{ stats.total_workouts|default:"0" }}</div>
+        </div>
+        <div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-5">
+            <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold mb-1">{% translate "Current Streak" %}</div>
+            <div class="font-headline-md text-headline-md font-extrabold text-primary-fixed">{{ stats.current_streak|default:"0" }} {% translate "Days" %}</div>
+        </div>
+    </div>
+
+    <!-- Settings & Quick Links -->
+    <div class="bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden">
+        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase p-6 pb-2">{% translate "Account Settings" %}</h3>
+        
+        <div class="flex flex-col">
+            <!-- Email -->
+            <div class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-[#c5c9ac]">mail</span>
+                    <div>
+                        <h4 class="text-primary font-bold">{% translate "Email Address" %}</h4>
+                        <p class="text-caption text-on-surface-variant">{{ user.email }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <a href="{% url 'core:user:change-password' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-[#c5c9ac]">lock</span>
+                    <div>
+                        <h4 class="text-primary font-bold">{% translate "Change Password" %}</h4>
+                        <p class="text-caption text-on-surface-variant">{% translate "Update your security credentials" %}</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+            </a>
+
+            <!-- API Key -->
+            <a href="{% url 'core:user:api-key' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-[#c5c9ac]">vpn_key</span>
+                    <div>
+                        <h4 class="text-primary font-bold">{% translate "API Credentials" %}</h4>
+                        <p class="text-caption text-on-surface-variant">{% translate "Manage external app integrations" %}</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Daily Activity Goals -->
+    <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6">
+        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase mb-4">{% translate "Daily Activity Goals" %}</h3>
+        
+        <form method="post" action="{% url 'core:profile_tailwind' %}" class="flex flex-col gap-4">
+            {% csrf_token %}
+            
+            <!-- Steps Goal -->
+            <div class="flex flex-col gap-1.5">
+                <label for="id_steps_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Steps Goal" %}</label>
+                <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300]" required>
+            </div>
+
+            <!-- Calories Goal -->
+            <div class="flex flex-col gap-1.5">
+                <label for="id_calories_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Burned Calories Goal (Cal)" %}</label>
+                <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#ff453a]" required>
+            </div>
+
+            <!-- Water Goal -->
+            <div class="flex flex-col gap-1.5">
+                <label for="id_water_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Water Goal (L)" %}</label>
+                <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#00d2ff]" required>
+            </div>
+
+            <button type="submit" class="bg-[#caf300] hover:bg-[#b0d500] text-[#131313] min-h-[48px] py-2.5 rounded-full font-bold tracking-tight mt-2 transition-colors">
+                {% translate "UPDATE GOALS" %}
+            </button>
+        </form>
+    </div>
+
+    <!-- Logout CTA -->
+    <a href="{% url 'core:user:logout' %}" class="w-full bg-[#2a2a2a] border border-[#333333] text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-body-lg text-body-lg font-bold hover:bg-red-950/20 hover:text-red-400 hover:border-red-500/20 transition-colors">
+        <span class="material-symbols-outlined">logout</span>
+        {% translate "LOG OUT" %}
+    </a>
+</main>
+{% endblock %}
