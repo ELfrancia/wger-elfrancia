@@ -18,5 +18,9 @@
 - [x] Task 10: Implement Full-Screen Overlay layout in template (`wger/manager/templates/workout/log_tailwind.html`)
 - [x] Task 11: Implement JavaScript Overlay state transition and alarm style changes (`wger/manager/templates/workout/log_tailwind.html`)
 
+## Plan E: Workout Progress & Checkmark Updates
+- [ ] Task 12: Refactor workout logging view in python backend (`wger/manager/views/workout.py`)
+- [ ] Task 13: Refactor active workout template layout and JS (`wger/manager/templates/workout/log_tailwind.html`)
+
 ## Verification
 - [x] Task 7: Verify layout and functionality on host and container
