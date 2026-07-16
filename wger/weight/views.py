@@ -378,3 +378,129 @@ def weight_overview_tailwind(request):
     if request.headers.get('HX-Request'):
         return render(request, 'weight/calendar_fragment.html', context)
     return render(request, 'overview_tailwind.html', context)
+
+
+from django.views.decorators.http import require_http_methods
+import datetime
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def weight_activity_details(request):
+    """
+    View che gestisce la visualizzazione del calendario e il logging delle attività giornaliere
+    """
+    from wger.core.models import DailyActivity
+    from wger.manager.models import WorkoutLog
+    from django.utils import timezone
+    from decimal import Decimal
+    import decimal
+
+    # 1. Parsing della data selezionata
+    date_str = request.GET.get('date') or request.POST.get('date')
+    if date_str:
+        try:
+            selected_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = timezone.localdate()
+    else:
+        selected_date = timezone.localdate()
+
+    # 2. Gestione POST per il logging delle attività per la data selezionata
+    activity, _ = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
+    
+    if request.method == 'POST':
+        activity_type = request.POST.get('activity_type')
+        amount = request.POST.get('amount')
+        value = request.POST.get('value')
+
+        if activity_type == 'steps':
+            try:
+                if value is not None and value != '':
+                    activity.steps = max(0, int(value))
+                elif amount is not None and amount != '':
+                    activity.steps = max(0, activity.steps + int(amount))
+                activity.save()
+            except (ValueError, TypeError):
+                pass
+        elif activity_type == 'calories':
+            try:
+                if value is not None and value != '':
+                    activity.calories = max(0, int(value))
+                elif amount is not None and amount != '':
+                    activity.calories = max(0, activity.calories + int(amount))
+                activity.save()
+            except (ValueError, TypeError):
+                pass
+        elif activity_type == 'water':
+            try:
+                if value is not None and value != '':
+                    val_str = str(value).replace(',', '.')
+                    activity.water = max(Decimal('0.0'), Decimal(val_str))
+                elif amount is not None and amount != '':
+                    amt_str = str(amount).replace(',', '.')
+                    activity.water = max(Decimal('0.0'), activity.water + Decimal(amt_str))
+                activity.save()
+            except (ValueError, TypeError, decimal.InvalidOperation):
+                pass
+
+    # 3. Calcolo dei giorni della settimana (da Lunedì a Domenica)
+    # Lunedì è index 0, Domenica è index 6
+    weekday_offset = selected_date.weekday()
+    monday_of_week = selected_date - datetime.timedelta(days=weekday_offset)
+    
+    week_days = []
+    # Nomi dei giorni in italiano
+    day_names = [_('M'), _('T'), _('W'), _('T'), _('F'), _('S'), _('S')]
+    
+    for i in range(7):
+        day_date = monday_of_week + datetime.timedelta(days=i)
+        week_days.append({
+            'name': day_names[i],
+            'number': day_date.day,
+            'date_str': day_date.strftime('%Y-%m-%d'),
+            'is_selected': day_date == selected_date,
+        })
+
+    # Date per navigare alla settimana precedente e successiva
+    prev_week_str = (selected_date - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+    next_week_str = (selected_date + datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+
+    # 4. Calcolo metriche di resoconto
+    distance_active = float(activity.steps) * 0.00075 # km
+    profile = request.user.userprofile
+
+    # Traduzione del nome del mese in italiano per visualizzazione
+    months_it = {
+        1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
+        5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
+        9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
+    }
+    month_name = months_it.get(selected_date.month, selected_date.strftime('%B'))
+    month_year_str = f"{month_name} {selected_date.year}"
+
+    # 5. Distribuzione oraria degli allenamenti (WorkoutLog) per la data selezionata
+    # Ottieni i log dell'utente in quella data
+    start_of_day = timezone.make_aware(datetime.datetime.combine(selected_date, datetime.time.min))
+    end_of_day = timezone.make_aware(datetime.datetime.combine(selected_date, datetime.time.max))
+    logs = WorkoutLog.objects.filter(user=request.user, date__range=(start_of_day, end_of_day))
+    
+    hourly_distribution = [0] * 24
+    for log in logs:
+        local_log_date = timezone.localtime(log.date)
+        hour = local_log_date.hour
+        hourly_distribution[hour] += 1
+
+    context = {
+        'selected_date_str': selected_date.strftime('%Y-%m-%d'),
+        'week_days': week_days,
+        'prev_week_str': prev_week_str,
+        'next_week_str': next_week_str,
+        'month_year_str': month_year_str,
+        'activity': activity,
+        'profile': profile,
+        'distance_active': distance_active,
+        'hourly_distribution_json': json.dumps(hourly_distribution),
+    }
+
+    return render(request, 'activity_details_fragment.html', context)
+
