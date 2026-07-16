@@ -48,6 +48,8 @@ coverage.xml
 *.log
 settings/*_extra.py
 *.sqlite
+# Local wger database, SQLite journals, and manual backups
+/database.sqlite*
 /CACHE
 
 
