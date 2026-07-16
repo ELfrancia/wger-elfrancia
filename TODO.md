@@ -20,7 +20,7 @@
 
 ## Plan E: Workout Progress & Checkmark Updates
 - [x] Task 12: Refactor workout logging view in python backend (`wger/manager/views/workout.py`)
-- [ ] Task 13: Refactor active workout template layout and JS (`wger/manager/templates/workout/log_tailwind.html`)
+- [x] Task 13: Refactor active workout template layout and JS (`wger/manager/templates/workout/log_tailwind.html`)
 
 ## Verification
 - [x] Task 7: Verify layout and functionality on host and container
