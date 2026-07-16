@@ -115,8 +115,8 @@ def weight_overview_tailwind(request):
         range_param = 'monthly'
         start_date = now - timedelta(days=30)
         
-    # Extract selected_date from GET request, defaulting to today.
-    selected_date_str = request.GET.get('selected_date')
+    # Extract selected_date from GET or POST request, defaulting to today.
+    selected_date_str = request.GET.get('selected_date') or request.POST.get('selected_date')
     if selected_date_str:
         try:
             selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
@@ -124,6 +124,46 @@ def weight_overview_tailwind(request):
             selected_date = now.date()
     else:
         selected_date = now.date()
+
+    from wger.core.models import DailyActivity
+    activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
+
+    if request.method == 'POST':
+        activity_type = request.POST.get('activity_type')
+        amount = request.POST.get('amount')
+        value = request.POST.get('value')
+        from decimal import Decimal
+        import decimal
+
+        if activity_type == 'steps':
+            try:
+                if value is not None and value != '':
+                    activity.steps = max(0, int(value))
+                elif amount is not None and amount != '':
+                    activity.steps = max(0, activity.steps + int(amount))
+                activity.save()
+            except (ValueError, TypeError):
+                pass
+        elif activity_type == 'calories':
+            try:
+                if value is not None and value != '':
+                    activity.calories = max(0, int(value))
+                elif amount is not None and amount != '':
+                    activity.calories = max(0, activity.calories + int(amount))
+                activity.save()
+            except (ValueError, TypeError):
+                pass
+        elif activity_type == 'water':
+            try:
+                if value is not None and value != '':
+                    val_str = str(value).replace(',', '.')
+                    activity.water = max(Decimal('0.0'), Decimal(val_str))
+                elif amount is not None and amount != '':
+                    amt_str = str(amount).replace(',', '.')
+                    activity.water = max(Decimal('0.0'), activity.water + Decimal(amt_str))
+                activity.save()
+            except (ValueError, TypeError, decimal.InvalidOperation):
+                pass
 
     # Calculate Monday of the active week.
     monday_of_week = selected_date - timedelta(days=selected_date.weekday())
@@ -351,6 +391,14 @@ def weight_overview_tailwind(request):
     weight_data_json = json.dumps(weight_data)
     activity_data_json = json.dumps(activity_data)
 
+    # Calculate hourly distribution of workout sets for the selected date
+    hourly_distribution = [0] * 24
+    for log in logs_for_date:
+        local_log_date = timezone.localtime(log.date)
+        hour = local_log_date.hour
+        hourly_distribution[hour] += 1
+    hourly_distribution_json = json.dumps(hourly_distribution)
+
     context = {
         'range': range_param,
         'workouts_completed': workouts_completed,
@@ -373,6 +421,10 @@ def weight_overview_tailwind(request):
         'next_week_date': next_week_date,
         'selected_sessions': selected_sessions,
         'session_exercises': session_exercises,
+        'activity': activity,
+        'distance_active': float(activity.steps) * 0.00075,
+        'hourly_distribution_json': hourly_distribution_json,
+        'profile': request.user.userprofile,
     }
     
     if request.headers.get('HX-Request'):
@@ -406,7 +458,7 @@ def weight_activity_details(request):
         selected_date = timezone.localdate()
 
     # 2. Gestione POST per il logging delle attività per la data selezionata
-    activity, _ = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
+    activity, created = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
     
     if request.method == 'POST':
         activity_type = request.POST.get('activity_type')

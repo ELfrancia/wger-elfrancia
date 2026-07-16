@@ -1,7 +1,7 @@
 {% load i18n %}
 
-<div id="activity-calendar-container" class="flex flex-col gap-4 w-full">
-    <!-- Activity Calendar Card -->
+<div id="activity-calendar-container" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="flex flex-col gap-5 w-full">
+    <!-- 1. Activity Calendar Section -->
     <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-5 shadow-md">
         <h3 class="text-white font-bold text-base tracking-tight text-center mb-4">{% translate "Calendario Attività" %}</h3>
         
@@ -11,7 +11,7 @@
                 <button hx-get="{% url 'weight:overview' %}?selected_date={{ day.date|date:'Y-m-d' }}" 
                         hx-target="#activity-calendar-container" 
                         hx-swap="outerHTML"
-                        class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all duration-300 {% if day.is_selected %}bg-[#caf300] text-[#131313] font-black shadow-[0_0_12px_rgba(202,243,0,0.3)]{% else %}bg-[#1c1c1e] hover:bg-[#252528] text-neutral-400 hover:text-white border border-white/[0.02]{% endif %}">
+                        class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all duration-300 {% if day.is_selected %}bg-[#caf300] text-[#131313] font-black shadow-[0_0_12px_rgba(202,243,0,0.3)] scale-105{% else %}bg-[#1c1c1e] hover:bg-[#252528] text-neutral-400 hover:text-white border border-white/[0.02]{% endif %}">
                     <span class="text-[9px] font-bold uppercase tracking-wider mb-0.5">{{ day.day_name }}</span>
                     <span class="text-xs font-black">{{ day.day_num }}</span>
                     {% if day.has_workout and not day.is_selected %}
@@ -39,10 +39,149 @@
         </div>
     </div>
 
-    <!-- Workout Summary Card -->
+    <!-- 2. Concentric Progress Rings and Logs Card -->
+    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col gap-6 relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <h3 class="text-white font-bold text-sm tracking-tight">{% translate "Resoconto Giornaliero" %}</h3>
+            <span class="text-[10px] text-neutral-500 font-bold font-mono">{{ selected_date_display }}</span>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <!-- Left side inputs list -->
+            <div class="flex flex-col gap-4 w-full md:w-1/2">
+                <!-- Steps -->
+                <div class="flex flex-col border-b border-white/[0.05] pb-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[#caf300]" style="font-variation-settings: 'FILL' 1;">directions_walk</span>
+                            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{% translate "Passi" %}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black text-[#caf300]">{{ activity.steps|default:"0" }}</span>
+                            <span class="text-[10px] text-neutral-500">/ {{ profile.steps_goal|default:"16000" }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <div class="flex gap-1">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "steps", "amount": 1000, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                                +1k
+                            </button>
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "steps", "amount": 5000, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                                +5k
+                            </button>
+                        </div>
+                        <form hx-post="{% url 'weight:overview' %}" hx-target="#activity-calendar-container" hx-swap="outerHTML" class="flex items-center gap-1">
+                            <input type="hidden" name="selected_date" value="{{ selected_date|date:'Y-m-d' }}">
+                            <input type="hidden" name="activity_type" value="steps">
+                            <input type="number" name="amount" placeholder="+Passi" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
+                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Calories -->
+                <div class="flex flex-col border-b border-white/[0.05] pb-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[#caf300]/85" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{% translate "Calorie" %}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black text-[#caf300]/85">{{ activity.calories|default:"0" }}</span>
+                            <span class="text-[10px] text-neutral-500">/ {{ profile.calories_goal|default:"680" }} Cal</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <div class="flex gap-1">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "calories", "amount": 100, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                                +100
+                            </button>
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "calories", "amount": 250, "date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                                +250
+                            </button>
+                        </div>
+                        <form hx-post="{% url 'weight:overview' %}" hx-target="#activity-calendar-container" hx-swap="outerHTML" class="flex items-center gap-1">
+                            <input type="hidden" name="selected_date" value="{{ selected_date|date:'Y-m-d' }}">
+                            <input type="hidden" name="activity_type" value="calories">
+                            <input type="number" name="amount" placeholder="+Cal" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
+                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Water -->
+                <div class="flex flex-col pb-1">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[#caf300]/70" style="font-variation-settings: 'FILL' 1;">local_drink</span>
+                            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{% translate "Acqua" %}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black text-[#caf300]/70">{{ activity.water|default:"0.0" }}</span>
+                            <span class="text-[10px] text-neutral-500">/ {{ profile.water_goal|default:"2.5" }} L</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <div class="flex gap-1">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "water", "amount": 0.25, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                                +0.25L
+                            </button>
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "water", "amount": 0.5, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                                +0.5L
+                            </button>
+                        </div>
+                        <form hx-post="{% url 'weight:overview' %}" hx-target="#activity-calendar-container" hx-swap="outerHTML" class="flex items-center gap-1">
+                            <input type="hidden" name="selected_date" value="{{ selected_date|date:'Y-m-d' }}">
+                            <input type="hidden" name="activity_type" value="water">
+                            <input type="number" step="0.05" name="amount" placeholder="+L" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
+                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SVG Concentric rings -->
+            <div class="relative w-36 h-36 flex items-center justify-center bg-black/10 border border-white/[0.02] rounded-full p-2">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 110 110">
+                    <circle cx="55" cy="55" r="45" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+                    <circle cx="55" cy="55" r="34" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+                    <circle cx="55" cy="55" r="23" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+                    
+                    <circle id="ring-detail-steps" cx="55" cy="55" r="45" stroke="#caf300" stroke-width="8" fill="transparent" 
+                            stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                    <circle id="ring-detail-calories" cx="55" cy="55" r="34" stroke="#9fbd00" stroke-width="8" fill="transparent" 
+                            stroke-dasharray="213.63" stroke-dashoffset="213.63" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                    <circle id="ring-detail-water" cx="55" cy="55" r="23" stroke="#748b00" stroke-width="8" fill="transparent" 
+                            stroke-dasharray="144.51" stroke-dashoffset="144.51" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Details list (Distance and Calorie output) -->
+        <div class="flex flex-col gap-2 mt-4 pt-4 border-t border-white/[0.05] text-[11px] font-bold text-neutral-400">
+            <div class="flex justify-between items-center">
+                <span>{% translate "Distance while active" %}</span>
+                <span class="text-white text-xs font-extrabold">{{ distance_active|floatformat:2 }} km</span>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+                <span>{% translate "Total burnt calories" %}</span>
+                <span class="text-white text-xs font-extrabold">{{ activity.calories|default:"0" }} Cal</span>
+            </div>
+        </div>
+
+        <!-- Hourly Activity Chart -->
+        <div class="mt-4 pt-4 border-t border-white/[0.05] flex flex-col gap-3">
+            <h4 class="text-white font-bold text-[11px] tracking-wide">{% translate "Attività Oraria (Allenamenti)" %}</h4>
+            <div class="relative w-full h-[120px]">
+                <canvas id="hourlyActivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Workout Summary Card -->
     <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-5 shadow-md">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-white font-bold text-sm tracking-tight">{% translate "Resoconto Allenamenti" %}</h3>
+            <h3 class="text-white font-bold text-xs tracking-tight">{% translate "Resoconto Allenamenti" %}</h3>
             <span class="text-[10px] text-neutral-500 font-bold font-mono">{{ selected_date_display }}</span>
         </div>
 
@@ -111,7 +250,7 @@
                                         </div>
                                     </div>
                                 {% endif %}
-                            {% endfor %}
+                             {% endfor %}
                         </div>
 
                         {% if session.notes %}
@@ -136,4 +275,97 @@
             </div>
         {% endif %}
     </div>
+
+    <!-- JS script to initialize rings and Chart.js -->
+    <script>
+        (function() {
+            function parseValue(valStr) {
+                if (!valStr) return 0;
+                const clean = valStr.toString().replace(/\s/g, '').replace(',', '.');
+                return parseFloat(clean) || 0;
+            }
+
+            const stepsVal = parseValue("{{ activity.steps|default:'0' }}");
+            const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000' }}") || 16000;
+            const stepsPct = Math.min(stepsVal / stepsGoal, 1);
+            const ringSteps = document.getElementById('ring-detail-steps');
+            if (ringSteps) ringSteps.setAttribute('stroke-dashoffset', 282.74 - (stepsPct * 282.74));
+
+            const calVal = parseValue("{{ activity.calories|default:'0' }}");
+            const calGoal = parseValue("{{ profile.calories_goal|default:'680' }}") || 680;
+            const calPct = Math.min(calVal / calGoal, 1);
+            const ringCalories = document.getElementById('ring-detail-calories');
+            if (ringCalories) ringCalories.setAttribute('stroke-dashoffset', 213.63 - (calPct * 213.63));
+
+            const waterVal = parseValue("{{ activity.water|default:'0.0' }}");
+            const waterGoal = parseValue("{{ profile.water_goal|default:'2.5' }}") || 2.5;
+            const waterPct = Math.min(waterVal / waterGoal, 1);
+            const ringWater = document.getElementById('ring-detail-water');
+            if (ringWater) ringWater.setAttribute('stroke-dashoffset', 144.51 - (waterPct * 144.51));
+
+            // Chart.js Hourly Graph
+            const hourlyCanvas = document.getElementById('hourlyActivityChart');
+            if (hourlyCanvas) {
+                const hourlyData = JSON.parse('{{ hourly_distribution_json|escapejs }}');
+                const ctx = hourlyCanvas.getContext('2d');
+                
+                // Genera le etichette per le 24 ore
+                const labels = [];
+                for(let i=0; i<24; i++) {
+                    labels.push(i + 'h');
+                }
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Serie completate',
+                            data: hourlyData,
+                            backgroundColor: '#caf300',
+                            borderColor: 'transparent',
+                            borderRadius: 2,
+                            barPercentage: 0.75,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#161616',
+                                titleColor: '#ffffff',
+                                bodyColor: '#ffffff',
+                                borderColor: '#2a2a2a',
+                                borderWidth: 1,
+                                padding: 8,
+                                displayColors: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#888888',
+                                    font: { size: 8 },
+                                    autoSkip: true,
+                                    maxTicksLimit: 6
+                                }
+                            },
+                            y: {
+                                grid: { color: '#222222' },
+                                ticks: {
+                                    color: '#888888',
+                                    font: { size: 8 },
+                                    stepSize: 1,
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
 </div>
