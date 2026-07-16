@@ -101,6 +101,9 @@ def weight_overview_tailwind(request):
     """
     Overview page for workout progress, weights, and top exercises, styled in Tailwind
     """
+    from datetime import date, datetime
+    from django.utils.formats import date_format
+
     range_param = request.GET.get('range', 'monthly')
     
     now = timezone.now()
@@ -112,6 +115,73 @@ def weight_overview_tailwind(request):
         range_param = 'monthly'
         start_date = now - timedelta(days=30)
         
+    # Extract selected_date from GET request, defaulting to today.
+    selected_date_str = request.GET.get('selected_date')
+    if selected_date_str:
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = now.date()
+    else:
+        selected_date = now.date()
+
+    # Calculate Monday of the active week.
+    monday_of_week = selected_date - timedelta(days=selected_date.weekday())
+
+    # Gather week_days metadata
+    week_start = monday_of_week
+    week_end = monday_of_week + timedelta(days=6)
+    week_sessions_dates = set(
+        WorkoutSession.objects.filter(
+            user=request.user,
+            date__range=[week_start, week_end]
+        ).values_list('date', flat=True)
+    )
+
+    week_days = []
+    for i in range(7):
+        day_date = monday_of_week + timedelta(days=i)
+        week_days.append({
+            'date': day_date,
+            'day_num': day_date.day,
+            'day_name': date_format(day_date, 'D'),
+            'is_selected': day_date == selected_date,
+            'has_workout': day_date in week_sessions_dates,
+        })
+
+    # Get prev_week_date and next_week_date dates.
+    prev_week_date = selected_date - timedelta(days=7)
+    next_week_date = selected_date + timedelta(days=7)
+
+    # Get current_month_name and selected_date_display.
+    current_month_name = date_format(selected_date, 'F Y')
+    selected_date_display = date_format(selected_date, 'd F Y')
+
+    # Retrieve all completed WorkoutSessions and WorkoutLogs for that selected date
+    selected_sessions = WorkoutSession.objects.filter(user=request.user, date=selected_date)
+    logs_for_date = WorkoutLog.objects.filter(user=request.user, session__in=selected_sessions).select_related('exercise')
+
+    # Group logs by exercise name under session_exercises
+    grouped = {}
+    for log in logs_for_date:
+        key = (log.session_id, log.exercise_id)
+        if key not in grouped:
+            grouped[key] = []
+        grouped[key].append(log)
+
+    session_exercises = []
+    for (session_id, exercise_id), logs in grouped.items():
+        first_log = logs[0]
+        exercise = first_log.exercise
+        translation = exercise.get_translation() if exercise else None
+        exercise_name = translation.name if translation else (exercise.name if exercise else f"Exercise {exercise_id}")
+        
+        session_exercises.append({
+            'session_id': session_id,
+            'exercise_name': exercise_name,
+            'logs': logs
+        })
+
     # Query WorkoutSession
     sessions = WorkoutSession.objects.filter(user=request.user, date__gte=start_date.date())
     workouts_completed = sessions.count()
@@ -293,6 +363,18 @@ def weight_overview_tailwind(request):
         'exercise_stats': exercise_stats,
         'weight_data_json': weight_data_json,
         'activity_data_json': activity_data_json,
+        
+        # New Activity Calendar context
+        'selected_date': selected_date,
+        'selected_date_display': selected_date_display,
+        'current_month_name': current_month_name,
+        'week_days': week_days,
+        'prev_week_date': prev_week_date,
+        'next_week_date': next_week_date,
+        'selected_sessions': selected_sessions,
+        'session_exercises': session_exercises,
     }
     
+    if request.headers.get('HX-Request'):
+        return render(request, 'weight/calendar_fragment.html', context)
     return render(request, 'overview_tailwind.html', context)
