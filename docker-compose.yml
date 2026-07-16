@@ -8,7 +8,12 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - wger_sqlite_data:/var/lib/wger
     environment:
       - DJANGO_SETTINGS_MODULE=settings.local_dev
       - PYTHONUNBUFFERED=1
+      - DJANGO_DB_DATABASE=/var/lib/wger/database.sqlite
     command: python manage.py runserver 0.0.0.0:8000
+
+volumes:
+  wger_sqlite_data:

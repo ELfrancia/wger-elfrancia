@@ -78,7 +78,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': env.str('DJANGO_DB_DATABASE', '/home/wger/db/database.sqlite'),
+            'NAME': env.str('DJANGO_DB_DATABASE', BASE_DIR.parent / 'database.sqlite'),
         }
     }
 PS_STORAGE_PG_URI = env.str(

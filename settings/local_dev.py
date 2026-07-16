@@ -1,5 +1,7 @@
 """Local development settings for wger"""
 
+import os
+
 # ruff: noqa: F405
 # ruff: noqa: F403
 
@@ -109,7 +111,7 @@ DBCONFIG_PG = {
 
 DBCONFIG_SQLITE = {
     'ENGINE': 'django_prometheus.db.backends.sqlite3',
-    'NAME': BASE_DIR.parent / 'database.sqlite',
+    'NAME': os.environ.get('DJANGO_DB_DATABASE', BASE_DIR.parent / 'database.sqlite'),
     'OPTIONS': {
         'timeout': 20,
     }
@@ -127,5 +129,14 @@ try:
 except ImportError:
     pass
 
-# Reload server to clear cache and apply database deletion
+# Configure SQLite pragmas for Docker mount compatibility
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
+
+@receiver(connection_created)
+def configure_sqlite(sender, connection, **kwargs):
+    if connection.vendor == 'sqlite':
+        cursor = connection.cursor()
+        cursor.execute('PRAGMA journal_mode = DELETE;')
+        cursor.execute('PRAGMA busy_timeout = 20000;')
 
