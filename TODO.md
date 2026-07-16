@@ -10,5 +10,9 @@
 - [x] Task 5: Refactor `weight_overview_tailwind` View (`wger/weight/views.py`)
 - [x] Task 6: Embed Calendar Fragment in `overview_tailwind` Template (`wger/weight/templates/overview_tailwind.html`)
 
+## Plan C: Workout Rest Timer Integration
+- [ ] Task 8: Refactor template layout and add JavaScript Rest Timer logic (`wger/manager/templates/workout/log_tailwind.html`)
+- [ ] Task 9: Verify Rest Timer layout and controls
+
 ## Verification
 - [x] Task 7: Verify layout and functionality on host and container
