@@ -50,6 +50,8 @@ settings/*_extra.py
 *.sqlite
 # Local wger database, SQLite journals, and manual backups
 /database.sqlite*
+/database.sqlite
+/database.sqlite.backup-20260717-0118
 /CACHE
 
 

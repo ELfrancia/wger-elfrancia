@@ -10,8 +10,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\urls.py": {
-    "mtime": 1784107238.11563,
-    "ast_hash": "6196992a42b7476b856dd938a8f82a22",
+    "mtime": 1784236049.6064696,
+    "ast_hash": "9285e76e3c77fdeaa3381573542aeac9",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\version.py": {
@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\urls.py": {
-    "mtime": 1784113595.3745296,
-    "ast_hash": "9420df2b9786ca608332b1258d9ed811",
+    "mtime": 1784189954.0607922,
+    "ast_hash": "a3bc686004b1342f9b0bc9ab29ba4e83",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\validators.py": {
@@ -505,8 +505,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\models\\profile.py": {
-    "mtime": 1784107236.4107113,
-    "ast_hash": "311f74b13b5ad8463618d7b3eca3b249",
+    "mtime": 1784236387.380601,
+    "ast_hash": "1ce5efce641558341924284fd597a69b",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\models\\rep_unit.py": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\models\\__init__.py": {
-    "mtime": 1784107236.402644,
-    "ast_hash": "aaf523483ea28ee9fb8b5d35d9dbfacd",
+    "mtime": 1784189915.4853654,
+    "ast_hash": "3c2533336b2543c173e7ef628c85f172",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templatetags\\wger_extras.py": {
@@ -695,8 +695,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\views\\user.py": {
-    "mtime": 1784113592.9456651,
-    "ast_hash": "8173fb170ba51ab7419fc74f33c890cb",
+    "mtime": 1784236511.951957,
+    "ast_hash": "e5abb7cd40cb2b9cdbe1bf250027b5cf",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\views\\weight_units.py": {
@@ -1875,8 +1875,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\urls.py": {
-    "mtime": 1784112504.7086945,
-    "ast_hash": "50dde0ba02e455bd44f694766c35ce89",
+    "mtime": 1784232560.967887,
+    "ast_hash": "1329f7a20d894fb9106267959fa9b0fc",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\validators.py": {
@@ -2160,8 +2160,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\models\\routine.py": {
-    "mtime": 1784107237.608099,
-    "ast_hash": "59abf7451b7881283df69f6204496bbb",
+    "mtime": 1784202081.2741468,
+    "ast_hash": "76a6829c79d03cf5931e77d5eb1a1cb0",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\models\\session.py": {
@@ -2175,13 +2175,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\models\\slot.py": {
-    "mtime": 1784112442.7757123,
-    "ast_hash": "0ae46e98a1adf0dbc6b4517f868da149",
+    "mtime": 1784232753.0671425,
+    "ast_hash": "ca162525fc1ded097b4bfa35e807c185",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\models\\slot_entry.py": {
-    "mtime": 1784112444.972678,
-    "ast_hash": "cd5d240c0f9bc1d90bb968a8416bb5fa",
+    "mtime": 1784232793.1178298,
+    "ast_hash": "78b53f65e428983719a73735ea9844fe",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\models\\weight_config.py": {
@@ -2265,8 +2265,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\tests\\test_routine.py": {
-    "mtime": 1784107237.6518073,
-    "ast_hash": "676b2e565753a2f56a5d7814318cc5bc",
+    "mtime": 1784202091.2011628,
+    "ast_hash": "ab248d37e185fe480b4fbdc0715e3af5",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\tests\\test_routine_statistics.py": {
@@ -2320,8 +2320,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\views\\routine.py": {
-    "mtime": 1784112500.7673888,
-    "ast_hash": "aaabf46b3201b4ddaf34a0423a235309",
+    "mtime": 1784232768.2734315,
+    "ast_hash": "d10309f72338f84fe5e74c8ce6d8cf06",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\views\\__init__.py": {
@@ -3500,13 +3500,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\urls.py": {
-    "mtime": 1784107238.2294915,
-    "ast_hash": "d256e1908673843c5af85b3193d929a4",
+    "mtime": 1784241728.6752627,
+    "ast_hash": "64810b3485fe04c8d72c9989533c5ef8",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\views.py": {
-    "mtime": 1784107238.2324903,
-    "ast_hash": "b6160d56b24351c35a9039be6150ed3b",
+    "mtime": 1784241919.5177367,
+    "ast_hash": "194066caf2bf1850fe19e4a2c52b50f0",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\__init__.py": {
@@ -3695,8 +3695,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\template.html": {
-    "mtime": 1784107236.8562708,
-    "ast_hash": "fcc81e37a506263c823e407923c0aa7a",
+    "mtime": 1784236058.2925384,
+    "ast_hash": "ceecbdd50bf5c69f3a41799452605eeb",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\template_features.html": {
@@ -3715,13 +3715,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\account\\login.html": {
-    "mtime": 1784114205.0865526,
-    "ast_hash": "601dd5859ca3d63716eec12e608b337b",
+    "mtime": 1784234802.9644487,
+    "ast_hash": "daed610f4c8dcb8ee498c56d90a49049",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\account\\signup.html": {
-    "mtime": 1784114012.726436,
-    "ast_hash": "baa28315b974623d8cd0af3525444745",
+    "mtime": 1784234808.0008717,
+    "ast_hash": "e419aff5bf570ecedaab23a584da7984",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\account\\email\\email_confirmation_message.html": {
@@ -4090,13 +4090,13 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\settings\\local_dev.py": {
-    "mtime": 1784112962.5920067,
-    "ast_hash": "5ef9a281d3eff16b67a4d144f47a0afe",
+    "mtime": 1784243880.9131873,
+    "ast_hash": "354a5a86e513c8b5cff11bc381abe4f2",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\settings\\main.py": {
-    "mtime": 1784107236.240372,
-    "ast_hash": "7b8a86be945f1625808d0279fae51378",
+    "mtime": 1784243194.563331,
+    "ast_hash": "7084b7e5d24bb57347c898e884638b45",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\settings\\settings_global.py": {
@@ -4110,8 +4110,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\exercises\\management\\commands\\import_exercisedb.py": {
-    "mtime": 1784112488.1815665,
-    "ast_hash": "26c1e486e954e0488e710410755c7f8f",
+    "mtime": 1784201092.2879887,
+    "ast_hash": "cd20d65a3db2d13b649971bd67552864",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\exercises\\migrations\\0041_alter_historicaltranslation_description_and_more.py": {
@@ -4145,8 +4145,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\views\\workout.py": {
-    "mtime": 1784109281.346428,
-    "ast_hash": "04c2ca54d9d724f8b6f0deb066c4bb00",
+    "mtime": 1784240770.3477197,
+    "ast_hash": "190242161d59b1ed71012ce9dc66e3db",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\migrations\\0006_alter_weightentry_unique_together.py": {
@@ -4340,23 +4340,23 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\navigation_tailwind.html": {
-    "mtime": 1784113655.1374094,
-    "ast_hash": "f55a939fb19e0fcee6da00ff4b388566",
+    "mtime": 1784235582.9485323,
+    "ast_hash": "4934f81b7335490589262c9b29a82c11",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\template_tailwind.html": {
-    "mtime": 1784114003.4987838,
-    "ast_hash": "d4866b0b3fd7abf377645fe8ca6c603b",
+    "mtime": 1784236054.4367983,
+    "ast_hash": "33a8c35e0e0bc978e7845f9bf034d0be",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\user\\dashboard_tailwind.html": {
-    "mtime": 1784113544.391421,
-    "ast_hash": "c865aee67b84d5675ef5dca49e5b79af",
+    "mtime": 1784236412.3817313,
+    "ast_hash": "569738617a7fdee9b845a01fbd18ce02",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\user\\profile_tailwind.html": {
-    "mtime": 1784113587.305552,
-    "ast_hash": "d58bda1f2108ad048ad9e3296e07a82a",
+    "mtime": 1784236831.3850489,
+    "ast_hash": "bef1600159928223e34dbc591000f6f0",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\templates\\routines\\add_day_tailwind.html": {
@@ -4365,8 +4365,8 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\templates\\routines\\add_exercise_tailwind.html": {
-    "mtime": 1784112516.6518488,
-    "ast_hash": "099e6aa2ad22831621be3e6d71a95d01",
+    "mtime": 1784240456.541702,
+    "ast_hash": "6a41db2089a776d4443cf3a49f028bb5",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\templates\\routines\\add_tailwind.html": {
@@ -4380,18 +4380,18 @@
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\templates\\routines\\overview_tailwind.html": {
-    "mtime": 1784113554.5886278,
-    "ast_hash": "e3af76fab524fbcf6e6df55c1c2c9459",
+    "mtime": 1784236227.4346142,
+    "ast_hash": "8cddf96b57d2f0c0f1251920babc8132",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\templates\\routines\\view_tailwind.html": {
-    "mtime": 1784113565.3991642,
-    "ast_hash": "29825ea9938685af2207ea2d96c6b7c1",
+    "mtime": 1784240456.5434039,
+    "ast_hash": "773c351b2beb16d8eaade97a919967fa",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\manager\\templates\\workout\\log_tailwind.html": {
-    "mtime": 1784113577.8609931,
-    "ast_hash": "f3ed8a5df96764a23166b06b8436da58",
+    "mtime": 1784240770.34419,
+    "ast_hash": "14472279cce363dba6fa4780346d7e96",
     "semantic_hash": ""
   },
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\stitch_designs\\active_workout.png": {
@@ -4417,6 +4417,136 @@
   "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\stitch_designs\\workout_detail.png": {
     "mtime": 1784108694.7760582,
     "ast_hash": "e80885ccaf05a52fa9e85e9a99b4d5c9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\delete_exercises.py": {
+    "mtime": 1784243007.3117785,
+    "ast_hash": "9f7bfa24e234e3f6b34ee64f3f2472bb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\migrations\\0027_userprofile_calories_goal_userprofile_steps_goal_and_more.py": {
+    "mtime": 1784189933.546428,
+    "ast_hash": "e82c792045e0ef3ffdd0186ae876e699",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\migrations\\0028_userprofile_avatar_url.py": {
+    "mtime": 1784236394.371414,
+    "ast_hash": "daae6399ff8de5d77deabdc2ff99612c",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\models\\daily_activity.py": {
+    "mtime": 1784189913.1744225,
+    "ast_hash": "1276b8f416a93e28bbe7afda0e465dad",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\manifest.json": {
+    "mtime": 1784236041.922931,
+    "ast_hash": "ff6246d899d24c1d24eadb24a7b7a54b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\sw.js": {
+    "mtime": 1784236043.6851943,
+    "ast_hash": "16fef784774d028ea0d743e9d18e82ad",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\tests\\test_daily_activity.py": {
+    "mtime": 1784190061.716264,
+    "ast_hash": "f087736746b0458aa3369323ad4e71d7",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\exercises\\management\\commands\\sync_from_baserow.py": {
+    "mtime": 1784201558.6340153,
+    "ast_hash": "b523b2b96d9de88c022037fb2844f2e0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\tests\\test_activity_details.py": {
+    "mtime": 1784241860.6708338,
+    "ast_hash": "f6d2b5b4529071b9540c5414b0a410b1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docker-compose.yml": {
+    "mtime": 1784243877.1553605,
+    "ast_hash": "8e1885b29d5a84964b21a90490598bac",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\TODO.md": {
+    "mtime": 1784240770.3421826,
+    "ast_hash": "7ce5422c693db74e999720b9377ff52e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\plans\\2026-07-17-activity-calendar-integration-plan.md": {
+    "mtime": 1784240456.5068574,
+    "ast_hash": "10bb7446380dada1aec80a5330bb3637",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\plans\\2026-07-17-activity-calendar.md": {
+    "mtime": 1784241648.200134,
+    "ast_hash": "30880147c5e6ce96698bc213c51cf9ab",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\plans\\2026-07-17-responsive-set-layout.md": {
+    "mtime": 1784240456.5068574,
+    "ast_hash": "5b4d653ccf7c390f0be760bc05cd92a3",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\plans\\2026-07-17-rest-screen-overlay-plan.md": {
+    "mtime": 1784240456.5068574,
+    "ast_hash": "730b1b378b5bc972c4dcb1a22f05ba43",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\plans\\2026-07-17-workout-progress-and-checkmark-plan.md": {
+    "mtime": 1784240770.3431892,
+    "ast_hash": "e6812130734006fb5516f492601c7ed4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\plans\\2026-07-17-workout-rest-timer-plan.md": {
+    "mtime": 1784240456.510936,
+    "ast_hash": "17bdb45832ff394ffd6d4f39271a55fe",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\specs\\2026-07-17-activity-calendar-design.md": {
+    "mtime": 1784241508.4974768,
+    "ast_hash": "9891621410756bc055543cf04db517fb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\specs\\2026-07-17-responsive-set-layout-design.md": {
+    "mtime": 1784240456.5122423,
+    "ast_hash": "9801ba82ce70ba2100f98252e4e73a34",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\specs\\2026-07-17-rest-screen-overlay-design.md": {
+    "mtime": 1784240456.5133748,
+    "ast_hash": "bae1d3d4cfe942f38a52957955fb8189",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\specs\\2026-07-17-workout-progress-and-checkmark-design.md": {
+    "mtime": 1784240670.546335,
+    "ast_hash": "a768d0c404702f4ee816b9b9b9bf54a5",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\docs\\superpowers\\specs\\2026-07-17-workout-timer-design.md": {
+    "mtime": 1784240456.5150442,
+    "ast_hash": "e039cab4e78fd275c6ce63d5889d3bff",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\core\\templates\\user\\daily_activity_fragment.html": {
+    "mtime": 1784237265.4589353,
+    "ast_hash": "ff95bf685d1fe5f98af0cac3496eb637",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\templates\\activity_details_fragment.html": {
+    "mtime": 1784241819.2508445,
+    "ast_hash": "addfad8f189c071bbe7f8104de3a4c7e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\templates\\overview_tailwind.html": {
+    "mtime": 1784240456.5471175,
+    "ast_hash": "2a0d6e657d9da17936671465f43324cf",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\franc\\Desktop\\Codex\\Workout_app\\wger-elfrancia\\wger\\weight\\templates\\weight\\calendar_fragment.html": {
+    "mtime": 1784241927.400104,
+    "ast_hash": "9166d157d754d4a9f12c5e48090519f8",
     "semantic_hash": ""
   }
 }
