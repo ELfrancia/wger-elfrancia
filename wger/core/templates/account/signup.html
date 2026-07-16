@@ -25,14 +25,14 @@
                     <input type="{% if 'password' in field.html_name %}password{% elif 'email' in field.html_name %}email{% else %}text{% endif %}" 
                            name="{{ field.html_name }}" id="{{ field.id_for_label }}" required
                            value="{{ field.value|default:'' }}"
-                           class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-[0_0_15px_rgba(202,243,0,0.15)] transition-all duration-300 outline-none placeholder-neutral-600 text-sm">
+                           class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-md transition-all duration-300 outline-none placeholder-neutral-600 text-sm">
                     {% for error in field.errors %}
                         <span class="text-red-400 text-xs px-2 mt-1 font-medium block">{{ error }}</span>
                     {% endfor %}
                 </div>
             {% endfor %}
 
-            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#b8dd00] text-[#131313] h-14 rounded-full flex items-center justify-center font-extrabold tracking-wider hover:shadow-[0_0_20px_rgba(202,243,0,0.3)] transition-all duration-300 mt-2">
+            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#b8dd00] text-[#131313] h-14 rounded-full flex items-center justify-center font-extrabold tracking-wider hover:shadow-lg transition-all duration-300 mt-2">
                 {% translate "CREATE ACCOUNT" %}
             </button>
         </form>
@@ -42,7 +42,7 @@
             <span>{% translate "Already have an account?" %}</span>
             <hr class="flex-1 border-[#262626]">
         </div>
-        <a href="{% url 'core:user:login' %}" class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-[0_0_15px_rgba(202,243,0,0.05)] transition-all duration-300">
+        <a href="{% url 'core:user:login' %}" class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-300">
             {% translate "LOG IN" %}
         </a>
     </div>

@@ -101,46 +101,39 @@
             {% endif %}
         </div>
 
-        <div class="grid grid-cols-3 gap-4">
-            <div class="flex flex-col gap-2">
-                <label for="{{ form.sets.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">
-                    {% translate "Sets" %}
-                </label>
-                {{ form.sets }}
-                {% if form.sets.errors %}
-                    <span class="text-xs text-error font-medium block text-center">{{ form.sets.errors.0 }}</span>
-                {% endif %}
+        <!-- Superset Actions & Selected Exercises Area -->
+        <div class="flex flex-col gap-4">
+            <!-- Selected Exercises Container -->
+            <div id="superset-container" class="hidden flex-col gap-3 p-4 bg-[#161616] border border-[#262626] rounded-[24px]">
+                <div class="flex items-center justify-between border-b border-[#262626]/40 pb-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Exercises in Superset</span>
+                    <span class="text-[9px] font-bold text-[#caf300] bg-[#caf300]/10 border border-[#caf300]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">SUPERSET MODE</span>
+                </div>
+                <div id="superset-list" class="flex flex-col gap-2">
+                    <!-- Dynamically populated -->
+                </div>
             </div>
+            
+            <div id="hidden-exercises-inputs"></div>
 
-            <div class="flex flex-col gap-2">
-                <label for="{{ form.reps.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">
-                    {% translate "Reps" %}
-                </label>
-                {{ form.reps }}
-                {% if form.reps.errors %}
-                    <span class="text-xs text-error font-medium block text-center">{{ form.reps.errors.0 }}</span>
-                {% endif %}
+            <div class="flex flex-col md:flex-row gap-3 mt-4">
+                <!-- Add to Superset Button -->
+                <button type="button" id="add-to-superset-btn" disabled class="flex-1 border border-[#262626] text-[#caf300] hover:text-white min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight opacity-50 cursor-not-allowed transition-all duration-300">
+                    <span class="material-symbols-outlined">link</span>
+                    {% translate "ADD TO SUPERSET" %}
+                </button>
+
+                <!-- Main Submit Button -->
+                <button type="submit" id="submit-btn" disabled class="flex-1 bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight opacity-50 cursor-not-allowed hover:opacity-90 transition-opacity">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                    <span id="submit-btn-text">{% translate "ADD EXERCISE" %}</span>
+                </button>
+                
+                <!-- Cancel Button -->
+                <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 border border-surface-container-high text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:bg-surface-container transition-colors">
+                    {% translate "CANCEL" %}
+                </a>
             </div>
-
-            <div class="flex flex-col gap-2">
-                <label for="{{ form.weight.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center">
-                    {% translate "Weight (kg)" %}
-                </label>
-                {{ form.weight }}
-                {% if form.weight.errors %}
-                    <span class="text-xs text-error font-medium block text-center">{{ form.weight.errors.0 }}</span>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row gap-3 mt-4">
-            <button type="submit" class="flex-1 bg-primary-fixed text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:opacity-90 transition-opacity">
-                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
-                {% translate "ADD EXERCISE" %}
-            </button>
-            <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 border border-surface-container-high text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:bg-surface-container transition-colors">
-                {% translate "CANCEL" %}
-            </a>
         </div>
     </form>
 </section>
@@ -169,7 +162,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const muscleSelect = document.getElementById('filter-muscle');
     const skillSelect = document.getElementById('filter-skill');
     const items = document.querySelectorAll('.exercise-item');
-    const selectEl = document.getElementById('id_exercise');
+
+    let selectedExercises = []; // Array of { id: int, name: string }
+    let activeSelection = null;  // { id: int, name: string }
 
     // 1. Filtering Logic
     function filterExercises() {
@@ -200,27 +195,151 @@ document.addEventListener('DOMContentLoaded', function() {
     muscleSelect.addEventListener('change', filterExercises);
     skillSelect.addEventListener('change', filterExercises);
 
-    // 2. Selection Logic
-    function selectItem(item) {
-        // Clear all previous selections
-        items.forEach(i => {
-            i.classList.remove('border-primary-fixed', 'bg-surface-container/60');
-            i.classList.add('border-transparent');
-            const check = i.querySelector('.selected-indicator');
-            if (check) check.classList.add('opacity-0');
+    // 2. UI Syncing Logic
+    function syncUI() {
+        const supersetContainer = document.getElementById('superset-container');
+        const supersetList = document.getElementById('superset-list');
+        const hiddenInputs = document.getElementById('hidden-exercises-inputs');
+        const mainSubmitBtn = document.getElementById('submit-btn');
+        const submitBtnText = document.getElementById('submit-btn-text');
+        const addToSupersetBtn = document.getElementById('add-to-superset-btn');
+
+        // Clear hidden inputs & render list
+        hiddenInputs.innerHTML = '';
+        supersetList.innerHTML = '';
+
+        selectedExercises.forEach((ex, idx) => {
+            const letter = String.fromCharCode(65 + idx); // A, B, C...
+
+            // Create hidden input
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'exercise';
+            input.value = ex.id;
+            hiddenInputs.appendChild(input);
+
+            // Create list item
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-3 bg-[#131313] border border-[#262626] rounded-xl';
+            row.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="bg-[#caf300] text-[#131313] text-xs font-mono font-extrabold w-5 h-5 rounded-full flex items-center justify-center">${letter}</span>
+                    <span class="text-sm font-bold text-white">${ex.name}</span>
+                </div>
+                <button type="button" class="remove-btn text-gray-500 hover:text-red-400 flex items-center" data-id="${ex.id}">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            `;
+            
+            // Wire up remove button
+            row.querySelector('.remove-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                removeExercise(ex.id);
+            });
+            
+            supersetList.appendChild(row);
         });
 
-        // Set new selection
-        item.classList.remove('border-transparent');
-        item.classList.add('border-primary-fixed', 'bg-surface-container/60');
-        const check = item.querySelector('.selected-indicator');
-        if (check) check.classList.remove('opacity-0');
-
-        // Update hidden select
-        if (selectEl) {
-            selectEl.value = item.dataset.id;
-            selectEl.dispatchEvent(new Event('change'));
+        // Add active selection to hidden inputs
+        if (activeSelection) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'exercise';
+            input.value = activeSelection.id;
+            hiddenInputs.appendChild(input);
         }
+
+        // Toggle container visibility
+        if (selectedExercises.length > 0) {
+            supersetContainer.classList.remove('hidden');
+            supersetContainer.classList.add('flex');
+        } else {
+            supersetContainer.classList.remove('flex');
+            supersetContainer.classList.add('hidden');
+        }
+
+        // Configure buttons
+        const totalSelected = selectedExercises.length + (activeSelection ? 1 : 0);
+        if (totalSelected === 0) {
+            mainSubmitBtn.disabled = true;
+            mainSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
+        } else {
+            mainSubmitBtn.disabled = false;
+            mainSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (selectedExercises.length > 0 || totalSelected > 1) {
+                submitBtnText.textContent = `{% translate 'ADD SUPERSET' %} (${totalSelected})`;
+            } else {
+                submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
+            }
+        }
+
+        // Enable or disable Add to Superset button
+        if (activeSelection) {
+            addToSupersetBtn.disabled = false;
+            addToSupersetBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            addToSupersetBtn.classList.add('border-[#caf300]/40');
+        } else {
+            addToSupersetBtn.disabled = true;
+            addToSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            addToSupersetBtn.classList.remove('border-[#caf300]/40');
+        }
+
+        // Sync list checkmarks
+        items.forEach(item => {
+            const id = parseInt(item.dataset.id);
+            const indicator = item.querySelector('.selected-indicator');
+            const inSupersetIdx = selectedExercises.findIndex(ex => ex.id === id);
+            const isActive = activeSelection && activeSelection.id === id;
+
+            if (isActive) {
+                item.classList.remove('border-transparent');
+                item.classList.add('border-primary-fixed', 'bg-surface-container/60');
+                if (indicator) {
+                    indicator.classList.remove('opacity-0');
+                    const nextLetter = String.fromCharCode(65 + selectedExercises.length);
+                    indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-[10px] font-mono font-extrabold w-5 h-5 rounded-full flex items-center justify-center">${nextLetter}</span>`;
+                }
+            } else if (inSupersetIdx !== -1) {
+                item.classList.remove('border-transparent');
+                item.classList.add('border-[#caf300]/40', 'bg-[#caf300]/5');
+                if (indicator) {
+                    indicator.classList.remove('opacity-0');
+                    const letter = String.fromCharCode(65 + inSupersetIdx);
+                    indicator.innerHTML = `<span class="bg-gray-800 text-[#caf300] text-[10px] font-mono font-extrabold w-5 h-5 rounded-full border border-[#caf300]/30 flex items-center justify-center">${letter}</span>`;
+                }
+            } else {
+                item.classList.remove('border-primary-fixed', 'border-[#caf300]/40', 'bg-surface-container/60', 'bg-[#caf300]/5');
+                item.classList.add('border-transparent');
+                if (indicator) {
+                    indicator.classList.add('opacity-0');
+                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>`;
+                }
+            }
+        });
+    }
+
+    function removeExercise(id) {
+        selectedExercises = selectedExercises.filter(ex => ex.id !== id);
+        syncUI();
+    }
+
+    // 3. Selection Logic
+    function selectItem(item) {
+        const id = parseInt(item.dataset.id);
+        const name = item.dataset.name;
+
+        // Ignore if already in superset
+        if (selectedExercises.some(ex => ex.id === id)) {
+            return;
+        }
+
+        if (activeSelection && activeSelection.id === id) {
+            activeSelection = null;
+        } else {
+            activeSelection = { id, name };
+        }
+        syncUI();
     }
 
     items.forEach(item => {
@@ -229,16 +348,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 3. Initial state
-    if (selectEl && selectEl.value) {
-        const initialItem = document.querySelector(`.exercise-item[data-id="${selectEl.value}"]`);
-        if (initialItem) {
-            selectItem(initialItem);
-            setTimeout(() => {
-                initialItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }, 100);
+    // 4. Add to Superset Event Listener
+    document.getElementById('add-to-superset-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (activeSelection) {
+            selectedExercises.push(activeSelection);
+            activeSelection = null;
+            syncUI();
         }
-    }
+    });
 });
 </script>
 {% endblock %}

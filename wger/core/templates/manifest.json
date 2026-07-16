@@ -1,0 +1,25 @@
+{
+  "short_name": "wger",
+  "name": "wger Workout Manager",
+  "description": "Self hosted FLOSS fitness/workout and weight tracker",
+  "icons": [
+    {
+      "src": "/static/images/logos/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/logos/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#131313",
+  "theme_color": "#131313",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/"
+}

@@ -1,151 +1,205 @@
-{% load i18n %}
+{% load i18n l10n %}
 
-<!-- Daily Activity Hero Section -->
-<section id="daily-activity-container" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="w-full bg-[#131313] border border-[#262626] rounded-[24px] p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-    <!-- Left side: details -->
-    <div class="flex flex-col gap-4 w-full md:w-1/2">
-        <h3 class="text-xs font-semibold uppercase tracking-widest text-[#8e8e93]">{% translate "Daily Activity" %}</h3>
-        
-        <!-- Steps details -->
-        <div class="flex flex-col border-b border-[#262626] pb-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-[#caf300]" style="font-variation-settings: 'FILL' 1;">directions_walk</span>
-                    <span class="text-sm font-medium text-[#eaeaea]">{% translate "Steps" %}</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-lg font-bold text-white">{{ activity.steps|default:"0" }}</span>
-                    <span class="text-xs text-[#8e8e93]">/ {{ profile.steps_goal|default:"16000" }}</span>
-                </div>
-            </div>
-            <!-- Steps Controls -->
-            <div class="flex items-center justify-between mt-2 gap-2">
-                <div class="flex gap-1.5">
-                    <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "steps", "amount": 1000}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-[#1f1f1f] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">
-                        +1k
-                    </button>
-                    <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "steps", "amount": 5000}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-[#1f1f1f] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">
-                        +5k
-                    </button>
-                </div>
-                <form hx-post="{% url 'core:user:log-daily-activity' %}" hx-target="#daily-activity-container" hx-swap="outerHTML" class="flex items-center gap-1">
-                    <input type="hidden" name="activity_type" value="steps">
-                    <input type="number" name="amount" placeholder="+Steps" class="w-20 bg-[#1f1f1f] border border-[#262626] text-white text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[#caf300] placeholder-[#666]">
-                    <button type="submit" class="bg-[#262626] hover:bg-[#caf300] hover:text-[#131313] text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">{% translate "Add" %}</button>
-                </form>
-            </div>
+<!-- Daily Activity Wrapper (updates both cards on log) -->
+<section id="daily-activity-container" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="w-full flex flex-col gap-4 bg-transparent p-0 border-0 shadow-none">
+    
+    <!-- 1. Steps Hero Card (Top Card) -->
+    <div class="bg-[#161618]/90 border border-white/[0.05] rounded-[28px] p-5 flex flex-col gap-4 shadow-xl">
+        <div class="flex items-center justify-between text-neutral-400 text-xs font-bold uppercase tracking-wider">
+            <span>{% translate "Steps" %}</span>
+            <span id="steps-pct-text" class="text-xs text-[#caf300] font-black">0%</span>
         </div>
-
-        <!-- Calories details -->
-        <div class="flex flex-col border-b border-[#262626] pb-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-[#ff453a]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
-                    <span class="text-sm font-medium text-[#eaeaea]">{% translate "Calories" %}</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-lg font-bold text-white">{{ activity.calories|default:"0" }}</span>
-                    <span class="text-xs text-[#8e8e93]">/ {{ profile.calories_goal|default:"680" }} Cal</span>
-                </div>
+        <div class="flex items-center justify-between gap-6">
+            <div class="text-2xl font-black text-white tracking-tight">
+                <span class="text-white">{{ activity.steps|default:"0" }}</span>
+                <span class="text-neutral-500 font-bold text-sm">/ {{ profile.steps_goal|default:"16000" }}</span>
             </div>
-            <!-- Calories Controls -->
-            <div class="flex items-center justify-between mt-2 gap-2">
-                <div class="flex gap-1.5">
-                    <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "calories", "amount": 100}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-[#1f1f1f] hover:bg-[#ff453a] hover:text-white text-[#eaeaea] text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">
-                        +100
-                    </button>
-                    <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "calories", "amount": 250}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-[#1f1f1f] hover:bg-[#ff453a] hover:text-white text-[#eaeaea] text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">
-                        +250
-                    </button>
-                </div>
-                <form hx-post="{% url 'core:user:log-daily-activity' %}" hx-target="#daily-activity-container" hx-swap="outerHTML" class="flex items-center gap-1">
-                    <input type="hidden" name="activity_type" value="calories">
-                    <input type="number" name="amount" placeholder="+Cal" class="w-20 bg-[#1f1f1f] border border-[#262626] text-white text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[#ff453a] placeholder-[#666]">
-                    <button type="submit" class="bg-[#262626] hover:bg-[#ff453a] hover:text-white text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">{% translate "Add" %}</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Water details -->
-        <div class="flex flex-col pb-1">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-[#00d2ff]" style="font-variation-settings: 'FILL' 1;">local_drink</span>
-                    <span class="text-sm font-medium text-[#eaeaea]">{% translate "Water" %}</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-lg font-bold text-white">{{ activity.water|default:"0.0" }}</span>
-                    <span class="text-xs text-[#8e8e93]">/ {{ profile.water_goal|default:"2.5" }} L</span>
-                </div>
-            </div>
-            <!-- Water Controls -->
-            <div class="flex items-center justify-between mt-2 gap-2">
-                <div class="flex gap-1.5">
-                    <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "water", "amount": 0.25}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-[#1f1f1f] hover:bg-[#00d2ff] hover:text-[#131313] text-[#eaeaea] text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">
-                        +0.25L
-                    </button>
-                    <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "water", "amount": 0.5}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-[#1f1f1f] hover:bg-[#00d2ff] hover:text-[#131313] text-[#eaeaea] text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">
-                        +0.5L
-                    </button>
-                </div>
-                <form hx-post="{% url 'core:user:log-daily-activity' %}" hx-target="#daily-activity-container" hx-swap="outerHTML" class="flex items-center gap-1">
-                    <input type="hidden" name="activity_type" value="water">
-                    <input type="number" step="0.05" name="amount" placeholder="+Liters" class="w-20 bg-[#1f1f1f] border border-[#262626] text-white text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[#00d2ff] placeholder-[#666]">
-                    <button type="submit" class="bg-[#262626] hover:bg-[#00d2ff] hover:text-[#131313] text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors">{% translate "Add" %}</button>
-                </form>
+            <div class="flex-grow h-2.5 rounded-full bg-neutral-800 overflow-hidden relative">
+                <div id="steps-progress-bar" class="h-full bg-[#caf300] rounded-full transition-all duration-500 ease-out" style="width: 0%;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Right side: Concentric rings SVG -->
-    <div class="relative w-40 h-40 flex items-center justify-center">
-        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 110 110">
-            <!-- Background rings (dark opacity) -->
-            <circle cx="55" cy="55" r="45" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
-            <circle cx="55" cy="55" r="34" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
-            <circle cx="55" cy="55" r="23" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+    <!-- 2. Daily Activity Card (Middle Card) -->
+    <div class="bg-[#161618]/90 border border-white/[0.05] rounded-[28px] p-6 flex flex-col gap-6 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <h3 class="text-white font-bold text-base tracking-tight">{% translate "Daily Activity" %}</h3>
+            <a href="{% url 'weight:overview' %}" class="text-xs font-bold text-[#caf300] hover:text-[#b8dd00] transition-colors">
+                {% translate "See all" %}
+            </a>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <!-- Left details list -->
+            <div class="flex flex-col gap-4 w-full md:w-1/2">
+                <!-- Steps -->
+                <div class="flex flex-col border-b border-white/[0.05] pb-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[#caf300]" style="font-variation-settings: 'FILL' 1;">directions_walk</span>
+                            <span class="text-xs font-bold text-neutral-400 uppercase tracking-widest">{% translate "Steps" %}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black text-[#caf300]">{{ activity.steps|default:"0" }}</span>
+                            <span class="text-xs text-neutral-500">/ {{ profile.steps_goal|default:"16000" }}</span>
+                        </div>
+                    </div>
+                    <!-- Mini Log Bar for Steps -->
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <div class="flex gap-1">
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "steps", "amount": -1000}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-red-500 hover:text-white text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Remove 1k steps' %}">
+                                -1k
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "steps", "amount": 1000}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Add 1k steps' %}">
+                                +1k
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "steps", "amount": -5000}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-red-500 hover:text-white text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Remove 5k steps' %}">
+                                -5k
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "steps", "amount": 5000}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Add 5k steps' %}">
+                                +5k
+                            </button>
+                        </div>
+                        <form hx-post="{% url 'core:user:log-daily-activity' %}" hx-target="#daily-activity-container" hx-swap="outerHTML" class="flex items-center gap-1">
+                            <input type="hidden" name="activity_type" value="steps">
+                            <input type="number" name="amount" placeholder="Steps" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
+                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Calories -->
+                <div class="flex flex-col border-b border-white/[0.05] pb-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-red-500" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                            <span class="text-xs font-bold text-neutral-400 uppercase tracking-widest">{% translate "Calories" %}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black text-red-500">{{ activity.calories|default:"0" }}</span>
+                            <span class="text-xs text-neutral-500">/ {{ profile.calories_goal|default:"680" }} Cal</span>
+                        </div>
+                    </div>
+                    <!-- Mini Log Bar for Calories -->
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <div class="flex gap-1">
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "calories", "amount": -100}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-red-500 hover:text-white text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Remove 100 kcal' %}">
+                                -100
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "calories", "amount": 100}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-red-500 hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Add 100 kcal' %}">
+                                +100
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "calories", "amount": -250}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-red-500 hover:text-white text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Remove 250 kcal' %}">
+                                -250
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "calories", "amount": 250}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-red-500 hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Add 250 kcal' %}">
+                                +250
+                            </button>
+                        </div>
+                        <form hx-post="{% url 'core:user:log-daily-activity' %}" hx-target="#daily-activity-container" hx-swap="outerHTML" class="flex items-center gap-1">
+                            <input type="hidden" name="activity_type" value="calories">
+                            <input type="number" name="amount" placeholder="Cal" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-red-500 placeholder-neutral-700 text-center">
+                            <button type="submit" class="bg-white/[0.05] hover:bg-red-500 hover:text-[#131313] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Water -->
+                <div class="flex flex-col pb-1">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-sky-500" style="font-variation-settings: 'FILL' 1;">local_drink</span>
+                            <span class="text-xs font-bold text-neutral-400 uppercase tracking-widest">{% translate "Water" %}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-black text-sky-500">{{ activity.water|default:"0.0" }}</span>
+                            <span class="text-xs text-neutral-500">/ {{ profile.water_goal|default:"2.5" }} L</span>
+                        </div>
+                    </div>
+                    <!-- Mini Log Bar for Water -->
+                    <div class="flex items-center justify-between mt-2 gap-2">
+                        <div class="flex gap-1">
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "water", "amount": -0.25}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-sky-500 hover:text-white text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Remove 0.25L water' %}">
+                                -0.25
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "water", "amount": 0.25}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-sky-500 hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Add 0.25L water' %}">
+                                +0.25
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "water", "amount": -0.5}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-sky-500 hover:text-white text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Remove 0.5L water' %}">
+                                -0.5
+                            </button>
+                            <button hx-post="{% url 'core:user:log-daily-activity' %}" hx-vals='{"activity_type": "water", "amount": 0.5}' hx-target="#daily-activity-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-sky-500 hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200" title="{% translate 'Add 0.5L water' %}">
+                                +0.5
+                            </button>
+                        </div>
+                        <form hx-post="{% url 'core:user:log-daily-activity' %}" hx-target="#daily-activity-container" hx-swap="outerHTML" class="flex items-center gap-1">
+                            <input type="hidden" name="activity_type" value="water">
+                            <input type="number" step="0.05" name="amount" placeholder="L" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-sky-500 placeholder-neutral-700 text-center">
+                            <button type="submit" class="bg-white/[0.05] hover:bg-sky-500 hover:text-[#131313] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side: Concentric rings SVG in custom colors -->
+            <div class="relative w-44 h-44 flex items-center justify-center bg-black/10 border border-white/[0.02] rounded-full p-2">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 110 110">
+                    <!-- Background rings (dark opacity) -->
+                    <circle cx="55" cy="55" r="45" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+                    <circle cx="55" cy="55" r="34" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+                    <circle cx="55" cy="55" r="23" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
+                    
+                    <!-- Progress rings in matching lime/red/blue tones -->
+                    <!-- Steps Ring (Outer, Radius 45, Circumference 282.74, #caf300) -->
+                    <circle id="ring-steps" cx="55" cy="55" r="45" stroke="#caf300" stroke-width="8" fill="transparent" 
+                            stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                    <!-- Calories Ring (Middle, Radius 34, Circumference 213.63, Red/Rose #ef4444) -->
+                    <circle id="ring-calories" cx="55" cy="55" r="34" stroke="#ef4444" stroke-width="8" fill="transparent" 
+                            stroke-dasharray="213.63" stroke-dashoffset="213.63" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                    <!-- Water Ring (Inner, Radius 23, Circumference 144.51, Blue/Sky #0ea5e9) -->
+                    <circle id="ring-water" cx="55" cy="55" r="23" stroke="#0ea5e9" stroke-width="8" fill="transparent" 
+                            stroke-dasharray="144.51" stroke-dashoffset="144.51" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Execution block to update progress circles and top hero values -->
+    <script>
+        (function() {
+            function parseValue(valStr) {
+                if (!valStr) return 0;
+                const clean = valStr.toString().replace(/\s/g, '').replace(',', '.');
+                return parseFloat(clean) || 0;
+            }
+
+            const stepsVal = parseValue("{{ activity.steps|default:'0'|unlocalize }}");
+            const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000'|unlocalize }}") || 16000;
+            const stepsPct = Math.min(stepsVal / stepsGoal, 1);
+            const r1Offset = 282.74 - (stepsPct * 282.74);
+            const ringSteps = document.getElementById('ring-steps');
+            if (ringSteps) ringSteps.setAttribute('stroke-dashoffset', r1Offset);
+
+            // Update top Steps card values too
+            const stepsPctText = document.getElementById('steps-pct-text');
+            if (stepsPctText) stepsPctText.innerText = Math.round(stepsPct * 100) + "%";
             
-            <!-- Progress rings -->
-            <!-- Steps Ring (Outer, Radius 45, Circumference 282.74) -->
-            <circle id="ring-steps" cx="55" cy="55" r="45" stroke="#caf300" stroke-width="8" fill="transparent" 
-                    stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
-            <!-- Calories Ring (Middle, Radius 34, Circumference 213.63) -->
-            <circle id="ring-calories" cx="55" cy="55" r="34" stroke="#ff453a" stroke-width="8" fill="transparent" 
-                    stroke-dasharray="213.63" stroke-dashoffset="213.63" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
-            <!-- Water Ring (Inner, Radius 23, Circumference 144.51) -->
-            <circle id="ring-water" cx="55" cy="55" r="23" stroke="#00d2ff" stroke-width="8" fill="transparent" 
-                    stroke-dasharray="144.51" stroke-dashoffset="144.51" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
-        </svg>
-    </div>
+            const stepsProgressBar = document.getElementById('steps-progress-bar');
+            if (stepsProgressBar) stepsProgressBar.style.width = Math.round(stepsPct * 100) + "%";
+
+            const calVal = parseValue("{{ activity.calories|default:'0'|unlocalize }}");
+            const calGoal = parseValue("{{ profile.calories_goal|default:'680'|unlocalize }}") || 680;
+            const calPct = Math.min(calVal / calGoal, 1);
+            const r2Offset = 213.63 - (calPct * 213.63);
+            const ringCalories = document.getElementById('ring-calories');
+            if (ringCalories) ringCalories.setAttribute('stroke-dashoffset', r2Offset);
+
+            const waterVal = parseValue("{{ activity.water|default:'0.0'|unlocalize }}");
+            const waterGoal = parseValue("{{ profile.water_goal|default:'2.5'|unlocalize }}") || 2.5;
+            const waterPct = Math.min(waterVal / waterGoal, 1);
+            const r3Offset = 144.51 - (waterPct * 144.51);
+            const ringWater = document.getElementById('ring-water');
+            if (ringWater) ringWater.setAttribute('stroke-dashoffset', r3Offset);
+        })();
+    </script>
 </section>
-
-<script>
-    (function() {
-        function parseValue(valStr) {
-            if (!valStr) return 0;
-            const clean = valStr.toString().replace(/\s/g, '').replace(',', '.');
-            return parseFloat(clean) || 0;
-        }
-
-        const stepsVal = parseValue("{{ activity.steps|default:'0' }}");
-        const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000' }}") || 1;
-        const stepsPct = Math.min(stepsVal / stepsGoal, 1);
-        const r1Offset = 282.74 - (stepsPct * 282.74);
-        const ringSteps = document.getElementById('ring-steps');
-        if (ringSteps) ringSteps.setAttribute('stroke-dashoffset', r1Offset);
-
-        const calVal = parseValue("{{ activity.calories|default:'0' }}");
-        const calGoal = parseValue("{{ profile.calories_goal|default:'680' }}") || 1;
-        const calPct = Math.min(calVal / calGoal, 1);
-        const r2Offset = 213.63 - (calPct * 213.63);
-        const ringCalories = document.getElementById('ring-calories');
-        if (ringCalories) ringCalories.setAttribute('stroke-dashoffset', r2Offset);
-
-        const waterVal = parseValue("{{ activity.water|default:'0.0' }}");
-        const waterGoal = parseValue("{{ profile.water_goal|default:'2.5' }}") || 1;
-        const waterPct = Math.min(waterVal / waterGoal, 1);
-        const r3Offset = 144.51 - (waterPct * 144.51);
-        const ringWater = document.getElementById('ring-water');
-        if (ringWater) ringWater.setAttribute('stroke-dashoffset', r3Offset);
-    })();
-</script>

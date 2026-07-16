@@ -1,4 +1,4 @@
-{% load static %}
+{% load static i18n %}
 <!-- TopAppBar (Web & Mobile) -->
 <header class="w-full sticky top-0 z-50 bg-[#131313]/95 backdrop-blur-sm flex justify-between items-center px-4 py-4 pt-[max(env(safe-area-inset-top),16px)] border-b border-surface-container-high">
     <div class="flex items-center gap-3">
@@ -13,26 +13,35 @@
 </header>
 
 <!-- BottomNavBar (Mobile Only) -->
-<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#131313] border-t border-surface-container-high flex justify-around items-center h-[calc(80px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-2">
-    <a class="flex flex-col items-center justify-center text-primary-fixed min-w-[64px] min-h-[64px]" href="{% url 'core:dashboard' %}">
-        <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
-        <span class="text-[10px] uppercase tracking-widest font-bold">Home</span>
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#121214] rounded-t-[32px] border-t border-white/[0.04] flex justify-around items-center h-[calc(84px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-4 shadow-[0_-8px_30px_rgba(0,0,0,0.6)]">
+    <!-- Home -->
+    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
+        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:dashboard' %}1{% else %}0{% endif %};">home</span>
+        <span class="text-[10px] font-semibold tracking-wide">{% translate "Home" %}</span>
     </a>
-    <a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="{% url 'manager:routine:overview' %}">
-        <span class="material-symbols-outlined mb-1">fitness_center</span>
-        <span class="text-[10px] uppercase tracking-widest font-bold">Routines</span>
+    
+    <!-- Routines -->
+    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if 'manager:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'manager:routine:overview' %}">
+        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'manager:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">fitness_center</span>
+        <span class="text-[10px] font-semibold tracking-wide">{% translate "Routines" %}</span>
     </a>
-    <div class="-mt-8">
-        <a href="{% url 'manager:routine:add' %}" class="w-[60px] h-[60px] rounded-full bg-primary-fixed text-[#131313] flex items-center justify-center shadow-[0_0_20px_rgba(202,243,0,0.2)] hover:scale-105 transition-transform">
-            <span class="material-symbols-outlined text-3xl font-extrabold" style="font-variation-settings: 'FILL' 1;">add</span>
+    
+    <!-- Add Button (Centered, popping out) -->
+    <div class="-mt-8 relative z-10">
+        <a href="{% url 'manager:routine:add' %}" class="w-14 h-14 rounded-full bg-[#caf300] text-[#121214] flex items-center justify-center shadow-lg hover:scale-105 transition-transform duration-300 border-4 border-[#121214]">
+            <span class="material-symbols-outlined text-2xl font-black" style="font-variation-settings: 'wght' 700;">add</span>
         </a>
     </div>
-    <a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="{% url 'weight:overview' %}">
-        <span class="material-symbols-outlined mb-1">insights</span>
-        <span class="text-[10px] uppercase tracking-widest font-bold">Progress</span>
+    
+    <!-- Progress -->
+    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if 'weight:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'weight:overview' %}">
+        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'weight:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">equalizer</span>
+        <span class="text-[10px] font-semibold tracking-wide">{% translate "Progress" %}</span>
     </a>
-    <a class="flex flex-col items-center justify-center text-on-surface-variant min-w-[64px] min-h-[64px]" href="{% url 'core:profile_tailwind' %}">
-        <span class="material-symbols-outlined mb-1">person</span>
-        <span class="text-[10px] uppercase tracking-widest font-bold">Profile</span>
+    
+    <!-- Profile -->
+    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if request.resolver_match.view_name == 'core:profile_tailwind' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:profile_tailwind' %}">
+        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:profile_tailwind' %}1{% else %}0{% endif %};">person</span>
+        <span class="text-[10px] font-semibold tracking-wide">{% translate "Profile" %}</span>
     </a>
 </nav>

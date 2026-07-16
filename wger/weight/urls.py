@@ -41,7 +41,7 @@ urlpatterns = [
     ),
     re_path(
         'overview',
-        ReactView.as_view(),
+        views.weight_overview_tailwind,
         name='overview',
     ),
 ]

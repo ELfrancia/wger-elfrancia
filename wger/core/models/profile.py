@@ -327,6 +327,13 @@ class UserProfile(models.Model):
         null=False,
     )
 
+    avatar_url = models.CharField(
+        max_length=500,
+        verbose_name=_('Avatar URL'),
+        default='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80',
+        blank=True,
+    )
+
     #
     # Others
     #

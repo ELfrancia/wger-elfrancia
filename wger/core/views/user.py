@@ -814,16 +814,19 @@ class WgerLoginView(AllauthLoginView):
 def dashboard_tailwind(request):
     from wger.trophies.models import UserStatistics
     from wger.core.models import DailyActivity
+    from wger.manager.models import WorkoutSession
     from django.utils import timezone
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
     latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date').first()
     activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
     profile = request.user.userprofile
+    completed_sessions = WorkoutSession.objects.filter(user=request.user).order_by('-date')[:5]
     return render(request, 'user/dashboard_tailwind.html', {
         'stats': stats,
         'latest_session': latest_session,
         'activity': activity,
         'profile': profile,
+        'completed_sessions': completed_sessions,
     })
 
 
@@ -831,6 +834,10 @@ def dashboard_tailwind(request):
 def profile_tailwind(request):
     from wger.trophies.models import UserStatistics
     from decimal import Decimal, InvalidOperation
+    from django.conf import settings
+    from django.core.files.storage import FileSystemStorage
+    import os
+
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
     profile = request.user.userprofile
 
@@ -838,6 +845,8 @@ def profile_tailwind(request):
         steps_goal = request.POST.get('steps_goal')
         calories_goal = request.POST.get('calories_goal')
         water_goal = request.POST.get('water_goal')
+        avatar_url = request.POST.get('avatar_url')
+        avatar_file = request.FILES.get('avatar_file')
 
         updated = False
         if steps_goal is not None and steps_goal != '':
@@ -859,10 +868,22 @@ def profile_tailwind(request):
                 updated = True
             except (ValueError, TypeError, InvalidOperation):
                 pass
+        if avatar_file:
+            ext = os.path.splitext(avatar_file.name)[1]
+            filename = f"avatar_{request.user.id}{ext}"
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+            if fs.exists(filename):
+                fs.delete(filename)
+            saved_name = fs.save(filename, avatar_file)
+            profile.avatar_url = fs.url(saved_name)
+            updated = True
+        elif avatar_url is not None:
+            profile.avatar_url = avatar_url.strip()
+            updated = True
 
         if updated:
             profile.save()
-            messages.success(request, _('Goals successfully updated.'))
+            messages.success(request, _('Profile settings successfully updated.'))
             return redirect('core:profile_tailwind')
 
     return render(request, 'user/profile_tailwind.html', {

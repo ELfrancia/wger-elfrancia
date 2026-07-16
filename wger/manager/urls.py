@@ -105,9 +105,19 @@ patterns_routine = [
         name='add-set',
     ),
     path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/set/<int:entry_pk>/update',
+        routine.update_set_tailwind,
+        name='update-set',
+    ),
+    path(
         '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/set/<int:entry_pk>/delete',
         routine.delete_set_tailwind,
         name='delete-set',
+    ),
+    path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/set/<int:entry_pk>/notes/update',
+        routine.update_set_notes_tailwind,
+        name='update-set-notes',
     ),
     path(
         '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/notes/update',

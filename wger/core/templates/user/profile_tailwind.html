@@ -7,12 +7,12 @@
 <main class="max-w-3xl mx-auto px-4 mt-6 flex flex-col gap-6 pb-24">
     <!-- User Avatar & Profile Card -->
     <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6 flex flex-col items-center gap-4 text-center">
-        <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-fixed bg-surface-container flex items-center justify-center">
-            <span class="material-symbols-outlined text-primary-fixed text-5xl">person</span>
+        <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-[#caf300] bg-neutral-900 flex items-center justify-center shadow-lg">
+            <img src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' }}" alt="Avatar" class="w-full h-full object-cover">
         </div>
         <div>
-            <h2 class="font-headline-md text-headline-md font-bold text-primary">{{ user.username }}</h2>
-            <p class="text-on-surface-variant font-body-md mt-1">{{ user.email }}</p>
+            <h2 class="font-headline-md text-headline-md font-black text-white uppercase tracking-tight">{{ user.username }}</h2>
+            <p class="text-neutral-500 font-body-md mt-1">{{ user.email }}</p>
         </div>
     </div>
 
@@ -70,36 +70,113 @@
         </div>
     </div>
 
-    <!-- Daily Activity Goals -->
+    <!-- Daily Activity Goals & Settings -->
     <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6">
-        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase mb-4">{% translate "Daily Activity Goals" %}</h3>
+        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase mb-4">{% translate "Profile & Activity Settings" %}</h3>
         
-        <form method="post" action="{% url 'core:profile_tailwind' %}" class="flex flex-col gap-4">
+        <form method="post" action="{% url 'core:profile_tailwind' %}" enctype="multipart/form-data" class="flex flex-col gap-4">
             {% csrf_token %}
+            
+            <!-- Profile Picture Settings -->
+            <div class="flex flex-col gap-3 border-b border-white/[0.05] pb-5 mb-2">
+                <label for="id_avatar_url" class="text-xs font-semibold text-[#8e8e93]">{% translate "Profile Picture URL" %}</label>
+                <input type="url" name="avatar_url" id="id_avatar_url" value="{{ profile.avatar_url }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300] text-xs" placeholder="https://example.com/image.jpg">
+                
+                <!-- File Upload -->
+                <div class="flex flex-col gap-1.5 mt-1">
+                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{% translate "Or upload an image file:" %}</span>
+                    <div class="flex items-center gap-3">
+                        <input type="file" name="avatar_file" id="id_avatar_file" accept="image/*" class="hidden" onchange="previewUpload(this)">
+                        <button type="button" onclick="document.getElementById('id_avatar_file').click()" class="bg-[#1c1c1e] border border-white/[0.08] hover:border-[#caf300]/30 text-white rounded-xl px-4 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                            <span class="material-symbols-outlined text-base">upload_file</span>
+                            {% translate "Choose File" %}
+                        </button>
+                        <span id="file-name" class="text-xs text-neutral-500 font-semibold truncate max-w-[200px]">{% translate "No file chosen" %}</span>
+                    </div>
+                </div>
+
+                <!-- Presets selection -->
+                <div class="flex flex-col gap-2 mt-2">
+                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{% translate "Or choose a preset portrait:" %}</span>
+                    <div class="flex gap-3 mt-1">
+                        <!-- Preset 1 -->
+                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
+                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 1" class="w-full h-full object-cover">
+                        </button>
+                        <!-- Preset 2 -->
+                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
+                            <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 2" class="w-full h-full object-cover">
+                        </button>
+                        <!-- Preset 3 -->
+                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 3" class="w-full h-full object-cover">
+                        </button>
+                        <!-- Preset 4 -->
+                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 4" class="w-full h-full object-cover">
+                        </button>
+                    </div>
+                </div>
+            </div>
             
             <!-- Steps Goal -->
             <div class="flex flex-col gap-1.5">
                 <label for="id_steps_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Steps Goal" %}</label>
-                <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300]" required>
+                <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300]">
             </div>
 
             <!-- Calories Goal -->
             <div class="flex flex-col gap-1.5">
                 <label for="id_calories_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Burned Calories Goal (Cal)" %}</label>
-                <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#ff453a]" required>
+                <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#ff453a]">
             </div>
 
             <!-- Water Goal -->
             <div class="flex flex-col gap-1.5">
                 <label for="id_water_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Water Goal (L)" %}</label>
-                <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#00d2ff]" required>
+                <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#00d2ff]">
             </div>
 
             <button type="submit" class="bg-[#caf300] hover:bg-[#b0d500] text-[#131313] min-h-[48px] py-2.5 rounded-full font-bold tracking-tight mt-2 transition-colors">
-                {% translate "UPDATE GOALS" %}
+                {% translate "SAVE SETTINGS" %}
             </button>
         </form>
     </div>
+    
+    <script>
+        function selectPreset(url) {
+            const input = document.getElementById('id_avatar_url');
+            if (input) {
+                input.value = url;
+                const previewImg = document.querySelector('.w-24.h-24 img');
+                if (previewImg) previewImg.src = url;
+                
+                // Instantly submit the form to save
+                input.closest('form').submit();
+            }
+            document.getElementById('id_avatar_file').value = '';
+            document.getElementById('file-name').textContent = '{% translate "No file chosen" %}';
+        }
+
+        function previewUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('file-name').textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImg = document.querySelector('.w-24.h-24 img');
+                    if (previewImg) previewImg.src = e.target.result;
+                    const urlInput = document.getElementById('id_avatar_url');
+                    if (urlInput) urlInput.value = '';
+                    
+                    // Instantly submit the form to save
+                    input.closest('form').submit();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
 
     <!-- Logout CTA -->
     <a href="{% url 'core:user:logout' %}" class="w-full bg-[#2a2a2a] border border-[#333333] text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-body-lg text-body-lg font-bold hover:bg-red-950/20 hover:text-red-400 hover:border-red-500/20 transition-colors">

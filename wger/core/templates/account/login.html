@@ -37,7 +37,7 @@
                     {{ form.login.label }}
                 </label>
                 <input type="text" name="{{ form.login.html_name }}" id="{{ form.login.id_for_label }}" required
-                       class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-[0_0_15px_rgba(202,243,0,0.15)] transition-all duration-300 outline-none placeholder-neutral-600 text-sm"
+                       class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-md transition-all duration-300 outline-none placeholder-neutral-600 text-sm"
                        placeholder="{% translate "Username" %}">
                 {% for error in form.login.errors %}
                     <span class="text-red-400 text-xs px-2 mt-1 font-medium block">{{ error }}</span>
@@ -50,7 +50,7 @@
                     {{ form.password.label }}
                 </label>
                 <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" required
-                       class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-[0_0_15px_rgba(202,243,0,0.15)] transition-all duration-300 outline-none placeholder-neutral-600 text-sm"
+                       class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-md transition-all duration-300 outline-none placeholder-neutral-600 text-sm"
                        placeholder="{% translate "Password" %}">
                 {% for error in form.password.errors %}
                     <span class="text-red-400 text-xs px-2 mt-1 font-medium block">{{ error }}</span>
@@ -72,7 +72,7 @@
             </div>
 
             <!-- Submit -->
-            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#b8dd00] text-[#131313] h-14 rounded-full flex items-center justify-center font-extrabold tracking-wider hover:shadow-[0_0_20px_rgba(202,243,0,0.3)] transition-all duration-300 mt-2">
+            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#b8dd00] text-[#131313] h-14 rounded-full flex items-center justify-center font-extrabold tracking-wider hover:shadow-lg transition-all duration-300 mt-2">
                 {% translate "LOG IN" %}
             </button>
         </form>
@@ -82,7 +82,7 @@
             <div class="flex flex-col gap-4 border-t border-[#262626] pt-6">
                 {% if PASSKEY_LOGIN_ENABLED %}
                     <button type="submit" form="mfa_login" id="passkey_login"
-                            class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-[0_0_15px_rgba(202,243,0,0.05)] transition-all duration-300 gap-2">
+                            class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-300 gap-2">
                         <span class="material-symbols-outlined text-sm">key</span>
                         {% translate "Sign in with a passkey" %}
                     </button>
@@ -110,7 +110,7 @@
                 <span>{% translate "No account?" %}</span>
                 <hr class="flex-1 border-[#262626]">
             </div>
-            <a href="{% url 'core:user:registration' %}" class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-[0_0_15px_rgba(202,243,0,0.05)] transition-all duration-300">
+            <a href="{% url 'core:user:registration' %}" class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-300">
                 {% translate "REGISTER" %}
             </a>
         {% endif %}

@@ -72,6 +72,20 @@ class Slot(models.Model):
         entries = getattr(self, 'prefetched_entries', self.entries.all())
         return len(entries) > 1
 
+    @property
+    def unique_exercises(self):
+        seen = set()
+        exercises = []
+        for entry in self.entries.all().order_by('order', 'id'):
+            if entry.exercise_id not in seen:
+                seen.add(entry.exercise_id)
+                exercises.append(entry.exercise)
+        return exercises
+
+    @property
+    def is_real_superset(self) -> bool:
+        return len(self.unique_exercises) > 1
+
     def set_data(self, iteration: int) -> List[SetExerciseData]:
         """Calculates the set data for a specific iteration"""
         entries = getattr(self, 'prefetched_entries', self.entries.all())

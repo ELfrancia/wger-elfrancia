@@ -29,6 +29,13 @@
 
     <link rel="icon" href="{% static 'images/favicon.png' %}" type="image/png">
 
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="wger">
+    <link rel="apple-touch-icon" href="{% static 'images/logos/logo-192.png' %}">
+
     <!-- OpenGraph -->
     {% block opengraph %}
         <meta property="og:url" content="{{ request_absolute_path }}">
@@ -213,6 +220,17 @@
 </footer>
 
 {% block extra_body %}{% endblock %}
+
+<!-- Register PWA Service Worker -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registered', reg))
+                .catch(err => console.error('Service Worker registration failed', err));
+        });
+    }
+</script>
 
 </body>
 </html>

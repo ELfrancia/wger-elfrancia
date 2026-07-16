@@ -193,6 +193,19 @@ class SlotEntry(models.Model):
         ]
 
     @property
+    def set_index(self) -> int:
+        """
+        Returns the 1-based index of this set relative to other sets
+        of the same exercise in the slot.
+        """
+        siblings = self.slot.entries.all().order_by('order', 'id')
+        same_exercise_siblings = [s for s in siblings if s.exercise_id == self.exercise_id]
+        try:
+            return same_exercise_siblings.index(self) + 1
+        except ValueError:
+            return 1
+
+    @property
     def has_progression(self) -> bool:
         """
         Returns true if the calculated config data can change across iterations

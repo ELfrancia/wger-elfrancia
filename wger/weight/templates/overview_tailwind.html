@@ -1,0 +1,542 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}{% translate "Scheda di Progressi" %}{% endblock %}
+
+{% block header %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 py-6">
+    <!-- Header with Toggle Range Switch -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="font-headline-lg-mobile text-2xl md:text-3xl text-white font-bold tracking-tighter">
+                {% translate "Scheda di Progressi" %}
+            </h2>
+            <p class="text-sm text-[#888888]">
+                {% translate "Tieni traccia delle tue statistiche di allenamento e peso." %}
+            </p>
+        </div>
+        
+        <!-- View and Period Selectors -->
+        <div class="flex flex-wrap gap-3 items-center self-start sm:self-center">
+            <!-- Glassmorphic View Toggle -->
+            <div class="flex bg-[#161616]/80 backdrop-blur-md border border-white/[0.08] p-1 rounded-full w-fit shadow-lg">
+                <button id="btn-view-dati" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 bg-[#caf300] text-[#131313] font-bold shadow-sm">
+                    {% translate "Dati" %}
+                </button>
+                <button id="btn-view-grafici" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 text-[#888888] hover:text-white hover:bg-white/[0.04]">
+                    {% translate "Grafici" %}
+                </button>
+            </div>
+
+            <!-- Glassmorphic Period Selector -->
+            <div class="flex bg-[#161616]/80 backdrop-blur-md border border-white/[0.08] p-1 rounded-full w-fit shadow-lg">
+                <a href="?range=weekly" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 {% if range == 'weekly' %}bg-[#caf300] text-[#131313] font-bold shadow-sm{% else %}text-[#888888] hover:text-white hover:bg-white/[0.04]{% endif %}">
+                    {% translate "Settimanale" %}
+                </a>
+                <a href="?range=monthly" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 {% if range == 'monthly' %}bg-[#caf300] text-[#131313] font-bold shadow-sm{% else %}text-[#888888] hover:text-white hover:bg-white/[0.04]{% endif %}">
+                    {% translate "Mensile" %}
+                </a>
+                <a href="?range=yearly" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 {% if range == 'yearly' %}bg-[#caf300] text-[#131313] font-bold shadow-sm{% else %}text-[#888888] hover:text-white hover:bg-white/[0.04]{% endif %}">
+                    {% translate "Annuale" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dati View (Numeric View) -->
+    <div id="view-section-dati" class="space-y-6 transition-all duration-300">
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Completed Workouts -->
+        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col justify-between hover:border-[#caf300]/30 transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Allenamenti Completati" %}</span>
+                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
+                    <span class="material-symbols-outlined text-[#caf300] text-xl">fitness_center</span>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-4xl font-extrabold text-white tracking-tight mb-1">
+                    {{ workouts_completed }}
+                </h3>
+                <p class="text-xs text-[#888888]">
+                    {% translate "Sessioni registrate nel periodo" %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Total Volume -->
+        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col justify-between hover:border-[#caf300]/30 transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Volume Totale" %}</span>
+                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
+                    <span class="material-symbols-outlined text-[#caf300] text-xl">monitoring</span>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-4xl font-extrabold text-white tracking-tight mb-1">
+                    {{ total_volume }} <span class="text-lg font-normal text-[#888888]">kg</span>
+                </h3>
+                <p class="text-xs text-[#888888]">
+                    {% translate "Volume complessivo (ripetizioni &times; peso)" %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Total Repetitions -->
+        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col justify-between hover:border-[#caf300]/30 transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Ripetizioni Totali" %}</span>
+                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
+                    <span class="material-symbols-outlined text-[#caf300] text-xl">replay</span>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-4xl font-extrabold text-white tracking-tight mb-1">
+                    {{ total_repetitions }}
+                </h3>
+                <p class="text-xs text-[#888888]">
+                    {% translate "Ripetizioni totali eseguite" %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Weight Progress Card -->
+        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md hover:border-[#caf300]/30 transition-all duration-300 group">
+            <div class="flex items-center justify-between mb-4">
+                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Andamento Peso" %}</span>
+                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
+                    <span class="material-symbols-outlined text-[#caf300] text-xl">scale</span>
+                </div>
+            </div>
+            {% if starting_weight %}
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-[10px] text-[#888888] uppercase tracking-wider font-bold block mb-0.5">{% translate "Ultimo Rilevato" %}</span>
+                    <h4 class="text-2xl font-bold text-white mb-1">{{ ending_weight }} kg</h4>
+                    <p class="text-xs text-[#888888]">{% translate "Iniziale:" %} {{ starting_weight }} kg</p>
+                </div>
+                <div class="text-right flex flex-col justify-end">
+                    <span class="font-label-caps text-[10px] text-[#888888] uppercase tracking-wider font-bold block mb-1">{% translate "Variazione" %}</span>
+                    <div>
+                        {% if weight_change > 0 %}
+                        <span class="inline-flex items-center text-emerald-400 font-bold text-md bg-emerald-950/40 border border-emerald-500/25 px-2 py-0.5 rounded-xl shadow-[0_0_12px_rgba(52,211,153,0.15)]">
+                            <span class="material-symbols-outlined text-sm mr-0.5">arrow_upward</span>
+                            +{{ weight_change|floatformat:2 }} kg
+                        </span>
+                        {% elif weight_change < 0 %}
+                        <span class="inline-flex items-center text-rose-400 font-bold text-md bg-rose-950/40 border border-rose-500/25 px-2 py-0.5 rounded-xl shadow-[0_0_12px_rgba(251,113,133,0.15)]">
+                            <span class="material-symbols-outlined text-sm mr-0.5">arrow_downward</span>
+                            {{ weight_change|floatformat:2 }} kg
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center text-gray-400 font-bold text-md bg-gray-900/40 border border-gray-800 px-2 py-0.5 rounded-xl">
+                            0.00 kg
+                        </span>
+                        {% endif %}
+                    </div>
+                    <p class="text-xs text-[#888888] mt-1">{% translate "Media:" %} {{ avg_weight|floatformat:2 }} kg</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-2 text-[#888888]">
+                <p class="text-xs mb-2">{% translate "Nessun dato sul peso in questo periodo" %}</p>
+                <a href="{% url 'weight:import-csv' %}" class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:bg-[#caf300]/10 hover:border-[#caf300]/20 text-[10px] text-[#caf300] font-bold uppercase tracking-wider transition-colors duration-300">
+                    {% translate "Importa dati" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Exercises Section -->
+    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 md:p-8 shadow-md mt-2">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Analisi Esercizi Top" %}</h3>
+                <p class="text-xs text-[#888888]">{% translate "I 10 esercizi con maggior volume di allenamento." %}</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+                <span class="material-symbols-outlined text-[#caf300] text-xl">bar_chart</span>
+            </div>
+        </div>
+
+        {% if exercise_stats %}
+        <div class="space-y-6">
+            {% for stat in exercise_stats %}
+            <div class="group">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="min-w-0 pr-4">
+                        <span class="text-white font-bold block truncate group-hover:text-[#caf300] transition-colors duration-200">
+                            {{ stat.name }}
+                        </span>
+                        <span class="text-xs text-[#888888]">
+                            {{ stat.sets_completed }} {% translate "serie" %} &bull; {{ stat.total_repetitions }} {% translate "reps" %}
+                        </span>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <span class="text-white font-bold block">
+                            {{ stat.total_volume }} <span class="text-xs text-[#888888]">kg vol</span>
+                        </span>
+                        <span class="text-xs text-[#888888]">{% translate "Max:" %} {{ stat.max_weight }} kg</span>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-[#201f1f] h-2.5 rounded-full overflow-hidden">
+                    <div class="bg-[#caf300] h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(202,243,0,0.35)]" 
+                         style="width: {{ stat.volume_percentage }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    </div> <!-- Close view-section-dati -->
+
+    <!-- Grafici View (Charts View) -->
+    <div id="view-section-grafici" class="hidden space-y-6 transition-all duration-300">
+        <div class="grid grid-cols-1 gap-6">
+            <!-- Weight Trend Chart Card -->
+            <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md hover:border-[#caf300]/30 transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Andamento Peso" %}</h3>
+                        <p class="text-xs text-[#888888]">{% translate "Evoluzione del tuo peso nel periodo selezionato" %}</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[#caf300] text-xl">scale</span>
+                    </div>
+                </div>
+                <div class="relative w-full h-[320px] flex items-center justify-center">
+                    <canvas id="weightChart"></canvas>
+                    <div id="weightChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-[#888888]">
+                        <span class="material-symbols-outlined text-4xl mb-2 text-white/20">scale</span>
+                        <p class="text-xs">{% translate "Nessun dato sul peso in questo periodo" %}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Volume & Activity Chart Card -->
+            <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md hover:border-[#caf300]/30 transition-all duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Volume di Allenamento & Attività" %}</h3>
+                        <p class="text-xs text-[#888888]">{% translate "Volume giornaliero (barre) e sessioni completate (linea)" %}</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[#caf300] text-xl">monitoring</span>
+                    </div>
+                </div>
+                <div class="relative w-full h-[320px] flex items-center justify-center">
+                    <canvas id="activityChart"></canvas>
+                    <div id="activityChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-[#888888]">
+                        <span class="material-symbols-outlined text-4xl mb-2 text-white/20">fitness_center</span>
+                        <p class="text-xs">{% translate "Nessun allenamento registrato in questo periodo" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+    // Safely parse JSON datasets passed from the Django view
+    const weightData = JSON.parse('{{ weight_data_json|escapejs }}');
+    const activityData = JSON.parse('{{ activity_data_json|escapejs }}');
+    const rangeParam = '{{ range }}';
+
+    // Helper function to format dates nicely based on period
+    function formatDate(dateStr, range) {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        
+        if (range === 'weekly') {
+            const days = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+            return `${days[date.getDay()]} ${date.getDate()}`;
+        } else if (range === 'yearly') {
+            const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+            return `${months[date.getMonth()]} ${date.getFullYear().toString().substr(-2)}`;
+        } else {
+            const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+            return `${date.getDate()} ${months[date.getMonth()]}`;
+        }
+    }
+
+    // Toggle logic with localStorage support
+    const btnDati = document.getElementById('btn-view-dati');
+    const btnGrafici = document.getElementById('btn-view-grafici');
+    const sectionDati = document.getElementById('view-section-dati');
+    const sectionGrafici = document.getElementById('view-section-grafici');
+
+    function setViewMode(mode) {
+        if (mode === 'grafici') {
+            sectionDati.classList.add('hidden');
+            sectionGrafici.classList.remove('hidden');
+            
+            btnGrafici.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 bg-[#caf300] text-[#131313] font-bold shadow-sm';
+            btnDati.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 text-[#888888] hover:text-white hover:bg-white/[0.04]';
+            
+            localStorage.setItem('progress_view_mode', 'grafici');
+        } else {
+            sectionGrafici.classList.add('hidden');
+            sectionDati.classList.remove('hidden');
+            
+            btnDati.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 bg-[#caf300] text-[#131313] font-bold shadow-sm';
+            btnGrafici.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 text-[#888888] hover:text-white hover:bg-white/[0.04]';
+            
+            localStorage.setItem('progress_view_mode', 'dati');
+        }
+    }
+
+    if (btnDati && btnGrafici) {
+        btnDati.addEventListener('click', () => setViewMode('dati'));
+        btnGrafici.addEventListener('click', () => setViewMode('grafici'));
+        
+        const savedMode = localStorage.getItem('progress_view_mode');
+        setViewMode(savedMode === 'grafici' ? 'grafici' : 'dati');
+    }
+
+    // Weight Chart initialization
+    const weightCanvas = document.getElementById('weightChart');
+    if (weightCanvas && weightData.length > 0) {
+        const ctx = weightCanvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(202, 243, 0, 0.25)');
+        gradient.addColorStop(1, 'rgba(202, 243, 0, 0.0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: weightData.map(d => formatDate(d.date, rangeParam)),
+                datasets: [{
+                    label: 'Peso (kg)',
+                    data: weightData.map(d => d.weight),
+                    borderColor: '#caf300',
+                    backgroundColor: gradient,
+                    fill: true,
+                    borderWidth: 3,
+                    tension: 0.3,
+                    pointBackgroundColor: '#caf300',
+                    pointBorderColor: '#131313',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#161616',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#2a2a2a',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y.toFixed(2)} kg`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2a2a',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            },
+                            autoSkip: true,
+                            maxTicksLimit: rangeParam === 'yearly' ? 12 : (rangeParam === 'monthly' ? 8 : 7)
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#2a2a2a',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        if (weightCanvas) weightCanvas.style.display = 'none';
+        document.getElementById('weightChartEmpty')?.classList.remove('hidden');
+    }
+
+    // Activity & Volume Chart initialization
+    const activityCanvas = document.getElementById('activityChart');
+    const hasActivityData = activityData.some(d => d.volume > 0 || d.sessions > 0);
+
+    if (activityCanvas && hasActivityData) {
+        const ctx = activityCanvas.getContext('2d');
+        const barGradient = ctx.createLinearGradient(0, 0, 0, 300);
+        barGradient.addColorStop(0, 'rgba(202, 243, 0, 0.95)');
+        barGradient.addColorStop(1, 'rgba(202, 243, 0, 0.3)');
+
+        new Chart(ctx, {
+            data: {
+                labels: activityData.map(d => formatDate(d.date, rangeParam)),
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Volume (kg)',
+                        data: activityData.map(d => d.volume),
+                        backgroundColor: barGradient,
+                        borderColor: 'transparent',
+                        borderRadius: 4,
+                        yAxisID: 'y',
+                        barPercentage: rangeParam === 'weekly' ? 0.6 : (rangeParam === 'monthly' ? 0.8 : 0.9),
+                    },
+                    {
+                        type: 'line',
+                        label: 'Sessioni',
+                        data: activityData.map(d => d.sessions),
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#131313',
+                        pointBorderWidth: 1.5,
+                        pointRadius: rangeParam === 'yearly' ? 1 : 3,
+                        pointHoverRadius: 5,
+                        yAxisID: 'y1',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 11
+                            },
+                            boxWidth: 12,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#161616',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#2a2a2a',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 12,
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2a2a',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            },
+                            autoSkip: true,
+                            maxTicksLimit: rangeParam === 'yearly' ? 12 : (rangeParam === 'monthly' ? 8 : 7)
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: {
+                            color: '#2a2a2a',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            },
+                            callback: function(value) {
+                                return value + ' kg';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Volume',
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                        ticks: {
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            },
+                            stepSize: 1,
+                            precision: 0
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sessioni',
+                            color: '#888888',
+                            font: {
+                                family: 'Inter',
+                                size: 10
+                            }
+                        },
+                        min: 0
+                    }
+                }
+            }
+        });
+    } else {
+        if (activityCanvas) activityCanvas.style.display = 'none';
+        document.getElementById('activityChartEmpty')?.classList.remove('hidden');
+    }
+</script>
+{% endblock %}

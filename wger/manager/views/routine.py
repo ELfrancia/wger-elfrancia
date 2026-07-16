@@ -230,28 +230,31 @@ def delete_day_tailwind(request, routine_pk, day_pk):
 def add_exercise_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
     if request.method == 'POST':
-        form = AddExerciseForm(request.POST)
-        if form.is_valid():
-            exercise = form.cleaned_data['exercise']
-            sets = form.cleaned_data['sets']
-            reps = form.cleaned_data['reps']
-            weight = form.cleaned_data['weight']
-            
+        exercise_ids = request.POST.getlist('exercise')
+        
+        if exercise_ids:
             max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
             slot = Slot.objects.create(
                 day=day,
                 order=(max_order or 0) + 1
             )
             
-            slot_entry = SlotEntry.objects.create(
-                slot=slot,
-                exercise=exercise,
-                order=1
-            )
-            
-            SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=sets)
-            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
-            WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight)
+            for idx, ex_id in enumerate(exercise_ids):
+                from wger.exercises.models import Exercise
+                exercise = get_object_or_404(Exercise, id=ex_id)
+                
+                slot_entry = SlotEntry.objects.create(
+                    slot=slot,
+                    exercise=exercise,
+                    order=idx + 1
+                )
+                
+                SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+                WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
+                
+            from wger.manager.helpers import reset_routine_cache
+            reset_routine_cache(day.routine)
             
             if request.headers.get('HX-Request'):
                 response = HttpResponse()
@@ -334,13 +337,25 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
     if request.method == 'POST':
         reps = request.POST.get('reps')
         weight = request.POST.get('weight')
-        first_entry = slot.entries.first()
-        if first_entry and reps and weight:
+        comment = request.POST.get('comment', '').strip()
+        exercise_id = request.POST.get('exercise_id')
+        
+        target_exercise = None
+        if exercise_id:
+            from wger.exercises.models import Exercise
+            target_exercise = get_object_or_404(Exercise, id=exercise_id)
+        else:
+            first_entry = slot.entries.first()
+            if first_entry:
+                target_exercise = first_entry.exercise
+                
+        if target_exercise and reps and weight:
             max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
             slot_entry = SlotEntry.objects.create(
                 slot=slot,
-                exercise=first_entry.exercise,
-                order=(max_order or 0) + 1
+                exercise=target_exercise,
+                order=(max_order or 0) + 1,
+                comment=comment
             )
             SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
             RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
@@ -369,6 +384,63 @@ def delete_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
     from wger.manager.helpers import reset_routine_cache
     reset_routine_cache(slot.day.routine)
     
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+@login_required
+def update_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
+    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    entry = get_object_or_404(SlotEntry, pk=entry_pk, slot=slot)
+    if request.method == 'POST':
+        reps = request.POST.get('reps')
+        weight = request.POST.get('weight')
+        
+        if reps is not None:
+            rep_config, created = RepetitionsConfig.objects.get_or_create(
+                slot_entry=entry,
+                iteration=1,
+                defaults={'value': reps}
+            )
+            if not created:
+                rep_config.value = reps
+                rep_config.save()
+                
+        if weight is not None:
+            weight_config, created = WeightConfig.objects.get_or_create(
+                slot_entry=entry,
+                iteration=1,
+                defaults={'value': weight}
+            )
+            if not created:
+                weight_config.value = weight
+                weight_config.save()
+                
+        from wger.manager.helpers import reset_routine_cache
+        reset_routine_cache(slot.day.routine)
+        
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+@login_required
+def update_set_notes_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
+    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    entry = get_object_or_404(SlotEntry, pk=entry_pk, slot=slot)
+    if request.method == 'POST':
+        comment = request.POST.get('comment', '').strip()
+        entry.comment = comment
+        entry.save()
+        
+        from wger.manager.helpers import reset_routine_cache
+        reset_routine_cache(slot.day.routine)
+        
     if request.headers.get('HX-Request'):
         response = HttpResponse()
         response['HX-Redirect'] = slot.day.routine.get_absolute_url()

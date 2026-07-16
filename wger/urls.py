@@ -25,6 +25,8 @@ from django.contrib.sitemaps.views import (
     sitemap,
 )
 from django.urls import path
+from django.views.generic import TemplateView
+
 
 # Third Party
 from drf_spectacular.views import (
@@ -297,6 +299,22 @@ urlpatterns = i18n_patterns(
 urlpatterns += [
     path('i18n/', include('django.conf.urls.i18n')),
     path('robots.txt', TextTemplateView.as_view(template_name='robots.txt'), name='robots'),
+    path(
+        'manifest.json',
+        TemplateView.as_view(
+            template_name='manifest.json',
+            content_type='application/json',
+        ),
+        name='manifest',
+    ),
+    path(
+        'sw.js',
+        TemplateView.as_view(
+            template_name='sw.js',
+            content_type='application/javascript',
+        ),
+        name='service-worker',
+    ),
     # allauth account pages are mounted without a language prefix: the OAuth
     # callback's redirect_uri has to be stable
     path('account/', include('allauth.urls')),
