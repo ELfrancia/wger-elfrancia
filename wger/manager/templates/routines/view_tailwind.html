@@ -334,5 +334,18 @@ function toggleAddSetForm(formId) {
         }
     }
 }
+
+function toggleNoteField(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        if (container.classList.contains('hidden')) {
+            container.classList.remove('hidden');
+            const input = container.querySelector('input[name="comment"]');
+            if (input) input.focus();
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+}
 </script>
 {% endblock %}
