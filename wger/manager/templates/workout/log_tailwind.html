@@ -4,6 +4,51 @@
 {% block title %}Active Workout - Onyx{% endblock %}
 
 {% block content %}
+<!-- Full-Screen Rest Timer Overlay -->
+<div id="rest-timer-overlay" class="fixed inset-0 z-50 bg-[#131313] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
+    <!-- Top header label -->
+    <div class="text-center">
+        <span id="overlay-header-label" class="text-[10px] text-gray-500 uppercase tracking-widest font-black transition-colors">{% translate "Tempo di recupero" %}</span>
+    </div>
+
+    <!-- Central timer display -->
+    <div class="flex flex-col items-center justify-center flex-grow w-full">
+        <div id="overlay-timer-display" class="font-display text-[90px] sm:text-[120px] leading-none text-[#caf300] font-black tracking-tighter tabular-nums mb-2 select-none transition-colors">
+            00:45
+        </div>
+        <div id="overlay-status-label" class="text-2xl font-black tracking-widest uppercase hidden text-black transition-colors">
+            {% translate "Tempo Scaduto" %}
+        </div>
+    </div>
+
+    <!-- Adjustment controls and Presets -->
+    <div id="overlay-controls-container" class="flex flex-col items-center gap-6 w-full max-w-sm mb-12">
+        <!-- Adjust +/- Buttons -->
+        <div class="flex items-center justify-center gap-6">
+            <button type="button" onclick="adjustTimer(-10)" class="w-12 h-12 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-white/30 text-white flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-xl">remove</span>
+            </button>
+            <button type="button" onclick="adjustTimer(10)" class="w-12 h-12 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-white/30 text-white flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-xl">add</span>
+            </button>
+        </div>
+
+        <!-- Presets -->
+        <div class="flex flex-wrap justify-center gap-2">
+            <button type="button" onclick="setTimerPreset(30)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">30s</button>
+            <button type="button" onclick="setTimerPreset(60)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">1:00</button>
+            <button type="button" onclick="setTimerPreset(90)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">1:30</button>
+            <button type="button" onclick="setTimerPreset(120)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">2:00</button>
+        </div>
+    </div>
+
+    <!-- Action Footer Button -->
+    <div class="w-full max-w-xs text-center">
+        <button id="overlay-back-btn" type="button" onclick="closeOverlay()" class="w-full border border-white/20 hover:border-white/50 text-white hover:bg-white/5 min-h-[50px] py-3 rounded-full flex items-center justify-center font-bold text-xs tracking-widest uppercase transition-all duration-300">
+            {% translate "Torna al Workout" %}
+        </button>
+    </div>
+</div>
 <main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-3xl mx-auto pb-24">
     <!-- Top Progress Bar & Workout Name -->
     <div class="w-full flex flex-col pt-4 px-6 pb-4">
@@ -141,6 +186,13 @@
     let isRunning = false;
 
     const timerDisplay = document.getElementById('timer-display');
+    const overlay = document.getElementById('rest-timer-overlay');
+    const overlayTimerDisplay = document.getElementById('overlay-timer-display');
+    const overlayStatusLabel = document.getElementById('overlay-status-label');
+    const overlayControls = document.getElementById('overlay-controls-container');
+    const overlayBackBtn = document.getElementById('overlay-back-btn');
+    const overlayHeaderLabel = document.getElementById('overlay-header-label');
+
     const btnPlay = document.getElementById('btn-timer-play');
     const iconPlay = document.getElementById('icon-timer-play');
     const textPlay = document.getElementById('text-timer-play');
@@ -151,13 +203,76 @@
         return `${m}:${s}`;
     }
 
+    function openOverlay() {
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+    }
+
     function updateDisplay() {
+        const timeStr = formatTime(timeLeft);
         if (timerDisplay) {
-            timerDisplay.innerText = formatTime(timeLeft);
-            if (timeLeft <= 0) {
+            timerDisplay.innerText = timeStr;
+        }
+        if (overlayTimerDisplay) {
+            overlayTimerDisplay.innerText = timeStr;
+        }
+
+        if (timeLeft <= 0) {
+            // Expired state: Turn screen yellow-green, make text black, show TEMPO SCADUTO
+            if (overlay) {
+                overlay.classList.remove('bg-[#131313]');
+                overlay.classList.add('bg-[#caf300]');
+            }
+            if (overlayTimerDisplay) {
+                overlayTimerDisplay.classList.remove('text-[#caf300]');
+                overlayTimerDisplay.classList.add('text-black', 'animate-pulse');
+            }
+            if (overlayStatusLabel) {
+                overlayStatusLabel.classList.remove('hidden');
+            }
+            if (overlayControls) {
+                overlayControls.classList.add('hidden');
+            }
+            if (overlayHeaderLabel) {
+                overlayHeaderLabel.classList.add('text-black/60');
+                overlayHeaderLabel.classList.remove('text-gray-500');
+            }
+            if (overlayBackBtn) {
+                overlayBackBtn.classList.remove('border-white/20', 'hover:border-white/50', 'text-white', 'hover:bg-white/5');
+                overlayBackBtn.classList.add('bg-black', 'text-[#caf300]', 'hover:bg-black/90', 'border-0');
+                overlayBackBtn.innerText = "{% translate 'Tempo Scaduto - Chiudi' %}";
+            }
+            if (timerDisplay) {
                 timerDisplay.classList.add('text-red-500', 'animate-pulse');
                 timerDisplay.classList.remove('text-[#caf300]');
-            } else {
+            }
+        } else {
+            // Normal state: Restore dark bg and colors
+            if (overlay) {
+                overlay.classList.remove('bg-[#caf300]');
+                overlay.classList.add('bg-[#131313]');
+            }
+            if (overlayTimerDisplay) {
+                overlayTimerDisplay.classList.add('text-[#caf300]');
+                overlayTimerDisplay.classList.remove('text-black', 'animate-pulse');
+            }
+            if (overlayStatusLabel) {
+                overlayStatusLabel.classList.add('hidden');
+            }
+            if (overlayControls) {
+                overlayControls.classList.remove('hidden');
+            }
+            if (overlayHeaderLabel) {
+                overlayHeaderLabel.classList.remove('text-black/60');
+                overlayHeaderLabel.classList.add('text-gray-500');
+            }
+            if (overlayBackBtn) {
+                overlayBackBtn.classList.add('border-white/20', 'hover:border-white/50', 'text-white', 'hover:bg-white/5');
+                overlayBackBtn.classList.remove('bg-black', 'text-[#caf300]', 'hover:bg-black/90', 'border-0');
+                overlayBackBtn.innerText = "{% translate 'Torna al Workout' %}";
+            }
+            if (timerDisplay) {
                 timerDisplay.classList.remove('text-red-500', 'animate-pulse');
                 timerDisplay.classList.add('text-[#caf300]');
             }
@@ -167,6 +282,7 @@
     function startCountdown() {
         if (timerInterval) clearInterval(timerInterval);
         isRunning = true;
+        openOverlay(); // Open overlay on start
         if (textPlay) textPlay.innerText = "{% translate 'Pause' %}";
         if (iconPlay) iconPlay.innerText = "pause";
         if (btnPlay) {
@@ -230,6 +346,17 @@
         pauseCountdown();
         timerDuration = seconds;
         timeLeft = seconds;
+        updateDisplay();
+        startCountdown(); // auto restart on preset change
+    }
+
+    function closeOverlay() {
+        pauseCountdown();
+        if (overlay) {
+            overlay.classList.add('hidden');
+        }
+        // reset timer duration for the next use
+        timeLeft = timerDuration;
         updateDisplay();
     }
 
