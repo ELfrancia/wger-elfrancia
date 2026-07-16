@@ -14,5 +14,9 @@
 - [x] Task 8: Refactor template layout and add JavaScript Rest Timer logic (`wger/manager/templates/workout/log_tailwind.html`)
 - [x] Task 9: Verify Rest Timer layout and controls
 
+## Plan D: Full-Screen Rest Overlay
+- [ ] Task 10: Implement Full-Screen Overlay layout in template (`wger/manager/templates/workout/log_tailwind.html`)
+- [ ] Task 11: Implement JavaScript Overlay state transition and alarm style changes (`wger/manager/templates/workout/log_tailwind.html`)
+
 ## Verification
 - [x] Task 7: Verify layout and functionality on host and container
