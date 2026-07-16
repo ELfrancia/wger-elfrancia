@@ -44,4 +44,9 @@ urlpatterns = [
         views.weight_overview_tailwind,
         name='overview',
     ),
+    path(
+        'activity-details/',
+        views.weight_activity_details,
+        name='activity-details',
+    ),
 ]
