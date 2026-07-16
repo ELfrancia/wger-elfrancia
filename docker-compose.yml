@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - DJANGO_SETTINGS_MODULE=settings.local_dev
+      - PYTHONUNBUFFERED=1
+    command: python manage.py runserver 0.0.0.0:8000
