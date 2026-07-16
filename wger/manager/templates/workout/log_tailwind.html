@@ -52,8 +52,12 @@
 <main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-3xl mx-auto pb-24">
     <!-- Top Progress Bar & Workout Name -->
     <div class="w-full flex flex-col pt-4 px-6 pb-4">
-        <div class="w-full h-1 bg-[#262626] rounded-full overflow-hidden mb-4">
-            <div class="h-full bg-[#caf300] shadow-sm transition-all duration-1000 w-1/2"></div>
+        <div class="w-full h-1 bg-[#262626] rounded-full overflow-hidden mb-2">
+            <div id="workout-progress-bar" class="h-full bg-[#caf300] shadow-[0_0_8px_rgba(202,243,0,0.4)] transition-all duration-500" style="width: {{ progress_percentage }}%;"></div>
+        </div>
+        <div class="w-full flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
+            <span>{% translate "Progresso" %}</span>
+            <span id="workout-progress-text">{{ progress_percentage }}%</span>
         </div>
         <div class="w-full text-center flex justify-between items-center">
             <span class="font-label-caps text-xs text-gray-400 uppercase tracking-widest font-bold">{{ day.routine.name }} - {{ day.name }}</span>
@@ -119,25 +123,38 @@
                         
                         <div class="flex flex-col gap-3">
                             {% for slot_entry in slot.entries.all %}
-                                <div class="flex items-center justify-between py-2 border-b border-[#262626]/20 last:border-0">
+                                <div class="set-row flex items-center justify-between py-2 border-b border-[#262626]/20 last:border-0">
                                     <span class="text-sm text-gray-400 font-medium">Set {{ forloop.counter }}</span>
                                     
                                     <div class="flex items-center gap-3">
                                         {% if slot_entry.id in logged_set_ids %}
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-[10px] text-[#caf300] font-bold bg-[#caf300]/10 border border-[#caf300]/30 px-3 py-1 rounded-full uppercase tracking-wider">
-                                                    {% translate "Completed" %}
-                                                </span>
-                                                <div class="w-8 h-8 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center font-bold shadow-sm">
-                                                    ✓
+                                            <form class="flex items-center gap-2">
+                                                <!-- Reps Input -->
+                                                <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] rounded-full px-3 py-1 transition-colors">
+                                                    <input type="number" disabled value="{{ slot_entry.reps_config.reps }}" class="w-10 bg-transparent border-0 p-0 text-center font-bold text-gray-400 focus:ring-0 text-sm">
+                                                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{% translate "reps" %}</span>
                                                 </div>
-                                            </div>
+                                                
+                                                <span class="text-xs text-gray-500">@</span>
+                                                
+                                                <!-- Weight Input -->
+                                                <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] rounded-full px-3 py-1 transition-colors">
+                                                    <input type="number" disabled value="{{ slot_entry.weight_config.weight }}" class="w-12 bg-transparent border-0 p-0 text-center font-bold text-gray-400 focus:ring-0 text-sm">
+                                                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{% translate "kg" %}</span>
+                                                </div>
+                                                
+                                                <!-- Completed Checkmark -->
+                                                <button type="button" disabled class="w-8 h-8 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center font-bold shadow-sm cursor-default">
+                                                    <span class="material-symbols-outlined text-sm font-black">check</span>
+                                                </button>
+                                            </form>
                                         {% else %}
                                             <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" class="flex items-center gap-2">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="exercise_id" value="{{ slot.obj.id }}">
                                                 <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id }}">
                                                 
+                                                <!-- Reps Input -->
                                                 <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] hover:border-[#caf300]/50 rounded-full px-3 py-1 transition-colors">
                                                     <input type="number" name="repetitions" value="{{ slot_entry.reps_config.reps }}" class="w-10 bg-transparent border-0 p-0 text-center font-bold text-white focus:ring-0 text-sm">
                                                     <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{% translate "reps" %}</span>
@@ -145,12 +162,14 @@
                                                 
                                                 <span class="text-xs text-gray-500">@</span>
                                                 
+                                                <!-- Weight Input -->
                                                 <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] hover:border-[#caf300]/50 rounded-full px-3 py-1 transition-colors">
                                                     <input type="number" step="0.5" name="weight" value="{{ slot_entry.weight_config.weight }}" class="w-12 bg-transparent border-0 p-0 text-center font-bold text-white focus:ring-0 text-sm">
                                                     <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{% translate "kg" %}</span>
                                                 </div>
                                                 
-                                                <button type="submit" class="w-8 h-8 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center hover:scale-110 transition-transform shadow-sm hover:shadow-md">
+                                                <!-- Checkmark Button (Non-illuminated) -->
+                                                <button type="submit" class="w-8 h-8 rounded-full bg-[#1c1b1b] border border-[#262626] text-gray-500 hover:text-white hover:border-gray-500 flex items-center justify-center transition-all shadow-sm hover:scale-105">
                                                     <span class="material-symbols-outlined text-sm font-bold">check</span>
                                                 </button>
                                             </form>
@@ -378,9 +397,24 @@
         }
     }
 
+    function updateProgressBar() {
+        const totalSets = document.querySelectorAll('.set-row').length;
+        const completedSets = document.querySelectorAll('.set-row button[disabled]').length;
+        const percentage = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+        
+        const progressBar = document.getElementById('workout-progress-bar');
+        const progressText = document.getElementById('workout-progress-text');
+        
+        if (progressBar) progressBar.style.width = `${percentage}%`;
+        if (progressText) progressText.innerText = `${percentage}%`;
+    }
+
     // Auto-trigger timer when a set is logged via HTMX
     document.body.addEventListener('htmx:afterOnLoad', function(evt) {
         if (evt.detail.xhr && evt.detail.xhr.status === 200) {
+            // Update the progress bar!
+            setTimeout(updateProgressBar, 50);
+
             // Reset and start countdown automatically!
             timeLeft = timerDuration;
             updateDisplay();
@@ -390,5 +424,6 @@
 
     // Initial render
     updateDisplay();
+    updateProgressBar();
 </script>
 {% endblock %}
