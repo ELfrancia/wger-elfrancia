@@ -110,6 +110,9 @@ DBCONFIG_PG = {
 DBCONFIG_SQLITE = {
     'ENGINE': 'django_prometheus.db.backends.sqlite3',
     'NAME': BASE_DIR.parent / 'database.sqlite',
+    'OPTIONS': {
+        'timeout': 20,
+    }
 }
 
 DATABASES = {
@@ -123,3 +126,6 @@ try:
     from .local_dev_extra import *
 except ImportError:
     pass
+
+# Reload server to clear cache and apply database deletion
+
