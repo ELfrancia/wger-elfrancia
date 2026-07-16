@@ -1,0 +1,139 @@
+{% load i18n %}
+
+<div id="activity-calendar-container" class="flex flex-col gap-4 w-full">
+    <!-- Activity Calendar Card -->
+    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-5 shadow-md">
+        <h3 class="text-white font-bold text-base tracking-tight text-center mb-4">{% translate "Calendario Attività" %}</h3>
+        
+        <!-- Days Grid -->
+        <div class="grid grid-cols-7 gap-1.5 w-full">
+            {% for day in week_days %}
+                <button hx-get="{% url 'weight:overview' %}?selected_date={{ day.date|date:'Y-m-d' }}" 
+                        hx-target="#activity-calendar-container" 
+                        hx-swap="outerHTML"
+                        class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all duration-300 {% if day.is_selected %}bg-[#caf300] text-[#131313] font-black shadow-[0_0_12px_rgba(202,243,0,0.3)]{% else %}bg-[#1c1c1e] hover:bg-[#252528] text-neutral-400 hover:text-white border border-white/[0.02]{% endif %}">
+                    <span class="text-[9px] font-bold uppercase tracking-wider mb-0.5">{{ day.day_name }}</span>
+                    <span class="text-xs font-black">{{ day.day_num }}</span>
+                    {% if day.has_workout and not day.is_selected %}
+                        <div class="w-1.5 h-1.5 bg-[#caf300] rounded-full mt-0.5"></div>
+                    {% endif %}
+                </button>
+            {% endfor %}
+        </div>
+
+        <!-- Month Navigation Row -->
+        <div class="flex items-center justify-between mt-4 px-2 text-xs font-bold text-neutral-400">
+            <button hx-get="{% url 'weight:overview' %}?selected_date={{ prev_week_date|date:'Y-m-d' }}" 
+                    hx-target="#activity-calendar-container" 
+                    hx-swap="outerHTML"
+                    class="hover:text-white flex items-center justify-center p-1 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">arrow_back_ios</span>
+            </button>
+            <span class="text-white uppercase tracking-wider font-extrabold text-[10px]">{{ current_month_name }}</span>
+            <button hx-get="{% url 'weight:overview' %}?selected_date={{ next_week_date|date:'Y-m-d' }}" 
+                    hx-target="#activity-calendar-container" 
+                    hx-swap="outerHTML"
+                    class="hover:text-white flex items-center justify-center p-1 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">arrow_forward_ios</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Workout Summary Card -->
+    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-5 shadow-md">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-white font-bold text-sm tracking-tight">{% translate "Resoconto Allenamenti" %}</h3>
+            <span class="text-[10px] text-neutral-500 font-bold font-mono">{{ selected_date_display }}</span>
+        </div>
+
+        {% if selected_sessions %}
+            <div class="space-y-4">
+                {% for session in selected_sessions %}
+                    <div class="p-4 bg-[#1c1c1e]/60 border border-white/[0.03] rounded-2xl">
+                        <div class="flex items-center justify-between border-b border-white/[0.05] pb-2.5 mb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300]">
+                                    <span class="material-symbols-outlined text-base">fitness_center</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-white leading-none">
+                                        {% if session.routine %}
+                                            {{ session.routine.name }}
+                                        {% elif session.day %}
+                                            {{ session.day.name }}
+                                        {% else %}
+                                            {% translate "Allenamento" %}
+                                        {% endif %}
+                                    </h4>
+                                    {% if session.time_start %}
+                                        <span class="text-[9px] text-neutral-500 mt-1 block">
+                                            {{ session.time_start|time:"H:i" }} - {{ session.time_end|time:"H:i" }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if session.impression %}
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
+                                    {% if session.impression == '3' %}
+                                        bg-emerald-950/40 border border-emerald-500/20 text-emerald-400
+                                    {% elif session.impression == '2' %}
+                                        bg-amber-950/40 border border-amber-500/20 text-amber-400
+                                    {% else %}
+                                        bg-red-950/40 border border-red-500/20 text-red-400
+                                    {% endif %}">
+                                    {% if session.impression == '3' %}
+                                        {% translate "Good" %}
+                                    {% elif session.impression == '2' %}
+                                        {% translate "Neutral" %}
+                                    {% else %}
+                                        {% translate "Bad" %}
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Exercises Logged in this Session -->
+                        <div class="space-y-3">
+                            {% for ex_data in session_exercises %}
+                                {% if ex_data.session_id == session.id %}
+                                    <div>
+                                        <h5 class="text-xs font-bold text-white mb-1.5 flex items-center gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#caf300]"></span>
+                                            {{ ex_data.exercise_name }}
+                                        </h5>
+                                        <div class="flex flex-wrap gap-1.5 pl-3">
+                                            {% for log in ex_data.logs %}
+                                                <span class="bg-[#131313]/60 border border-white/[0.03] rounded px-2 py-0.5 text-[10px] text-neutral-300 font-mono">
+                                                    Set {{ forloop.counter }}: {{ log.repetitions|floatformat:0 }} reps &times; {{ log.weight|floatformat:1 }} kg
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        {% if session.notes %}
+                            <div class="mt-3.5 pt-2.5 border-t border-white/[0.05] flex gap-2 items-start text-[10px] text-neutral-400 italic">
+                                <span class="material-symbols-outlined text-[12px] mt-0.5">notes</span>
+                                <p class="flex-1">{{ session.notes }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty Placeholder -->
+            <div class="flex flex-col items-center justify-center py-8 text-center gap-3 border border-dashed border-white/[0.06] rounded-2xl bg-transparent">
+                <div class="w-10 h-10 rounded-full bg-neutral-900 border border-white/[0.04] flex items-center justify-center text-neutral-600">
+                    <span class="material-symbols-outlined text-lg">calendar_today</span>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-white">{% translate "Nessun allenamento registrato" %}</h4>
+                    <p class="text-[10px] text-neutral-500 mt-1 max-w-[200px]">{% translate "Nessun workout registrato per questa data." %}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
