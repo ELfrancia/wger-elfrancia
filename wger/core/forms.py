@@ -327,7 +327,7 @@ class PasswordResetFormCaptcha(PasswordResetForm):
 class UserAddForm(forms.ModelForm):
     password = forms.CharField(
         label=_('Password'),
-        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        widget=PasswordInputWithToggle(attrs={'autocomplete': 'new-password'}),
         help_text=_('A temporary password that the user will be forced to change on their first login.'),
     )
 
@@ -339,6 +339,7 @@ class UserAddForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_class = 'wger-form'
+        self.helper.attrs = {'novalidate': True}
         self.helper.layout = Layout(
             'username',
             'email',
@@ -348,13 +349,15 @@ class UserAddForm(forms.ModelForm):
                 css_class='form-row',
             ),
             'password',
-            ButtonHolder(Submit('submit', _('Add User'), css_class='btn-success btn-block')),
+            ButtonHolder(Submit('submitBtn', _('Add User'), css_class='btn-success btn-block')),
         )
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email=email).exists():
-            raise forms.ValidationError(_('A user with that email already exists.'))
+        if not email:
+            return email
+        if any(u.pk != self.instance.pk for u in filter_users_by_email(email)):
+            raise forms.ValidationError(_('This e-mail address is already in use.'))
         return email
 
     def save(self, commit=True):
@@ -362,5 +365,11 @@ class UserAddForm(forms.ModelForm):
         user.set_password(self.cleaned_data['password'])
         if commit:
             user.save()
+            try:
+                profile = user.userprofile
+                profile.needs_password_change = True
+                profile.save()
+            except UserProfile.DoesNotExist:
+                pass
         return user
 
