@@ -18,17 +18,37 @@
 import copy
 import datetime
 import logging
+import os
+import threading
 from typing import List
+import uuid
+
+# Third Party
+import requests
 
 # Django
 from django.contrib.auth.decorators import login_required
 from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
+    JsonResponse,
 )
 from django.shortcuts import get_object_or_404, render
+from django.utils.text import slugify
+from django.views.decorators.http import require_POST
 
 # wger
+from wger.core.models import Language
+from wger.core.models.license import License
+from wger.exercises.models import (
+    CalisthenicsExercise,
+    Exercise,
+    Translation,
+    ExerciseCategory,
+    Muscle,
+    Equipment,
+    ExerciseTag,
+)
 from wger.manager.models import (
     AbstractChangeConfig,
     Routine,
@@ -464,5 +484,130 @@ def update_notes_tailwind(request, routine_pk, day_pk, slot_pk):
         response['HX-Redirect'] = slot.day.routine.get_absolute_url()
         return response
     return redirect('manager:routine:view', pk=routine_pk)
+
+
+def _async_push_to_baserow(name, instructions, skill_family, target_muscle, equipment_name):
+    baserow_url = os.environ.get('BASEROW_URL', 'http://localhost:8080').rstrip('/')
+    baserow_token = os.environ.get('BASEROW_TOKEN')
+    baserow_table_id = os.environ.get('BASEROW_TABLE_ID', '322')
+
+    if not baserow_token:
+        logger.warning("Baserow token not configured. Skipping sync.")
+        return
+
+    headers = {
+        "Authorization": f"Token {baserow_token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "Name": name,
+        "Instructions": instructions,
+        "Skill Family": skill_family,
+        "Target Muscle": target_muscle,
+        "Equipment": equipment_name,
+        "Is Published": True,
+        "Discipline": "calisthenics",
+        "Source Exercise ID": f"custom-{uuid.uuid4().hex[:8]}"
+    }
+
+    url = f"{baserow_url}/api/database/rows/table/{baserow_table_id}/?user_field_names=true"
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        logger.info(f"Successfully synced custom exercise '{name}' to Baserow.")
+    except Exception as e:
+        logger.error(f"Failed to sync custom exercise to Baserow: {e}")
+
+
+@login_required
+@require_POST
+def add_custom_exercise_tailwind(request, routine_pk, day_pk):
+    name = request.POST.get('name', '').strip()
+    instructions = request.POST.get('instructions', '').strip()
+    skill_family = request.POST.get('skill_family', 'other').strip()
+    target_muscle_name = request.POST.get('target_muscle', '').strip()
+    weighted = request.POST.get('weighted') == 'on'
+
+    if not name:
+        return JsonResponse({'status': 'error', 'message': 'Name is required'}, status=400)
+
+    # 1. Create CalisthenicsExercise locally
+    source_id = f"custom-{uuid.uuid4().hex[:8]}"
+    slug = f"{slugify(name)}-{source_id}"
+    equipment_name = 'weighted body weight' if weighted else 'body weight'
+    
+    instructions_list = [line.strip() for line in instructions.split('\n') if line.strip()]
+
+    cal_exercise = CalisthenicsExercise.objects.create(
+        source='custom',
+        source_exercise_id=source_id,
+        slug=slug,
+        name=name,
+        instructions=instructions_list,
+        target_muscle=target_muscle_name,
+        equipment=equipment_name,
+        skill_family=skill_family,
+        discipline='calisthenics',
+        is_published=True
+    )
+
+    # 2. Create native Exercise
+    category, _ = ExerciseCategory.objects.get_or_create(name='Calisthenics')
+    default_license = License.objects.first()
+    
+    base_exercise = Exercise.objects.create(
+        uuid=cal_exercise.id,
+        category=category,
+        license=default_license
+    )
+
+    # 3. Associate equipment
+    eq_name = 'Dumbbells' if weighted else 'Body weight'
+    equipment, _ = Equipment.objects.get_or_create(name=eq_name)
+    base_exercise.equipment.add(equipment)
+
+    # 4. Associate target muscle
+    if target_muscle_name:
+        muscle, _ = Muscle.objects.get_or_create(
+            name=target_muscle_name.capitalize(),
+            defaults={'name_en': target_muscle_name, 'is_front': True}
+        )
+        base_exercise.muscles.add(muscle)
+
+    # 5. Create English Translation
+    english_lang = Language.objects.get(short_name='en')
+    Translation.objects.create(
+        exercise=base_exercise,
+        language=english_lang,
+        name=name,
+        description="\n".join(instructions_list),
+        license=default_license
+    )
+
+    # 6. Create initial tags
+    tags = ['bodyweight', 'calisthenics', 'custom']
+    if weighted:
+        tags.append('weighted')
+    if skill_family != 'other':
+        tags.append(skill_family.replace('_', '-'))
+    for t in tags:
+        ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
+
+    # 7. Start background thread to push to Baserow
+    threading.Thread(
+        target=_async_push_to_baserow,
+        args=(name, instructions, skill_family, target_muscle_name, equipment_name),
+        daemon=True
+    ).start()
+
+    # Return response
+    return JsonResponse({
+        'status': 'success',
+        'id': base_exercise.id,
+        'name': name,
+        'muscles': target_muscle_name,
+        'skill_family': skill_family.replace('_', ' ').title()
+    })
 
 

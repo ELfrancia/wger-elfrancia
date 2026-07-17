@@ -95,6 +95,11 @@ patterns_routine = [
         name='add-exercise',
     ),
     path(
+        '<int:routine_pk>/day/<int:day_pk>/exercise/add-custom',
+        routine.add_custom_exercise_tailwind,
+        name='add-custom-exercise',
+    ),
+    path(
         '<int:routine_pk>/day/<int:day_pk>/exercise/<int:slot_pk>/delete',
         routine.delete_exercise_tailwind,
         name='delete-exercise',
