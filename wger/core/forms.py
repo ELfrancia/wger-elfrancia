@@ -322,3 +322,45 @@ class PasswordResetFormCaptcha(PasswordResetForm):
             'captcha',
             ButtonHolder(Submit('submitBtn', _('Submit'), css_class='btn-success btn-block')),
         )
+
+
+class UserAddForm(forms.ModelForm):
+    password = forms.CharField(
+        label=_('Password'),
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        help_text=_('A temporary password that the user will be forced to change on their first login.'),
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_class = 'wger-form'
+        self.helper.layout = Layout(
+            'username',
+            'email',
+            Row(
+                Column('first_name', css_class='col-6'),
+                Column('last_name', css_class='col-6'),
+                css_class='form-row',
+            ),
+            'password',
+            ButtonHolder(Submit('submit', _('Add User'), css_class='btn-success btn-block')),
+        )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError(_('A user with that email already exists.'))
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        return user
+
