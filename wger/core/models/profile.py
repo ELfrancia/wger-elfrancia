@@ -111,6 +111,11 @@ class UserProfile(models.Model):
     Flag to mark a temporary user (demo account)
     """
 
+    needs_password_change = models.BooleanField(
+        verbose_name=_('Needs password change'),
+        default=False,
+    )
+
     #
     # User preferences
     #
