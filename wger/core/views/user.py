@@ -32,6 +32,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    UserPassesTestMixin,
 )
 from django.contrib.auth.models import User
 from django.contrib.auth.views import (
@@ -62,6 +63,7 @@ from django.utils.translation import (
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic import (
+    CreateView,
     DetailView,
     ListView,
     UpdateView,
@@ -91,6 +93,7 @@ from wger.core.forms import (
     UsernameConfirmationForm,
     UserPersonalInformationForm,
     UserPreferencesForm,
+    UserAddForm,
 )
 from wger.gym.helpers import is_same_gym
 from wger.gym.models import (
@@ -716,6 +719,54 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             'users': context['object_list']['members'],
         }
         return context
+
+
+class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = User
+    form_class = UserAddForm
+    template_name = 'form_content.html'
+    success_url = reverse_lazy('core:user:list')
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = _('Add User')
+        return context
+
+    def form_valid(self, form):
+        user = form.save(commit=True)
+
+        from wger.config.models import GymConfig
+        from wger.gym.models import GymUserConfig
+        from wger.utils.language import load_language
+        from django.utils import translation
+        from allauth.account.models import EmailAddress
+
+        profile = user.userprofile
+        profile.needs_password_change = True
+        profile.notification_language = load_language(translation.get_language())
+
+        try:
+            gym_config = GymConfig.objects.get(pk=1)
+            if gym_config.default_gym:
+                profile.gym = gym_config.default_gym
+                GymUserConfig.objects.get_or_create(gym=gym_config.default_gym, user=user)
+        except GymConfig.DoesNotExist:
+            pass
+
+        profile.save()
+
+        if user.email:
+            EmailAddress.objects.get_or_create(
+                user=user,
+                email=user.email,
+                defaults={'primary': True, 'verified': True}
+            )
+
+        messages.success(self.request, _('User successfully created.'))
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class WgerPasswordChangeView(PasswordChangeView):
