@@ -879,6 +879,7 @@ class WgerLoginView(AllauthLoginView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['use_social_auth'] = bool(settings.WGER_SOCIAL_PROVIDERS)
+        context['PASSKEY_LOGIN_ENABLED'] = getattr(settings, 'MFA_PASSKEY_LOGIN_ENABLED', False) and getattr(settings, 'WGER_PASSKEY_LOGIN_ENABLED', False)
         return context
 
 

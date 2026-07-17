@@ -92,6 +92,15 @@ class GymAddUserTestCase(WgerTestCase):
         self.user_login('general_manager1')
         self.add_user()
 
+    def test_add_user_sets_needs_password_change(self):
+        """
+        A user created via GymAddUserView must have needs_password_change set to True.
+        """
+        self.user_login('admin')
+        self.add_user()
+        new_user = User.objects.get(pk=self.client.session['gym.user']['user_pk'])
+        self.assertTrue(new_user.userprofile.needs_password_change)
+
     def test_add_user_registers_email_with_allauth(self):
         """
         A member created by an admin gets an allauth EmailAddress row, so they

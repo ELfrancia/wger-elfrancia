@@ -269,6 +269,9 @@ MFA_TOTP_ISSUER = 'wger'
 MFA_PASSKEY_LOGIN_ENABLED = True
 MFA_PASSKEY_SIGNUP_ENABLED = False
 
+# Disable passkey login in the frontend by default
+WGER_PASSKEY_LOGIN_ENABLED = False
+
 #
 # Social account providers
 #
@@ -564,7 +567,7 @@ USER_AGENTS_CACHE = 'default'
 #
 WGER_SETTINGS = {
     'ALLOW_GUEST_USERS': True,
-    'ALLOW_REGISTRATION': True,
+    'ALLOW_REGISTRATION': False,
     'ALLOW_UPLOAD_VIDEOS': False,
     'EMAIL_FROM': 'wger Workout Manager <wger@example.com>',
     'EXERCISE_CACHE_TTL': 4 * 604800,  # one month; entries are invalidated on write

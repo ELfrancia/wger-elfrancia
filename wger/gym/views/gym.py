@@ -438,6 +438,7 @@ class GymAddUserView(
         # Update profile
         user.userprofile.gym = gym
         user.userprofile.birthdate = form.cleaned_data['birthdate']
+        user.userprofile.needs_password_change = True
         user.userprofile.save()
 
         # Register the email with allauth so the member can log in by email

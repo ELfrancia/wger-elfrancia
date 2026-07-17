@@ -17,6 +17,7 @@ import logging
 from io import StringIO
 
 # Django
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.management import call_command
@@ -37,6 +38,44 @@ class RegistrationTestCase(WgerTestCase):
     """
     Tests registering a new user via the registration form
     """
+
+    def setUp(self):
+        super().setUp()
+        new_wger_settings = settings.WGER_SETTINGS.copy()
+        new_wger_settings['ALLOW_REGISTRATION'] = True
+        self.settings_override = self.settings(WGER_SETTINGS=new_wger_settings)
+        self.settings_override.enable()
+
+    def tearDown(self):
+        self.settings_override.disable()
+        super().tearDown()
+
+    def test_registration_disabled_by_default(self):
+        """
+        With ALLOW_REGISTRATION=False, signup form GET redirects to features page,
+        and POST does not create a user.
+        """
+        new_wger_settings = settings.WGER_SETTINGS.copy()
+        new_wger_settings['ALLOW_REGISTRATION'] = False
+        with self.settings(WGER_SETTINGS=new_wger_settings):
+            # GET signup page redirects
+            response = self.client.get(reverse('core:user:registration'))
+            self.assertEqual(response.status_code, 302)
+            self.assertRedirects(response, reverse('software:features'))
+
+            # POST signup form redirects and doesn't create user
+            registration_data = {
+                'username': 'myusername_disabled',
+                'password1': 'quai8fai7Zae',
+                'password2': 'quai8fai7Zae',
+                'email': 'my.email_disabled@example.com',
+                'g-recaptcha-response': 'PASSED',
+            }
+            count_before = User.objects.count()
+            response = self.client.post(reverse('core:user:registration'), registration_data)
+            count_after = User.objects.count()
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(count_before, count_after)
 
     def test_registration_captcha(self):
         """

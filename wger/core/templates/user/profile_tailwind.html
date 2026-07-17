@@ -70,6 +70,121 @@
         </div>
     </div>
 
+    <!-- Manage / Administration section for administrators -->
+    {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer or user.is_superuser or user.is_staff %}
+    <div class="bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden">
+        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase p-6 pb-2">{% translate "MANAGE" %}</h3>
+        
+        <div class="flex flex-col">
+            {% if perms.gym.manage_gyms or user.is_superuser %}
+                <!-- User list -->
+                <a href="{% url 'core:user:list' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-[#c5c9ac]">group</span>
+                        <div>
+                            <h4 class="text-primary font-bold">{% translate "User list" %}</h4>
+                            <p class="text-caption text-on-surface-variant">{% translate "View and manage registered users" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                </a>
+
+                <!-- Add User -->
+                <a href="{% url 'core:user:add-user' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-[#c5c9ac]">person_add</span>
+                        <div>
+                            <h4 class="text-primary font-bold">{% translate "Add User" %}</h4>
+                            <p class="text-caption text-on-surface-variant">{% translate "Physically add a new user to the database" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                </a>
+
+                <!-- Gym list -->
+                <a href="{% url 'gym:gym:list' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-[#c5c9ac]">corporate_fare</span>
+                        <div>
+                            <h4 class="text-primary font-bold">{% translate "Gyms" %}</h4>
+                            <p class="text-caption text-on-surface-variant">{% translate "Manage gyms and branches" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                </a>
+
+                <!-- Add Gym -->
+                <a href="{% url 'gym:gym:add' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-[#c5c9ac]">add_business</span>
+                        <div>
+                            <h4 class="text-primary font-bold">{% translate "Add Gym" %}</h4>
+                            <p class="text-caption text-on-surface-variant">{% translate "Create a new gym structure" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                </a>
+            {% endif %}
+
+            {% if perms.gym.gym_trainer or perms.gym.manage_gym %}
+                {% if user.userprofile.gym %}
+                    <!-- Gym Members list -->
+                    <a href="{% url 'gym:gym:user-list' user.userprofile.gym.pk %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-[#c5c9ac]">group</span>
+                            <div>
+                                <h4 class="text-primary font-bold">{{ user.userprofile.gym }} (Membri)</h4>
+                                <p class="text-caption text-on-surface-variant">{% translate "Manage members of your gym" %}</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                    </a>
+
+                    <!-- Add Gym Member -->
+                    <a href="{% url 'gym:gym:add-user' user.userprofile.gym.pk %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                        <div class="flex items-center gap-4">
+                            <span class="material-symbols-outlined text-[#c5c9ac]">person_add</span>
+                            <div>
+                                <h4 class="text-primary font-bold">{% translate "Add Gym Member" %}</h4>
+                                <p class="text-caption text-on-surface-variant">{% translate "Create a new member for your gym" %}</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                    </a>
+                {% endif %}
+            {% endif %}
+
+            {% if perms.core.change_language %}
+                <!-- Languages -->
+                <a href="{% url 'core:language:overview' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-[#c5c9ac]">translate</span>
+                        <div>
+                            <h4 class="text-primary font-bold">{% translate "Languages" %}</h4>
+                            <p class="text-caption text-on-surface-variant">{% translate "Manage application languages" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                </a>
+            {% endif %}
+
+            {% if perms.core.change_license %}
+                <!-- Licenses -->
+                <a href="{% url 'core:license:list' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-[#c5c9ac]">description</span>
+                        <div>
+                            <h4 class="text-primary font-bold">{% translate "Licenses" %}</h4>
+                            <p class="text-caption text-on-surface-variant">{% translate "Manage content licenses" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Daily Activity Goals & Settings -->
     <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6">
         <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase mb-4">{% translate "Profile & Activity Settings" %}</h3>

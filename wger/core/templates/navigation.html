@@ -309,10 +309,16 @@
                         <li class="dropdown nav-item">
                             <a href="#" class="dropdown-toggle nav-link text-white"
                                data-bs-toggle="dropdown">
-                                {{ user|format_username }}
+                                <span class="{% fa_class 'cog' %}"></span> {% translate "Settings" %}
                                 <span class="caret"></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-lg-end">
+                                <li>
+                                    <span class="dropdown-item-text text-muted small">
+                                        {{ user|format_username }}
+                                    </span>
+                                </li>
+                                <li class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item"
                                        href="{% url 'core:user:preferences' %}">
@@ -320,11 +326,10 @@
                                     </a>
                                 </li>
                                 {% if not trainer_identity %}
-                                    <li class="dropdown-divider"></li>
                                     <li>
                                         <form method="post" action="{% url 'account_logout' %}">
                                             {% csrf_token %}
-                                            <button type="submit" class="dropdown-item">
+                                            <button type="submit" class="dropdown-item text-danger">
                                                 <span class="{% fa_class 'sign-out-alt' %}"></span>
                                                 {% translate "Logout" %}
                                             </button>
@@ -335,9 +340,55 @@
                                 {#                #}
                                 {# Administration #}
                                 {#                #}
-                                {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer %}
+                                {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer or user.is_superuser or user.is_staff %}
                                     <li class="dropdown-divider"></li>
                                     <li class="dropdown-header">{% translate "Administration" %}</li>
+                                    
+                                    {% if perms.gym.manage_gyms or user.is_superuser %}
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'core:user:list' %}">
+                                                <span class="{% fa_class 'users' %}"></span> {% translate "User list" %}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'core:user:add-user' %}">
+                                                <span class="{% fa_class 'user-plus' %}"></span> {% translate "Add User" %}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'gym:gym:list' %}">
+                                                <span class="{% fa_class 'building' %}"></span> {% translate "Gyms" %}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'gym:gym:add' %}">
+                                                <span class="{% fa_class 'plus' %}"></span> {% translate "Add Gym" %}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {# it's not possible to group expressions '(a or b) and c' #}
+                                    {% if perms.gym.gym_trainer or perms.gym.manage_gym %}
+                                        {% if user.userprofile.gym %}
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="{% url 'gym:gym:user-list' user.userprofile.gym.pk %}">
+                                                    <span class="{% fa_class 'users' %}"></span> {{ user.userprofile.gym }} (Membri)
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="{% url 'gym:gym:add-user' user.userprofile.gym.pk %}">
+                                                    <span class="{% fa_class 'user-plus' %}"></span> Aggiungi membro palestra
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endif %}
+
                                     {% if perms.core.change_language %}
                                         <li>
                                             <a class="dropdown-item"
@@ -369,32 +420,6 @@
                                                 {% translate "Weight units" %}
                                             </a>
                                         </li>
-                                    {% endif %}
-                                    {% if perms.gym.manage_gyms %}
-                                        <li>
-                                            <a class="dropdown-item"
-                                               href="{% url 'core:user:list' %}">
-                                                {% translate "User list" %}
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item"
-                                               href="{% url 'gym:gym:list' %}">
-                                                {% translate "Gyms" %}
-                                            </a>
-                                        </li>
-                                    {% endif %}
-
-                                    {# it's not possible to group expressions '(a or b) and c' #}
-                                    {% if perms.gym.gym_trainer or perms.gym.manage_gym %}
-                                        {% if user.userprofile.gym %}
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="{% url 'gym:gym:user-list' user.userprofile.gym.pk %}">
-                                                    {{ user.userprofile.gym }}
-                                                </a>
-                                            </li>
-                                        {% endif %}
                                     {% endif %}
 
                                     {% if perms.trophies.change_trophy %}
