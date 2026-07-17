@@ -28,8 +28,10 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.translation import gettext as _
 
 # wger
+from wger.core.models import UserProfile
 from wger.utils.helpers import remove_language_code
 
 
@@ -160,4 +162,31 @@ class AuthProxyHeaderMiddleware(MiddlewareMixin):
             # Explicitly clear any potentially lingering user object
             request.user = None
 
+        return None
+
+
+class ForcePasswordChangeMiddleware(MiddlewareMixin):
+    """
+    Middleware to force authenticated users to change their password
+    if their UserProfile's needs_password_change flag is True.
+    """
+    def process_request(self, request):
+        if request.user.is_authenticated:
+            try:
+                profile = request.user.userprofile
+                if profile.needs_password_change:
+                    path_info = remove_language_code(request.path_info)
+                    change_pwd_path = remove_language_code(reverse('core:user:change-password'))
+                    logout_path = remove_language_code(reverse('core:user:logout'))
+                    
+                    # Exclude change password, logout, and static/media files
+                    if path_info != change_pwd_path and path_info != logout_path:
+                        if not request.path.startswith(settings.STATIC_URL) and not request.path.startswith(settings.MEDIA_URL):
+                            from django.contrib import messages
+                            # Only display message if it is not an AJAX/fetch request
+                            if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                                messages.warning(request, _('Please change your temporary password before continuing.'))
+                            return redirect('core:user:change-password')
+            except UserProfile.DoesNotExist:
+                pass
         return None

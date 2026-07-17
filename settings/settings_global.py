@@ -150,6 +150,7 @@ MIDDLEWARE = [
 
     # Auth proxy middleware
     'wger.core.middleware.AuthProxyHeaderMiddleware',
+    'wger.core.middleware.ForcePasswordChangeMiddleware',
 
     # Javascript Header. Sends helper headers for AJAX
     'wger.utils.middleware.JavascriptAJAXRedirectionMiddleware',

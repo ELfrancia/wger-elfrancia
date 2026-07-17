@@ -122,6 +122,7 @@ from wger.utils.headless_long_lived import (
     revoke_long_lived_session,
 )
 from wger.weight.models import WeightEntry
+from wger.core.models import UserProfile
 
 
 logger = logging.getLogger(__name__)
@@ -789,6 +790,14 @@ class WgerPasswordChangeView(PasswordChangeView):
         )
         return form
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        profile = self.request.user.userprofile
+        if profile.needs_password_change:
+            profile.needs_password_change = False
+            profile.save()
+        return response
+
 
 class WgerPasswordResetView(PasswordResetView):
     template_name = 'form_content.html'
@@ -825,6 +834,17 @@ class WgerPasswordResetConfirmView(PasswordResetConfirmView):
         form.helper.form_class = 'wger-form'
         form.helper.add_input(Submit('submit', _('Save'), css_class='btn-success btn-block'))
         return form
+
+    def form_valid(self, form):
+        user = form.save()
+        try:
+            profile = user.userprofile
+            if profile.needs_password_change:
+                profile.needs_password_change = False
+                profile.save()
+        except UserProfile.DoesNotExist:
+            pass
+        return super().form_valid(form)
 
 
 class WgerLoginView(AllauthLoginView):
