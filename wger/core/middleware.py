@@ -176,12 +176,21 @@ class ForcePasswordChangeMiddleware(MiddlewareMixin):
                 profile = request.user.userprofile
                 if profile.needs_password_change:
                     path_info = remove_language_code(request.path_info)
+                    
+                    # Exclude API endpoints
+                    if path_info.startswith('/api/'):
+                        return None
+
                     change_pwd_path = remove_language_code(reverse('core:user:change-password'))
                     logout_path = remove_language_code(reverse('core:user:logout'))
                     
                     # Exclude change password, logout, and static/media files
                     if path_info != change_pwd_path and path_info != logout_path:
-                        if not request.path.startswith(settings.STATIC_URL) and not request.path.startswith(settings.MEDIA_URL):
+                        from urllib.parse import urlparse
+                        static_path = urlparse(settings.STATIC_URL).path or '/static/'
+                        media_path = urlparse(settings.MEDIA_URL).path or '/media/'
+                        
+                        if not request.path.startswith(static_path) and not request.path.startswith(media_path):
                             from django.contrib import messages
                             # Only display message if it is not an AJAX/fetch request
                             if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
