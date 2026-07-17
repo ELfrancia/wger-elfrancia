@@ -46,11 +46,14 @@
                                 <option value="{{ skill }}">{{ skill }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" id="open-custom-modal-btn" class="bg-[#1c1b1b] border border-surface-container-high hover:border-[#caf300] text-primary rounded-2xl px-4 py-3 text-sm font-bold flex items-center gap-1 transition-all">
+                            <span class="material-symbols-outlined text-sm">add</span> {% translate "Custom" %}
+                        </button>
                     </div>
                 </div>
 
                 <!-- Exercise List -->
-                <div class="max-h-[380px] overflow-y-auto pr-1 flex flex-col gap-2 rounded-2xl border border-surface-container-high p-2 bg-[#131313] custom-scrollbar">
+                <div id="exercise-list-container" class="max-h-[380px] overflow-y-auto pr-1 flex flex-col gap-2 rounded-2xl border border-surface-container-high p-2 bg-[#131313] custom-scrollbar">
                     {% for ex in exercises_list %}
                         <div class="exercise-item flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-surface-container-highest hover:bg-surface-container-low transition-all cursor-pointer select-none" 
                              data-id="{{ ex.id }}" 
@@ -134,6 +137,91 @@
         </div>
     </form>
 </section>
+
+<!-- Custom Exercise Modal -->
+<div id="custom-exercise-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-[#131313] border border-surface-container-high rounded-[28px] w-full max-w-lg p-6 flex flex-col gap-5 shadow-2xl transform scale-95 transition-transform duration-300">
+        <div class="flex items-center justify-between border-b border-surface-container-high/40 pb-3">
+            <h3 class="text-xl font-extrabold text-primary flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#caf300]">fitness_center</span>
+                {% translate "Create Custom Exercise" %}
+            </h3>
+            <button type="button" id="close-custom-modal-btn" class="text-on-surface-variant hover:text-primary transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <form id="custom-exercise-form" method="post" action="{% url 'manager:routine:add-custom-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-4">
+            {% csrf_token %}
+            
+            <!-- Name -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Name" %}</label>
+                <input type="text" name="name" required placeholder="{% translate 'e.g. Archer Push-up' %}"
+                       class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Skill Family -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Skill Family" %}</label>
+                    <select name="skill_family" class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-3 py-3 text-primary text-sm focus:outline-none focus:border-[#caf300]">
+                        <option value="other">{% translate "Other" %}</option>
+                        <option value="push_up">{% translate "Push Up" %}</option>
+                        <option value="pull_up">{% translate "Pull Up" %}</option>
+                        <option value="dip">{% translate "Dip" %}</option>
+                        <option value="handstand">{% translate "Handstand" %}</option>
+                        <option value="front_lever">{% translate "Front Lever" %}</option>
+                        <option value="back_lever">{% translate "Back Lever" %}</option>
+                        <option value="l_sit">{% translate "L Sit" %}</option>
+                        <option value="planche">{% translate "Planche" %}</option>
+                        <option value="squat">{% translate "Squat" %}</option>
+                    </select>
+                </div>
+                
+                <!-- Target Muscle -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Target Muscle" %}</label>
+                    <select name="target_muscle" class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-3 py-3 text-primary text-sm focus:outline-none focus:border-[#caf300]">
+                        <option value="">{% translate "None" %}</option>
+                        {% for muscle in muscles_list %}
+                            <option value="{{ muscle }}">{{ muscle }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Weighted Toggle -->
+            <div class="flex items-center justify-between bg-surface-container/30 border border-surface-container-high/60 rounded-xl p-3">
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-primary">{% translate "Weighted / Zavorrato" %}</span>
+                    <span class="text-xs text-on-surface-variant">Check if the exercise requires extra weights or is weighted</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="weighted" class="sr-only peer">
+                    <div class="w-11 h-6 bg-[#2a2a2a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#caf300] peer-checked:after:bg-[#131313]"></div>
+                </label>
+            </div>
+
+            <!-- Instructions -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Instructions" %}</label>
+                <textarea name="instructions" rows="3" placeholder="{% translate 'Step 1...\nStep 2...' %}"
+                          class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Form Buttons -->
+            <div class="flex gap-3 mt-2">
+                <button type="submit" class="flex-1 bg-[#caf300] text-[#131313] py-3 rounded-full font-bold hover:opacity-90 transition-opacity">
+                    {% translate "Save Exercise" %}
+                </button>
+                <button type="button" id="cancel-custom-modal-btn" class="flex-1 border border-surface-container-high text-primary py-3 rounded-full font-bold hover:bg-surface-container transition-colors">
+                    {% translate "Cancel" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_body %}
@@ -158,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('exercise-search');
     const muscleSelect = document.getElementById('filter-muscle');
     const skillSelect = document.getElementById('filter-skill');
-    const items = document.querySelectorAll('.exercise-item');
 
     let selectedExercises = []; // Array of { id: int, name: string }
     let activeSelection = null;  // { id: int, name: string }
@@ -169,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const muscle = muscleSelect.value;
         const skill = skillSelect.value;
         
-        items.forEach(item => {
+        document.querySelectorAll('.exercise-item').forEach(item => {
             const name = item.dataset.name.toLowerCase();
             const muscles = item.dataset.muscles.split(',');
             const itemSkill = item.dataset.skill;
@@ -283,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Sync list checkmarks
-        items.forEach(item => {
+        document.querySelectorAll('.exercise-item').forEach(item => {
             const id = parseInt(item.dataset.id);
             const indicator = item.querySelector('.selected-indicator');
             const inSupersetIdx = selectedExercises.findIndex(ex => ex.id === id);
@@ -339,7 +426,8 @@ document.addEventListener('DOMContentLoaded', function() {
         syncUI();
     }
 
-    items.forEach(item => {
+    // Setup initial click handlers
+    document.querySelectorAll('.exercise-item').forEach(item => {
         item.addEventListener('click', function() {
             selectItem(item);
         });
@@ -354,6 +442,112 @@ document.addEventListener('DOMContentLoaded', function() {
             syncUI();
         }
     });
+
+    // 5. Custom Exercise Modal
+    const modal = document.getElementById('custom-exercise-modal');
+    const openBtn = document.getElementById('open-custom-modal-btn');
+    const closeBtn = document.getElementById('close-custom-modal-btn');
+    const cancelBtn = document.getElementById('cancel-custom-modal-btn');
+    const form = document.getElementById('custom-exercise-form');
+    const exerciseListContainer = document.getElementById('exercise-list-container');
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            form.reset();
+        }, 300);
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Create new HTML element in list
+                    const newItem = document.createElement('div');
+                    newItem.className = "exercise-item flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-surface-container-highest hover:bg-surface-container-low transition-all cursor-pointer select-none";
+                    newItem.setAttribute('data-id', data.id);
+                    newItem.setAttribute('data-name', data.name);
+                    newItem.setAttribute('data-muscles', data.muscles || '');
+                    newItem.setAttribute('data-skill', data.skill_family || '');
+                    
+                    newItem.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
+                                <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-primary">${data.name}</span>
+                                <span class="text-xs text-on-surface-variant">
+                                    ${data.muscles || "{% translate 'No muscle info' %}"}
+                                    ${data.skill_family && data.skill_family !== 'Other' ? ' • ' + data.skill_family : ''}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity">
+                            <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        </div>
+                    `;
+
+                    // Prepend to list
+                    if (exerciseListContainer) {
+                        exerciseListContainer.insertBefore(newItem, exerciseListContainer.firstChild);
+                    }
+
+                    // Add click handler for the new item
+                    newItem.addEventListener('click', function() {
+                        selectItem(newItem);
+                    });
+
+                    // Automatically select the new item
+                    selectItem(newItem);
+                    
+                    // Close the modal
+                    closeModal();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating custom exercise. Please try again.');
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

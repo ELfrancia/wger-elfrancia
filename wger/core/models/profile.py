@@ -115,6 +115,9 @@ class UserProfile(models.Model):
         verbose_name=_('Needs password change'),
         default=False,
     )
+    """
+    Flag indicating if the user is forced to change their password on next login
+    """
 
     #
     # User preferences
