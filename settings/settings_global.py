@@ -150,7 +150,6 @@ MIDDLEWARE = [
 
     # Auth proxy middleware
     'wger.core.middleware.AuthProxyHeaderMiddleware',
-    'wger.core.middleware.ForcePasswordChangeMiddleware',
 
     # Javascript Header. Sends helper headers for AJAX
     'wger.utils.middleware.JavascriptAJAXRedirectionMiddleware',
@@ -161,6 +160,7 @@ MIDDLEWARE = [
     # Send an appropriate Header so search engines don't index pages
     'wger.utils.middleware.RobotsExclusionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'wger.core.middleware.ForcePasswordChangeMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 

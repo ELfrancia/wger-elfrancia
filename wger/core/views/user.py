@@ -737,7 +737,8 @@ class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        user = form.save(commit=True)
+        self.object = form.save(commit=True)
+        user = self.object
 
         from wger.config.models import GymConfig
         from wger.gym.models import GymUserConfig
