@@ -110,6 +110,55 @@
         }
       }
     </script>
+    <style>
+      /* Style legacy crispy/bootstrap form controls to match the dark Onyx/Tailwind theme */
+      input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="url"], input[type="date"], select, textarea {
+          width: 100% !important;
+          background-color: #1c1b1b !important;
+          border-color: #2a2a2a !important;
+          color: #ffffff !important;
+          border-radius: 1rem !important;
+          padding: 0.75rem 1rem !important;
+          font-weight: 700 !important;
+      }
+      input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+          outline: none !important;
+          border-color: #caf300 !important;
+          box-shadow: 0 0 0 1px #caf300 !important;
+      }
+      input[type="checkbox"], input[type="radio"] {
+          background-color: #1c1b1b !important;
+          border-color: #2a2a2a !important;
+          color: #caf300 !important;
+          border-radius: 0.25rem !important;
+      }
+      .btn-success, .btn-primary, button[type="submit"], input[type="submit"] {
+          background-color: #caf300 !important;
+          color: #131313 !important;
+          font-weight: 700 !important;
+          border-radius: 9999px !important;
+          padding: 0.75rem 1.5rem !important;
+          border: none !important;
+          transition: opacity 0.2s !important;
+          cursor: pointer !important;
+      }
+      .btn-success:hover, .btn-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+          opacity: 0.9 !important;
+      }
+      .btn-secondary, .btn-default, a.btn-secondary, .btn-close {
+          border: 1px solid #2a2a2a !important;
+          background-color: transparent !important;
+          color: #ffffff !important;
+          font-weight: 700 !important;
+          border-radius: 9999px !important;
+          padding: 0.75rem 1.5rem !important;
+          transition: background-color 0.2s !important;
+          cursor: pointer !important;
+      }
+      .btn-secondary:hover, .btn-default:hover, a.btn-secondary:hover {
+          background-color: #201f1f !important;
+      }
+    </style>
     <title>{% block title %}Onyx Tracker{% endblock %}</title>
     {% block header %}{% endblock %}
 </head>

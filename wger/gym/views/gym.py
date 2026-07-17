@@ -177,6 +177,7 @@ class GymAddView(WgerFormMixin, LoginRequiredMixin, PermissionRequiredMixin, Cre
     model = Gym
     fields = ('name', 'phone', 'email', 'owner', 'zip_code', 'city', 'street')
     title = gettext_lazy('Add new gym')
+    template_name = 'form_content.html'
     permission_required = 'gym.add_gym'
 
 
@@ -374,6 +375,7 @@ class GymAddUserView(
 
     model = User
     title = gettext_lazy('Add user to gym')
+    template_name = 'form_content.html'
     success_url = reverse_lazy('gym:gym:new-user-data')
     permission_required = ('gym.manage_gym', 'gym.manage_gyms')
     form_class = GymUserAddForm
