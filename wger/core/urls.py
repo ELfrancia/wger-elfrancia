@@ -83,6 +83,11 @@ patterns_user = [
     path('<int:pk>/edit', user.UserEditView.as_view(), name='edit'),
     path('<int:pk>/overview', user.UserDetailView.as_view(), name='overview'),
     path('list', user.UserListView.as_view(), name='list'),
+    path(
+        'add-user',
+        user.UserCreateView.as_view(),
+        name='add-user',
+    ),
     # Password reset is implemented by Django, no need to cook our own soup here
     # (besides the templates)
     path(

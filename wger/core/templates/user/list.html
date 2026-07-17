@@ -10,5 +10,18 @@
 
 
 {% block sidebar %}
-
+    {% if request.user.is_superuser %}
+    <div class="card mb-3">
+        <div class="card-header">
+            <span class="{% fa_class 'user-plus' %} me-1"></span>
+            {% translate "Admin actions" %}
+        </div>
+        <div class="card-body">
+            <a href="{% url 'core:user:add-user' %}" class="btn btn-success w-100">
+                <span class="{% fa_class 'plus' %} me-1"></span>
+                {% translate "Add User" %}
+            </a>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}
