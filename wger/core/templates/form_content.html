@@ -22,7 +22,9 @@
 
 <section class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-6 mb-12">
     {% if form %}
-        {% crispy form %}
+        <div class="wger-legacy-form">
+            {% crispy form %}
+        </div>
     {% else %}
         <p class="text-on-surface-variant">{% translate "Looks like you clicked on an invalid link. Please try again." %}</p>
     {% endif %}

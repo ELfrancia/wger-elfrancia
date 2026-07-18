@@ -112,7 +112,14 @@
     </script>
     <style>
       /* Style legacy crispy/bootstrap form controls to match the dark Onyx/Tailwind theme */
-      input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="url"], input[type="date"], select, textarea {
+      .wger-legacy-form input[type="text"], 
+      .wger-legacy-form input[type="email"], 
+      .wger-legacy-form input[type="password"], 
+      .wger-legacy-form input[type="number"], 
+      .wger-legacy-form input[type="url"], 
+      .wger-legacy-form input[type="date"], 
+      .wger-legacy-form select, 
+      .wger-legacy-form textarea {
           width: 100% !important;
           background-color: #1c1b1b !important;
           border-color: #2a2a2a !important;
@@ -121,18 +128,29 @@
           padding: 0.75rem 1rem !important;
           font-weight: 700 !important;
       }
-      input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+      .wger-legacy-form input[type="text"]:focus, 
+      .wger-legacy-form input[type="email"]:focus, 
+      .wger-legacy-form input[type="password"]:focus, 
+      .wger-legacy-form input[type="number"]:focus, 
+      .wger-legacy-form input[type="url"]:focus, 
+      .wger-legacy-form input[type="date"]:focus, 
+      .wger-legacy-form select:focus, 
+      .wger-legacy-form textarea:focus {
           outline: none !important;
           border-color: #caf300 !important;
           box-shadow: 0 0 0 1px #caf300 !important;
       }
-      input[type="checkbox"], input[type="radio"] {
+      .wger-legacy-form input[type="checkbox"], 
+      .wger-legacy-form input[type="radio"] {
           background-color: #1c1b1b !important;
           border-color: #2a2a2a !important;
           color: #caf300 !important;
           border-radius: 0.25rem !important;
       }
-      .btn-success, .btn-primary, button[type="submit"], input[type="submit"] {
+      .wger-legacy-form .btn-success, 
+      .wger-legacy-form .btn-primary, 
+      .wger-legacy-form button[type="submit"], 
+      .wger-legacy-form input[type="submit"] {
           background-color: #caf300 !important;
           color: #131313 !important;
           font-weight: 700 !important;
@@ -142,10 +160,16 @@
           transition: opacity 0.2s !important;
           cursor: pointer !important;
       }
-      .btn-success:hover, .btn-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      .wger-legacy-form .btn-success:hover, 
+      .wger-legacy-form .btn-primary:hover, 
+      .wger-legacy-form button[type="submit"]:hover, 
+      .wger-legacy-form input[type="submit"]:hover {
           opacity: 0.9 !important;
       }
-      .btn-secondary, .btn-default, a.btn-secondary, .btn-close {
+      .wger-legacy-form .btn-secondary, 
+      .wger-legacy-form .btn-default, 
+      .wger-legacy-form a.btn-secondary, 
+      .wger-legacy-form .btn-close {
           border: 1px solid #2a2a2a !important;
           background-color: transparent !important;
           color: #ffffff !important;
@@ -155,7 +179,9 @@
           transition: background-color 0.2s !important;
           cursor: pointer !important;
       }
-      .btn-secondary:hover, .btn-default:hover, a.btn-secondary:hover {
+      .wger-legacy-form .btn-secondary:hover, 
+      .wger-legacy-form .btn-default:hover, 
+      .wger-legacy-form a.btn-secondary:hover {
           background-color: #201f1f !important;
       }
     </style>
