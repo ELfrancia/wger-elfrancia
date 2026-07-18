@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+    <title>Gofit - Onboarding Profile Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#131313",
+              "surface": "#161616",
+              "surface-container": "#201f1f",
+              "surface-container-low": "#1c1b1b",
+              "surface-container-high": "#2a2a2a",
+              "primary": "#ffffff",
+              "primary-fixed": "#caf300",
+              "on-surface-variant": "#c5c9ac",
+              "error": "#ffb4ab"
+            },
+            borderRadius: {
+              "DEFAULT": "1rem",
+              "lg": "2rem",
+              "xl": "3rem"
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #131313;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-[#e5e2e1] min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden flex flex-col h-[820px] shadow-2xl relative">
+        <!-- Top App Bar -->
+        <header class="flex items-center justify-between px-6 pt-6 w-full shrink-0">
+            <button class="text-primary hover:bg-[#201f1f] w-10 h-10 rounded-full flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
+            <span class="text-xs font-black uppercase tracking-widest text-on-surface-variant">Step 4 of 4</span>
+            <div class="w-10"></div>
+        </header>
+
+        <!-- Progress Indicator -->
+        <div class="px-6 pt-4 shrink-0">
+            <div class="w-full flex gap-1.5 h-1">
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 px-6 pt-8 flex flex-col items-center overflow-y-auto no-scrollbar">
+            <div class="text-center mb-6 w-full shrink-0">
+                <h1 class="text-[32px] font-black uppercase tracking-tight text-white mb-2">Fill Your Profile</h1>
+                <p class="text-sm font-medium text-on-surface-variant max-w-[280px] mx-auto">Complete your account setup. You can edit this later.</p>
+            </div>
+
+            <!-- Profile Photo Upload -->
+            <div class="relative mb-6 shrink-0">
+                <div class="w-28 h-28 rounded-full bg-[#1c1b1b] border border-[#262626] flex items-center justify-center overflow-hidden relative group">
+                    <img id="avatar-preview" class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80" alt="Avatar"/>
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span class="material-symbols-outlined text-white text-3xl">photo_camera</span>
+                    </div>
+                </div>
+                <button class="absolute bottom-0 right-0 bg-[#caf300] text-[#131313] w-9 h-9 rounded-full flex items-center justify-center border-2 border-[#161616] shadow-lg hover:scale-105 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-lg font-bold">edit</span>
+                </button>
+            </div>
+
+            <!-- Input Form -->
+            <form class="w-full flex flex-col gap-4 mb-4">
+                <!-- Full Name -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider" for="fullName">Full Name</label>
+                    <input class="w-full bg-[#1c1b1b] text-white placeholder:text-neutral-600 border border-[#262626] rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300] transition-colors" id="fullName" placeholder="Enter your full name" type="text"/>
+                </div>
+
+                <!-- Nickname -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider" for="nickname">Nickname</label>
+                    <input class="w-full bg-[#1c1b1b] text-white placeholder:text-neutral-600 border border-[#262626] rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300] transition-colors" id="nickname" placeholder="Enter a display name" type="text"/>
+                </div>
+
+                <!-- Email Address -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider" for="email">Email Address</label>
+                    <div class="relative">
+                        <input class="w-full bg-[#1c1b1b] text-white placeholder:text-neutral-600 border border-[#262626] rounded-2xl pl-4 pr-11 py-3 focus:outline-none focus:border-[#caf300] transition-colors" id="email" placeholder="name@example.com" type="email"/>
+                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 text-lg">mail</span>
+                    </div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider" for="phone">Phone Number</label>
+                    <div class="relative flex">
+                        <div class="flex items-center bg-[#1c1b1b] border border-[#262626] border-r-0 rounded-l-2xl px-3 gap-1">
+                            <span class="text-sm">🇮🇹</span>
+                            <span class="material-symbols-outlined text-sm text-neutral-500">arrow_drop_down</span>
+                        </div>
+                        <input class="flex-1 bg-[#1c1b1b] text-white placeholder:text-neutral-600 border border-[#262626] rounded-r-2xl px-4 py-3 focus:outline-none focus:border-[#caf300] transition-colors" id="phone" placeholder="+39 (000) 000-0000" type="tel"/>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Skip option -->
+            <div class="w-full flex justify-center mt-auto py-2 shrink-0">
+                <button class="text-xs font-bold text-on-surface-variant hover:text-white uppercase tracking-wider transition-colors">Skip for now</button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="p-6 bg-[#161616] border-t border-[#262626] shrink-0">
+            <button class="w-full bg-[#caf300] hover:bg-[#b0d500] active:scale-[0.98] text-[#131313] font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(202,243,0,0.15)]">
+                <span>Start</span>
+                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+        </footer>
+    </div>
+</body>
+</html>

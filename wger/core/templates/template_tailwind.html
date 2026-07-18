@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-    <meta name="theme-color" content="#131313"/>
+    <meta name="theme-color" content="#08090A"/>
     
     <!-- PWA Setup -->
     <link rel="manifest" href="/manifest.json">
@@ -14,7 +14,7 @@
     <link rel="apple-touch-icon" href="{% static 'images/logos/logo-192.png' %}">
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script>
@@ -22,96 +22,66 @@
         darkMode: "class",
         theme: {
           extend: {
-            "colors": {
-                    "error-container": "#93000a",
-                    "primary-fixed": "#caf300",
-                    "on-surface-variant": "#c5c9ac",
-                    "surface": "#131313",
-                    "on-error-container": "#ffdad6",
-                    "on-error": "#690005",
-                    "surface-container": "#201f1f",
-                    "background": "#131313",
-                    "surface-container-high": "#2a2a2a",
-                    "surface-container-lowest": "#0e0e0e",
-                    "primary-fixed-dim": "#b0d500",
-                    "primary-container": "#caf300",
-                    "on-tertiary": "#303030",
-                    "on-primary-fixed": "#171e00",
-                    "on-tertiary-fixed": "#1b1c1c",
-                    "on-secondary": "#2f3131",
-                    "inverse-surface": "#e5e2e1",
-                    "error": "#ffb4ab",
-                    "on-primary": "#2a3400",
-                    "surface-variant": "#353534",
-                    "surface-dim": "#131313",
-                    "inverse-primary": "#536600",
-                    "on-secondary-fixed": "#1a1c1c",
-                    "on-tertiary-fixed-variant": "#474746",
-                    "surface-tint": "#b0d500",
-                    "secondary-fixed": "#e2e2e2",
-                    "inverse-on-surface": "#313030",
-                    "on-background": "#e5e2e1",
-                    "secondary-container": "#454747",
-                    "tertiary": "#ffffff",
-                    "tertiary-fixed-dim": "#c8c6c5",
-                    "on-secondary-container": "#b4b5b5",
-                    "surface-container-highest": "#353534",
-                    "on-primary-fixed-variant": "#3e4c00",
-                    "tertiary-fixed": "#e4e2e1",
-                    "primary": "#ffffff",
-                    "on-primary-container": "#596c00",
-                    "on-surface": "#e5e2e1",
-                    "secondary": "#c6c6c7",
-                    "outline-variant": "#444932",
-                    "tertiary-container": "#e4e2e1",
-                    "on-secondary-fixed-variant": "#454747",
-                    "surface-bright": "#3a3939",
-                    "outline": "#8f9378",
-                    "on-tertiary-container": "#656464",
-                    "surface-container-low": "#1c1b1b",
-                    "secondary-fixed-dim": "#c6c6c7"
+            colors: {
+              background: "#08090A", // Premium absolute dark
+              surface: "#101114", // Solid card background
+              "surface-card": "#16171A",
+              "surface-container": "#1D1E22",
+              primary: "#caf300", // Onyx Lime Green
+              "on-primary": "#000000",
+              secondary: "#94A3B8", // Slate 400
+              outline: "#222429"
             },
-            "borderRadius": {
-                    "DEFAULT": "1rem",
-                    "lg": "2rem",
-                    "xl": "3rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "grid-gutter": "1rem",
-                    "stack-xs": "0.25rem",
-                    "stack-md": "1rem",
-                    "grid-margin": "2rem",
-                    "stack-lg": "2rem",
-                    "stack-sm": "0.5rem",
-                    "section-gap": "4rem"
-            },
-            "fontFamily": {
-                    "display": ["Inter"],
-                    "body-md": ["Inter"],
-                    "headline-lg-mobile": ["Inter"],
-                    "headline-lg": ["Inter"],
-                    "label-caps": ["Inter"],
-                    "headline-md": ["Inter"],
-                    "caption": ["Inter"],
-                    "body-lg": ["Inter"]
-            },
-            "fontSize": {
-                    "display": ["72px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
-                    "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
-                    "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}],
-                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-                    "caption": ["13px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "500"}],
-                    "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}]
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              display: ["Outfit", "sans-serif"]
             }
           }
         }
       }
     </script>
     <style>
-      /* Style legacy crispy/bootstrap form controls to match the dark Onyx/Tailwind theme */
+      /* Smooth height expansion */
+      .expand-container {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .expand-container.open {
+        grid-template-rows: 1fr;
+      }
+      .expand-content {
+        overflow: hidden;
+      }
+      
+      /* Hide scrollbar */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* Glow effect */
+      .glow-btn {
+        box-shadow: 0 4px 14px rgba(202, 243, 0, 0.25);
+      }
+      .glow-primary-sm {
+        box-shadow: 0 0 10px rgba(202, 243, 0, 0.15);
+      }
+      
+      /* Screen transition animations */
+      .page-transition {
+        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
+      }
+
+      /* Muscle highlight styles */
+      .muscle-path {
+        transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
+      }
+      
+      /* Style legacy wger forms to match the dark Onyx/Tailwind theme */
       .wger-legacy-form input[type="text"], 
       .wger-legacy-form input[type="email"], 
       .wger-legacy-form input[type="password"], 
@@ -121,8 +91,8 @@
       .wger-legacy-form select, 
       .wger-legacy-form textarea {
           width: 100% !important;
-          background-color: #1c1b1b !important;
-          border-color: #2a2a2a !important;
+          background-color: #16171A !important;
+          border-color: #222429 !important;
           color: #ffffff !important;
           border-radius: 1rem !important;
           padding: 0.75rem 1rem !important;
@@ -142,8 +112,8 @@
       }
       .wger-legacy-form input[type="checkbox"], 
       .wger-legacy-form input[type="radio"] {
-          background-color: #1c1b1b !important;
-          border-color: #2a2a2a !important;
+          background-color: #16171A !important;
+          border-color: #222429 !important;
           color: #caf300 !important;
           border-radius: 0.25rem !important;
       }
@@ -152,7 +122,7 @@
       .wger-legacy-form button[type="submit"], 
       .wger-legacy-form input[type="submit"] {
           background-color: #caf300 !important;
-          color: #131313 !important;
+          color: #000000 !important;
           font-weight: 700 !important;
           border-radius: 9999px !important;
           padding: 0.75rem 1.5rem !important;
@@ -170,7 +140,7 @@
       .wger-legacy-form .btn-default, 
       .wger-legacy-form a.btn-secondary, 
       .wger-legacy-form .btn-close {
-          border: 1px solid #2a2a2a !important;
+          border: 1px solid #222429 !important;
           background-color: transparent !important;
           color: #ffffff !important;
           font-weight: 700 !important;
@@ -182,13 +152,13 @@
       .wger-legacy-form .btn-secondary:hover, 
       .wger-legacy-form .btn-default:hover, 
       .wger-legacy-form a.btn-secondary:hover {
-          background-color: #201f1f !important;
+          background-color: #16171A !important;
       }
     </style>
     <title>{% block title %}Onyx Tracker{% endblock %}</title>
     {% block header %}{% endblock %}
 </head>
-<body class="bg-[#131313] text-[#e5e2e1] font-sans antialiased pb-24">
+<body class="bg-background text-[#e5e2e1] font-sans antialiased pb-24 min-h-screen">
     {% include 'navigation_tailwind.html' %}
     <main class="max-w-3xl mx-auto px-4 mt-4">
         {% if user.is_authenticated and user.userprofile.is_temporary %}
@@ -198,7 +168,7 @@
         {% endif %}
         {% if messages %}
             {% for message in messages %}
-                <div class="bg-surface-container-high border border-surface-container-high p-4 rounded-2xl mb-4 text-sm font-semibold {% if message.tags == 'error' %}border-red-500/30 text-red-200{% else %}text-primary{% endif %}">
+                <div class="bg-[#16171A] border border-[#222429] p-4 rounded-2xl mb-4 text-sm font-semibold {% if message.tags == 'error' %}border-red-500/30 text-red-200{% else %}text-primary{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -206,6 +176,456 @@
         {% block content %}{% endblock %}
     </main>
     {% block extra_body %}{% endblock %}
+    
+    <!-- Redesigned Official Exercise Detail Overlay Screen (NO TIMER, DYNAMIC SVG HUMAN BODY WITH MUSCLE HIGHLIGHTING) -->
+    <div id="exercise-official-screen" class="fixed inset-0 z-50 bg-[#08090A] overflow-y-auto no-scrollbar p-4 sm:p-6 transition-all duration-300 transform translate-x-full opacity-0 hidden">
+        <div class="w-full max-w-lg mx-auto flex flex-col gap-5 pb-32">
+            
+            <!-- Full-Bleed Media Header with Floating Controls -->
+            <div class="relative w-full h-72 rounded-[2.2rem] overflow-hidden bg-[#0C0D0F] border border-outline shadow-xl flex items-center justify-center p-2">
+                <img id="official-exercise-gif" src="" alt="Esercizio Animato" class="max-w-full max-h-full object-contain rounded-2xl select-none">
+                
+                <!-- Gradient Overlay for Legibility -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30"></div>
+
+                <!-- Floating Back Button (Touch target 44x44px equivalent bounds) -->
+                <button onclick="closeExerciseOfficialPage()" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all duration-200" title="Torna indietro">
+                    <span class="material-symbols-outlined text-xl">arrow_back</span>
+                </button>
+
+                <!-- Floating Favorite/Pin Button -->
+                <button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all duration-200" title="Aggiungi ai preferiti">
+                    <svg class="w-4.5 h-4.5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </button>
+
+                <!-- Exercise Title Overlay inside the media -->
+                <div class="absolute bottom-5 left-5 right-5 flex flex-col">
+                    <span class="text-[10px] font-black uppercase text-primary tracking-widest font-display">SCHEDA TECNICA</span>
+                    <h1 id="official-exercise-name" class="text-2xl font-black font-display text-white tracking-tight mt-0.5">Nome Esercizio</h1>
+                </div>
+            </div>
+
+            <!-- Segmented Tab Controls (UX Progressive Disclosure) -->
+            <div class="bg-surface border border-outline rounded-2xl p-1 flex gap-1 shadow-sm">
+                <button onclick="switchDetailsTab('execution')" id="tab-btn-execution" class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 bg-primary text-on-primary font-display">
+                    ESECUZIONE
+                </button>
+                <button onclick="switchDetailsTab('muscles')" id="tab-btn-muscles" class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
+                    ANATOMIA
+                </button>
+                <button onclick="switchDetailsTab('tips')" id="tab-btn-tips" class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
+                    CONSIGLI PRO
+                </button>
+            </div>
+
+            <!-- TAB CONTENT 1: EXECUTION (TIMELINE TIMING STYLE) -->
+            <div id="tab-content-execution" class="flex flex-col gap-4">
+                <div class="bg-surface border border-outline rounded-3xl p-5 shadow-md">
+                    <span class="text-[10px] font-extrabold uppercase text-primary font-display tracking-widest flex items-center gap-1.5 mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        FASI DI ESECUZIONE CORRETTA
+                    </span>
+                    
+                    <!-- Timeline Steps Container -->
+                    <div class="flex flex-col gap-4 pl-2 relative" id="official-exercise-steps-timeline">
+                        <!-- Steps dynamically injected -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 2: ANATOMY & MUSCLES (SVG DYNAMIC HUMAN MODEL + LOAD BARS) -->
+            <div id="tab-content-muscles" class="flex flex-col gap-4 hidden">
+                
+                <!-- Splitted Anatomy Layout (Model + Data) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 bg-surface border border-outline rounded-3xl p-5 shadow-md">
+                    
+                    <!-- Left: Beautiful Muscle Vector Model (SVG) -->
+                    <div class="md:col-span-5 flex flex-col items-center justify-center bg-[#0C0D0F] border border-outline/50 rounded-2xl p-4 relative overflow-hidden">
+                        <div class="absolute top-2 left-2 text-[8px] font-bold text-zinc-650 tracking-wider font-display uppercase">Modello Anatomico</div>
+                        
+                        <div class="flex gap-8 justify-center items-center py-4 w-full relative">
+                            <!-- Front View -->
+                            <div class="flex flex-col items-center gap-1.5">
+                                <span class="text-[9px] font-bold text-zinc-550 tracking-wider font-display">FRONTE</span>
+                                <svg id="front-body-svg" viewBox="0 0 100 200" width="70" height="140" class="w-[70px] h-[140px] select-none"></svg>
+                            </div>
+                            <!-- Back View -->
+                            <div class="flex flex-col items-center gap-1.5">
+                                <span class="text-[9px] font-bold text-zinc-550 tracking-wider font-display">RETRO</span>
+                                <svg id="back-body-svg" viewBox="0 0 100 200" width="70" height="140" class="w-[70px] h-[140px] select-none"></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Muscle Details Progress Bars (md:col-span-7) -->
+                    <div class="md:col-span-7 flex flex-col justify-between gap-4">
+                        <div class="flex flex-col gap-4">
+                            <span class="text-[10px] font-extrabold uppercase text-primary font-display tracking-widest flex items-center gap-1.5">
+                                COINVOLGIMENTO MUSCOLARE D'IMPATTO
+                            </span>
+                            
+                            <div class="flex flex-col gap-4">
+                                <!-- Primary Muscle -->
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="flex justify-between items-center text-xs font-semibold">
+                                        <span class="text-white flex items-center gap-1.5">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-primary inline-block shadow-[0_0_6px_rgba(202,243,0,0.5)]"></span>
+                                            Target Primario: <span id="official-muscle-primary-name" class="text-primary font-bold"></span>
+                                        </span>
+                                        <span class="text-primary font-black">95%</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-[#16171A] rounded-full overflow-hidden border border-outline/30">
+                                        <div class="h-full bg-primary rounded-full w-[95%] glow-primary-sm"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Secondary Muscle -->
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="flex justify-between items-center text-xs font-semibold">
+                                        <span class="text-white flex items-center gap-1.5">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-zinc-400 inline-block"></span>
+                                            Target Secondario: <span id="official-muscle-secondary-name" class="text-secondary font-bold"></span>
+                                        </span>
+                                        <span class="text-secondary font-bold">75%</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-[#16171A] rounded-full overflow-hidden border border-outline/30">
+                                        <div class="h-full bg-zinc-650 rounded-full w-[75%]"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Equipment required -->
+                        <div class="pt-4 border-t border-outline/30 flex items-center justify-between mt-auto">
+                            <span class="text-xs text-secondary font-semibold">Attrezzatura Richiesta</span>
+                            <span id="official-exercise-gear" class="text-xs font-bold text-white bg-surface-card border border-outline px-3 py-1 rounded-full"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 3: PRO TIPS & WARNINGS -->
+            <div id="tab-content-tips" class="flex flex-col gap-4 hidden">
+                <!-- Warnings / Mistakes Box -->
+                <div class="bg-surface border border-outline rounded-3xl p-5 shadow-md flex flex-col gap-4">
+                    <span class="text-[10px] font-extrabold uppercase text-red-400 font-display tracking-widest flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        ERRORI COMUNI DA EVITARE
+                    </span>
+                    <ul class="text-sm text-secondary flex flex-col gap-2.5 pl-1">
+                        <li class="flex items-start gap-2.5">
+                            <span class="text-red-400 font-black text-lg leading-none">&bull;</span>
+                            <span>**Usare lo slancio**: Evita di dondolare con le gambe per salire, riduce drasticamente lo stimolo.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="text-red-400 font-black text-lg leading-none">&bull;</span>
+                            <span>**Rom di movimento parziale**: Non estendere completamente le braccia o non completare la salita.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Pro Tip Box -->
+                <div class="bg-primary/5 border border-primary/20 rounded-3xl p-5 shadow-sm flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 113.536 0V21h-2v-3"></path>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider font-display">Consiglio d'Oro per la Crescita</h4>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Spremi attivamente i bicipiti nella parte superiore del movimento mantenendo la posizione per 1 secondo intero (contrazione di picco) prima di iniziare la discesa.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return CTA at the bottom -->
+            <div class="w-full mt-6 pb-8 px-1">
+                <button onclick="closeExerciseOfficialPage()" class="w-full py-4 rounded-full bg-zinc-900 border border-zinc-800 hover:border-primary text-sm font-bold tracking-wide text-white hover:text-primary shadow-xl active:scale-[0.98] transition-all duration-200">
+                    Chiudi e continua allenamento
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Import Muscle Highlight Script -->
+    <script src="{% static 'js/muscle_highlight.js' %}"></script>
+
+    <!-- Modal Interaction Script -->
+    <script>
+        async function translateToItalian(text) {
+            if (!text || !/[a-zA-Z]/.test(text)) return text;
+            
+            // Basic heuristics to check if it's already in Italian
+            const italianIndicators = [' di ', ' il ', ' la ', ' e ', ' con ', ' per ', ' un ', ' da ', ' in ', ' del ', ' della ', ' alle '];
+            const lowerText = text.toLowerCase();
+            if (italianIndicators.some(word => lowerText.includes(word)) && !lowerText.includes(' the ') && !lowerText.includes(' and ')) {
+                return text;
+            }
+            
+            try {
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=it&dt=t&q=${encodeURIComponent(text)}`;
+                const res = await fetch(url);
+                const json = await res.json();
+                if (json && json[0]) {
+                    return json[0].map(part => part[0]).join('');
+                }
+            } catch (e) {
+                console.error("Translation error: ", e);
+            }
+            return text;
+        }
+
+        function generateDynamicTips(exerciseName, categoryName) {
+            const name = (exerciseName || '').toLowerCase();
+            const cat = (categoryName || '').toLowerCase();
+            
+            let proTip = "Mantieni un movimento controllato e focalizzati sulla connessione mente-muscolo per massimizzare il reclutamento delle fibre.";
+            let mistakes = [
+                "Usare lo slancio: Evita di oscillare o usare l'inerzia per sollevare il peso.",
+                "Rom parziale: Non completare l'intera estensione o contrazione del movimento."
+            ];
+            
+            if (name.includes('push-up') || name.includes('flession') || cat.includes('chest') || cat.includes('petto')) {
+                proTip = "Tieni i gomiti a 45 gradi rispetto al busto e contrai attivamente i pettorali nella fase di picco.";
+                mistakes = [
+                    "Inarcare la schiena: Tieni il core e i glutei contratti per mantenere una linea retta.",
+                    "Spalle alzate: Evita di incassare il collo, tieni le scapole depresse."
+                ];
+            } else if (name.includes('pull-up') || name.includes('chin-up') || name.includes('trazioni') || cat.includes('back') || cat.includes('schiena')) {
+                proTip = "Focalizzati sul tirare con i gomiti verso il basso e unire le scapole nella parte alta per attivare al massimo il dorsale.";
+                mistakes = [
+                    "Spalle intrarotate: Evita di chiuderti in avanti, tieni il petto alto verso la sbarra.",
+                    "Usare lo slancio: Non dondolare con le gambe (kipping) a meno che non sia programmato."
+                ];
+            } else if (name.includes('squat') || name.includes('lunge') || name.includes('affondi') || cat.includes('legs') || cat.includes('gambe')) {
+                proTip = "Mantieni il peso distribuito su tutto il piede e spingi le ginocchia verso l'esterno in linea con le punte dei piedi.";
+                mistakes = [
+                    "Ginocchia all'interno: Evita che le ginocchia cedano verso l'interno durante la risalita.",
+                    "Talloni sollevati: Non staccare i talloni da terra per non sovraccaricare le articolazioni."
+                ];
+            } else if (name.includes('dip') || name.includes('tricipiti') || cat.includes('triceps')) {
+                proTip = "Mantieni le spalle basse e controlla la discesa fino a formare un angolo di 90 gradi con i gomiti.";
+                mistakes = [
+                    "Scendere troppo: Evita di scendere oltre il parallelo per proteggere l'articolazione della spalla.",
+                    "Allargare i gomiti: Tieni i gomiti vicini al corpo per focalizzare lo stimolo sui tricipiti."
+                ];
+            } else if (name.includes('plank') || name.includes('raise') || cat.includes('abs') || cat.includes('addominali')) {
+                proTip = "Contrai attivamente il core, spingi i talloni all'indietro e mantieni il bacino in retroversione per la massima tensione addominale.";
+                mistakes = [
+                    "Bacino basso: Non far cedere i fianchi verso il pavimento per evitare sforzi lombari.",
+                    "Trattenere il fiato: Mantieni una respirazione costante e diaframmatica durante la tenuta."
+                ];
+            }
+            
+            return { proTip, mistakes };
+        }
+
+        function openExerciseOfficialPage(event, id, name, gif, categoryName, musclePrimary, muscleSecondary, gear, instructions) {
+            if (event) event.stopPropagation();
+
+            // Populate overlay elements
+            document.getElementById('official-exercise-name').innerText = name || '';
+            document.getElementById('official-exercise-gif').src = gif || '';
+            
+            // Format muscles list to string
+            let primStr = '';
+            if (Array.isArray(musclePrimary)) {
+                primStr = musclePrimary.map(m => typeof m === 'string' ? m : m.name).join(', ');
+            } else {
+                primStr = String(musclePrimary || '');
+            }
+
+            let secStr = '';
+            if (Array.isArray(muscleSecondary)) {
+                secStr = muscleSecondary.map(m => typeof m === 'string' ? m : m.name).join(', ');
+            } else {
+                secStr = String(muscleSecondary || '');
+            }
+
+            let gearStr = '';
+            if (Array.isArray(gear)) {
+                gearStr = gear.join(', ');
+            } else {
+                gearStr = String(gear || '');
+            }
+
+            document.getElementById('official-muscle-primary-name').innerText = primStr;
+            document.getElementById('official-muscle-secondary-name').innerText = secStr;
+            document.getElementById('official-exercise-gear').innerText = gearStr;
+
+            // Generate timeline execution steps dynamically
+            const timelineContainer = document.getElementById('official-exercise-steps-timeline');
+            timelineContainer.innerHTML = '';
+            
+            let rawText = instructions || '';
+            
+            // Clean HTML tags and normalize content transitions
+            if (rawText.includes('<') && rawText.includes('>')) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rawText;
+                tempDiv.querySelectorAll('p, li, br, h1, h2, h3, h4, h5, h6').forEach(el => {
+                    el.after(' | ');
+                });
+                rawText = tempDiv.innerText || tempDiv.textContent || '';
+            }
+            
+            // Split by period, newline, or pipe symbol
+            const steps = rawText
+                .split(/(?:\.|\n|\|)\s*/)
+                .map(step => step.trim())
+                .filter(step => step.length > 3);
+            
+            if (steps.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div class="text-xs text-secondary py-2 italic">
+                        Nessuna istruzione dettagliata disponibile per questo esercizio.
+                    </div>
+                `;
+            } else {
+                steps.forEach((stepText, index) => {
+                    const stepRow = document.createElement('div');
+                    stepRow.className = 'flex gap-4 relative';
+                    
+                    let lineConnector = '';
+                    if (index < steps.length - 1) {
+                        lineConnector = `<div class="absolute left-4 top-8 bottom-[-16px] w-0.5 bg-outline"></div>`;
+                    }
+
+                    // Format step text nicely
+                    let formattedText = stepText;
+                    if (!formattedText.endsWith('.') && !formattedText.endsWith('!') && !formattedText.endsWith('?')) {
+                        formattedText += '.';
+                    }
+
+                    stepRow.innerHTML = `
+                        ${lineConnector}
+                        <div class="w-8 h-8 rounded-full bg-surface-card border border-outline text-xs font-bold text-primary flex items-center justify-center flex-shrink-0 z-10 select-none glow-primary-sm">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-1 pb-4">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wide">Fase ${index + 1}</h4>
+                            <p class="step-text-para text-xs text-secondary mt-1 leading-relaxed">${formattedText}</p>
+                        </div>
+                    `;
+                    timelineContainer.appendChild(stepRow);
+
+                    // Translate to Italian
+                    translateToItalian(formattedText).then(translated => {
+                        const para = stepRow.querySelector('.step-text-para');
+                        if (para) para.innerText = translated;
+                    });
+                });
+            }
+
+            // Generate dynamic tips based on exercise details
+            const tipsData = generateDynamicTips(name, categoryName);
+            
+            // Populate Pro Tip Box
+            const proTipPara = document.querySelector('#tab-content-tips p');
+            if (proTipPara) {
+                proTipPara.innerText = tipsData.proTip;
+            }
+            
+            // Populate Warnings Box
+            const mistakesList = document.querySelector('#tab-content-tips ul');
+            if (mistakesList) {
+                mistakesList.innerHTML = '';
+                tipsData.mistakes.forEach(mistake => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start gap-2.5';
+                    
+                    let contentHTML = ``;
+                    if (mistake.includes(':')) {
+                        const parts = mistake.split(':');
+                        const boldTitle = parts[0].trim();
+                        const descText = parts.slice(1).join(':').trim();
+                        contentHTML = `
+                            <span class="text-red-400 font-black text-lg leading-none">&bull;</span>
+                            <span><strong>${boldTitle}</strong>: ${descText}</span>
+                        `;
+                    } else {
+                        contentHTML = `
+                            <span class="text-red-400 font-black text-lg leading-none">&bull;</span>
+                            <span>${mistake}</span>
+                        `;
+                    }
+                    li.innerHTML = contentHTML;
+                    mistakesList.appendChild(li);
+                });
+            }
+
+            // Highlight SVGs
+            if (window.highlightMusclesInModal) {
+                const primArray = Array.isArray(musclePrimary) ? musclePrimary : [];
+                const secArray = Array.isArray(muscleSecondary) ? muscleSecondary : [];
+                window.highlightMusclesInModal(primArray, secArray);
+            }
+
+            // Default to 'execution' tab on opening
+            switchDetailsTab('execution');
+
+            // Slide overlay in
+            const overlay = document.getElementById('exercise-official-screen');
+            overlay.classList.remove('hidden');
+            // Force reflow
+            overlay.offsetHeight;
+            overlay.classList.remove('translate-x-full', 'opacity-0');
+        }
+
+        function closeExerciseOfficialPage() {
+            const overlay = document.getElementById('exercise-official-screen');
+            if (overlay) {
+                overlay.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    document.getElementById('official-exercise-gif').src = '';
+                }, 300);
+            }
+        }
+
+        function switchDetailsTab(tabId) {
+            const tabExecution = document.getElementById('tab-content-execution');
+            const tabMuscles = document.getElementById('tab-content-muscles');
+            const tabTips = document.getElementById('tab-content-tips');
+
+            const btnExecution = document.getElementById('tab-btn-execution');
+            const btnMuscles = document.getElementById('tab-btn-muscles');
+            const btnTips = document.getElementById('tab-btn-tips');
+
+            if (tabExecution) tabExecution.classList.add('hidden');
+            if (tabMuscles) tabMuscles.classList.add('hidden');
+            if (tabTips) tabTips.classList.add('hidden');
+
+            const inactiveClass = 'text-secondary hover:text-white';
+            const activeClass = 'bg-primary text-on-primary';
+
+            [btnExecution, btnMuscles, btnTips].forEach(btn => {
+                if (btn) {
+                    btn.className = btn.className.replace(activeClass, '').replace(inactiveClass, '').trim();
+                    btn.className += ' ' + inactiveClass;
+                }
+            });
+
+            if (tabId === 'execution') {
+                if (tabExecution) tabExecution.classList.remove('hidden');
+                if (btnExecution) btnExecution.className = btnExecution.className.replace(inactiveClass, activeClass);
+            } else if (tabId === 'muscles') {
+                if (tabMuscles) tabMuscles.classList.remove('hidden');
+                if (btnMuscles) btnMuscles.className = btnMuscles.className.replace(inactiveClass, activeClass);
+            } else if (tabId === 'tips') {
+                if (tabTips) tabTips.classList.remove('hidden');
+                if (btnTips) btnTips.className = btnTips.className.replace(inactiveClass, activeClass);
+            }
+        }
+    </script>
     
     <!-- Register PWA Service Worker -->
     <script>

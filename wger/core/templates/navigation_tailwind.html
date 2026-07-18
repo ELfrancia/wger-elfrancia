@@ -1,11 +1,11 @@
 {% load static i18n %}
 <!-- TopAppBar (Web & Mobile) -->
-<header class="w-full sticky top-0 z-50 bg-[#131313]/95 backdrop-blur-sm flex justify-between items-center px-4 py-4 pt-[max(env(safe-area-inset-top),16px)] border-b border-surface-container-high">
+<header class="w-full sticky top-0 z-50 bg-[#08090A]/95 backdrop-blur-md flex justify-between items-center px-4 py-4 pt-[max(env(safe-area-inset-top),16px)] border-b border-[#222429]">
     <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full overflow-hidden border border-surface-container-high bg-surface-container flex items-center justify-center">
-            <span class="material-symbols-outlined text-primary-fixed text-2xl">person</span>
+        <div class="w-10 h-10 rounded-full overflow-hidden border border-[#222429] bg-[#16171A] flex items-center justify-center">
+            <span class="material-symbols-outlined text-[#caf300] text-xl">person</span>
         </div>
-        <h1 class="font-headline-md text-headline-md text-primary tracking-tight font-extrabold uppercase">ONYX ATHLETIC</h1>
+        <h1 class="text-md text-white tracking-tight font-extrabold uppercase font-display">ONYX CLUB</h1>
     </div>
     <button class="min-w-[44px] min-h-[44px] flex items-center justify-center hover:opacity-80 transition-opacity">
         <span class="material-symbols-outlined text-primary text-2xl">notifications</span>
@@ -13,7 +13,7 @@
 </header>
 
 <!-- BottomNavBar (Mobile Only) -->
-<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#121214] rounded-t-[32px] border-t border-white/[0.04] flex justify-around items-center h-[calc(84px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-4 shadow-[0_-8px_30px_rgba(0,0,0,0.6)]">
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#101114] rounded-t-[32px] border-t border-[#222429] flex justify-around items-center h-[calc(84px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-4 shadow-[0_-8px_30px_rgba(0,0,0,0.6)]">
     <!-- Home -->
     <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
         <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:dashboard' %}1{% else %}0{% endif %};">home</span>
@@ -28,7 +28,7 @@
     
     <!-- Add Button (Centered, popping out) -->
     <div class="-mt-8 relative z-10">
-        <a href="{% url 'manager:routine:add' %}" class="w-14 h-14 rounded-full bg-[#caf300] text-[#121214] flex items-center justify-center shadow-lg hover:scale-105 transition-transform duration-300 border-4 border-[#121214]">
+        <a href="{% url 'manager:routine:add' %}" class="w-14 h-14 rounded-full bg-[#caf300] text-[#121214] flex items-center justify-center shadow-lg hover:scale-105 transition-transform duration-300 border-4 border-[#101114]">
             <span class="material-symbols-outlined text-2xl font-black" style="font-variation-settings: 'wght' 700;">add</span>
         </a>
     </div>

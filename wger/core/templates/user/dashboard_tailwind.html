@@ -8,18 +8,18 @@
     <!-- Welcome Header -->
     <div class="flex items-center justify-between mt-2 mb-2">
         <div class="flex items-center gap-3">
-            <div class="relative w-12 h-12 rounded-full overflow-hidden border border-white/[0.08] bg-neutral-900 shadow-md">
+            <div class="relative w-12 h-12 rounded-full overflow-hidden border border-outline bg-surface-card shadow-md">
                 <!-- Dynamic profile image -->
                 <img src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' }}" alt="Avatar" class="w-full h-full object-cover">
                 <!-- Status active dot -->
-                <div class="absolute bottom-0 right-0 w-3 h-3 bg-[#caf300] border border-[#131313] rounded-full"></div>
+                <div class="absolute bottom-0 right-0 w-3 h-3 bg-primary border border-background rounded-full"></div>
             </div>
             <div>
-                <h2 class="text-white font-black text-base tracking-tight leading-none">{% blocktranslate with username=user.username %}Hello {{ username }}!{% endblocktranslate %}</h2>
-                <p class="text-neutral-500 text-xs font-bold mt-1">{% translate "Let's start your day" %}</p>
+                <h2 class="text-white font-black text-base tracking-tight leading-none font-display">{% blocktranslate with username=user.username %}Hello {{ username }}!{% endblocktranslate %}</h2>
+                <p class="text-secondary text-xs font-bold mt-1">{% translate "Let's start your day" %}</p>
             </div>
         </div>
-        <div class="w-10 h-10 rounded-full bg-[#1c1c1e] border border-white/[0.05] flex items-center justify-center text-[#caf300] hover:scale-105 transition-all duration-200 cursor-pointer shadow-md">
+        <div class="w-10 h-10 rounded-full bg-surface border border-outline flex items-center justify-center text-primary hover:scale-105 transition-all duration-200 cursor-pointer shadow-md">
             <span class="material-symbols-outlined font-bold text-lg" style="font-variation-settings: 'FILL' 1;">trophy</span>
         </div>
     </div>
@@ -28,19 +28,19 @@
     {% include 'user/daily_activity_fragment.html' %}
 
     <!-- Workouts Card (Dynamic Routines List) -->
-    <div class="bg-[#161618]/90 border border-white/[0.05] rounded-[28px] p-5 flex flex-col gap-4 shadow-xl">
+    <div class="bg-surface border border-outline rounded-[28px] p-5 flex flex-col gap-4 shadow-xl">
         <div class="flex items-center justify-between">
-            <h3 class="text-white font-bold text-base tracking-tight">{% translate "Workouts" %}</h3>
-            <a href="{% url 'manager:routine:overview' %}" class="text-xs font-bold text-[#caf300] hover:text-[#b8dd00] transition-colors">
+            <h3 class="text-white font-bold text-base tracking-tight font-display">{% translate "Workouts" %}</h3>
+            <a href="{% url 'manager:routine:overview' %}" class="text-xs font-bold text-primary hover:text-white transition-colors">
                 {% translate "See all" %}
             </a>
         </div>
 
         <div class="flex flex-col gap-2.5">
             {% for session in completed_sessions %}
-                <div class="flex items-center justify-between p-3.5 bg-[#1c1c1e] rounded-[20px] border border-white/[0.02]">
+                <div class="flex items-center justify-between p-3.5 bg-surface-card rounded-[20px] border border-outline/50">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-neutral-900 border border-white/[0.05] flex items-center justify-center text-[#caf300]">
+                        <div class="w-10 h-10 rounded-full bg-surface border border-outline flex items-center justify-center text-primary">
                             {% if session.day.name and "running" in session.day.name|lower or "corsa" in session.day.name|lower or "walk" in session.day.name|lower %}
                                 <span class="material-symbols-outlined text-lg">directions_run</span>
                             {% else %}
@@ -57,7 +57,7 @@
                                     {% translate "Workout Session" %}
                                 {% endif %}
                             </h4>
-                            <p class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5">
+                            <p class="text-[10px] text-secondary font-bold uppercase tracking-wider mt-0.5">
                                 {% if session.notes %}
                                     {{ session.notes|truncatechars:20 }}
                                 {% else %}
@@ -66,19 +66,19 @@
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1 text-[11px] text-[#caf300] font-extrabold">
+                    <div class="flex items-center gap-1 text-[11px] text-primary font-extrabold">
                         <span>{{ session.date|date:"d M" }}</span>
                         <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                     </div>
                 </div>
             {% empty %}
-                <div class="flex flex-col items-center justify-center py-6 px-4 bg-[#1c1c1e] rounded-[20px] border border-white/[0.03] text-center gap-3">
-                    <span class="material-symbols-outlined text-[#caf300] text-3xl">fitness_center</span>
+                <div class="flex flex-col items-center justify-center py-6 px-4 bg-surface-card rounded-[20px] border border-outline text-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-3xl">fitness_center</span>
                     <div>
                         <h4 class="text-sm font-bold text-white">{% translate "No workouts executed yet" %}</h4>
-                        <p class="text-xs text-neutral-500 mt-1 max-w-[240px]">{% translate "Start a training session to track your workouts." %}</p>
+                        <p class="text-xs text-secondary mt-1 max-w-[240px]">{% translate "Start a training session to track your workouts." %}</p>
                     </div>
-                    <a href="{% url 'manager:routine:overview' %}" class="px-5 py-2 rounded-full bg-[#caf300] text-[#131313] text-xs font-black hover:scale-105 transition-transform mt-2">
+                    <a href="{% url 'manager:routine:overview' %}" class="px-5 py-2.5 rounded-full bg-primary text-on-primary text-xs font-black hover:scale-105 transition-transform mt-2">
                         {% translate "Start a Workout" %}
                     </a>
                 </div>

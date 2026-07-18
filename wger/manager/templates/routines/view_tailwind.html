@@ -4,187 +4,376 @@
 {% block title %}{{ routine.name }} - {% translate "Workout Details" %}{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="relative w-full h-[35vh] md:h-80 -mx-4 px-4 overflow-hidden border-b border-[#262626]">
-    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCnJ7DgHD-AZGvCfpS57s8dYSWTBFpzOwzI8RxNQZzzEWdOxfO21Dc6SjWfc5m7seOYpOKbz-rsNcl62DD6YIfnzIJu-nVfKcAA9dU0tQFgMwcwwkxjddVsMnyf4HoZGJqgY1Zm3b_sGQ8hAzVZLZWWup2BLuucHagX0ZFixkxIHesOp0ug9qYnmBf3jBcc-svDDSNOlZzCYNqLZaGiKC86gGmCrDEpaT3WRa49jAQCGLjnX02k-g')"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-[#131313] via-[#131313]/60 to-transparent"></div>
+<!-- Hero Section (Matching Screen 1 cover card format) -->
+<div class="relative w-full h-56 rounded-[2.2rem] overflow-hidden bg-cover bg-center border border-[#222429] shadow-lg -mx-4 px-4 mb-5" 
+     style="background-image: linear-gradient(to bottom, rgba(8, 9, 10, 0.05), rgba(8, 9, 10, 0.9)), url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=800');">
+    <!-- Back Button -->
+    <a href="{% url 'manager:routine:overview' %}" class="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/80 transition-all duration-200">
+        <span class="material-symbols-outlined text-sm">arrow_back</span>
+    </a>
     
-    <!-- Back Button Overlay -->
-    <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-10">
-        <a href="{% url 'manager:routine:overview' %}" class="w-10 h-10 rounded-full bg-[#131313]/60 backdrop-blur-md border border-[#262626] flex items-center justify-center text-white hover:border-[#caf300] hover:text-[#caf300] transition-all duration-300">
-            <span class="material-symbols-outlined">arrow_back</span>
-        </a>
+    <!-- Edit Button -->
+    <a href="{% url 'manager:routine:edit' routine.pk %}" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/80 transition-all duration-200">
+        <span class="material-symbols-outlined text-sm">edit</span>
+    </a>
+    
+    <!-- Badges & Title Overlay -->
+    <div class="absolute bottom-5 left-5 right-5 flex flex-col gap-1.5">
         <div class="flex gap-2">
-            <a href="{% url 'manager:routine:edit' routine.pk %}" class="w-10 h-10 rounded-full bg-[#131313]/60 backdrop-blur-md border border-[#262626] flex items-center justify-center text-white hover:border-[#caf300] hover:text-[#caf300] transition-all duration-300">
-                <span class="material-symbols-outlined">edit</span>
-            </a>
+            <span class="bg-[#caf300] text-[#000000] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md tracking-wider">{{ routine.duration_weeks }} {% translate "WEEKS" %}</span>
+            <span class="bg-[#16171A] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md tracking-wider">{% translate "CALISTHENICS" %}</span>
         </div>
-    </div>
-    
-    <div class="absolute bottom-0 left-0 w-full p-6">
-        <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="bg-[#caf300] text-[#131313] text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest">{{ routine.duration_weeks }} {% translate "Weeks" %}</span>
-                <span class="bg-[#1c1b1b] border border-[#262626] text-gray-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest">{% translate "Calisthenics" %}</span>
-            </div>
-            <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-white font-bold uppercase tracking-tight">{{ routine.name }}</h1>
-        </div>
+        <h2 class="text-3xl font-display font-black text-white tracking-tight uppercase">{{ routine.name }}</h2>
     </div>
 </div>
 
-<!-- Main Content Container -->
-<main class="max-w-3xl mx-auto px-4 pt-6 flex flex-col gap-6">
-    <!-- About Section -->
-    <div class="bg-[#161616]/60 backdrop-blur-md border border-[#262626] rounded-[24px] p-6 shadow-xl">
-        <h2 class="font-label-caps text-label-caps text-[#caf300] uppercase mb-2 tracking-widest text-[11px] font-bold">{% translate "About" %}</h2>
-        <p class="font-body-md text-body-md text-gray-300 leading-relaxed">
-            {{ routine.description|default:"No description provided for this routine." }}
-        </p>
-    </div>
+<!-- About Section -->
+<div class="bg-surface border border-outline rounded-3xl p-5 shadow-sm mb-5">
+    <span class="text-[10px] font-extrabold uppercase text-primary font-display tracking-widest">{% translate "ABOUT" %}</span>
+    <p class="text-sm text-secondary mt-1.5 leading-relaxed">
+        {{ routine.description|default:"No description provided for this routine." }}
+    </p>
+</div>
 
-    <!-- Training Days Section -->
-    <div class="flex flex-col gap-4 mb-8">
-        <div class="flex justify-between items-center px-2">
-            <h2 class="font-label-caps text-label-caps text-gray-400 uppercase tracking-widest text-[11px] font-bold">{% translate "Training Days" %}</h2>
-            <a href="{% url 'manager:routine:add-day' routine.pk %}" class="flex items-center gap-1 text-xs font-bold text-[#caf300] hover:text-white transition-colors duration-300 border border-[#caf300]/30 hover:border-[#caf300] px-3 py-1.5 rounded-full bg-[#caf300]/5">
-                <span class="material-symbols-outlined text-xs">add</span> {% translate "ADD DAY" %}
-            </a>
-        </div>
+<!-- Training Days Header -->
+<div class="flex items-center justify-between px-1 mb-4">
+    <span class="text-xs font-bold tracking-widest uppercase text-zinc-500 font-display">{% translate "TRAINING DAYS" %}</span>
+    <a href="{% url 'manager:routine:add-day' routine.pk %}" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-primary/20 text-[10px] font-extrabold text-primary bg-primary/5 hover:bg-primary/10 transition-all duration-200">
+        <span class="material-symbols-outlined text-[10px]">add</span> {% translate "ADD DAY" %}
+    </a>
+</div>
 
-        {% for day in routine.days.all %}
-            <div class="bg-[#161616]/60 backdrop-blur-md border border-[#262626] rounded-[24px] p-6 flex flex-col gap-4 shadow-xl">
-                <div class="flex items-center justify-between border-b border-[#262626]/60 pb-4">
-                    <div>
-                        <h3 class="font-body-md text-body-md text-white font-bold">{{ day.name }}</h3>
-                        {% if day.description %}
-                            <p class="text-xs text-gray-400 mt-1">{{ day.description }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <a href="{% url 'manager:day:overview' routine.pk day.pk %}" class="px-6 py-2 rounded-full bg-[#caf300] text-[#131313] font-bold text-xs hover:scale-105 transition-transform tracking-wider uppercase shadow-md hover:shadow-lg">
-                            {% translate "START" %}
-                        </a>
-                        <a href="{% url 'manager:routine:add-exercise' routine.pk day.pk %}" class="w-9 h-9 rounded-full bg-[#131313] border border-[#262626] hover:border-[#caf300] hover:text-[#caf300] flex items-center justify-center text-white transition-all duration-300">
-                            <span class="material-symbols-outlined text-sm">add</span>
-                        </a>
-                        <form hx-post="{% url 'manager:routine:delete-day' routine.pk day.pk %}" hx-confirm="{% translate 'Are you sure you want to delete this day?' %}" class="inline">
-                            {% csrf_token %}
-                            <button type="submit" class="w-9 h-9 rounded-full bg-[#131313] border border-[#262626] hover:border-red-500/40 hover:text-red-400 flex items-center justify-center text-gray-500 transition-all duration-300">
-                                <span class="material-symbols-outlined text-sm">delete</span>
-                            </button>
-                        </form>
-                    </div>
+<!-- Training Days List -->
+<div class="flex flex-col gap-5">
+    {% for day in routine.days.all %}
+        <div class="bg-surface border border-outline rounded-[2.2rem] p-5 flex flex-col gap-4 shadow-md">
+            
+            <!-- Day Header -->
+            <div class="flex justify-between items-center border-b border-[#222429]/35 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold font-display text-white tracking-tight">{{ day.name }}</h2>
+                    <p class="text-xs text-secondary mt-0.5">{{ day.description|default:"Esercizi e programmazione odierna" }}</p>
                 </div>
+                
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'manager:day:overview' routine.pk day.pk %}" class="font-display font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full bg-primary text-on-primary hover:opacity-90 transition-all duration-300 glow-btn">
+                        {% translate "START" %}
+                    </a>
+                    <a href="{% url 'manager:routine:add-exercise' routine.pk day.pk %}" class="w-9.5 h-9.5 rounded-full bg-surface-card border border-outline hover:border-primary text-white hover:text-primary flex items-center justify-center transition-all duration-300">
+                        <span class="material-symbols-outlined text-[16px]">add</span>
+                    </a>
+                    <form hx-post="{% url 'manager:routine:delete-day' routine.pk day.pk %}" hx-confirm="{% translate 'Are you sure you want to delete this day?' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="w-9.5 h-9.5 rounded-full bg-surface-card border border-outline hover:border-red-500/50 text-secondary hover:text-red-400 flex items-center justify-center transition-all duration-300" title="Resetta scheda">
+                            <span class="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
 
-                <!-- Exercises List inside Day -->
-                <div class="flex flex-col gap-2">
-                    {% for slot in day.slots.all %}
-                        <div class="flex flex-col gap-4 py-5 border-b border-[#262626]/40 last:border-0">
-                            {% if slot.is_real_superset %}
-                                <!-- SUPERSET DISPLAY -->
-                                <div class="flex items-center justify-between border-b border-[#262626]/40 pb-3">
-                                    <span class="text-xs font-bold text-[#caf300] bg-[#caf300]/10 border border-[#caf300]/20 px-3 py-1 rounded-full uppercase tracking-wider">SUPERSET</span>
-                                    <form hx-post="{% url 'manager:routine:delete-exercise' routine.pk day.pk slot.pk %}" hx-confirm="{% translate 'Are you sure you want to remove this superset?' %}">
-                                        {% csrf_token %}
-                                        <button type="submit" class="w-7 h-7 rounded-full bg-[#131313] border border-[#262626] hover:border-red-500/40 hover:text-red-400 flex items-center justify-center text-gray-500 transition-all duration-300">
-                                            <span class="material-symbols-outlined text-sm">close</span>
-                                        </button>
-                                    </form>
-                                </div>
-                                
-                                <div class="flex flex-col gap-6 pl-2">
-                                    {% for exercise in slot.unique_exercises %}
-                                        <div class="flex flex-col gap-3">
-                                            <!-- Exercise Sub-header -->
-                                            <div class="flex items-center justify-between">
-                                                <h4 class="text-white font-extrabold text-sm uppercase tracking-tight">
-                                                    <span class="text-[#caf300] font-mono mr-1">
-                                                        {% if forloop.counter == 1 %}A{% elif forloop.counter == 2 %}B{% elif forloop.counter == 3 %}C{% elif forloop.counter == 4 %}D{% else %}E{% endif %}.
+            <!-- Exercises list under day -->
+            <div class="flex flex-col gap-3">
+                {% for slot in day.slots.all %}
+                    <div class="flex flex-col gap-4 py-3 border-b border-[#222429]/40 last:border-0 last:pb-0">
+                        {% if slot.is_real_superset %}
+                            <!-- SUPERSET DISPLAY -->
+                            <div class="flex items-center justify-between border-b border-[#222429]/40 pb-2">
+                                <span class="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full uppercase tracking-wider">SUPERSET</span>
+                                <form hx-post="{% url 'manager:routine:delete-exercise' routine.pk day.pk slot.pk %}" hx-confirm="{% translate 'Are you sure you want to remove this superset?' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-7 h-7 rounded-full bg-[#131313] border border-outline hover:border-red-500/40 hover:text-red-400 flex items-center justify-center text-gray-500 transition-all duration-300">
+                                        <span class="material-symbols-outlined text-sm">close</span>
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="flex flex-col gap-4">
+                                {% for exercise in slot.unique_exercises %}
+                                    <div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id }}">
+                                        <!-- Header row -->
+                                        <div class="flex w-full items-center justify-between p-3.5 cursor-pointer select-none" onclick="toggleCollapse('{{ exercise.id }}')">
+                                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                                <span class="text-[#caf300] font-mono font-bold text-sm select-none">
+                                                    {% if forloop.counter == 1 %}A{% elif forloop.counter == 2 %}B{% elif forloop.counter == 3 %}C{% elif forloop.counter == 4 %}D{% else %}E{% endif %}
+                                                </span>
+                                                <!-- Thumbnail Image -->
+                                                <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-900 border border-outline flex-shrink-0 group">
+                                                    {% if exercise.main_image %}
+                                                        <img src="{{ exercise.main_image.image.url }}" class="w-full h-full object-cover">
+                                                    {% else %}
+                                                        <div class="w-full h-full bg-zinc-800 flex items-center justify-center text-gray-500">
+                                                            <span class="material-symbols-outlined text-lg">fitness_center</span>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200">
+                                                        <svg class="w-4.5 h-4.5 text-white/95" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="min-w-0 flex-1">
+                                                    <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{{ exercise.get_translation.name }}</h3>
+                                                    <span class="text-xs text-secondary mt-0.5 inline-block">
+                                                        {% with entries_count=slot.entries.all|length %}
+                                                            {{ entries_count }} set
+                                                        {% endwith %}
                                                     </span>
-                                                    {{ exercise.get_translation.name }}
-                                                </h4>
+                                                </div>
+                                            </div>
+
+                                            <!-- Controls -->
+                                            <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                                                <!-- INFO BUTTON -->
+                                                <button type="button" 
+                                                        onclick="openExerciseOfficialPage(
+                                                            event,
+                                                            '{{ exercise.id }}', 
+                                                            '{{ exercise.get_translation.name|escapejs }}', 
+                                                            '{% if exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% endif %}', 
+                                                            '{{ exercise.category.name|escapejs }}', 
+                                                            [{% for m in exercise.muscles.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
+                                                            [{% for m in exercise.muscles_secondary.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
+                                                            [{% for eq in exercise.equipment.all %}'{{ eq.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                                                            '{{ exercise.get_translation.description_source|default:exercise.get_translation.description|default:''|escapejs }}'
+                                                        )"
+                                                        class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-primary hover:border-primary flex items-center justify-center flex-shrink-0 transition-all duration-200" title="Informazioni esercizio">
+                                                    <span class="material-symbols-outlined text-sm">info</span>
+                                                </button>
+                                                <!-- Caret -->
+                                                <span class="material-symbols-outlined text-zinc-500 transition-transform duration-300 transform rotate-180 caret-icon flex-shrink-0 select-none">
+                                                    expand_more
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Collapsible Sets -->
+                                        <div class="expand-container open" id="sets-container-{{ exercise.id }}">
+                                            <div class="expand-content">
+                                                <div class="px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
+                                                    <div class="sets-list flex flex-col gap-2.5">
+                                                        {% for entry in slot.entries.all %}
+                                                            {% if entry.exercise_id == exercise.id %}
+                                                                <div class="flex flex-col gap-1 w-full">
+                                                                    <div class="set-row flex items-center justify-between p-2.5 bg-[#141517] border border-outline rounded-full transition-all duration-200" data-set-index="{{ entry.set_index }}">
+                                                                        <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
+                                                                            <span class="text-xs font-bold text-secondary uppercase tracking-wider">Set {{ entry.set_index }}</span>
+                                                                            <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                                                                                {% csrf_token %}
+                                                                                <!-- Reps Input -->
+                                                                                <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
+                                                                                    <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-10 bg-transparent text-white border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                                                                    <span class="text-[10px] text-secondary font-semibold uppercase ml-1">reps</span>
+                                                                                </div>
+                                                                                <span class="text-secondary text-sm font-bold">×</span>
+                                                                                <!-- Weight Input -->
+                                                                                <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
+                                                                                    <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1" class="w-10 bg-transparent text-primary border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                                                                    <span class="text-[10px] text-primary font-bold uppercase ml-1">KG</span>
+                                                                                </div>
+                                                                                <!-- Save Button -->
+                                                                                <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200">
+                                                                                    <span class="material-symbols-outlined text-[14px]">save</span>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                        
+                                                                        <div class="flex items-center gap-2 pr-2">
+                                                                            <!-- Note Toggle Button -->
+                                                                            <button type="button" onclick="toggleNoteField('note-container-{{ entry.pk }}')" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200" id="note-toggle-{{ entry.pk }}">
+                                                                                <span class="material-symbols-outlined text-[14px]">notes</span>
+                                                                            </button>
+                                                                            <!-- Delete Button -->
+                                                                            <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
+                                                                                {% csrf_token %}
+                                                                                <button type="submit" class="w-7.5 h-7.5 rounded-full border border-transparent hover:border-[#222429] text-gray-500 hover:text-red-400 flex items-center justify-center transition-all duration-200">
+                                                                                    <span class="material-symbols-outlined text-[14px]">close</span>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </div>
+                                                                    <!-- Expandable Note Container -->
+                                                                    <div id="note-container-{{ entry.pk }}" class="{% if not entry.comment %}hidden{% endif %} mt-2 w-full">
+                                                                        <form hx-post="{% url 'manager:routine:update-set-notes' routine.pk day.pk slot.pk entry.pk %}" class="relative flex items-center w-full bg-[#141517] border border-[#222429] px-4 py-3 rounded-2xl group">
+                                                                            {% csrf_token %}
+                                                                            <span class="material-symbols-outlined text-gray-500 absolute left-4 text-sm pointer-events-none">notes</span>
+                                                                            <input type="text" name="comment" value="{{ entry.comment }}" placeholder="{% translate 'Add set note...' %}" class="bg-transparent border-none p-0 flex-1 pl-7 text-sm text-gray-300 placeholder-gray-600 focus:ring-0">
+                                                                            <button type="submit" class="text-gray-500 hover:text-primary transition-colors duration-200">
+                                                                                <span class="material-symbols-outlined text-[14px]">save</span>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+
+                                                    <!-- Add Set Area for specific exercise in superset -->
+                                                    <div class="flex items-center gap-2 mt-2">
+                                                        <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}-{{ exercise.id }}')" class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-outline hover:border-primary text-xs font-bold text-primary bg-transparent hover:bg-primary/5 transition-all duration-200">
+                                                            <span class="material-symbols-outlined text-xs">add</span> {% translate "Add set" %}
+                                                        </button>
+                                                        
+                                                        <form id="add-set-form-{{ slot.pk }}-{{ exercise.id }}" hx-post="{% url 'manager:routine:add-set' routine.pk day.pk slot.pk %}" class="hidden items-center gap-2 bg-[#1c1b1b] border border-[#262626] rounded-xl p-2 transition-all duration-300">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+                                                            <div class="flex items-center gap-1">
+                                                                <input type="number" name="reps" placeholder="Reps" required min="1" max="100" class="w-14 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
+                                                                <span class="text-gray-500 text-xs">×</span>
+                                                                <input type="number" name="weight" placeholder="Weight" required min="0" step="0.1" class="w-16 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
+                                                                <span class="text-[10px] text-[#caf300] font-bold">KG</span>
+                                                            </div>
+                                                            <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="w-32 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#caf300]">
+                                                            
+                                                            <div class="flex items-center gap-1">
+                                                                <button type="submit" class="w-7 h-7 rounded-lg bg-[#caf300]/20 text-[#caf300] hover:bg-[#caf300] hover:text-[#131313] flex items-center justify-center transition-colors">
+                                                                    <span class="material-symbols-outlined text-sm">check</span>
+                                                                </button>
+                                                                <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}-{{ exercise.id }}')" class="w-7 h-7 rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
+                                                                    <span class="material-symbols-outlined text-sm">close</span>
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <!-- STANDARD SINGLE EXERCISE DISPLAY -->
+                            {% with exercise=slot.obj %}
+                                <div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id }}">
+                                    <!-- Header row -->
+                                    <div class="flex w-full items-center justify-between p-3.5 cursor-pointer select-none" onclick="toggleCollapse('{{ exercise.id }}')">
+                                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                                            <!-- Thumbnail Image -->
+                                            <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-900 border border-outline flex-shrink-0 group">
+                                                {% if exercise.main_image %}
+                                                    <img src="{{ exercise.main_image.image.url }}" class="w-full h-full object-cover">
+                                                {% else %}
+                                                    <div class="w-full h-full bg-zinc-800 flex items-center justify-center text-gray-500">
+                                                        <span class="material-symbols-outlined text-lg">fitness_center</span>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200">
+                                                    <svg class="w-4.5 h-4.5 text-white/95" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                </div>
                                             </div>
                                             
-                                            <!-- Sets List for this Exercise -->
-                                            <div class="flex flex-col gap-2.5">
-                                                {% for entry in slot.entries.all %}
-                                                    {% if entry.exercise_id == exercise.id %}
-                                                         <div class="flex flex-col gap-2 p-2 bg-[#131313]/60 border border-[#262626]/80 rounded-lg hover:border-gray-800 transition-colors">
-                                                             <!-- Main Row -->
-                                                             <div class="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap w-full">
-                                                                 <!-- Set Reps and Weight Edit Form -->
-                                                                 <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-                                                                     {% csrf_token %}
-                                                                     <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest min-w-[36px]">Set {{ entry.set_index }}</span>
-                                                                     
-                                                                     <div class="flex items-center gap-1">
-                                                                         <!-- Reps Input -->
-                                                                         <div class="flex items-center bg-[#1c1b1b]/50 border border-[#262626]/80 rounded-md px-1.5 py-0.5 focus-within:border-[#caf300] transition-colors">
-                                                                             <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100"
-                                                                                    class="w-9 bg-transparent text-center font-mono text-sm font-extrabold text-white border-0 p-0 focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                                                             <span class="text-[9px] text-gray-500 font-semibold select-none ml-0.5">reps</span>
-                                                                         </div>
-                                                                         
-                                                                         <span class="text-gray-600 text-xs font-bold select-none">×</span>
-                                                                         
-                                                                         <!-- Weight Input -->
-                                                                         <div class="flex items-center bg-[#1c1b1b]/50 border border-[#262626]/80 rounded-md px-1.5 py-0.5 focus-within:border-[#caf300] transition-colors">
-                                                                             <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1"
-                                                                                    class="w-12 bg-transparent text-center font-mono text-sm font-extrabold text-[#caf300] border-0 p-0 focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                                                             <span class="text-[9px] text-[#caf300] font-bold select-none ml-0.5">KG</span>
-                                                                         </div>
-                                                                     </div>
+                                            <div class="min-w-0 flex-1">
+                                                <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{{ exercise.get_translation.name }}</h3>
+                                                <span class="text-xs text-secondary mt-0.5 inline-block">
+                                                    {% with entries_count=slot.entries.all|length %}
+                                                        {{ entries_count }} set
+                                                    {% endwith %}
+                                                </span>
+                                            </div>
+                                        </div>
 
-                                                                     <!-- Save Button -->
-                                                                     <button type="submit" class="w-6 h-6 rounded bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] hover:text-white flex items-center justify-center transition-all duration-300" title="{% translate 'Save set' %}">
-                                                                         <span class="material-symbols-outlined text-[14px]">save</span>
-                                                                     </button>
-                                                                 </form>
+                                        <!-- Controls -->
+                                        <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                                            <!-- INFO BUTTON -->
+                                            <button type="button" 
+                                                    onclick="openExerciseOfficialPage(
+                                                        event,
+                                                        '{{ exercise.id }}', 
+                                                        '{{ exercise.get_translation.name|escapejs }}', 
+                                                        '{% if exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% endif %}', 
+                                                        '{{ exercise.category.name|escapejs }}', 
+                                                        [{% for m in exercise.muscles.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
+                                                        [{% for m in exercise.muscles_secondary.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
+                                                        [{% for eq in exercise.equipment.all %}'{{ eq.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                                                        '{{ exercise.get_translation.description_source|default:exercise.get_translation.description|default:''|escapejs }}'
+                                                    )"
+                                                    class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-primary hover:border-primary flex items-center justify-center flex-shrink-0 transition-all duration-200" title="Informazioni esercizio">
+                                                <span class="material-symbols-outlined text-sm">info</span>
+                                            </button>
+                                            
+                                            <!-- Delete Exercise -->
+                                            <form hx-post="{% url 'manager:routine:delete-exercise' routine.pk day.pk slot.pk %}" hx-confirm="{% translate 'Are you sure you want to remove this exercise?' %}" class="inline" onclick="event.stopPropagation()">
+                                                {% csrf_token %}
+                                                <button type="submit" class="w-8 h-8 rounded-full border border-transparent hover:border-outline text-zinc-550 hover:text-red-400 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                                </button>
+                                            </form>
+                                            <!-- Caret -->
+                                            <span class="material-symbols-outlined text-zinc-500 transition-transform duration-300 transform rotate-180 caret-icon flex-shrink-0 select-none">
+                                                expand_more
+                                            </span>
+                                        </div>
+                                    </div>
 
-                                                                 <!-- Action Buttons (Note toggle + Delete) -->
-                                                                 <div class="flex items-center gap-1.5">
-                                                                     <!-- Note Toggle Button -->
-                                                                     <button type="button" onclick="toggleNoteField('note-container-{{ entry.pk }}')" 
-                                                                             class="w-6 h-6 rounded flex items-center justify-center border transition-all duration-300 {% if entry.comment %}border-[#caf300]/40 text-[#caf300] bg-[#caf300]/5 hover:bg-[#caf300]/10{% else %}border-[#262626] text-gray-500 hover:text-white bg-[#1c1b1b]/60{% endif %}"
-                                                                             id="note-toggle-{{ entry.pk }}" title="{% translate 'Add/Edit note' %}">
-                                                                         <span class="material-symbols-outlined text-[14px]">notes</span>
-                                                                     </button>
+                                    <!-- Collapsible Sets -->
+                                    <div class="expand-container open" id="sets-container-{{ exercise.id }}">
+                                        <div class="expand-content">
+                                            <div class="px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
+                                                <div class="sets-list flex flex-col gap-2.5">
+                                                    {% for entry in slot.entries.all %}
+                                                        <div class="flex flex-col gap-1 w-full">
+                                                            <div class="set-row flex items-center justify-between p-2.5 bg-[#141517] border border-outline rounded-full transition-all duration-200" data-set-index="{{ entry.set_index }}">
+                                                                <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
+                                                                    <span class="text-xs font-bold text-secondary uppercase tracking-wider">Set {{ entry.set_index }}</span>
+                                                                    <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                                                                        {% csrf_token %}
+                                                                        <!-- Reps Input -->
+                                                                        <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
+                                                                            <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-10 bg-transparent text-white border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                                                            <span class="text-[10px] text-secondary font-semibold uppercase ml-1">reps</span>
+                                                                        </div>
+                                                                        <span class="text-secondary text-sm font-bold">×</span>
+                                                                        <!-- Weight Input -->
+                                                                        <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
+                                                                            <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1" class="w-10 bg-transparent text-primary border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                                                            <span class="text-[10px] text-primary font-bold uppercase ml-1">KG</span>
+                                                                        </div>
+                                                                        <!-- Save Button -->
+                                                                        <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200">
+                                                                            <span class="material-symbols-outlined text-[14px]">save</span>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                                
+                                                                <div class="flex items-center gap-2 pr-2">
+                                                                    <!-- Note Toggle Button -->
+                                                                    <button type="button" onclick="toggleNoteField('note-container-{{ entry.pk }}')" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200" id="note-toggle-{{ entry.pk }}">
+                                                                        <span class="material-symbols-outlined text-[14px]">notes</span>
+                                                                    </button>
+                                                                    <!-- Delete Button -->
+                                                                    <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
+                                                                        {% csrf_token %}
+                                                                        <button type="submit" class="w-7.5 h-7.5 rounded-full border border-transparent hover:border-[#222429] text-gray-500 hover:text-red-400 flex items-center justify-center transition-all duration-200">
+                                                                            <span class="material-symbols-outlined text-[14px]">close</span>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                            <!-- Expandable Note Container -->
+                                                            <div id="note-container-{{ entry.pk }}" class="{% if not entry.comment %}hidden{% endif %} mt-2 w-full">
+                                                                <form hx-post="{% url 'manager:routine:update-set-notes' routine.pk day.pk slot.pk entry.pk %}" class="relative flex items-center w-full bg-[#141517] border border-[#222429] px-4 py-3 rounded-2xl group">
+                                                                    {% csrf_token %}
+                                                                    <span class="material-symbols-outlined text-gray-500 absolute left-4 text-sm pointer-events-none">notes</span>
+                                                                    <input type="text" name="comment" value="{{ entry.comment }}" placeholder="{% translate 'Add set note...' %}" class="bg-transparent border-none p-0 flex-1 pl-7 text-sm text-gray-300 placeholder-gray-600 focus:ring-0">
+                                                                    <button type="submit" class="text-gray-500 hover:text-primary transition-colors duration-200">
+                                                                        <span class="material-symbols-outlined text-[14px]">save</span>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-xs text-gray-500 pl-4">{% translate "No sets configured" %}</span>
+                                                    {% endfor %}
+                                                </div>
 
-                                                                     <!-- Delete Button -->
-                                                                     <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
-                                                                         {% csrf_token %}
-                                                                         <button type="submit" class="w-6 h-6 rounded bg-[#1c1b1b]/60 border border-[#262626] hover:border-red-500/40 hover:text-red-400 flex items-center justify-center text-gray-500 transition-all duration-300" title="{% translate 'Delete set' %}">
-                                                                             <span class="material-symbols-outlined text-[14px]">close</span>
-                                                                         </button>
-                                                                     </form>
-                                                                 </div>
-                                                             </div>
-
-                                                             <!-- Expandable Note Container -->
-                                                             <div id="note-container-{{ entry.pk }}" class="{% if not entry.comment %}hidden{% endif %} mt-1 border-t border-[#262626]/20 pt-1.5">
-                                                                 <form hx-post="{% url 'manager:routine:update-set-notes' routine.pk day.pk slot.pk entry.pk %}" class="relative flex items-center w-full">
-                                                                     {% csrf_token %}
-                                                                     <span class="material-symbols-outlined text-gray-500 absolute left-2.5 text-xs pointer-events-none">notes</span>
-                                                                     <input type="text" name="comment" value="{{ entry.comment }}" placeholder="{% translate 'Add set note...' %}"
-                                                                            class="w-full bg-[#1c1b1b]/40 border border-[#262626] rounded-md pl-7 pr-7 py-1 text-[11px] text-gray-300 placeholder-gray-600 focus:bg-[#131313] focus:border-[#caf300] focus:outline-none transition-all duration-300">
-                                                                     <button type="submit" class="absolute right-2 text-gray-500 hover:text-[#caf300] flex items-center">
-                                                                         <span class="material-symbols-outlined text-[12px]">save</span>
-                                                                     </button>
-                                                                 </form>
-                                                             </div>
-                                                         </div>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                
-                                                <!-- Add Set Area for specific exercise in superset -->
-                                                <div class="flex items-center gap-2 mt-1">
-                                                    <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}-{{ exercise.id }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] hover:text-white text-xs font-bold transition-all duration-300">
+                                                <!-- Add Set Area -->
+                                                <div class="flex items-center gap-2 mt-2">
+                                                    <!-- Add Set Button -->
+                                                    <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}')" class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-outline hover:border-primary text-xs font-bold text-primary bg-transparent hover:bg-primary/5 transition-all duration-200">
                                                         <span class="material-symbols-outlined text-xs">add</span> {% translate "Add set" %}
                                                     </button>
                                                     
-                                                    <form id="add-set-form-{{ slot.pk }}-{{ exercise.id }}" hx-post="{% url 'manager:routine:add-set' routine.pk day.pk slot.pk %}" class="hidden items-center gap-2 bg-[#1c1b1b] border border-[#262626] rounded-xl p-2 transition-all duration-300">
+                                                    <!-- Add Set Form (Hidden by default) -->
+                                                    <form id="add-set-form-{{ slot.pk }}" hx-post="{% url 'manager:routine:add-set' routine.pk day.pk slot.pk %}" class="hidden items-center gap-2 bg-[#1c1b1b] border border-[#262626] rounded-xl p-2 transition-all duration-300">
                                                         {% csrf_token %}
-                                                        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
                                                         <div class="flex items-center gap-1">
                                                             <input type="number" name="reps" placeholder="Reps" required min="1" max="100" class="w-14 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
                                                             <span class="text-gray-500 text-xs">×</span>
@@ -197,7 +386,7 @@
                                                             <button type="submit" class="w-7 h-7 rounded-lg bg-[#caf300]/20 text-[#caf300] hover:bg-[#caf300] hover:text-[#131313] flex items-center justify-center transition-colors">
                                                                 <span class="material-symbols-outlined text-sm">check</span>
                                                             </button>
-                                                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}-{{ exercise.id }}')" class="w-7 h-7 rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
+                                                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}')" class="w-7 h-7 rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
                                                                 <span class="material-symbols-outlined text-sm">close</span>
                                                             </button>
                                                         </div>
@@ -205,155 +394,51 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <!-- STANDARD SINGLE EXERCISE DISPLAY -->
-                                <!-- Header Row: Exercise Name and Delete Button -->
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <h4 class="text-white font-bold text-sm">{{ slot.obj.get_translation.name }}</h4>
-                                    </div>
-                                    <form hx-post="{% url 'manager:routine:delete-exercise' routine.pk day.pk slot.pk %}" hx-confirm="{% translate 'Are you sure you want to remove this exercise?' %}">
-                                        {% csrf_token %}
-                                        <button type="submit" class="w-7 h-7 rounded-full bg-[#131313] border border-[#262626] hover:border-red-500/40 hover:text-red-400 flex items-center justify-center text-gray-500 transition-all duration-300">
-                                            <span class="material-symbols-outlined text-sm">close</span>
-                                        </button>
-                                    </form>
-                                </div>
-
-                                <!-- Sets Container (Vertical Stack) -->
-                                <div class="flex flex-col gap-2.5">
-                                    <!-- Existing Sets -->
-                                    {% for entry in slot.entries.all %}
-                                        <div class="flex flex-col gap-2 p-2 bg-[#131313]/60 border border-[#262626]/80 rounded-lg hover:border-gray-800 transition-colors">
-                                            <!-- Main Row -->
-                                            <div class="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap w-full">
-                                                <!-- Set Reps and Weight Edit Form -->
-                                                <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-                                                    {% csrf_token %}
-                                                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest min-w-[36px]">Set {{ entry.set_index }}</span>
-                                                    
-                                                    <div class="flex items-center gap-1">
-                                                        <!-- Reps Input -->
-                                                        <div class="flex items-center bg-[#1c1b1b]/50 border border-[#262626]/80 rounded-md px-1.5 py-0.5 focus-within:border-[#caf300] transition-colors">
-                                                            <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100"
-                                                                   class="w-9 bg-transparent text-center font-mono text-sm font-extrabold text-white border-0 p-0 focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                                            <span class="text-[9px] text-gray-500 font-semibold select-none ml-0.5">reps</span>
-                                                        </div>
-                                                        
-                                                        <span class="text-gray-600 text-xs font-bold select-none">×</span>
-                                                        
-                                                        <!-- Weight Input -->
-                                                        <div class="flex items-center bg-[#1c1b1b]/50 border border-[#262626]/80 rounded-md px-1.5 py-0.5 focus-within:border-[#caf300] transition-colors">
-                                                            <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1"
-                                                                   class="w-12 bg-transparent text-center font-mono text-sm font-extrabold text-[#caf300] border-0 p-0 focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                                            <span class="text-[9px] text-[#caf300] font-bold select-none ml-0.5">KG</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Save Button -->
-                                                    <button type="submit" class="w-6 h-6 rounded bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] hover:text-white flex items-center justify-center transition-all duration-300" title="{% translate 'Save set' %}">
-                                                        <span class="material-symbols-outlined text-[14px]">save</span>
-                                                    </button>
-                                                </form>
-
-                                                <!-- Action Buttons (Note toggle + Delete) -->
-                                                <div class="flex items-center gap-1.5">
-                                                    <!-- Note Toggle Button -->
-                                                    <button type="button" onclick="toggleNoteField('note-container-{{ entry.pk }}')" 
-                                                            class="w-6 h-6 rounded flex items-center justify-center border transition-all duration-300 {% if entry.comment %}border-[#caf300]/40 text-[#caf300] bg-[#caf300]/5 hover:bg-[#caf300]/10{% else %}border-[#262626] text-gray-500 hover:text-white bg-[#1c1b1b]/60{% endif %}"
-                                                            id="note-toggle-{{ entry.pk }}" title="{% translate 'Add/Edit note' %}">
-                                                        <span class="material-symbols-outlined text-[14px]">notes</span>
-                                                    </button>
-
-                                                    <!-- Delete Button -->
-                                                    <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="w-6 h-6 rounded bg-[#1c1b1b]/60 border border-[#262626] hover:border-red-500/40 hover:text-red-400 flex items-center justify-center text-gray-500 transition-all duration-300" title="{% translate 'Delete set' %}">
-                                                            <span class="material-symbols-outlined text-[14px]">close</span>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-
-                                            <!-- Expandable Note Container -->
-                                            <div id="note-container-{{ entry.pk }}" class="{% if not entry.comment %}hidden{% endif %} mt-1 border-t border-[#262626]/20 pt-1.5">
-                                                <form hx-post="{% url 'manager:routine:update-set-notes' routine.pk day.pk slot.pk entry.pk %}" class="relative flex items-center w-full">
-                                                    {% csrf_token %}
-                                                    <span class="material-symbols-outlined text-gray-500 absolute left-2.5 text-xs pointer-events-none">notes</span>
-                                                    <input type="text" name="comment" value="{{ entry.comment }}" placeholder="{% translate 'Add set note...' %}"
-                                                           class="w-full bg-[#1c1b1b]/40 border border-[#262626] rounded-md pl-7 pr-7 py-1 text-[11px] text-gray-300 placeholder-gray-600 focus:bg-[#131313] focus:border-[#caf300] focus:outline-none transition-all duration-300">
-                                                    <button type="submit" class="absolute right-2 text-gray-500 hover:text-[#caf300] flex items-center">
-                                                        <span class="material-symbols-outlined text-[12px]">save</span>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    {% empty %}
-                                        <span class="text-xs text-gray-500">{% translate "No sets configured" %}</span>
-                                    {% endfor %}
-
-                                    <!-- Add Set Area -->
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <!-- Add Set Button -->
-                                        <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] hover:text-white text-xs font-bold transition-all duration-300">
-                                            <span class="material-symbols-outlined text-xs">add</span> {% translate "Add set" %}
-                                        </button>
-                                        
-                                        <!-- Add Set Form (Hidden by default) -->
-                                        <form id="add-set-form-{{ slot.pk }}" hx-post="{% url 'manager:routine:add-set' routine.pk day.pk slot.pk %}" class="hidden items-center gap-2 bg-[#1c1b1b] border border-[#262626] rounded-xl p-2 transition-all duration-300">
-                                            {% csrf_token %}
-                                            <div class="flex items-center gap-1">
-                                                <input type="number" name="reps" placeholder="Reps" required min="1" max="100" class="w-14 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
-                                                <span class="text-gray-500 text-xs">×</span>
-                                                <input type="number" name="weight" placeholder="Weight" required min="0" step="0.1" class="w-16 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
-                                                <span class="text-[10px] text-[#caf300] font-bold">KG</span>
-                                            </div>
-                                            
-                                            <!-- Optional set note field on add -->
-                                            <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="w-32 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#caf300]">
-                                            
-                                            <div class="flex items-center gap-1">
-                                                <button type="submit" class="w-7 h-7 rounded-lg bg-[#caf300]/20 text-[#caf300] hover:bg-[#caf300] hover:text-[#131313] flex items-center justify-center transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">check</span>
-                                                </button>
-                                                <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.pk }}')" class="w-7 h-7 rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
-                                                    <span class="material-symbols-outlined text-sm">close</span>
-                                                </button>
-                                            </div>
-                                        </form>
                                     </div>
                                 </div>
-                            {% endif %}
+                            {% endwith %}
+                        {% endif %}
 
-                            <!-- Notes Row -->
-                            <form hx-post="{% url 'manager:routine:update-notes' routine.pk day.pk slot.pk %}" class="relative flex items-center w-full mt-1">
-                                {% csrf_token %}
-                                <span class="material-symbols-outlined text-gray-500 absolute left-3 text-xs pointer-events-none">notes</span>
-                                <input type="text" name="notes" value="{{ slot.comment }}" placeholder="{% translate 'Add note (e.g. slow tempo, rest 90s)...' %}"
-                                       class="w-full bg-[#131313]/40 border border-[#262626] rounded-xl pl-8 pr-8 py-1.5 text-xs text-gray-300 placeholder-gray-600 focus:bg-[#131313] focus:border-[#caf300] focus:outline-none transition-all duration-300">
-                                <button type="submit" class="absolute right-2.5 text-gray-500 hover:text-[#caf300] flex items-center">
-                                    <span class="material-symbols-outlined text-[14px]">save</span>
-                                </button>
-                            </form>
-                        </div>
-                    {% empty %}
-                        <p class="text-xs text-gray-500 text-center py-4">{% translate "No exercises added to this day yet." %}</p>
-                    {% endfor %}
-                </div>
+                        <!-- Notes Row -->
+                        <form hx-post="{% url 'manager:routine:update-notes' routine.pk day.pk slot.pk %}" class="relative flex items-center w-full mt-1">
+                            {% csrf_token %}
+                            <span class="material-symbols-outlined text-gray-500 absolute left-3 text-xs pointer-events-none">notes</span>
+                            <input type="text" name="notes" value="{{ slot.comment|default:'' }}" placeholder="{% translate 'Add note (e.g. slow tempo, rest 90s)...' %}" class="w-full bg-[#131313]/40 border border-[#262626] rounded-xl pl-8 pr-8 py-1.5 text-xs text-gray-300 placeholder-gray-650 focus:bg-[#131313] focus:border-[#caf300] focus:outline-none transition-all duration-300">
+                            <button type="submit" class="absolute right-2.5 text-gray-500 hover:text-[#caf300] flex items-center">
+                                <span class="material-symbols-outlined text-[14px]">save</span>
+                            </button>
+                        </form>
+                    </div>
+                {% empty %}
+                    <p class="text-xs text-gray-500 text-center py-4">{% translate "No exercises added to this day yet." %}</p>
+                {% endfor %}
             </div>
-        {% empty %}
-            <div class="bg-[#161616]/40 border border-[#262626] rounded-[24px] p-8 text-center text-gray-500">
-                {% translate "No training days set up for this routine yet." %}
-            </div>
-        {% endfor %}
-    </div>
-</main>
+        </div>
+    {% empty %}
+        <div class="bg-surface border border-outline rounded-[2.2rem] p-8 text-center text-gray-500">
+            {% translate "No training days set up for this routine yet." %}
+        </div>
+    {% endfor %}
+</div>
 {% endblock %}
 
 {% block extra_body %}
 <script>
+function toggleCollapse(exerciseId) {
+    const container = document.getElementById(`sets-container-${exerciseId}`);
+    if (!container) return;
+    const card = container.closest('.exercise-group');
+    const caret = card.querySelector('.caret-icon');
+    
+    if (container.classList.contains('open')) {
+        container.classList.remove('open');
+        if (caret) caret.classList.remove('rotate-180');
+    } else {
+        container.classList.add('open');
+        if (caret) caret.classList.add('rotate-180');
+    }
+}
+
 function toggleAddSetForm(formId) {
     const form = document.getElementById(formId);
     if (form) {

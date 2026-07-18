@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+    <title>Gofit - Onboarding Height</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#131313",
+              "surface": "#161616",
+              "surface-container": "#201f1f",
+              "surface-container-low": "#1c1b1b",
+              "surface-container-high": "#2a2a2a",
+              "primary": "#ffffff",
+              "primary-fixed": "#caf300",
+              "on-surface-variant": "#c5c9ac",
+              "error": "#ffb4ab"
+            },
+            borderRadius: {
+              "DEFAULT": "1rem",
+              "lg": "2rem",
+              "xl": "3rem"
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #131313;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-[#e5e2e1] min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden flex flex-col h-[750px] shadow-2xl relative">
+        <!-- Top App Bar -->
+        <header class="flex items-center justify-between px-6 pt-6 w-full shrink-0">
+            <button class="text-primary hover:bg-[#201f1f] w-10 h-10 rounded-full flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
+            <span class="text-xs font-black uppercase tracking-widest text-on-surface-variant">Step 2 of 4</span>
+            <div class="w-10"></div>
+        </header>
+
+        <!-- Progress Indicator -->
+        <div class="px-6 pt-4 shrink-0">
+            <div class="w-full flex gap-1.5 h-1">
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+                <div class="flex-1 bg-[#262626] rounded-full"></div>
+                <div class="flex-1 bg-[#262626] rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 px-6 pt-10 flex flex-col items-center select-none overflow-y-auto no-scrollbar">
+            <div class="text-center mb-6 w-full">
+                <h1 class="text-[32px] font-black uppercase tracking-tight text-white mb-2">What is Your Height?</h1>
+                <p class="text-sm font-medium text-on-surface-variant max-w-[280px] mx-auto">Height in cm. This will help customize your workout metrics.</p>
+            </div>
+
+            <!-- Height Display & Vertical Scroll Wheel -->
+            <div class="w-full flex-grow flex flex-col items-center justify-center my-auto relative">
+                <!-- Highlight Indicator Lines -->
+                <div class="absolute w-48 h-16 border-y-2 border-[#caf300]/30 z-0 pointer-events-none top-1/2 -translate-y-1/2 flex items-center justify-end pr-4">
+                    <span class="text-xs font-bold text-[#caf300]/70 uppercase tracking-widest">cm</span>
+                </div>
+
+                <!-- Scroll Wheel -->
+                <div id="height-wheel" class="w-48 h-64 overflow-y-auto no-scrollbar relative z-10 flex flex-col gap-5 py-[96px] cursor-grab active:cursor-grabbing text-center">
+                    <!-- JS populated heights -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="p-6 bg-[#161616] border-t border-[#262626] flex flex-col gap-3 shrink-0">
+            <button class="w-full bg-[#caf300] hover:bg-[#b0d500] active:scale-[0.98] text-[#131313] font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2">
+                <span>Continue</span>
+                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+            <button class="w-full bg-transparent hover:bg-[#201f1f] text-white border border-[#262626] font-bold py-3.5 rounded-full transition-all">
+                Back
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wheel = document.getElementById('height-wheel');
+            const minHeight = 140;
+            const maxHeight = 220;
+
+            let html = '';
+            for (let h = minHeight; h <= maxHeight; h++) {
+                html += `
+                    <div class="height-item text-3xl font-extrabold text-neutral-600 transition-all duration-150 shrink-0 h-10 flex items-center justify-center" data-height="${h}">
+                        ${h}
+                    </div>
+                `;
+            }
+            wheel.innerHTML = html;
+
+            // Height selection and styling based on scroll position
+            const updateSelection = () => {
+                const wheelCenter = wheel.scrollTop + wheel.clientHeight / 2;
+                const items = wheel.getElementsByClassName('height-item');
+                
+                let selectedItem = null;
+                let minDiff = Infinity;
+
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    const itemCenter = item.offsetTop + item.clientHeight / 2;
+                    const diff = Math.abs(wheelCenter - itemCenter);
+                    
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        selectedItem = item;
+                    }
+
+                    // Reset styling
+                    item.classList.remove('text-[#caf300]', 'text-5xl', 'scale-110');
+                    item.classList.add('text-neutral-600', 'text-3xl');
+                }
+
+                if (selectedItem) {
+                    selectedItem.classList.remove('text-neutral-600', 'text-3xl');
+                    selectedItem.classList.add('text-[#caf300]', 'text-5xl', 'scale-110');
+                }
+            };
+
+            wheel.addEventListener('scroll', updateSelection);
+
+            // Drag to scroll logic
+            let isDown = false;
+            let startY;
+            let scrollTop;
+
+            wheel.addEventListener('mousedown', (e) => {
+                isDown = true;
+                startY = e.pageY - wheel.offsetTop;
+                scrollTop = wheel.scrollTop;
+            });
+            wheel.addEventListener('mouseleave', () => {
+                isDown = false;
+            });
+            wheel.addEventListener('mouseup', () => {
+                isDown = false;
+            });
+            wheel.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const y = e.pageY - wheel.offsetTop;
+                const walk = (y - startY) * 1.5;
+                wheel.scrollTop = scrollTop - walk;
+            });
+
+            // Initial position center at 175cm
+            setTimeout(() => {
+                const targetItem = Array.from(wheel.children).find(el => el.getAttribute('data-height') === '175');
+                if (targetItem) {
+                    const targetScroll = targetItem.offsetTop - wheel.clientHeight / 2 + targetItem.clientHeight / 2;
+                    wheel.scrollTop = targetScroll;
+                    updateSelection();
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

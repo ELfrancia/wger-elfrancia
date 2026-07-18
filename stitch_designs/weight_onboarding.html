@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+    <title>Gofit - Onboarding Weight</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#131313",
+              "surface": "#161616",
+              "surface-container": "#201f1f",
+              "surface-container-low": "#1c1b1b",
+              "surface-container-high": "#2a2a2a",
+              "primary": "#ffffff",
+              "primary-fixed": "#caf300",
+              "on-surface-variant": "#c5c9ac",
+              "error": "#ffb4ab"
+            },
+            borderRadius: {
+              "DEFAULT": "1rem",
+              "lg": "2rem",
+              "xl": "3rem"
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #131313;
+        }
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-[#e5e2e1] min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden flex flex-col h-[750px] shadow-2xl relative">
+        <!-- Top App Bar -->
+        <header class="flex items-center justify-between px-6 pt-6 w-full shrink-0">
+            <button class="text-primary hover:bg-[#201f1f] w-10 h-10 rounded-full flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
+            <span class="text-xs font-black uppercase tracking-widest text-on-surface-variant">Step 1 of 4</span>
+            <div class="w-10"></div>
+        </header>
+
+        <!-- Progress Indicator -->
+        <div class="px-6 pt-4 shrink-0">
+            <div class="w-full flex gap-1.5 h-1">
+                <div class="flex-1 bg-[#caf300] rounded-full"></div>
+                <div class="flex-1 bg-[#262626] rounded-full"></div>
+                <div class="flex-1 bg-[#262626] rounded-full"></div>
+                <div class="flex-1 bg-[#262626] rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 px-6 pt-10 flex flex-col items-center select-none overflow-y-auto no-scrollbar">
+            <div class="text-center mb-8 w-full">
+                <h1 class="text-[32px] font-black uppercase tracking-tight text-white mb-2">What is Your Weight?</h1>
+                <p class="text-sm font-medium text-on-surface-variant max-w-[280px] mx-auto">Weight in kg. Don't worry, you can always change it later.</p>
+            </div>
+
+            <!-- Weight Display & Scroll Scale -->
+            <div class="w-full flex flex-col items-center justify-center my-auto">
+                <div class="flex items-baseline justify-center gap-1.5 mb-8">
+                    <span id="weight-value" class="text-7xl font-black tracking-tighter text-[#caf300]">75.0</span>
+                    <span class="text-xl font-extrabold text-on-surface-variant uppercase tracking-wider">kg</span>
+                </div>
+
+                <!-- Ruler Container -->
+                <div class="w-full relative h-28 bg-[#1c1b1b] border border-[#262626] rounded-2xl overflow-hidden flex items-center justify-center">
+                    <!-- Gradient Fades -->
+                    <div class="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#1c1b1b] to-transparent z-10 pointer-events-none"></div>
+                    <div class="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#1c1b1b] to-transparent z-10 pointer-events-none"></div>
+
+                    <!-- Center Pointer -->
+                    <div class="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1 bg-[#caf300] z-20 shadow-[0_0_12px_rgba(202,243,0,0.6)]"></div>
+
+                    <!-- Ruler Ticks -->
+                    <div id="ruler" class="w-full h-full overflow-x-auto no-scrollbar flex items-end pb-4 cursor-grab active:cursor-grabbing relative">
+                        <div class="flex items-end gap-3 px-[50%] h-full whitespace-nowrap" id="ticks-container">
+                            <!-- JS populated ticks -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="p-6 bg-[#161616] border-t border-[#262626] flex flex-col gap-3 shrink-0">
+            <button class="w-full bg-[#caf300] hover:bg-[#b0d500] active:scale-[0.98] text-[#131313] font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2">
+                <span>Continue</span>
+                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+            <button class="w-full bg-transparent hover:bg-[#201f1f] text-white border border-[#262626] font-bold py-3.5 rounded-full transition-all">
+                Back
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('ticks-container');
+            const weightVal = document.getElementById('weight-value');
+            const ruler = document.getElementById('ruler');
+
+            const minWeight = 40;
+            const maxWeight = 150;
+            const tickSpacing = 14; // pixels per tick (including gap)
+
+            let html = '';
+            for (let w = minWeight; w <= maxWeight; w += 0.5) {
+                const isWhole = w % 1 === 0;
+                const isFive = w % 5 === 0;
+                
+                let heightClass = 'h-4 bg-[#262626]';
+                if (isFive) {
+                    heightClass = 'h-10 bg-white';
+                } else if (isWhole) {
+                    heightClass = 'h-7 bg-on-surface-variant';
+                }
+
+                html += `
+                    <div class="flex flex-col items-center justify-end h-full w-[2px] shrink-0" data-weight="${w.toFixed(1)}">
+                        ${isFive ? `<span class="text-[10px] font-bold text-on-surface-variant mb-1.5">${Math.floor(w)}</span>` : ''}
+                        <div class="w-[2px] ${heightClass} rounded-full"></div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+
+            // Scroll alignment and tracking
+            const setWeight = (scrollLeft) => {
+                const centerPos = scrollLeft + ruler.clientWidth / 2;
+                // Calculate which element is closest to the center
+                const ticks = container.children;
+                let closestElement = null;
+                let minDiff = Infinity;
+
+                for (let i = 0; i < ticks.length; i++) {
+                    const tick = ticks[i];
+                    const tickCenter = tick.offsetLeft + tick.clientWidth / 2;
+                    const diff = Math.abs(centerPos - tickCenter);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestElement = tick;
+                    }
+                }
+
+                if (closestElement) {
+                    const weight = closestElement.getAttribute('data-weight');
+                    weightVal.textContent = weight;
+                }
+            };
+
+            ruler.addEventListener('scroll', () => {
+                setWeight(ruler.scrollLeft);
+            });
+
+            // Drag to scroll logic
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            ruler.addEventListener('mousedown', (e) => {
+                isDown = true;
+                ruler.classList.add('active');
+                startX = e.pageX - ruler.offsetLeft;
+                scrollLeft = ruler.scrollLeft;
+            });
+            ruler.addEventListener('mouseleave', () => {
+                isDown = false;
+            });
+            ruler.addEventListener('mouseup', () => {
+                isDown = false;
+            });
+            ruler.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - ruler.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                ruler.scrollLeft = scrollLeft - walk;
+            });
+
+            // Initial center at 75.0kg
+            setTimeout(() => {
+                const targetTick = Array.from(container.children).find(el => el.getAttribute('data-weight') === '75.0');
+                if (targetTick) {
+                    const targetScroll = targetTick.offsetLeft - ruler.clientWidth / 2 + targetTick.clientWidth / 2;
+                    ruler.scrollLeft = targetScroll;
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>
