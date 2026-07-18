@@ -558,6 +558,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'wger.core.validators.UppercaseValidator',
+    },
+    {
+        'NAME': 'wger.core.validators.LowercaseValidator',
+    },
+    {
+        'NAME': 'wger.core.validators.SymbolValidator',
+    },
 ]
 
 USER_AGENTS_CACHE = 'default'

@@ -119,136 +119,7 @@
             
             <div class="flex flex-col gap-4">
                 {% for slot in day.slots.all %}
-                    {% with exercise=slot.obj %}
-                        <div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id }}">
-                            <!-- Card Header -->
-                            <div class="flex w-full items-center justify-between p-3.5 cursor-pointer select-none" onclick="toggleCollapse('{{ exercise.id }}')">
-                                <div class="flex items-center gap-3 min-w-0 flex-1">
-                                    <!-- Thumbnail Image -->
-                                    <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-900 border border-outline flex-shrink-0 group">
-                                        {% if exercise.main_image %}
-                                            <img src="{{ exercise.main_image.image.url }}" class="w-full h-full object-cover">
-                                        {% else %}
-                                            <div class="w-full h-full bg-zinc-800 flex items-center justify-center text-gray-500">
-                                                <span class="material-symbols-outlined text-lg">fitness_center</span>
-                                            </div>
-                                        {% endif %}
-                                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200">
-                                            <svg class="w-4.5 h-4.5 text-white/95" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="min-w-0 flex-1">
-                                        <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{{ exercise.get_translation.name }}</h3>
-                                        <span class="text-xs text-secondary mt-0.5 inline-block">
-                                            {% with entries_count=slot.entries.all|length %}
-                                                {{ entries_count }} set
-                                            {% endwith %}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Controls -->
-                                <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                                    <!-- INFO BUTTON -->
-                                    <button type="button" 
-                                            onclick="openExerciseOfficialPage(
-                                                event,
-                                                '{{ exercise.id }}', 
-                                                '{{ exercise.get_translation.name|escapejs }}', 
-                                                '{% if exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% endif %}', 
-                                                '{{ exercise.category.name|escapejs }}', 
-                                                [{% for m in exercise.muscles.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
-                                                [{% for m in exercise.muscles_secondary.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
-                                                [{% for eq in exercise.equipment.all %}'{{ eq.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-                                                '{{ exercise.get_translation.description_source|default:exercise.get_translation.description|default:''|escapejs }}'
-                                            )"
-                                            class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-primary hover:border-primary flex items-center justify-center flex-shrink-0 transition-all duration-200" title="Informazioni esercizio">
-                                        <span class="material-symbols-outlined text-sm">info</span>
-                                    </button>
-                                    
-                                    <!-- Main Exercise Checkbox -->
-                                    <button class="exercise-check-btn w-8 h-8 rounded-full flex items-center justify-center border-2 border-zinc-700 hover:border-primary flex-shrink-0 transition-all duration-200" onclick="toggleExerciseAllSets(event, '{{ exercise.id }}')">
-                                        <div class="inner-check w-full h-full rounded-full flex items-center justify-center bg-transparent transition-all duration-200">
-                                            <svg class="w-4 h-4 text-on-primary hidden" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                        </div>
-                                    </button>
-
-                                    <!-- Caret -->
-                                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-300 transform rotate-180 caret-icon flex-shrink-0 select-none">
-                                        expand_more
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Collapsible Sets -->
-                            <div class="expand-container open" id="sets-container-{{ exercise.id }}">
-                                <div class="expand-content">
-                                    <div class="px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
-                                        <div class="sets-list flex flex-col gap-2.5">
-                                            {% for slot_entry in slot.entries.all %}
-                                                {% if slot_entry.id in logged_set_ids %}
-                                                    <!-- Completed Set row -->
-                                                    <div class="set-row flex items-center justify-between p-2.5 bg-primary/5 border border-primary/20 rounded-full transition-all duration-200" data-set-index="{{ forloop.counter }}">
-                                                        <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
-                                                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Set {{ forloop.counter }}</span>
-                                                            <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-[#222429] px-2 py-1 w-24">
-                                                                <input type="number" disabled value="{{ slot_entry.reps_config.reps }}" class="w-10 bg-transparent text-gray-400 border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                                                <span class="text-[10px] text-gray-500 font-semibold uppercase ml-1">reps</span>
-                                                            </div>
-                                                            <span class="text-secondary text-sm font-bold">×</span>
-                                                            <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-[#222429] px-2 py-1 w-24">
-                                                                <input type="number" disabled value="{{ slot_entry.weight_config.weight }}" class="w-10 bg-transparent text-gray-400 border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                                                <span class="text-[10px] text-gray-500 font-bold uppercase ml-1">KG</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex items-center gap-2 pr-2">
-                                                            <button type="button" disabled class="w-7.5 h-7.5 rounded-full bg-primary/20 border border-primary/40 text-primary flex items-center justify-center transition-all duration-200">
-                                                                <span class="material-symbols-outlined text-[14px] font-black">check</span>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                {% else %}
-                                                    <!-- Pending Set row -->
-                                                    <div class="set-row flex items-center justify-between p-2.5 bg-[#141517] border border-outline rounded-full transition-all duration-200" data-set-index="{{ forloop.counter }}">
-                                                        <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
-                                                            <span class="text-xs font-bold text-secondary uppercase tracking-wider">Set {{ forloop.counter }}</span>
-                                                            <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" class="flex items-center gap-2 flex-wrap sm:flex-nowrap set-log-form">
-                                                                {% csrf_token %}
-                                                                <input type="hidden" name="exercise_id" value="{{ slot.obj.id }}">
-                                                                <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id }}">
-                                                                
-                                                                <!-- Reps Input -->
-                                                                <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
-                                                                    <input type="number" name="repetitions" value="{{ slot_entry.reps_config.reps }}" required min="1" max="100" class="w-10 bg-transparent text-white border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                                                    <span class="text-[10px] text-secondary font-semibold uppercase ml-1">reps</span>
-                                                                </div>
-                                                                
-                                                                <span class="text-secondary text-sm font-bold">×</span>
-                                                                
-                                                                <!-- Weight Input -->
-                                                                <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
-                                                                    <input type="number" step="0.5" name="weight" value="{{ slot_entry.weight_config.weight }}" required min="0" class="w-10 bg-transparent text-primary border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                                                    <span class="text-[10px] text-primary font-bold uppercase ml-1">KG</span>
-                                                                </div>
-                                                                
-                                                                <!-- Submit Checkmark Button -->
-                                                                <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200">
-                                                                    <span class="material-symbols-outlined text-[14px]">check</span>
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endwith %}
+                    {% include "workout/includes/exercise_card.html" %}
                 {% empty %}
                     <p class="text-xs text-gray-500 text-center py-4">{% translate "No exercises configured for this day." %}</p>
                 {% endfor %}
@@ -469,7 +340,7 @@
 
     function updateProgressBar() {
         const totalSets = document.querySelectorAll('.set-row').length;
-        const completedSets = document.querySelectorAll('.set-row button[disabled]').length;
+        const completedSets = document.querySelectorAll('.set-row[data-completed="true"]').length;
         const percentage = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
         
         const progressBar = document.getElementById('workout-progress-bar');
@@ -494,48 +365,19 @@
         }
     }
 
-    function toggleExerciseAllSets(event, exerciseId) {
-        if (event) event.stopPropagation();
-        
-        const container = document.getElementById(`sets-container-${exerciseId}`);
-        if (!container) return;
-        
-        const forms = container.querySelectorAll('.set-log-form');
-        if (forms.length === 0) return;
-        
-        let delay = 0;
-        forms.forEach(form => {
-            setTimeout(() => {
-                htmx.trigger(form, 'submit');
-            }, delay);
-            delay += 300;
-        });
-    }
-
-    function updateParentCheckboxes() {
-        const cards = document.querySelectorAll('.exercise-group');
-        cards.forEach(card => {
-            const exerciseId = card.getAttribute('data-id');
-            const container = document.getElementById(`sets-container-${exerciseId}`);
-            if (!container) return;
-            
-            const unloggedForms = container.querySelectorAll('.set-log-form');
-            const checkBtn = card.querySelector('.exercise-check-btn');
-            if (!checkBtn) return;
-            
-            const inner = checkBtn.querySelector('.inner-check');
-            const checkIcon = inner ? inner.querySelector('svg') : null;
-            
-            if (unloggedForms.length === 0) {
-                checkBtn.classList.add('bg-primary', 'border-primary');
-                checkBtn.classList.remove('border-zinc-700');
-                if (checkIcon) checkIcon.classList.remove('hidden');
+    function toggleAddSetForm(formId) {
+        const form = document.getElementById(formId);
+        if (form) {
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                form.classList.add('inline-flex');
+                const repsInput = form.querySelector('input[name="reps"]');
+                if (repsInput) repsInput.focus();
             } else {
-                checkBtn.classList.remove('bg-primary', 'border-primary');
-                checkBtn.classList.add('border-zinc-700');
-                if (checkIcon) checkIcon.classList.add('hidden');
+                form.classList.remove('inline-flex');
+                form.classList.add('hidden');
             }
-        });
+        }
     }
 
     let lastTimerTriggerTime = 0;
@@ -544,15 +386,17 @@
     document.body.addEventListener('htmx:afterOnLoad', function(evt) {
         if (evt.detail.xhr && evt.detail.xhr.status === 200) {
             setTimeout(updateProgressBar, 50);
-            setTimeout(updateParentCheckboxes, 50);
 
-            // Debounce rest timer trigger to avoid multiple timers when checking a parent checkbox
-            const now = Date.now();
-            if (now - lastTimerTriggerTime > 1500) {
-                lastTimerTriggerTime = now;
-                timeLeft = timerDuration;
-                updateDisplay();
-                startCountdown();
+            // Only trigger rest timer if the triggered element was a single set log form
+            const triggeredForm = evt.detail.elt;
+            if (triggeredForm && triggeredForm.classList.contains('set-log-form')) {
+                const now = Date.now();
+                if (now - lastTimerTriggerTime > 1500) {
+                    lastTimerTriggerTime = now;
+                    timeLeft = timerDuration;
+                    updateDisplay();
+                    startCountdown();
+                }
             }
         }
     });
@@ -560,6 +404,5 @@
     // Initial render
     updateDisplay();
     updateProgressBar();
-    updateParentCheckboxes();
 </script>
 {% endblock %}

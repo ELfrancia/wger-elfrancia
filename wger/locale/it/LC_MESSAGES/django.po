@@ -5207,3 +5207,13 @@ msgstr "Re-Invia"
 
 #~ msgid "Edit weight"
 #~ msgstr "Modifica il peso"
+
+msgid "Your password must contain at least one uppercase letter."
+msgstr "La tua password deve contenere almeno una lettera maiuscola."
+
+msgid "Your password must contain at least one lowercase letter."
+msgstr "La tua password deve contenere almeno una lettera minuscola."
+
+msgid "Your password must contain at least one symbol."
+msgstr "La tua password deve contenere almeno un simbolo."
+

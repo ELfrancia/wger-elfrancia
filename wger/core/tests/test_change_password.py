@@ -50,8 +50,8 @@ class ChangePasswordTestCase(WgerTestCase):
         # Fill in the change password form
         form_data = {
             'old_password': 'testtest',
-            'new_password1': 'shuZoh2oGu7i',
-            'new_password2': 'shuZoh2oGu7i',
+            'new_password1': 'shuZoh2oGu7i!',
+            'new_password2': 'shuZoh2oGu7i!',
         }
 
         response = self.client.post(reverse('core:user:change-password'), form_data)
@@ -62,7 +62,7 @@ class ChangePasswordTestCase(WgerTestCase):
         if fail:
             self.assertTrue(user.check_password('testtest'))
         else:
-            self.assertTrue(user.check_password('shuZoh2oGu7i'))
+            self.assertTrue(user.check_password('shuZoh2oGu7i!'))
 
     def test_change_password_anonymous(self):
         """
@@ -102,8 +102,8 @@ class ChangePasswordTestCase(WgerTestCase):
             reverse('core:user:change-password'),
             {
                 'old_password': 'testtest',
-                'new_password1': 'shuZoh2oGu7i',
-                'new_password2': 'shuZoh2oGu7i',
+                'new_password1': 'shuZoh2oGu7i!',
+                'new_password2': 'shuZoh2oGu7i!',
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -137,8 +137,8 @@ class ChangePasswordTestCase(WgerTestCase):
             reverse('core:user:change-password'),
             {
                 'old_password': 'testtest',
-                'new_password1': 'shuZoh2oGu7i',
-                'new_password2': 'shuZoh2oGu7i',
+                'new_password1': 'shuZoh2oGu7i!',
+                'new_password2': 'shuZoh2oGu7i!',
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -156,3 +156,45 @@ class ChangePasswordTestCase(WgerTestCase):
             format='json',
         )
         self.assertEqual(refresh_after.status_code, 200)
+
+    def test_uppercase_validator(self):
+        """
+        Verify that passwords without uppercase characters are rejected.
+        """
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        with self.assertRaises(ValidationError) as ctx:
+            validate_password("lowercase123!")
+        self.assertTrue(any("uppercase" in m.lower() for m in ctx.exception.messages))
+
+    def test_lowercase_validator(self):
+        """
+        Verify that passwords without lowercase characters are rejected.
+        """
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        with self.assertRaises(ValidationError) as ctx:
+            validate_password("UPPERCASE123!")
+        self.assertTrue(any("lowercase" in m.lower() for m in ctx.exception.messages))
+
+    def test_symbol_validator(self):
+        """
+        Verify that passwords without symbols/non-alphanumeric characters are rejected.
+        """
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        with self.assertRaises(ValidationError) as ctx:
+            validate_password("UppercaseAndLowercase123")
+        self.assertTrue(any("symbol" in m.lower() for m in ctx.exception.messages))
+
+    def test_valid_password_accepted(self):
+        """
+        Verify that passwords that are valid are accepted.
+        """
+        from django.contrib.auth.password_validation import validate_password
+        # Should not raise validation error
+        validate_password("ValidPass123!")
+

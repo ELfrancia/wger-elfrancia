@@ -5,7 +5,9 @@ from django.http import HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from wger.manager.models import Day, WorkoutSession, WorkoutLog, SlotEntry
+from django.db import models as django_models
+from wger.manager.models import Day, WorkoutSession, WorkoutLog, SlotEntry, SetsConfig, RepetitionsConfig, WeightConfig
+from wger.manager.helpers import reset_routine_cache
 
 
 @login_required
@@ -23,49 +25,133 @@ def log_tailwind(request, routine_pk, day_pk):
     )
 
     if request.method == 'POST':
+        action = request.POST.get('action')
         exercise_id = request.POST.get('exercise_id')
-        slot_entry_id = request.POST.get('slot_entry_id')
-        repetitions = request.POST.get('repetitions')
-        weight = request.POST.get('weight')
-        rir = request.POST.get('rir') or None
 
-        # Create WorkoutLog entry
-        log_entry = WorkoutLog.objects.create(
-            user=request.user,
-            session=session,
-            exercise_id=exercise_id,
-            routine_id=routine_pk,
-            slot_entry_id=slot_entry_id,
-            repetitions=repetitions,
-            weight=weight,
-            rir=rir,
-            date=timezone.now()
-        )
+        # Determine target slot first, if possible
+        slot = None
+        if exercise_id:
+            slot = day.slots.filter(entries__exercise_id=exercise_id).distinct().first()
 
-        # If it's an HTMX request, we can return a success fragment (e.g. green checkmark)
+        if action == 'complete_exercise':
+            if slot:
+                # Get already logged set IDs for this exercise in this session
+                logged_set_ids = list(session.logs.filter(exercise_id=exercise_id).values_list('slot_entry_id', flat=True))
+                all_set_ids = [entry.id for entry in slot.entries.all()]
+
+                # Check if all sets are already completed
+                all_completed = all(sid in logged_set_ids for sid in all_set_ids)
+
+                if all_completed:
+                    # Uncheck: Delete all logs for this exercise in this session
+                    session.logs.filter(exercise_id=exercise_id).delete()
+                else:
+                    # Check: Log all remaining/unlogged sets using configured default values
+                    for slot_entry in slot.entries.all():
+                        if slot_entry.id not in logged_set_ids:
+                            WorkoutLog.objects.create(
+                                user=request.user,
+                                session=session,
+                                exercise_id=exercise_id,
+                                routine_id=routine_pk,
+                                slot_entry_id=slot_entry.id,
+                                repetitions=slot_entry.reps_config.reps,
+                                weight=slot_entry.weight_config.weight,
+                                date=timezone.now()
+                            )
+
+        elif action == 'delete_set':
+            slot_entry_id = request.POST.get('slot_entry_id')
+            session.logs.filter(slot_entry_id=slot_entry_id).delete()
+            if not slot and slot_entry_id:
+                slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
+                if slot_entry:
+                    slot = slot_entry.slot
+
+        elif action == 'add_set':
+            if slot:
+                from wger.exercises.models import Exercise
+                exercise = get_object_or_404(Exercise, id=exercise_id)
+                max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
+                slot_entry = SlotEntry.objects.create(
+                    slot=slot,
+                    exercise=exercise,
+                    order=(max_order or 0) + 1
+                )
+                SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+                WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
+                reset_routine_cache(day.routine)
+
+        elif action == 'delete_set_config':
+            slot_entry_id = request.POST.get('slot_entry_id')
+            slot_entry = get_object_or_404(SlotEntry, id=slot_entry_id, slot__day=day)
+            slot = slot_entry.slot
+            
+            if slot.entries.count() <= 1:
+                slot.delete()
+                reset_routine_cache(day.routine)
+                if request.headers.get('HX-Request'):
+                    return HttpResponse("")
+                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+            else:
+                slot_entry.delete()
+                reset_routine_cache(day.routine)
+
+        else:
+            # Default set logging
+            slot_entry_id = request.POST.get('slot_entry_id')
+            repetitions = request.POST.get('repetitions')
+            weight = request.POST.get('weight')
+            rir = request.POST.get('rir') or None
+
+            try:
+                repetitions = int(repetitions)
+            except (TypeError, ValueError):
+                repetitions = 0
+
+            try:
+                from decimal import Decimal
+                weight = Decimal(weight)
+            except (TypeError, ValueError):
+                from decimal import Decimal
+                weight = Decimal('0')
+
+            # Create WorkoutLog entry
+            log_entry = WorkoutLog.objects.create(
+                user=request.user,
+                session=session,
+                exercise_id=exercise_id,
+                routine_id=routine_pk,
+                slot_entry_id=slot_entry_id,
+                repetitions=repetitions,
+                weight=weight,
+                rir=rir,
+                date=timezone.now()
+            )
+            if not slot and slot_entry_id:
+                slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
+                if slot_entry:
+                    slot = slot_entry.slot
+
+        # Common rendering response for HTMX request
         if request.headers.get('HX-Request'):
-            reps_label = _('reps')
-            kg_label = _('kg')
-            return HttpResponse(f'''
-            <form class="flex items-center gap-2">
-                <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] rounded-full px-3 py-1 transition-colors">
-                    <input type="number" disabled value="{repetitions}" class="w-10 bg-transparent border-0 p-0 text-center font-bold text-gray-400 focus:ring-0 text-sm">
-                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{reps_label}</span>
-                </div>
-                
-                <span class="text-xs text-gray-500">@</span>
-                
-                <div class="flex items-center gap-1 bg-[#131313] border border-[#262626] rounded-full px-3 py-1 transition-colors">
-                    <input type="number" disabled value="{weight}" class="w-12 bg-transparent border-0 p-0 text-center font-bold text-gray-400 focus:ring-0 text-sm">
-                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{kg_label}</span>
-                </div>
-                
-                <button type="button" disabled class="w-8 h-8 rounded-full bg-[#caf300] text-[#131313] flex items-center justify-center font-bold shadow-sm cursor-default">
-                    <span class="material-symbols-outlined text-sm font-black">check</span>
-                </button>
-            </form>
-            ''')
-        
+            session_logged_set_ids = list(session.logs.values_list('slot_entry_id', flat=True))
+            logged_set_ids_set = set(session_logged_set_ids)
+            completed_exercise_ids = []
+            for s in day.slots.all():
+                all_set_ids = [entry.id for entry in s.entries.all()]
+                if all_set_ids and all(sid in logged_set_ids_set for sid in all_set_ids):
+                    if s.obj:
+                        completed_exercise_ids.append(s.obj.id)
+
+            return render(request, 'workout/includes/exercise_card.html', {
+                'slot': slot,
+                'logged_set_ids': session_logged_set_ids,
+                'completed_exercise_ids': completed_exercise_ids,
+                'day': day,
+            })
+
         return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
     # Calculate initial progress percentage
@@ -74,10 +160,19 @@ def log_tailwind(request, routine_pk, day_pk):
     completed_sets = len(logged_set_ids)
     progress_percentage = int((completed_sets / total_sets) * 100) if total_sets > 0 else 0
 
+    logged_set_ids_set = set(logged_set_ids)
+    completed_exercise_ids = []
+    for s in day.slots.all():
+        all_set_ids = [entry.id for entry in s.entries.all()]
+        if all_set_ids and all(sid in logged_set_ids_set for sid in all_set_ids):
+            if s.obj:
+                completed_exercise_ids.append(s.obj.id)
+
     return render(request, 'workout/log_tailwind.html', {
         'day': day,
         'session': session,
         'logged_set_ids': logged_set_ids,
+        'completed_exercise_ids': completed_exercise_ids,
         'progress_percentage': progress_percentage
     })
 

@@ -1,0 +1,186 @@
+{% load i18n %}
+{% with exercise=slot.obj %}
+<div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id }}" id="exercise-card-{{ exercise.id }}">
+    <!-- Card Header -->
+    <div class="flex w-full items-center justify-between p-3.5 cursor-pointer select-none" onclick="toggleCollapse('{{ exercise.id }}')">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+            <!-- Thumbnail Image -->
+            <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-900 border border-outline flex-shrink-0 group">
+                {% if exercise.main_image %}
+                    <img src="{{ exercise.main_image.image.url }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full bg-zinc-800 flex items-center justify-center text-gray-500">
+                        <span class="material-symbols-outlined text-lg">fitness_center</span>
+                    </div>
+                {% endif %}
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200">
+                    <svg class="w-4.5 h-4.5 text-white/95" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+            </div>
+            
+            <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{{ exercise.get_translation.name }}</h3>
+                <span class="text-xs text-secondary mt-0.5 inline-block">
+                    {% with entries_count=slot.entries.all|length %}
+                        {{ entries_count }} set
+                    {% endwith %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+            <!-- INFO BUTTON -->
+            <button type="button" 
+                    onclick="openExerciseOfficialPage(
+                        event,
+                        '{{ exercise.id }}', 
+                        '{{ exercise.get_translation.name|escapejs }}', 
+                        '{% if exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% endif %}', 
+                        '{{ exercise.category.name|escapejs }}', 
+                        [{% for m in exercise.muscles.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
+                        [{% for m in exercise.muscles_secondary.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
+                        [{% for eq in exercise.equipment.all %}'{{ eq.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                        '{{ exercise.get_translation.description_source|default:exercise.get_translation.description|default:''|escapejs }}'
+                    )"
+                    class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-primary hover:border-primary flex-shrink-0 transition-all duration-200" title="Informazioni esercizio">
+                <span class="material-symbols-outlined text-sm">info</span>
+            </button>
+            
+            <!-- Main Exercise Checkbox -->
+            <button class="exercise-check-btn w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-200 {% if exercise.id in completed_exercise_ids %}bg-primary border-primary{% else %}border-zinc-700 hover:border-primary{% endif %}"
+                    hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}"
+                    hx-vals='{"exercise_id": "{{ exercise.id }}", "action": "complete_exercise"}'
+                    hx-target="#exercise-card-{{ exercise.id }}"
+                    hx-swap="outerHTML"
+                    onclick="event.stopPropagation();">
+                <div class="inner-check w-full h-full rounded-full flex items-center justify-center bg-transparent transition-all duration-200">
+                    <svg class="w-4 h-4 text-on-primary {% if exercise.id not in completed_exercise_ids %}hidden{% endif %}" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            </button>
+
+            <!-- Caret -->
+            <span class="material-symbols-outlined text-zinc-500 transition-transform duration-300 transform rotate-180 caret-icon flex-shrink-0 select-none">
+                expand_more
+            </span>
+        </div>
+    </div>
+
+    <!-- Collapsible Sets -->
+    <div class="expand-container open" id="sets-container-{{ exercise.id }}">
+        <div class="expand-content">
+            <div class="px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
+                <div class="sets-list flex flex-col gap-2.5">
+                    {% for slot_entry in slot.entries.all %}
+                        {% if slot_entry.id in logged_set_ids %}
+                            <!-- Completed Set row -->
+                            <div class="set-row flex items-center justify-between p-2.5 bg-primary/5 border border-primary/20 rounded-full transition-all duration-200" data-set-index="{{ forloop.counter }}" data-completed="true">
+                                <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
+                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Set {{ forloop.counter }}</span>
+                                    <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-[#222429] px-2 py-1 w-24">
+                                        <input type="number" disabled value="{{ slot_entry.reps_config.reps }}" class="w-10 bg-transparent text-gray-400 border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                        <span class="text-[10px] text-gray-500 font-semibold uppercase ml-1">reps</span>
+                                    </div>
+                                    <span class="text-secondary text-sm font-bold">×</span>
+                                    <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-[#222429] px-2 py-1 w-24">
+                                        <input type="number" disabled value="{{ slot_entry.weight_config.weight }}" class="w-10 bg-transparent text-gray-400 border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                        <span class="text-[10px] text-gray-500 font-bold uppercase ml-1">KG</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 pr-2">
+                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#exercise-card-{{ exercise.id }}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+                                        <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id }}">
+                                        <input type="hidden" name="action" value="delete_set">
+                                        <button type="submit" class="w-7.5 h-7.5 rounded-full bg-primary/20 border border-primary/40 text-primary flex items-center justify-center hover:bg-primary/30 transition-all duration-200">
+                                            <span class="material-symbols-outlined text-[14px] font-black">check</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Pending Set row -->
+                            <div class="set-row flex items-center justify-between p-2.5 bg-[#141517] border border-outline rounded-full transition-all duration-200" data-set-index="{{ forloop.counter }}" data-completed="false">
+                                <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
+                                    <span class="text-xs font-bold text-secondary uppercase tracking-wider">Set {{ forloop.counter }}</span>
+                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#exercise-card-{{ exercise.id }}" class="flex items-center gap-2 flex-wrap sm:flex-nowrap set-log-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+                                        <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id }}">
+                                        <input type="hidden" name="set_index" value="{{ forloop.counter }}">
+                                        
+                                        <!-- Reps Input -->
+                                        <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
+                                            <input type="number" name="repetitions" value="{{ slot_entry.reps_config.reps }}" required min="1" max="100" class="w-10 bg-transparent text-white border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                            <span class="text-[10px] text-secondary font-semibold uppercase ml-1">reps</span>
+                                        </div>
+                                        
+                                        <span class="text-secondary text-sm font-bold">×</span>
+                                        
+                                        <!-- Weight Input -->
+                                        <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
+                                            <input type="number" step="0.5" name="weight" value="{{ slot_entry.weight_config.weight }}" required min="0" class="w-10 bg-transparent text-primary border-none p-0 text-sm font-bold text-center focus:ring-0">
+                                            <span class="text-[10px] text-primary font-bold uppercase ml-1">KG</span>
+                                        </div>
+                                        
+                                        <!-- Submit Checkmark Button -->
+                                        <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200">
+                                            <span class="material-symbols-outlined text-[14px]">check</span>
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="flex items-center gap-2 pr-2">
+                                    <!-- Delete set config button/form -->
+                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#exercise-card-{{ exercise.id }}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+                                        <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id }}">
+                                        <input type="hidden" name="action" value="delete_set_config">
+                                        <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-red-500 text-zinc-500 hover:text-red-500 transition-all duration-200" title="{% translate 'Delete set config' %}">
+                                            <span class="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Add Set Area -->
+                <div class="flex items-center gap-2 mt-2">
+                    <!-- Add Set Button -->
+                    <button type="button" onclick="toggleAddSetForm('add-set-form-{{ exercise.id }}')" class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-outline hover:border-primary text-xs font-bold text-primary bg-transparent hover:bg-primary/5 transition-all duration-200">
+                        <span class="material-symbols-outlined text-xs">add</span> {% translate "Add set" %}
+                    </button>
+                    
+                    <!-- Add Set Form (Hidden by default) -->
+                    <form id="add-set-form-{{ exercise.id }}" hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-target="#exercise-card-{{ exercise.id }}" hx-swap="outerHTML" class="hidden items-center gap-2 bg-[#1c1b1b] border border-[#262626] rounded-xl p-2 transition-all duration-300">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_set">
+                        <input type="hidden" name="exercise_id" value="{{ exercise.id }}">
+                        <div class="flex items-center gap-1">
+                            <input type="number" name="reps" placeholder="Reps" required min="1" max="100" class="w-14 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
+                            <span class="text-gray-500 text-xs">×</span>
+                            <input type="number" name="weight" placeholder="Weight" required min="0" step="0.1" class="w-16 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
+                            <span class="text-[10px] text-[#caf300] font-bold">KG</span>
+                        </div>
+                        <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="w-32 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#caf300]">
+                        
+                        <div class="flex items-center gap-1">
+                            <button type="submit" class="w-7 h-7 rounded-lg bg-[#caf300]/20 text-[#caf300] hover:bg-[#caf300] hover:text-[#131313] flex items-center justify-center transition-colors">
+                                <span class="material-symbols-outlined text-sm">check</span>
+                            </button>
+                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ exercise.id }}')" class="w-7 h-7 rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
