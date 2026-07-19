@@ -889,11 +889,16 @@ def dashboard_tailwind(request):
     from wger.core.models import DailyActivity
     from wger.manager.models import WorkoutSession
     from django.utils import timezone
+    import datetime
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
     latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date').first()
     activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
     profile = request.user.userprofile
-    completed_sessions = WorkoutSession.objects.filter(user=request.user).order_by('-date')[:5]
+    ten_days_ago = timezone.localdate() - datetime.timedelta(days=10)
+    completed_sessions = WorkoutSession.objects.filter(
+        user=request.user,
+        date__gte=ten_days_ago
+    ).select_related('day', 'routine').order_by('-date')
     return render(request, 'user/dashboard_tailwind.html', {
         'stats': stats,
         'latest_session': latest_session,

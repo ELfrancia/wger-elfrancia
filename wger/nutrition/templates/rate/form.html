@@ -22,95 +22,106 @@ $(document).ready(function() {
         Main Content
 -->
 {% block content %}
+<div class="flex flex-col gap-8">
+    <!-- Step 1: Basal Metabolic Rate -->
+    <div class="bg-[#101114] border border-[#222429] rounded-3xl p-6 shadow-md hover:border-[#caf300]/10 transition-colors duration-300">
+        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">1</span>
+            {% trans "Basal metabolic rate" %}
+        </h3>
+        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
+            {% blocktranslate %}The basal metabolic rate is the amount of energy expended daily
+            at rest. This is the minimum energy needed for the body to function, without any
+            additional physical activity.{% endblocktranslate %}
+        </p>
+        <form action="{% url 'nutrition:calories:bmr' %}"
+              method="post"
+              class="calories-autoform wger-form space-y-4"
+              id="bmr-form">
+            {% crispy form %}
+        </form>
+        
+        <div id="bmr-result-container" style="display:none;" class="mt-4 pt-4 border-t border-[#222429] flex items-center justify-between">
+            <span class="text-xs text-zinc-400">{% translate 'Your basic metabolic rate is:' %}</span>
+            <span class="text-lg font-black text-[#caf300] bg-primary/5 border border-primary/20 px-3 py-1 rounded-xl">
+                <span id="bmr-result-value">{{user.userprofile.calculate_basal_metabolic_rate|floatformat:2}}</span> kcal
+            </span>
+        </div>
+    </div>
 
-<h3>1 - {%trans "Basal metabolic rate" %}</h3>
-<p>{% blocktranslate %}The basal metabolic rate is the amount of energy expended daily
-at rest. This is the minimum energy needed for the body to function, without any
-additional physical activity.{% endblocktranslate %}</p>
-<form action="{% url 'nutrition:calories:bmr' %}"
-      method="post"
-      class="calories-autoform wger-form"
-      id="bmr-form">
-    {% crispy form %}
-</form>
+    <!-- Step 2: Physical Activities -->
+    <div class="bg-[#101114] border border-[#222429] rounded-3xl p-6 shadow-md hover:border-[#caf300]/10 transition-colors duration-300">
+        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">2</span>
+            {% trans "Physical activities" %}
+        </h3>
+        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
+            {% blocktranslate %}The physical activity level (PAL) is a factor used to to express
+            the additional physical activity and is used to calculate the total energy
+            required per day.{% endblocktranslate %}
+        </p>
+        <form action="{% url 'nutrition:calories:activities' %}"
+              method="post"
+              class="wger-form calories-autoform space-y-4"
+              id="activities-form">
+            {% crispy form_activities %}
+        </form>
+        
+        <div id="activities-result-container" style="display:none;" class="mt-4 pt-4 border-t border-[#222429] flex items-center justify-between">
+            <span class="text-xs text-zinc-400">{% translate 'Factor for daily activities:' %}</span>
+            <span class="text-sm font-black text-white bg-[#16171A] border border-[#222429] px-3 py-1 rounded-xl">
+                <span id="activities-result-value">{{user.userprofile.calculate_activities|floatformat:2}}</span>
+            </span>
+        </div>
+    </div>
 
-<div id="bmr-result-container" style="display:none;">
-    <p>{% translate 'Your basic metabolic rate is: ' %}
-    <strong>
-        <span id="bmr-result-value">{{user.userprofile.calculate_basal_metabolic_rate|floatformat:2}}</span>
-    </strong>
-    </p>
+    <!-- Step 3: Total Daily Calories -->
+    <div class="bg-[#101114] border border-[#222429] rounded-3xl p-6 shadow-md hover:border-[#caf300]/10 transition-colors duration-300">
+        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">3</span>
+            {% translate "Total daily calories" %}
+        </h3>
+        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
+            {% blocktranslate %}The base caloric intake is the amount of calories your metabolism
+            needs based on your level of physical activity.{% endblocktranslate %}
+        </p>
+        
+        <form action=""
+              method="post"
+              class="wger-form calories-autoform mb-6"
+              id="base-calories-form">
+            {% csrf_token %}
+            <div class="flex items-center justify-between bg-[#16171A] border border-[#222429] rounded-2xl p-4 mb-4">
+                <span class="text-xs font-bold text-white">{% translate "Basic caloric intake" %}</span>
+                <span class="text-md font-bold text-primary" id="id_base_calories">- kcal</span>
+            </div>
+            <input type="submit" class="w-full py-3 rounded-full bg-[#16171A] border border-[#222429] hover:border-primary text-white hover:text-primary font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer" value="{% translate 'Calculate basic caloric intake' %}" id="form-calculate-daily-calories">
+        </form>
+
+        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
+            {% blocktranslate %}The total calories are the actual total calories per day. This
+            might include e.g. a surplus or deficit if you are bulking or cutting. Alternatively
+            you might just enter yourself the amount of calories if you know the value.{% endblocktranslate %}
+        </p>
+
+        <form action=""
+              method="post"
+              class="wger-form space-y-4"
+              id="total-calories-form">
+            
+            <div class="space-y-3">
+                {{ form_calories.additional_calories|as_crispy_field }}
+                {{ form_calories.calories|as_crispy_field }}
+            </div>
+
+            <div class="flex flex-col gap-2 pt-4 border-t border-[#222429]/50">
+                <input type="submit" class="w-full py-3 rounded-full bg-[#16171A] border border-[#222429] hover:border-primary text-white hover:text-primary font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer" value="{% translate 'Transfer basic intake to total daily calories' %}" id="form-transfer-calories">
+                <input type="submit" class="w-full py-3 rounded-full bg-[#16171A] border border-[#222429] hover:border-primary text-white hover:text-primary font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer" value="{% translate 'Add additional calories to total daily calories' %}" id="add-calories-total">
+                <input type="submit" class="w-full py-3.5 rounded-full bg-primary text-on-primary font-black text-xs uppercase tracking-wider hover:scale-[1.01] transition-all duration-200 cursor-pointer shadow-md" value="{% translate 'Save total calories to profile' %}" id="form-update-calories">
+            </div>
+        </form>
+    </div>
 </div>
-
-
-
-
-<h3>2 - {%trans "Physical activities" %}</h3>
-<p>{% blocktranslate %}The physical activity level (PAL) is a factor used to to express
-the additional physical activity and is used to calculate the total energy
-required per day.{% endblocktranslate %}</p>
-<form action="{% url 'nutrition:calories:activities' %}"
-      method="post"
-      class="wger-form calories-autoform"
-      id="activities-form">
-    {% crispy form_activities %}
-</form>
-
-<div id="activities-result-container" style="display:none;">
-    <p>{% translate 'Factor for daily activities: ' %} <strong><span id="activities-result-value">{{user.userprofile.calculate_activities|floatformat:2}}</span></strong></p>
-</div>
-
-
-
-
-
-<h3>3 - {% translate "Total daily calories" %}</h3>
-<p>{% blocktranslate %}The base caloric intake is the amount of calories your metabolism
-needs based on your level of physical activity.{% endblocktranslate %}</p>
-<form action=""
-      method="post"
-      class="wger-form calories-autoform"
-      id="base-calories-form">
-    {% csrf_token %}
-    <table class="table">
-        <tr>
-            <td>{% translate "Basic caloric intake" %}</td>
-            <td><span id="id_base_calories"></span></td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <input type="submit" class="btn btn-light btn-block" value="{% translate 'Calculate basic caloric intake' %}" id="form-calculate-daily-calories">
-            </td>
-        </tr>
-    </table>
-</form>
-
-
-<p>{% blocktranslate %}The total calories are the actual total calories per day. This
-might include e.g. a surplus or deficit if you are bulking or cutting. Alternatively
-you might just enter yourself the amount of calories if you know the value.{% endblocktranslate %}
-</p>
-
-<form action=""
-      method="post"
-      class="wger-form"
-      id="total-calories-form">
-
-    {{ form_calories.additional_calories|as_crispy_field }}
-    {{ form_calories.calories|as_crispy_field }}
-
-    <p>
-        <input type="submit" class="btn btn-light btn-block" value="{% translate 'Transfer basic intake to total daily calories' %}" id="form-transfer-calories">
-    </p>
-
-    <p>
-        <input type="submit" class="btn btn-light btn-block" value="{% translate 'Add additional calories to total daily calories' %}" id="add-calories-total">
-    </p>
-
-    <p>
-        <input type="submit" class="btn btn-light btn-block" value="{% translate 'Save total calories to profile' %}" id="form-update-calories">
-    </p>
-</form>
 {% endblock %}
 
 

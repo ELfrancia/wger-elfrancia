@@ -49,17 +49,19 @@
                         </div>
                         <div>
                             <h4 class="text-sm font-bold text-white">
-                                {% if session.routine %}
-                                    {{ session.routine.name }}
-                                {% elif session.day %}
-                                    {{ session.day.name }}
+                                {% if session.day %}
+                                    {% if session.day.name %}
+                                        {{ session.day.name }}
+                                    {% else %}
+                                        Giorno {{ session.day.order }}
+                                    {% endif %}
                                 {% else %}
                                     {% translate "Workout Session" %}
                                 {% endif %}
                             </h4>
                             <p class="text-[10px] text-secondary font-bold uppercase tracking-wider mt-0.5">
-                                {% if session.notes %}
-                                    {{ session.notes|truncatechars:20 }}
+                                {% if session.routine %}
+                                    {{ session.routine.name }}
                                 {% else %}
                                     {% translate "Completed" %}
                                 {% endif %}

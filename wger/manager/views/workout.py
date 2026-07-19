@@ -27,6 +27,13 @@ def log_tailwind(request, routine_pk, day_pk):
     if request.method == 'POST':
         action = request.POST.get('action')
         exercise_id = request.POST.get('exercise_id')
+        slot_entry_id = request.POST.get('slot_entry_id')
+
+        # Sanitize integer IDs in case of localized formatting
+        if exercise_id:
+            exercise_id = ''.join(c for c in str(exercise_id) if c.isdigit())
+        if slot_entry_id:
+            slot_entry_id = ''.join(c for c in str(slot_entry_id) if c.isdigit())
 
         # Determine target slot first, if possible
         slot = None
@@ -49,19 +56,24 @@ def log_tailwind(request, routine_pk, day_pk):
                     # Check: Log all remaining/unlogged sets using configured default values
                     for slot_entry in slot.entries.all():
                         if slot_entry.id not in logged_set_ids:
+                            reps = slot_entry.reps_config.reps
+                            weight = slot_entry.weight_config.weight
+                            if reps is None:
+                                reps = 10
+                            if weight is None:
+                                weight = 0
                             WorkoutLog.objects.create(
                                 user=request.user,
                                 session=session,
                                 exercise_id=exercise_id,
                                 routine_id=routine_pk,
                                 slot_entry_id=slot_entry.id,
-                                repetitions=slot_entry.reps_config.reps,
-                                weight=slot_entry.weight_config.weight,
+                                repetitions=reps,
+                                weight=weight,
                                 date=timezone.now()
                             )
 
         elif action == 'delete_set':
-            slot_entry_id = request.POST.get('slot_entry_id')
             session.logs.filter(slot_entry_id=slot_entry_id).delete()
             if not slot and slot_entry_id:
                 slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
@@ -84,7 +96,6 @@ def log_tailwind(request, routine_pk, day_pk):
                 reset_routine_cache(day.routine)
 
         elif action == 'delete_set_config':
-            slot_entry_id = request.POST.get('slot_entry_id')
             slot_entry = get_object_or_404(SlotEntry, id=slot_entry_id, slot__day=day)
             slot = slot_entry.slot
             
@@ -100,7 +111,6 @@ def log_tailwind(request, routine_pk, day_pk):
 
         else:
             # Default set logging
-            slot_entry_id = request.POST.get('slot_entry_id')
             repetitions = request.POST.get('repetitions')
             weight = request.POST.get('weight')
             rir = request.POST.get('rir') or None

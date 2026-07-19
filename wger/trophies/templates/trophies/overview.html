@@ -11,34 +11,45 @@
 {# Content #}
 {#         #}
 {% block content %}
-<p>All trophies currently in the system</p>
+<p class="text-sm text-secondary mb-6">{% translate "All trophies currently in the system" %}</p>
 
-<div class="row row-cols-sm-2 row-cols-md-4 row-cols-lg-6 g-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 {% for trophy in trophy_list %}
-    <div class="col">
-        <div class="card h-100" style="min-width: 12rem;">
-            <img src="{% static trophy.image_rel_path %}" class="card-img-top" alt="..." style="padding: 1rem;">
-            <div class="card-body">
-                <h5 class="card-title">
-                    {%  if not trophy.is_active %}<s>{% endif %}
+    <div class="bg-[#101114] border border-[#222429] rounded-3xl overflow-hidden flex flex-col hover:border-[#caf300]/30 transition-all duration-300 group shadow-lg">
+        <div class="bg-[#16171A]/40 p-6 flex justify-center items-center border-b border-[#222429]">
+            <img src="{% static trophy.image_rel_path %}" class="w-20 h-20 object-contain group-hover:scale-110 transition-transform duration-300" alt="{{ trophy.name }}">
+        </div>
+        <div class="p-5 flex-1 flex flex-col justify-between gap-4">
+            <div>
+                <h4 class="text-white font-bold text-lg group-hover:text-primary transition-colors duration-200">
+                    {% if not trophy.is_active %}<s>{% endif %}
                     {{ trophy.name }}
-                    {%  if not trophy.is_active %}</s>{% endif %}
-                </h5>
-                <p class="card-text">
-                    {%  if not trophy.is_active %}<s>{% endif %}
+                    {% if not trophy.is_active %}</s>{% endif %}
+                </h4>
+                <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    {% if not trophy.is_active %}<s>{% endif %}
                     {{ trophy.description }}
-                    {%  if not trophy.is_active %}</s>{% endif %}
+                    {% if not trophy.is_active %}</s>{% endif %}
                 </p>
             </div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">Type: {{ trophy.trophy_type }}</li>
-                <li class="list-group-item">Hidden: {{ trophy.is_hidden }}</li>
-                <li class="list-group-item">Progressive: {{ trophy.is_progressive }}</li>
-            </ul>
-            <div class="card-footer text-body-secondary">
-                Awarded {{ trophy.user_trophies.count }} times
+            
+            <div class="flex flex-col gap-2 pt-2 border-t border-[#222429]/50 text-[10px] text-zinc-550 uppercase tracking-wider font-bold">
+                <div class="flex justify-between">
+                    <span>{% translate "Type" %}</span>
+                    <span class="text-white">{{ trophy.trophy_type }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>{% translate "Hidden" %}</span>
+                    <span class="text-white">{% if trophy.is_hidden %}{% translate "Yes" %}{% else %}{% translate "No" %}{% endif %}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>{% translate "Progressive" %}</span>
+                    <span class="text-white">{% if trophy.is_progressive %}{% translate "Yes" %}{% else %}{% translate "No" %}{% endif %}</span>
+                </div>
             </div>
-
+        </div>
+        <div class="bg-[#16171A]/60 border-t border-[#222429] py-3 px-5 text-center text-xs font-semibold text-primary">
+            {% blocktranslate with count=trophy.user_trophies.count %}Awarded {{ count }} times{% endblocktranslate %}
         </div>
     </div>
 {% endfor %}

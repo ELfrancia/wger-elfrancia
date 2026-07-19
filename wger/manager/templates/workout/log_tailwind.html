@@ -4,6 +4,16 @@
 {% block title %}Active Workout - Onyx{% endblock %}
 
 {% block content %}
+<style>
+    /* Smooth CSS transition for HTMX swaps */
+    .exercise-group {
+        transition: opacity 100ms ease-out, transform 100ms ease-out;
+    }
+    .exercise-group.htmx-swapping {
+        opacity: 0;
+        transform: scale(0.995);
+    }
+</style>
 <!-- Full-Screen Rest Timer Overlay -->
 <div id="rest-timer-overlay" class="fixed inset-0 z-50 bg-[#08090A] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
     <!-- Top header label -->
@@ -50,7 +60,7 @@
     </div>
 </div>
 
-<main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-3xl mx-auto pb-24">
+<main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-3xl mx-auto pb-24" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <!-- Top Progress Bar & Workout Name -->
     <div class="w-full flex flex-col pt-4 px-6 pb-4">
         <div class="w-full h-1.5 bg-[#16171A] rounded-full overflow-hidden mb-2">
@@ -382,6 +392,145 @@
 
     let lastTimerTriggerTime = 0;
 
+    function handleSetSubmit(form) {
+        // Start rest timer immediately (optimistic)
+        const now = Date.now();
+        if (now - lastTimerTriggerTime > 1500) {
+            lastTimerTriggerTime = now;
+            timeLeft = timerDuration;
+            updateDisplay();
+            startCountdown();
+        }
+
+        // Optimistic UI updates
+        const row = form.closest('.set-row');
+        if (row) {
+            row.classList.remove('bg-[#141517]', 'border-outline');
+            row.classList.add('bg-primary/5', 'border-primary/20', 'opacity-70');
+            row.setAttribute('data-completed', 'true');
+            
+            // Disable inputs (except hidden inputs needed for serialization)
+            row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
+                input.disabled = true;
+                input.classList.remove('text-white', 'text-primary');
+                input.classList.add('text-gray-400');
+            });
+            
+            // Set checkmark button to active completed state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('text-zinc-500', 'hover:text-primary', 'border-[#222429]');
+                submitBtn.classList.add('bg-primary/20', 'border-primary/40', 'text-primary');
+                submitBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] font-black">check</span>';
+            }
+
+            // Check if all sets in the same exercise group are completed
+            const card = row.closest('.exercise-group');
+            if (card) {
+                const rows = card.querySelectorAll('.set-row');
+                const allCompleted = Array.from(rows).every(r => r.getAttribute('data-completed') === 'true');
+                if (allCompleted) {
+                    const mainBtn = card.querySelector('.exercise-check-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.add('bg-primary', 'border-primary');
+                        mainBtn.classList.remove('border-zinc-700', 'hover:border-primary');
+                        const svg = mainBtn.querySelector('svg');
+                        if (svg) svg.classList.remove('hidden');
+                    }
+                }
+            }
+        }
+        
+        // Update progress bar instantly
+        updateProgressBar();
+    }
+
+    function handleSetUncheck(form) {
+        const row = form.closest('.set-row');
+        if (row) {
+            row.classList.remove('bg-primary/5', 'border-primary/20', 'opacity-70');
+            row.classList.add('bg-[#141517]', 'border-outline');
+            row.setAttribute('data-completed', 'false');
+            
+            row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
+                input.disabled = false;
+                input.classList.remove('text-gray-400');
+                input.classList.add('text-white');
+            });
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-pulse">hourglass_empty</span>';
+            }
+
+            // Uncheck the main exercise check button since at least one set is not completed
+            const card = row.closest('.exercise-group');
+            if (card) {
+                const mainBtn = card.querySelector('.exercise-check-btn');
+                if (mainBtn) {
+                    mainBtn.classList.remove('bg-primary', 'border-primary');
+                    mainBtn.classList.add('border-zinc-700', 'hover:border-primary');
+                    const svg = mainBtn.querySelector('svg');
+                    if (svg) svg.classList.add('hidden');
+                }
+            }
+        }
+        
+        // Update progress bar instantly
+        updateProgressBar();
+    }
+
+    function handleExerciseCheck(btn, event) {
+        event.stopPropagation();
+        
+        const card = btn.closest('.exercise-group');
+        if (!card) return;
+        
+        const isCompleted = btn.classList.contains('bg-primary');
+        const rows = card.querySelectorAll('.set-row');
+        
+        if (isCompleted) {
+            // Optimistically uncheck all sets
+            btn.classList.remove('bg-primary', 'border-primary');
+            btn.classList.add('border-zinc-700', 'hover:border-primary');
+            const svg = btn.querySelector('svg');
+            if (svg) svg.classList.add('hidden');
+            
+            rows.forEach(row => {
+                row.classList.remove('bg-primary/5', 'border-primary/20', 'opacity-70');
+                row.classList.add('bg-[#141517]', 'border-outline');
+                row.setAttribute('data-completed', 'false');
+                row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
+                    input.disabled = false;
+                    input.classList.remove('text-gray-400');
+                    input.classList.add('text-white');
+                });
+            });
+        } else {
+            // Optimistically check all sets
+            btn.classList.add('bg-primary', 'border-primary');
+            btn.classList.remove('border-zinc-700', 'hover:border-primary');
+            const svg = btn.querySelector('svg');
+            if (svg) svg.classList.remove('hidden');
+            
+            rows.forEach(row => {
+                row.classList.remove('bg-[#141517]', 'border-outline');
+                row.classList.add('bg-primary/5', 'border-primary/20', 'opacity-70');
+                row.setAttribute('data-completed', 'true');
+                row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
+                    input.disabled = true;
+                    input.classList.remove('text-white', 'text-primary');
+                    input.classList.add('text-gray-400');
+                });
+            });
+        }
+        
+        // Update progress bar instantly
+        updateProgressBar();
+    }
+
     // Auto-trigger timer when a set is logged via HTMX
     document.body.addEventListener('htmx:afterOnLoad', function(evt) {
         if (evt.detail.xhr && evt.detail.xhr.status === 200) {
@@ -390,14 +539,23 @@
             // Only trigger rest timer if the triggered element was a single set log form
             const triggeredForm = evt.detail.elt;
             if (triggeredForm && triggeredForm.classList.contains('set-log-form')) {
-                const now = Date.now();
-                if (now - lastTimerTriggerTime > 1500) {
-                    lastTimerTriggerTime = now;
-                    timeLeft = timerDuration;
-                    updateDisplay();
-                    startCountdown();
+                if (!isRunning) {
+                    const now = Date.now();
+                    if (now - lastTimerTriggerTime > 1500) {
+                        lastTimerTriggerTime = now;
+                        timeLeft = timerDuration;
+                        updateDisplay();
+                        startCountdown();
+                    }
                 }
             }
+        }
+    });
+
+    // Prevent view transitions if the rest timer overlay is active/visible
+    document.body.addEventListener('htmx:beforeTransition', function(evt) {
+        if (overlay && !overlay.classList.contains('hidden')) {
+            evt.preventDefault();
         }
     });
 

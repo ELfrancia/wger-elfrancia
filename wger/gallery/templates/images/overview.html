@@ -8,32 +8,31 @@
 
 {% block content %}
 
-    {% for image in images %}
+{% for image in images %}
         <div class="modal fade" id="modalImage{{ image.id }}" tabindex="-1" role="dialog"
              aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">{{ image.date }}</h5>
-                        <button type="button" class="close" data-bs-dismiss="modal"
-                                aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content bg-[#101114] border border-[#222429] rounded-3xl p-2 shadow-2xl">
+                    <div class="modal-header border-b border-[#222429] flex justify-between items-center px-4 py-3">
+                        <h5 class="modal-title text-white font-bold font-display" id="exampleModalLabel">{{ image.date }}</h5>
+                        <button type="button" class="btn-close invert opacity-80" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <a href="{{ image.image.url }}">
-                            <img src="{{ image.image.url }}" class="img-fluid" alt="">
-                        </a>
+                    <div class="modal-body p-4 flex flex-col gap-4">
+                        <div class="rounded-2xl overflow-hidden border border-[#222429] bg-[#0c0d0f] p-1 flex justify-center items-center">
+                            <a href="{{ image.image.url }}">
+                                <img src="{{ image.image.url }}" class="w-full max-h-[60vh] object-contain rounded-xl" alt="{{ image.description }}">
+                            </a>
+                        </div>
                         {% if image.description %}
-                            <p> {{ image.description }}</p>
+                            <p class="text-xs text-zinc-400 italic"> {{ image.description }}</p>
                         {% endif %}
-
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer border-t border-[#222429] flex justify-end gap-2 p-3">
                         {% url 'gallery:images:delete' image.id as url %}
                         <a
                             href="{{ url }}"
-                            class="btn btn-primary"
+                            class="w-10 h-10 rounded-full bg-red-950/40 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all duration-200"
                             hx-get="{{ url }}"
                             hx-target="#ajax-info-content"
                             data-bs-toggle="modal"
@@ -42,7 +41,7 @@
                             <span class="{% fa_class 'trash' %}"></span>
                         </a>
 
-                        <a href="{% url 'gallery:images:edit' image.id %}" class="btn btn-primary">
+                        <a href="{% url 'gallery:images:edit' image.id %}" class="w-10 h-10 rounded-full bg-[#16171A] border border-[#222429] text-white hover:border-primary hover:text-primary flex items-center justify-center transition-all duration-200">
                             <span class="{% fa_class 'edit' %}"></span>
                         </a>
                     </div>
@@ -51,11 +50,16 @@
         </div>
     {% endfor %}
 
-    <div class="row">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {% for image in images %}
-            <div class="col-sm-6 col-lg-4 mb-4">
-                <a href="#" data-bs-toggle="modal" data-bs-target="#modalImage{{ image.id }}">
-                    <img class="w-100 rounded" src="{{ image.image.url }}" alt="{{ image.description }}">
+            <div class="group relative overflow-hidden rounded-2xl border border-[#222429] hover:border-[#caf300]/40 transition-all duration-300 aspect-square bg-[#101114]">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#modalImage{{ image.id }}" class="block w-full h-full">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="{{ image.image.url }}" alt="{{ image.description }}">
+                    {% if image.description %}
+                        <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <p class="text-[10px] text-white truncate">{{ image.description }}</p>
+                        </div>
+                    {% endif %}
                 </a>
             </div>
         {% endfor %}
@@ -65,7 +69,7 @@
 
 
 {% block options %}
-    <a href="{% url 'gallery:images:add' %}" class="btn btn-success btn-sm">
+    <a href="{% url 'gallery:images:add' %}" class="inline-flex items-center justify-center px-4 py-2 rounded-full bg-primary text-on-primary font-bold text-xs uppercase tracking-wider hover:scale-[1.03] transition-all duration-200">
         {% translate "Add image" %}
     </a>
 {% endblock %}
