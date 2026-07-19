@@ -138,8 +138,18 @@
     </div>
 
     <!-- Finish Session Button -->
-    <div class="w-full flex justify-center items-center pb-16 pt-8 gap-8 px-6 mt-auto">
-        <a href="{% url 'core:dashboard' %}" class="w-full bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] shadow-md hover:shadow-lg transition-all duration-300 glow-btn">
+    <div class="w-full flex {% if progress_percentage > 0 %}flex-col sm:flex-row{% endif %} justify-center items-center pb-16 pt-8 gap-4 px-6 mt-auto">
+        {% if progress_percentage > 0 %}
+        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full sm:w-auto flex-1">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="restart_workout">
+            <button type="submit" onclick="return confirm('{% translate "Sei sicuro di voler resettare questo allenamento? Perderai tutti i set registrati oggi." %}')" class="w-full bg-[#1A1B1E] text-red-500 border border-red-500/20 hover:border-red-500 hover:bg-red-500/5 min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] transition-all duration-300">
+                <span class="material-symbols-outlined">restart_alt</span>
+                {% translate "RESTART" %}
+            </button>
+        </form>
+        {% endif %}
+        <a href="{% url 'core:dashboard' %}" class="w-full {% if progress_percentage > 0 %}sm:w-auto flex-1{% endif %} bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] shadow-md hover:shadow-lg transition-all duration-300 glow-btn">
             <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">done_all</span>
             {% translate "FINISH WORKOUT" %}
         </a>

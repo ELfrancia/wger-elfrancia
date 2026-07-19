@@ -271,27 +271,22 @@ class WorkoutLog(models.Model):
 
         # Auto-create a session only if the client didn't provide one.
         if not self.session_id:
-            try:
-                self.session = WorkoutSession.objects.get_or_create(
+            day = self.slot_entry.slot.day if (self.slot_entry and self.slot_entry.slot) else None
+            
+            # Retrieve the most recent session for this routine/day on this date
+            self.session = WorkoutSession.objects.filter(
+                user=self.user,
+                date=self.date,
+                routine=self.routine,
+                day=day,
+            ).order_by('-id').first()
+            
+            if not self.session:
+                self.session = WorkoutSession.objects.create(
                     user=self.user,
                     date=self.date,
                     routine=self.routine,
-                )[0]
-            except WorkoutSession.MultipleObjectsReturned:
-                # TODO: duplicate sessions can exist for the same (user, date, routine)
-                #       when routine is NULL, as the unique_together does not cover a NULL
-                #       routine in PostgreSQL.
-                #       This is a fix till we correctly take care of the problem, we just
-                #       reuse one session (ids are uuid7, so ordering by id yields the
-                #       earliest) instead of crashing the log POST with MultipleObjectsReturned.
-                self.session = (
-                    WorkoutSession.objects.filter(
-                        user=self.user,
-                        date=self.date,
-                        routine=self.routine,
-                    )
-                    .order_by('id')
-                    .first()
+                    day=day,
                 )
 
         # If the user of next_log is not this user, remove foreign key

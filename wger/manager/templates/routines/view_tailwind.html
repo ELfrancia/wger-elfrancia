@@ -56,7 +56,7 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
-                    <a href="{% url 'manager:day:overview' routine.pk day.pk %}" class="font-display font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full bg-primary text-on-primary hover:opacity-90 transition-all duration-300 glow-btn">
+                    <a href="{% url 'manager:day:overview' routine.pk day.pk %}?start=true" class="font-display font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full bg-primary text-on-primary hover:opacity-90 transition-all duration-300 glow-btn">
                         {% translate "START" %}
                     </a>
                     <a href="{% url 'manager:routine:add-exercise' routine.pk day.pk %}" class="w-9.5 h-9.5 rounded-full bg-surface-card border border-outline hover:border-primary text-white hover:text-primary flex items-center justify-center transition-all duration-300">

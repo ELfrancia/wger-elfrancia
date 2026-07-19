@@ -16,13 +16,43 @@ def log_tailwind(request, routine_pk, day_pk):
     if day.routine.user != request.user:
         return HttpResponseForbidden()
 
-    # Get or create today's workout session for this routine/day
-    session, created = WorkoutSession.objects.get_or_create(
-        user=request.user,
-        routine_id=routine_pk,
-        day=day,
-        date=datetime.date.today()
-    )
+    # Track active session ID for this day using django session cookies
+    session_key = f'active_session_{day_pk}'
+    session = None
+    
+    # If ?start=true is passed, we explicitly want to start a brand new session
+    if request.GET.get('start') == 'true':
+        session = WorkoutSession.objects.create(
+            user=request.user,
+            routine_id=routine_pk,
+            day=day,
+            date=datetime.date.today()
+        )
+        request.session[session_key] = str(session.id)
+        return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+    # Otherwise, try to load existing active session
+    session_id = request.session.get(session_key)
+    if session_id:
+        session = WorkoutSession.objects.filter(id=session_id, user=request.user).first()
+
+    # Fallback to the latest session for today, or create one if none exists
+    if not session:
+        session = WorkoutSession.objects.filter(
+            user=request.user,
+            routine_id=routine_pk,
+            day=day,
+            date=datetime.date.today()
+        ).order_by('-id').first()
+        
+        if not session:
+            session = WorkoutSession.objects.create(
+                user=request.user,
+                routine_id=routine_pk,
+                day=day,
+                date=datetime.date.today()
+            )
+        request.session[session_key] = str(session.id)
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -40,7 +70,11 @@ def log_tailwind(request, routine_pk, day_pk):
         if exercise_id:
             slot = day.slots.filter(entries__exercise_id=exercise_id).distinct().first()
 
-        if action == 'complete_exercise':
+        if action == 'restart_workout':
+            session.logs.all().delete()
+            return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+        elif action == 'complete_exercise':
             if slot:
                 # Get already logged set IDs for this exercise in this session
                 logged_set_ids = list(session.logs.filter(exercise_id=exercise_id).values_list('slot_entry_id', flat=True))

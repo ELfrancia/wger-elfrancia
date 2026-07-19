@@ -52,8 +52,9 @@
             <button class="exercise-check-btn w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-200 {% if exercise.id in completed_exercise_ids %}bg-primary border-primary{% else %}border-zinc-700 hover:border-primary{% endif %}"
                     hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}"
                     hx-vals='{"exercise_id": "{{ exercise.id|unlocalize }}", "action": "complete_exercise"}'
-                    hx-target="#exercise-card-{{ exercise.id|unlocalize }}"
-                    hx-swap="outerHTML swap:100ms transition:true"
+                    hx-target="#sets-list-{{ exercise.id|unlocalize }}"
+                    hx-select="#sets-list-{{ exercise.id|unlocalize }}"
+                    hx-swap="outerHTML"
                     onclick="handleExerciseCheck(this, event);">
                 <div class="inner-check w-full h-full rounded-full flex items-center justify-center bg-transparent transition-all duration-200">
                     <svg class="w-4 h-4 text-on-primary {% if exercise.id not in completed_exercise_ids %}hidden{% endif %}" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
@@ -73,7 +74,7 @@
     <div class="expand-container open" id="sets-container-{{ exercise.id|unlocalize }}">
         <div class="expand-content">
             <div class="px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
-                <div class="sets-list flex flex-col gap-2.5">
+                <div class="sets-list flex flex-col gap-2.5" id="sets-list-{{ exercise.id|unlocalize }}">
                     {% for slot_entry in slot.entries.all %}
                         {% if slot_entry.id in logged_set_ids %}
                             <!-- Completed Set row -->
