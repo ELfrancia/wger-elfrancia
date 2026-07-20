@@ -1,13 +1,13 @@
 {
-  "short_name": "wger",
-  "name": "wger Workout Manager",
-  "description": "Self hosted FLOSS fitness/workout and weight tracker",
+  "short_name": "Onyx",
+  "name": "Onyx Workout Manager",
+  "description": "Premium Onyx Workout & Calisthenics Tracker",
   "icons": [
     {
       "src": "/static/images/logos/logo-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/logos/logo-512.png",
@@ -17,9 +17,10 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#131313",
-  "theme_color": "#131313",
-  "display": "standalone",
+  "background_color": "#08090A",
+  "theme_color": "#08090A",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
   "orientation": "portrait",
   "scope": "/"
 }

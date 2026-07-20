@@ -3,21 +3,63 @@
 <html class="dark" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
     <meta name="theme-color" content="#08090A"/>
-    
-    <!-- PWA Setup -->
-    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-navbutton-color" content="#08090A"/>
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="wger">
-    <link rel="apple-touch-icon" href="{% static 'images/logos/logo-192.png' %}">
+    <meta name="apple-mobile-web-app-title" content="Onyx">
+    
+    <!-- PWA Setup & Fullscreen Mode -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/logos/logo-192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'images/logos/logo-512.png' %}">
+    <link rel="apple-touch-icon" sizes="512x512" href="{% static 'images/logos/logo-512.png' %}">
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script>
+      // Service Worker Registration for PWA Standalone Mode
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('SW registered successfully:', reg.scope);
+          }).catch(function(err) {
+            console.log('SW reg error:', err);
+          });
+        });
+      }
+
+      // PWA Install Prompt Handler
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+        }
+      });
+
+      function triggerPwaInstall() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted PWA installation');
+            }
+            deferredPrompt = null;
+          });
+        } else {
+          alert('Per installare l\'App Onyx senza barra IP e senza schede Chrome:\n\n1. Tocca i 3 pallini (⋮) in alto a destra su Chrome.\n2. Seleziona "Installa applicazione" (o "Aggiungi a Schermata Home").\n3. Apri l\'icona Onyx creata sulla Home del tuo telefono!');
+        }
+      }
+
       tailwind.config = {
         darkMode: "class",
         theme: {

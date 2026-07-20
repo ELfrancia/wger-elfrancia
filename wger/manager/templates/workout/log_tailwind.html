@@ -13,6 +13,41 @@
         opacity: 0;
         transform: scale(0.995);
     }
+
+    .set-row {
+        position: relative;
+        overflow: hidden;
+        transition: border-color 400ms ease, box-shadow 400ms ease;
+    }
+    
+    .set-row::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0%;
+        background: linear-gradient(90deg, rgba(202, 243, 0, 0.15) 0%, rgba(202, 243, 0, 0.5) 80%, rgba(202, 243, 0, 0.85) 100%);
+        border-radius: inherit;
+        z-index: 1;
+        pointer-events: none;
+        transition: width 750ms cubic-bezier(0.25, 1, 0.35, 1);
+        box-shadow: 2px 0 12px rgba(202, 243, 0, 0.6);
+    }
+
+    .set-row.is-completing::before {
+        width: 100%;
+    }
+
+    .set-row.is-completing {
+        border-color: rgba(202, 243, 0, 0.8) !important;
+        box-shadow: 0 0 20px rgba(202, 243, 0, 0.35) !important;
+    }
+
+    .set-row > * {
+        position: relative;
+        z-index: 2;
+    }
 </style>
 <!-- Full-Screen Rest Timer Overlay -->
 <div id="rest-timer-overlay" class="fixed inset-0 z-50 bg-[#08090A] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
@@ -62,7 +97,7 @@
 
 <main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-3xl mx-auto pb-24" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <!-- Top Progress Bar & Workout Name -->
-    <div class="w-full flex flex-col pt-4 px-6 pb-4">
+    <div class="w-full flex flex-col pt-4 px-2.5 sm:px-6 pb-4">
         <div class="w-full h-1.5 bg-[#16171A] rounded-full overflow-hidden mb-2">
             <div id="workout-progress-bar" class="h-full bg-[#caf300] shadow-[0_0_8px_rgba(202,243,0,0.4)] transition-all duration-500" style="width: {{ progress_percentage }}%;"></div>
         </div>
@@ -83,7 +118,7 @@
     </div>
 
     <!-- Timer / Rep Counter Core -->
-    <div class="flex flex-col items-center justify-center flex-grow w-full px-6 py-4">
+    <div class="flex flex-col items-center justify-center flex-grow w-full px-2 sm:px-6 py-4">
         <!-- Interactive Rest Timer -->
         <div class="flex flex-col items-center gap-4 mb-6">
             <!-- Main Timer Row -->
@@ -144,7 +179,7 @@
     </div>
 
     <!-- Finish Session Button -->
-    <div class="w-full flex {% if progress_percentage > 0 %}flex-col sm:flex-row{% endif %} justify-center items-center pb-16 pt-8 gap-4 px-6 mt-auto">
+    <div class="w-full flex {% if progress_percentage > 0 %}flex-col sm:flex-row{% endif %} justify-center items-center pb-16 pt-8 gap-4 px-2.5 sm:px-6 mt-auto">
         {% if progress_percentage > 0 %}
         <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full sm:w-auto flex-1">
             {% csrf_token %}
@@ -269,15 +304,17 @@
         }
     }
 
-    function startCountdown() {
+    function startCountdown(skipOverlay = false) {
         if (timerInterval) clearInterval(timerInterval);
         isRunning = true;
-        openOverlay(); // Open overlay on start
+        if (!skipOverlay) {
+            openOverlay();
+        }
         if (textPlay) textPlay.innerText = "{% translate 'Pause' %}";
         if (iconPlay) iconPlay.innerText = "pause";
         if (btnPlay) {
-            btnPlay.classList.add('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
-            btnPlay.classList.remove('bg-[#caf300]/10', 'border-[#caf300]/20', 'text-[#caf300]');
+            btnPlay.classList.add('bg-[#caf300]/10', 'border-[#caf300]/20', 'text-[#caf300]');
+            btnPlay.classList.remove('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
         }
 
         timerInterval = setInterval(() => {
@@ -413,37 +450,46 @@
     let lastTimerTriggerTime = 0;
 
     function handleSetSubmit(form) {
-        // Start rest timer immediately (optimistic)
+        const row = form.closest('.set-row');
+
+        // 1. Trigger GPU-accelerated smooth glow transition
+        if (row) {
+            row.classList.add('is-completing');
+        }
+
+        // 2. Start rest timer
         const now = Date.now();
         if (now - lastTimerTriggerTime > 1500) {
             lastTimerTriggerTime = now;
             timeLeft = timerDuration;
             updateDisplay();
-            startCountdown();
+            startCountdown(true);
         }
 
-        // Optimistic UI updates
-        const row = form.closest('.set-row');
+        // 3. Optimistic UI updates
         if (row) {
-            row.classList.remove('bg-[#141517]', 'border-outline');
-            row.classList.add('bg-primary/5', 'border-primary/20', 'opacity-70');
             row.setAttribute('data-completed', 'true');
             
+            const badge = row.querySelector('.set-badge');
+            if (badge) {
+                badge.classList.remove('bg-zinc-800/90', 'border-zinc-700/70', 'text-zinc-300');
+                badge.classList.add('bg-[#caf300]/20', 'border-[#caf300]/40', 'text-[#caf300]');
+            }
+
             // Defer input/button disabling to allow HTMX to serialize form parameters first
             setTimeout(() => {
                 row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
                     input.disabled = true;
-                    input.classList.remove('text-white', 'text-primary');
-                    input.classList.add('text-gray-400');
+                    input.classList.remove('text-white', 'text-[#caf300]');
+                    input.classList.add('text-zinc-400');
                 });
                 
                 // Set checkmark button to active completed state
                 const submitBtn = form.querySelector('button[type="submit"]');
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.classList.remove('text-zinc-500', 'hover:text-primary', 'border-[#222429]');
-                    submitBtn.classList.add('bg-primary/20', 'border-primary/40', 'text-primary');
-                    submitBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] font-black">check</span>';
+                    submitBtn.className = "w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-md transition-all duration-300";
+                    submitBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] font-black">check</span>';
                 }
             }, 0);
 
@@ -466,25 +512,40 @@
         
         // Update progress bar instantly
         updateProgressBar();
+
+        // 4. Smoothly open timer overlay modal after 750ms slider completion
+        setTimeout(() => {
+            openOverlay();
+        }, 750);
     }
 
     function handleSetUncheck(form) {
         const row = form.closest('.set-row');
         if (row) {
-            row.classList.remove('bg-primary/5', 'border-primary/20', 'opacity-70');
-            row.classList.add('bg-[#141517]', 'border-outline');
+            row.classList.remove('bg-[#caf300]/[0.05]', 'border-[#caf300]/25');
+            row.classList.add('bg-[#121316]', 'border-outline');
             row.setAttribute('data-completed', 'false');
             
+            const badge = row.querySelector('.set-badge');
+            if (badge) {
+                badge.classList.remove('bg-[#caf300]/15', 'border-[#caf300]/30', 'text-[#caf300]');
+                badge.classList.add('bg-zinc-800/90', 'border-zinc-700/70', 'text-zinc-300');
+            }
+
             row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
                 input.disabled = false;
-                input.classList.remove('text-gray-400');
-                input.classList.add('text-white');
+                input.classList.remove('text-zinc-400');
+                if (input.name === 'weight') {
+                    input.classList.add('text-[#caf300]');
+                } else {
+                    input.classList.add('text-white');
+                }
             });
             
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-pulse">hourglass_empty</span>';
+                submitBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-pulse">hourglass_empty</span>';
             }
 
             // Uncheck the main exercise check button since at least one set is not completed

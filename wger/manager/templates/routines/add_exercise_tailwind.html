@@ -15,7 +15,7 @@
     </div>
 </section>
 
-<section class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-6 mb-12">
+<section class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-4 sm:p-6 mb-12">
     <form method="post" class="flex flex-col gap-6" hx-boost="true">
         {% csrf_token %}
         
@@ -27,26 +27,26 @@
             <!-- Custom Exercise Selector UI -->
             <div id="exercise-picker" class="flex flex-col gap-4">
                 <!-- Search & Filters -->
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative flex-1">
+                <div class="flex flex-col gap-3">
+                    <div class="relative w-full">
                         <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
                         <input type="text" id="exercise-search" placeholder="{% translate 'Search exercises...' %}" 
                                class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl pl-11 pr-4 py-3 text-primary placeholder-on-surface-variant/50 focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed text-sm font-medium">
                     </div>
-                    <div class="flex gap-2">
-                        <select id="filter-muscle" class="bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-4 py-3 text-primary text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed">
+                    <div class="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full">
+                        <select id="filter-muscle" class="w-full sm:w-auto flex-1 min-w-0 bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-primary text-xs sm:text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed truncate">
                             <option value="">{% translate "All Muscles" %}</option>
                             {% for muscle in muscles_list %}
                                 <option value="{{ muscle }}">{{ muscle }}</option>
                             {% endfor %}
                         </select>
-                        <select id="filter-skill" class="bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-4 py-3 text-primary text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed">
+                        <select id="filter-skill" class="w-full sm:w-auto flex-1 min-w-0 bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-primary text-xs sm:text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed truncate">
                             <option value="">{% translate "All Skills" %}</option>
                             {% for skill in skills_list %}
                                 <option value="{{ skill }}">{{ skill }}</option>
                             {% endfor %}
                         </select>
-                        <button type="button" id="open-custom-modal-btn" class="bg-[#1c1b1b] border border-surface-container-high hover:border-[#caf300] text-primary rounded-2xl px-4 py-3 text-sm font-bold flex items-center gap-1 transition-all">
+                        <button type="button" id="open-custom-modal-btn" class="col-span-2 sm:col-span-1 w-full sm:w-auto bg-[#1c1b1b] border border-surface-container-high hover:border-[#caf300] text-primary rounded-2xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-1 transition-all flex-shrink-0">
                             <span class="material-symbols-outlined text-sm">add</span> {% translate "Custom" %}
                         </button>
                     </div>
@@ -60,18 +60,18 @@
                              data-name="{{ ex.name }}" 
                              data-muscles="{{ ex.muscles }}" 
                              data-skill="{{ ex.skill_family }}">
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
                                 <!-- Circular preview container -->
-                                <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
+                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
                                     {% if ex.preview_url %}
                                         <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
                                     {% else %}
                                         <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
                                     {% endif %}
                                 </div>
-                                <div class="flex flex-col">
-                                    <span class="text-sm font-bold text-primary">{{ ex.name }}</span>
-                                    <span class="text-xs text-on-surface-variant">
+                                <div class="flex flex-col min-w-0 flex-1">
+                                    <span class="text-sm font-bold text-primary truncate">{{ ex.name }}</span>
+                                    <span class="text-xs text-on-surface-variant truncate">
                                         {% if ex.muscles_display %}
                                             {{ ex.muscles_display }}
                                         {% else %}
@@ -84,7 +84,7 @@
                                 </div>
                             </div>
                             <!-- Selection Checkmark -->
-                            <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity">
+                            <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity flex-shrink-0 ml-2">
                                 <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                             </div>
                         </div>
@@ -732,19 +732,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     newItem.setAttribute('data-skill', data.skill_family || '');
                     
                     newItem.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
                                 <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
                             </div>
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-primary">${data.name}</span>
-                                <span class="text-xs text-on-surface-variant">
+                            <div class="flex flex-col min-w-0 flex-1">
+                                <span class="text-sm font-bold text-primary truncate">${data.name}</span>
+                                <span class="text-xs text-on-surface-variant truncate">
                                     ${data.muscles || "{% translate 'No muscle info' %}"}
                                     ${data.skill_family && data.skill_family !== 'Other' ? ' • ' + data.skill_family : ''}
                                 </span>
                             </div>
                         </div>
-                        <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity">
+                        <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity flex-shrink-0 ml-2">
                             <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                         </div>
                     `;

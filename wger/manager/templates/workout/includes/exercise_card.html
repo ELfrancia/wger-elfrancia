@@ -74,115 +74,138 @@
     <!-- Collapsible Sets -->
     <div class="expand-container open" id="sets-container-{{ slot.id|unlocalize }}">
         <div class="expand-content">
-            <div class="px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
-                <div class="sets-list flex flex-col gap-2.5" id="sets-list-{{ slot.id|unlocalize }}">
+            <div class="px-2.5 sm:px-4 pb-5 flex flex-col gap-3 pt-1 border-t border-[#222429]/20">
+                <div class="sets-list flex flex-col gap-2" id="sets-list-{{ slot.id|unlocalize }}">
                     {% for slot_entry in slot.entries.all %}
                         {% if slot_entry.id in logged_set_ids %}
                             <!-- Completed Set row -->
-                            <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between p-2.5 bg-primary/5 border border-primary/20 rounded-full transition-all duration-200" data-set-index="{{ forloop.counter }}" data-completed="true">
-                                <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
-                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Set {{ forloop.counter }}</span>
-                                    {% with logged_set=session_logs_map|get_item:slot_entry.id %}
-                                    <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-[#222429] px-2 py-1 w-24">
-                                        <input type="number" disabled value="{% if logged_set %}{{ logged_set.repetitions|floatformat:"-2" }}{% else %}{{ slot_entry.reps_config.reps }}{% endif %}" class="w-10 bg-transparent text-gray-400 border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                        <span class="text-[10px] text-gray-500 font-semibold uppercase ml-1">reps</span>
+                            <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#caf300]/[0.05] border border-[#caf300]/25 rounded-xl transition-all duration-200" data-set-index="{{ forloop.counter }}" data-completed="true">
+                                <div class="flex-1 min-w-0 flex items-center justify-between gap-1.5">
+                                    <!-- Set Badge -->
+                                    <div class="set-badge flex-shrink-0 px-2 py-1 rounded-lg bg-[#caf300]/15 border border-[#caf300]/30 text-[10px] font-extrabold font-mono text-[#caf300] uppercase tracking-wider whitespace-nowrap select-none">
+                                        SET {{ forloop.counter }}
                                     </div>
-                                    <span class="text-secondary text-sm font-bold">×</span>
-                                    <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-[#222429] px-2 py-1 w-24">
-                                        <input type="number" disabled value="{% if logged_set %}{{ logged_set.weight|floatformat:"-2" }}{% else %}{{ slot_entry.weight_config.weight }}{% endif %}" class="w-10 bg-transparent text-gray-400 border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                        <span class="text-[10px] text-gray-500 font-bold uppercase ml-1">KG</span>
+                                    
+                                    {% with logged_set=session_logs_map|get_item:slot_entry.id %}
+                                    <!-- Reps & Weight Inputs (Disabled) -->
+                                    <div class="flex items-center justify-center gap-1.5 flex-1 min-w-0">
+                                        <!-- Reps Input -->
+                                        <div class="flex items-center bg-zinc-900/60 border border-zinc-800/80 rounded-lg px-2 py-1 flex-1 min-w-0 max-w-[95px] h-8 flex-shrink-0">
+                                            <input type="number" disabled value="{% if logged_set %}{{ logged_set.repetitions|floatformat:"-2" }}{% else %}{{ slot_entry.reps_config.reps }}{% endif %}" class="w-full bg-transparent text-zinc-400 border-none p-0 text-xs sm:text-sm font-bold text-center focus:ring-0">
+                                            <span class="text-[9px] text-zinc-500 font-bold uppercase ml-1 flex-shrink-0 select-none">REPS</span>
+                                        </div>
+                                        
+                                        <span class="text-zinc-600 text-xs font-bold flex-shrink-0 select-none px-0.5">×</span>
+                                        
+                                        <!-- Weight Input -->
+                                        <div class="flex items-center bg-zinc-900/60 border border-zinc-800/80 rounded-lg px-2 py-1 flex-1 min-w-0 max-w-[100px] h-8 flex-shrink-0">
+                                            <input type="number" disabled value="{% if logged_set %}{{ logged_set.weight|floatformat:"-2" }}{% else %}{{ slot_entry.weight_config.weight }}{% endif %}" class="w-full bg-transparent text-zinc-400 border-none p-0 text-xs sm:text-sm font-bold text-center focus:ring-0">
+                                            <span class="text-[9px] text-zinc-500 font-bold uppercase ml-1 flex-shrink-0 select-none">KG</span>
+                                        </div>
                                     </div>
                                     {% endwith %}
-                                </div>
-                                <div class="flex items-center gap-2 pr-2">
-                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" onsubmit="handleSetUncheck(this);">
+                                    
+                                    <!-- Uncheck Button Form -->
+                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="flex-shrink-0" onsubmit="handleSetUncheck(this);">
                                         {% csrf_token %}
                                         <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
                                         <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
                                         <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id|unlocalize }}">
                                         <input type="hidden" name="action" value="delete_set">
-                                        <button type="submit" class="w-7.5 h-7.5 rounded-full bg-primary/20 border border-primary/40 text-primary flex items-center justify-center hover:bg-primary/30 transition-all duration-200">
-                                            <span class="material-symbols-outlined text-[14px] font-black">check</span>
+                                        <button type="submit" class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-sm active:scale-95" title="Annulla set">
+                                            <span class="material-symbols-outlined text-[16px] font-black">check</span>
                                         </button>
                                     </form>
                                 </div>
                             </div>
                         {% else %}
                             <!-- Pending Set row -->
-                            <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between p-2.5 bg-[#141517] border border-outline rounded-full transition-all duration-200" data-set-index="{{ forloop.counter }}" data-completed="false">
-                                <div class="flex items-center gap-3 pl-3 flex-1 min-w-0">
-                                    <span class="text-xs font-bold text-secondary uppercase tracking-wider">Set {{ forloop.counter }}</span>
-                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="flex items-center gap-2 flex-wrap sm:flex-nowrap set-log-form" onsubmit="handleSetSubmit(this);">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
-                                        <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
-                                        <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id|unlocalize }}">
-                                        <input type="hidden" name="set_index" value="{{ forloop.counter }}">
-                                        
+                            <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#121316] border border-outline rounded-xl transition-all duration-300" data-set-index="{{ forloop.counter }}" data-completed="false">
+                                <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML swap:900ms" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="flex-1 min-w-0 flex items-center justify-between gap-1.5 set-log-form" onsubmit="handleSetSubmit(this);">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
+                                    <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
+                                    <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id|unlocalize }}">
+                                    <input type="hidden" name="set_index" value="{{ forloop.counter }}">
+                                    
+                                    <!-- Set Badge -->
+                                    <div class="set-badge flex-shrink-0 px-2 py-1 rounded-lg bg-zinc-800/90 border border-zinc-700/70 text-[10px] font-extrabold font-mono text-zinc-300 uppercase tracking-wider whitespace-nowrap select-none">
+                                        SET {{ forloop.counter }}
+                                    </div>
+                                    
+                                    <!-- Reps & Weight Inputs -->
+                                    <div class="flex items-center justify-center gap-1.5 flex-1 min-w-0">
                                         <!-- Reps Input -->
-                                        <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
-                                            <input type="number" name="repetitions" value="{{ slot_entry.reps_config.reps }}" required min="1" max="100" class="w-10 bg-transparent text-white border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                            <span class="text-[10px] text-secondary font-semibold uppercase ml-1">reps</span>
+                                        <div class="flex items-center bg-[#090a0c] border border-zinc-700/80 focus-within:border-[#caf300] rounded-lg px-2 py-1 flex-1 min-w-0 max-w-[95px] h-8 transition-colors">
+                                            <input type="number" name="repetitions" value="{{ slot_entry.reps_config.reps }}" required min="1" max="100" class="w-full bg-transparent text-white border-none p-0 text-xs sm:text-sm font-bold text-center focus:ring-0">
+                                            <span class="text-[9px] text-zinc-400 font-bold uppercase ml-1 flex-shrink-0 select-none">REPS</span>
                                         </div>
                                         
-                                        <span class="text-secondary text-sm font-bold">×</span>
+                                        <span class="text-zinc-500 text-xs font-bold flex-shrink-0 select-none px-0.5">×</span>
                                         
                                         <!-- Weight Input -->
-                                        <div class="flex items-center bg-[#1A1B1E] rounded-xl border border-outline px-2 py-1 w-24">
-                                            <input type="number" step="0.5" name="weight" value="{{ slot_entry.weight_config.weight }}" required min="0" class="w-10 bg-transparent text-primary border-none p-0 text-sm font-bold text-center focus:ring-0">
-                                            <span class="text-[10px] text-primary font-bold uppercase ml-1">KG</span>
+                                        <div class="flex items-center bg-[#090a0c] border border-zinc-700/80 focus-within:border-[#caf300] rounded-lg px-2 py-1 flex-1 min-w-0 max-w-[100px] h-8 transition-colors">
+                                            <input type="number" step="0.5" name="weight" value="{{ slot_entry.weight_config.weight }}" required min="0" class="w-full bg-transparent text-[#caf300] border-none p-0 text-xs sm:text-sm font-bold text-center focus:ring-0">
+                                            <span class="text-[9px] text-[#caf300]/90 font-bold uppercase ml-1 flex-shrink-0 select-none">KG</span>
                                         </div>
-                                        
-                                        <!-- Submit Checkmark Button -->
-                                        <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-primary text-zinc-500 hover:text-primary transition-all duration-200">
-                                            <span class="material-symbols-outlined text-[14px]">check</span>
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="flex items-center gap-2 pr-2">
-                                    <!-- Delete set config button/form -->
-                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML swap:100ms transition:true" hx-target="#exercise-card-{{ slot.id|unlocalize }}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
-                                        <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
-                                        <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id|unlocalize }}">
-                                        <input type="hidden" name="action" value="delete_set_config">
-                                        <button type="submit" class="w-7.5 h-7.5 rounded-full flex items-center justify-center border border-[#222429] hover:border-red-500 text-zinc-500 hover:text-red-500 transition-all duration-200" title="{% translate 'Delete set config' %}">
-                                            <span class="material-symbols-outlined text-[14px]">close</span>
-                                        </button>
-                                    </form>
-                                </div>
+                                    </div>
+                                    
+                                    <!-- Submit Checkmark Button -->
+                                    <button type="submit" class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center bg-zinc-800 border border-zinc-700/80 hover:border-[#caf300] text-zinc-400 hover:text-[#caf300] transition-all active:scale-95" title="Conferma set">
+                                        <span class="material-symbols-outlined text-[16px]">check</span>
+                                    </button>
+                                </form>
+
+                                <!-- Delete set config button -->
+                                <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML swap:100ms transition:true" hx-target="#exercise-card-{{ slot.id|unlocalize }}" class="flex-shrink-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
+                                    <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
+                                    <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id|unlocalize }}">
+                                    <input type="hidden" name="action" value="delete_set_config">
+                                    <button type="submit" class="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all" title="{% translate 'Delete set config' %}">
+                                        <span class="material-symbols-outlined text-[14px]">close</span>
+                                    </button>
+                                </form>
                             </div>
                         {% endif %}
                     {% endfor %}
                 </div>
 
                 <!-- Add Set Area -->
-                <div class="flex items-center gap-2 mt-2">
+                <div class="flex flex-col gap-2 mt-2">
                     <!-- Add Set Button -->
-                    <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.id|unlocalize }}')" class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-outline hover:border-primary text-xs font-bold text-primary bg-transparent hover:bg-primary/5 transition-all duration-200">
+                    <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.id|unlocalize }}')" class="self-start flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-outline hover:border-primary text-xs font-bold text-primary bg-transparent hover:bg-primary/5 transition-all duration-200">
                         <span class="material-symbols-outlined text-xs">add</span> {% translate "Add set" %}
                     </button>
                     
                     <!-- Add Set Form (Hidden by default) -->
-                    <form id="add-set-form-{{ slot.id|unlocalize }}" hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-target="#exercise-card-{{ slot.id|unlocalize }}" hx-swap="outerHTML swap:100ms transition:true" class="hidden items-center gap-2 bg-[#1c1b1b] border border-[#262626] rounded-xl p-2 transition-all duration-300">
+                    <form id="add-set-form-{{ slot.id|unlocalize }}" hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-target="#exercise-card-{{ slot.id|unlocalize }}" hx-swap="outerHTML swap:100ms transition:true" class="hidden flex-wrap sm:flex-nowrap items-center gap-2 bg-[#16171a] border border-zinc-700/70 rounded-xl p-2.5 transition-all duration-300">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="add_set">
                         <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
                         <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
-                        <div class="flex items-center gap-1">
-                            <input type="number" name="reps" placeholder="Reps" required min="1" max="100" class="w-14 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
-                            <span class="text-gray-500 text-xs">×</span>
-                            <input type="number" name="weight" placeholder="Weight" required min="0" step="0.1" class="w-16 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-center text-white focus:outline-none focus:border-[#caf300]">
-                            <span class="text-[10px] text-[#caf300] font-bold">KG</span>
-                        </div>
-                        <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="w-32 bg-[#131313] border border-[#262626] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#caf300]">
                         
-                        <div class="flex items-center gap-1">
-                            <button type="submit" class="w-7 h-7 rounded-lg bg-[#caf300]/20 text-[#caf300] hover:bg-[#caf300] hover:text-[#131313] flex items-center justify-center transition-colors">
+                        <div class="flex items-center gap-1.5 flex-1 min-w-[150px]">
+                            <div class="flex items-center bg-[#0d0e10] border border-zinc-700/80 rounded-lg px-2 py-1 flex-1">
+                                <input type="number" name="reps" placeholder="Reps" required min="1" max="100" class="w-full bg-transparent text-xs text-center text-white focus:outline-none font-bold">
+                                <span class="text-[9px] text-zinc-500 font-bold ml-1">REPS</span>
+                            </div>
+                            <span class="text-zinc-500 text-xs font-bold">×</span>
+                            <div class="flex items-center bg-[#0d0e10] border border-zinc-700/80 rounded-lg px-2 py-1 flex-1">
+                                <input type="number" name="weight" placeholder="Kg" required min="0" step="0.5" class="w-full bg-transparent text-xs text-center text-[#caf300] focus:outline-none font-bold">
+                                <span class="text-[9px] text-[#caf300]/90 font-bold ml-1">KG</span>
+                            </div>
+                        </div>
+
+                        <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="flex-1 min-w-[120px] bg-[#0d0e10] border border-zinc-700/80 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-[#caf300]">
+                        
+                        <div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+                            <button type="submit" class="h-7 px-3 rounded-lg bg-[#caf300] text-black font-bold text-xs flex items-center justify-center gap-1 hover:bg-[#b5da00] transition-colors">
                                 <span class="material-symbols-outlined text-sm">check</span>
+                                {% translate "Aggiungi" %}
                             </button>
-                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.id|unlocalize }}')" class="w-7 h-7 rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
+                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.id|unlocalize }}')" class="w-7 h-7 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
                                 <span class="material-symbols-outlined text-sm">close</span>
                             </button>
                         </div>
