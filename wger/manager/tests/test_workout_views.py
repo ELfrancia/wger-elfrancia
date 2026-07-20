@@ -32,16 +32,18 @@ class WorkoutViewsTestCase(WgerTestCase):
         response = self.client.post(url, {'action': 'complete_exercise', 'exercise_id': exercise_id}, HTTP_HX_REQUEST='true')
         self.assertEqual(response.status_code, 200)
         
-        # Verify logs were created
+        # Verify logs were created for slot entries matching exercise_id
         session = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day).first()
         self.assertIsNotNone(session)
-        logs_count = session.logs.filter(exercise_id=exercise_id).count()
-        self.assertEqual(logs_count, slot.entries.count())
+        target_entries = slot.entries.filter(exercise_id=exercise_id)
+        slot_entry_ids = [e.id for e in target_entries]
+        logs_count = session.logs.filter(slot_entry_id__in=slot_entry_ids).count()
+        self.assertEqual(logs_count, target_entries.count())
 
         # POST again to uncheck/delete logs
         response = self.client.post(url, {'action': 'complete_exercise', 'exercise_id': exercise_id}, HTTP_HX_REQUEST='true')
         self.assertEqual(response.status_code, 200)
-        logs_count = session.logs.filter(exercise_id=exercise_id).count()
+        logs_count = session.logs.filter(slot_entry_id__in=slot_entry_ids).count()
         self.assertEqual(logs_count, 0)
 
     def test_log_tailwind_post_add_and_delete_set_config(self):

@@ -1082,7 +1082,7 @@ def session_details_tailwind(request, session_id):
     }
     impression_text = impression_mapping.get(session.impression, _('Neutral') + ' 🟡')
 
-    return render(request, 'user/session_details_modal.html', {
+    return render(request, 'user/session_details.html', {
         'session': session,
         'duration_str': duration_str,
         'grouped_logs': grouped_logs.items(),
@@ -1090,5 +1090,40 @@ def session_details_tailwind(request, session_id):
         'time_start_local': time_start_local,
         'time_end_local': time_end_local,
     })
+
+
+@login_required
+def update_log_ajax(request):
+    import json
+    from django.http import JsonResponse
+    from django.views.decorators.http import require_POST
+    from django.shortcuts import get_object_or_404
+    from wger.manager.models import WorkoutLog
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        log_id = data.get('log_id')
+        reps = data.get('reps')
+        weight = data.get('weight')
+        
+        log = get_object_or_404(WorkoutLog, id=log_id)
+        
+        # Check permissions: does this log belong to the user's session?
+        if log.session.user != request.user:
+            return JsonResponse({'status': 'error', 'message': 'Forbidden'}, status=403)
+            
+        if reps is not None:
+            log.repetitions = int(reps)
+        if weight is not None:
+            log.weight = float(weight)
+            
+        log.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
 
 

@@ -64,16 +64,25 @@ def log_tailwind(request, routine_pk, day_pk):
         action = request.POST.get('action')
         exercise_id = request.POST.get('exercise_id')
         slot_entry_id = request.POST.get('slot_entry_id')
+        slot_id = request.POST.get('slot_id')
 
         # Sanitize integer IDs in case of localized formatting
         if exercise_id:
             exercise_id = ''.join(c for c in str(exercise_id) if c.isdigit())
         if slot_entry_id:
             slot_entry_id = ''.join(c for c in str(slot_entry_id) if c.isdigit())
+        if slot_id:
+            slot_id = ''.join(c for c in str(slot_id) if c.isdigit())
 
         # Determine target slot first, if possible
         slot = None
-        if exercise_id:
+        if slot_id:
+            slot = day.slots.filter(id=slot_id).first()
+        if not slot and slot_entry_id:
+            slot_entry_obj = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
+            if slot_entry_obj:
+                slot = slot_entry_obj.slot
+        if not slot and exercise_id:
             slot = day.slots.filter(entries__exercise_id=exercise_id).distinct().first()
 
         if action == 'restart_workout':
@@ -92,19 +101,24 @@ def log_tailwind(request, routine_pk, day_pk):
 
         elif action == 'complete_exercise':
             if slot:
-                # Get already logged set IDs for this exercise in this session
-                logged_set_ids = list(session.logs.filter(exercise_id=exercise_id).values_list('slot_entry_id', flat=True))
-                all_set_ids = [entry.id for entry in slot.entries.all()]
+                if exercise_id:
+                    target_entries = slot.entries.filter(exercise_id=exercise_id)
+                else:
+                    target_entries = slot.entries.all()
 
-                # Check if all sets are already completed
-                all_completed = all(sid in logged_set_ids for sid in all_set_ids)
+                target_set_ids = [entry.id for entry in target_entries]
+                # Get already logged set IDs for these entries in this session
+                logged_set_ids = list(session.logs.filter(slot_entry_id__in=target_set_ids).values_list('slot_entry_id', flat=True))
+
+                # Check if all targeted sets for this slot are already completed
+                all_completed = target_set_ids and all(sid in logged_set_ids for sid in target_set_ids)
 
                 if all_completed:
-                    # Uncheck: Delete all logs for this exercise in this session
-                    session.logs.filter(exercise_id=exercise_id).delete()
+                    # Uncheck: Delete all logs for these target entries in this session
+                    session.logs.filter(slot_entry_id__in=target_set_ids).delete()
                 else:
-                    # Check: Log all remaining/unlogged sets using configured default values
-                    for slot_entry in slot.entries.all():
+                    # Check: Log all remaining/unlogged target sets using configured default values
+                    for slot_entry in target_entries:
                         if slot_entry.id not in logged_set_ids:
                             reps = slot_entry.reps_config.reps
                             weight = slot_entry.weight_config.weight
@@ -115,7 +129,7 @@ def log_tailwind(request, routine_pk, day_pk):
                             WorkoutLog.objects.create(
                                 user=request.user,
                                 session=session,
-                                exercise_id=exercise_id,
+                                exercise_id=slot_entry.exercise_id,
                                 routine_id=routine_pk,
                                 slot_entry_id=slot_entry.id,
                                 repetitions=reps,
@@ -199,17 +213,23 @@ def log_tailwind(request, routine_pk, day_pk):
             session_logged_set_ids = list(session.logs.values_list('slot_entry_id', flat=True))
             logged_set_ids_set = set(session_logged_set_ids)
             completed_exercise_ids = []
+            completed_slot_ids = []
             for s in day.slots.all():
                 all_set_ids = [entry.id for entry in s.entries.all()]
                 if all_set_ids and all(sid in logged_set_ids_set for sid in all_set_ids):
+                    completed_slot_ids.append(s.id)
                     if s.obj:
                         completed_exercise_ids.append(s.obj.id)
+
+            session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
 
             return render(request, 'workout/includes/exercise_card.html', {
                 'slot': slot,
                 'logged_set_ids': session_logged_set_ids,
                 'completed_exercise_ids': completed_exercise_ids,
+                'completed_slot_ids': completed_slot_ids,
                 'day': day,
+                'session_logs_map': session_logs_map,
             })
 
         return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
@@ -231,18 +251,24 @@ def log_tailwind(request, routine_pk, day_pk):
 
     logged_set_ids_set = set(logged_set_ids)
     completed_exercise_ids = []
+    completed_slot_ids = []
     for s in day.slots.all():
         all_set_ids = [entry.id for entry in s.entries.all()]
         if all_set_ids and all(sid in logged_set_ids_set for sid in all_set_ids):
+            completed_slot_ids.append(s.id)
             if s.obj:
                 completed_exercise_ids.append(s.obj.id)
+
+    session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
 
     return render(request, 'workout/log_tailwind.html', {
         'day': day,
         'session': session,
         'logged_set_ids': logged_set_ids,
         'completed_exercise_ids': completed_exercise_ids,
+        'completed_slot_ids': completed_slot_ids,
         'progress_percentage': progress_percentage,
         'elapsed_seconds': elapsed_seconds,
+        'session_logs_map': session_logs_map,
     })
 

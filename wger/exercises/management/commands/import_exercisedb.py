@@ -172,6 +172,35 @@ class Command(BaseCommand):
                 else:
                     instructions_clean.append(inst)
 
+            gif_url = item.get('gifUrl', '')
+            media_dir = os.path.join(os.getcwd(), 'media', 'exercises')
+            os.makedirs(media_dir, exist_ok=True)
+
+            local_filename = f"{eid}.gif"
+            local_file_path = os.path.join(media_dir, local_filename)
+
+            if gif_url and not os.path.exists(local_file_path):
+                try:
+                    res = requests.get(gif_url, timeout=10)
+                    if res.status_code == 200 and len(res.content) > 1000:
+                        with open(local_file_path, 'wb') as f:
+                            f.write(res.content)
+                except Exception:
+                    pass
+
+            if os.path.exists(local_file_path):
+                demo_media_url = f'/media/exercises/{local_filename}'
+            else:
+                fallback_map = {
+                    'push_up': '/media/exercises/x6KpKpq.gif',
+                    'pull_up': '/media/exercises/4GqRrAk.gif',
+                    'dip': '/media/exercises/LQFOrMn.gif',
+                    'handstand': '/media/exercises/XooAdhl.gif',
+                    'l_sit': '/media/exercises/5VXmnV5.gif',
+                    'squat': '/media/exercises/05Cf2v8.gif',
+                }
+                demo_media_url = fallback_map.get(skill_family, '/media/exercises/4GqRrAk.gif')
+
             processed_exercises.append({
                 'source_exercise_id': eid,
                 'name': item['name'],
@@ -188,7 +217,7 @@ class Command(BaseCommand):
                 'is_static_hold': is_static,
                 'is_unilateral': is_unilateral,
                 'is_compound': not is_static,
-                'demo_media_url': item.get('gifUrl', ''),
+                'demo_media_url': demo_media_url,
                 'raw_payload': item
             })
 

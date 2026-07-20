@@ -186,85 +186,224 @@
         </div>
 
         {% if selected_sessions %}
-            <div class="space-y-4">
-                {% for session in selected_sessions %}
-                    <div class="p-4 bg-[#1c1c1e]/60 border border-white/[0.03] rounded-2xl">
-                        <div class="flex items-center justify-between border-b border-white/[0.05] pb-2.5 mb-3">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-full bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300]">
-                                    <span class="material-symbols-outlined text-base">fitness_center</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-bold text-white leading-none">
-                                        {% if session.routine %}
-                                            {{ session.routine.name }}
-                                        {% elif session.day %}
-                                            {{ session.day.name }}
-                                        {% else %}
-                                            {% translate "Allenamento" %}
-                                        {% endif %}
-                                    </h4>
-                                    {% if session.time_start %}
-                                        <span class="text-[9px] text-neutral-500 mt-1 block">
-                                            {{ session.time_start|time:"H:i" }} - {% if session.time_end %}{{ session.time_end|time:"H:i" }}{% else %}--:--{% endif %}
-                                            {% if session.duration %}
-                                                ({{ session.duration }})
+            <!-- Scroll Slider Container -->
+            <div class="relative w-full">
+                <div class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-full gap-4 py-2" id="workout-history-slider-container">
+                    {% for session in selected_sessions %}
+                        <div class="snap-center shrink-0 w-full bg-[#18181b] border border-white/[0.05] rounded-3xl p-5 shadow-lg flex flex-col justify-between transition-all duration-300" id="session-card-{{ forloop.counter0 }}">
+                            
+                            <!-- Card Header -->
+                            <div class="flex justify-between items-start pb-3.5 border-b border-white/[0.04] gap-2.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-[#caf300] flex items-center justify-center shadow-inner animate-pulse-slow">
+                                        <span class="material-symbols-outlined text-base">fitness_center</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <h4 class="text-xs font-black text-white font-display tracking-tight uppercase leading-none">
+                                            {% if session.routine %}
+                                                {{ session.routine.name }}
+                                            {% elif session.day %}
+                                                {{ session.day.name }}
+                                            {% else %}
+                                                {% translate "Allenamento" %}
                                             {% endif %}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            {% if session.impression %}
-                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
-                                    {% if session.impression == '3' %}
-                                        bg-emerald-950/40 border border-emerald-500/20 text-emerald-400
-                                    {% elif session.impression == '2' %}
-                                        bg-amber-950/40 border border-amber-500/20 text-amber-400
-                                    {% else %}
-                                        bg-red-950/40 border border-red-500/20 text-red-400
-                                    {% endif %}">
-                                    {% if session.impression == '3' %}
-                                        {% translate "Good" %}
-                                    {% elif session.impression == '2' %}
-                                        {% translate "Neutral" %}
-                                    {% else %}
-                                        {% translate "Bad" %}
-                                    {% endif %}
-                                </span>
-                            {% endif %}
-                        </div>
-
-                        <!-- Exercises Logged in this Session -->
-                        <div class="space-y-3">
-                            {% for ex_data in session_exercises %}
-                                {% if ex_data.session_id == session.id %}
-                                    <div>
-                                        <h5 class="text-xs font-bold text-white mb-1.5 flex items-center gap-1.5">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-[#caf300]"></span>
-                                            {{ ex_data.exercise_name }}
-                                        </h5>
-                                        <div class="flex flex-wrap gap-1.5 pl-3">
-                                            {% for log in ex_data.logs %}
-                                                <span class="bg-[#131313]/60 border border-white/[0.03] rounded px-2 py-0.5 text-[10px] text-neutral-300 font-mono">
-                                                    Set {{ forloop.counter }}: {{ log.repetitions|floatformat:0 }} reps &times; {{ log.weight|floatformat:1 }} kg
-                                                </span>
-                                            {% endfor %}
+                                        </h4>
+                                        <div class="flex items-center gap-1.5 mt-1.5 text-zinc-400 text-[10px] font-medium font-mono select-none">
+                                            {% if session.time_start %}
+                                                <span class="material-symbols-outlined text-[12px] text-[#caf300]/80">schedule</span>
+                                                <span>{{ session.time_start|time:"H:i" }} - {% if session.time_end %}{{ session.time_end|time:"H:i" }}{% else %}--:--{% endif %}</span>
+                                            {% endif %}
+                                            {% if session.duration %}
+                                                {% if session.time_start %}
+                                                    <span class="text-zinc-650 font-black">•</span>
+                                                {% endif %}
+                                                <span class="material-symbols-outlined text-[12px] text-[#caf300]/80">hourglass_empty</span>
+                                                <span>{{ session.duration }}</span>
+                                            {% endif %}
                                         </div>
                                     </div>
+                                </div>
+
+                                {% if session.impression %}
+                                    {% if session.impression == '3' %}
+                                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm bg-[#caf300]/10 border border-[#caf300]/20 text-[#caf300]">
+                                            {% translate "Good" %}
+                                        </span>
+                                    {% elif session.impression == '2' %}
+                                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm bg-zinc-850 border border-zinc-750 text-zinc-300">
+                                            {% translate "Neutral" %}
+                                        </span>
+                                    {% else %}
+                                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm bg-red-500/10 border border-red-500/20 text-red-400">
+                                            {% translate "Bad" %}
+                                        </span>
+                                    {% endif %}
                                 {% endif %}
-                             {% endfor %}
+                            </div>
+
+                            <!-- Exercises Logged in this Session -->
+                            <div class="flex-grow pt-4">
+                                <div class="space-y-4">
+                                    {% for ex_data in session_exercises %}
+                                        {% if ex_data.session_id == session.id %}
+                                            <div class="exercise-item-row">
+                                                <!-- Exercise Header -->
+                                                <div class="flex items-center justify-between pb-1.5 border-b border-white/[0.04] mb-2">
+                                                    <h5 class="text-[10px] font-black text-white tracking-wide uppercase font-display flex items-center gap-2 select-none">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#caf300] inline-block shadow-[0_0_6px_rgba(202,243,0,0.5)]"></span>
+                                                        {{ ex_data.exercise_name }}
+                                                    </h5>
+                                                    <span class="text-[9px] font-bold text-zinc-550 uppercase tracking-wider font-mono select-none">
+                                                        {{ ex_data.logs|length }} set
+                                                    </span>
+                                                </div>
+
+                                                <!-- Sets list (Aligned Table-Like rows) -->
+                                                <div class="space-y-1 bg-black/10 border border-white/[0.03] rounded-2xl p-3.5">
+                                                    {% for log in ex_data.logs %}
+                                                        <div class="flex items-center justify-between text-xs py-1.5 border-b border-white/[0.02] last:border-b-0"
+                                                              data-reps="{{ log.repetitions|floatformat:0 }}"
+                                                              data-weight="{% if log.weight is not None %}{{ log.weight|floatformat:1 }}{% else %}0{% endif %}">
+                                                            <!-- Set number -->
+                                                            <span class="text-neutral-500 font-bold font-mono text-[10px] w-12 select-none">#{{ forloop.counter }}</span>
+                                                            
+                                                            <!-- Reps -->
+                                                            <div class="flex-grow flex justify-center items-baseline gap-0.5 text-center select-none">
+                                                                <span class="text-white font-extrabold font-mono text-sm">{{ log.repetitions|floatformat:0 }}</span>
+                                                                <span class="text-[9px] text-zinc-550 font-bold uppercase">rep</span>
+                                                            </div>
+                                                            
+                                                            <!-- Weight -->
+                                                            <div class="w-24 text-right flex items-baseline justify-end gap-0.5 select-none">
+                                                                {% if log.weight == 0 %}
+                                                                    <span class="text-zinc-400 font-semibold text-[10px] uppercase">Corpo Libero</span>
+                                                                {% else %}
+                                                                    <span class="text-white font-black font-mono text-sm">{{ log.weight|floatformat:1 }}</span>
+                                                                    <span class="text-[9px] text-zinc-550 font-bold uppercase">kg</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                     {% endfor %}
+                                    
+                                    <!-- Empty state placeholder inside the card -->
+                                    <div class="empty-session-placeholder hidden flex flex-col items-center justify-center py-10 text-center gap-3 border border-dashed border-zinc-800/80 rounded-3xl bg-black/10 select-none">
+                                        <div class="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-850 flex items-center justify-center text-zinc-500">
+                                            <span class="material-symbols-outlined text-base">info</span>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-400">Nessun Esercizio</h5>
+                                            <p class="text-[10px] text-zinc-500 mt-1 max-w-[200px] mx-auto">Non ci sono esercizi o serie salvati per questo allenamento.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notes Section -->
+                            {% if session.notes %}
+                                <div class="mt-3 pt-2.5 border-t border-white/[0.04] flex gap-2 items-start text-[10px] text-zinc-400 italic">
+                                    <span class="material-symbols-outlined text-[12px] mt-0.5 text-zinc-500">notes</span>
+                                    <p class="flex-1 leading-normal">{{ session.notes }}</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Card Footer (Session Stats) -->
+                            <div class="pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-semibold text-zinc-500 mt-3">
+                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">analytics</span> Statistiche:</span>
+                                <div class="flex gap-2.5 font-mono">
+                                    <span class="text-zinc-300">Reps: <strong class="text-[#caf300] font-bold" id="stats-reps-{{ session.id }}">--</strong></span>
+                                    <span class="text-zinc-800">•</span>
+                                    <span class="text-zinc-300">Volume: <strong class="text-[#caf300] font-bold" id="stats-vol-{{ session.id }}">--</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Controls (only shown if there are multiple cards) -->
+                {% if selected_sessions|length > 1 %}
+                    <div class="flex items-center justify-between px-2 pt-3 border-t border-white/[0.03] mt-3">
+                        <button type="button" onclick="scrollPrev()" class="w-8 h-8 rounded-full border border-zinc-800 hover:border-[#caf300] hover:bg-[#caf300] hover:text-[#131313] text-zinc-400 flex items-center justify-center transition-all select-none">
+                            <span class="material-symbols-outlined text-base">chevron_left</span>
+                        </button>
+                        
+                        <!-- Slider Dots -->
+                        <div class="flex gap-1.5 items-center select-none" id="workout-slider-dots">
+                            {% for session in selected_sessions %}
+                                <div class="h-1.5 rounded-full transition-all duration-300 {% if forloop.first %}w-[18px] bg-[#caf300]{% else %}w-1.5 bg-white/20{% endif %}" id="workout-dot-{{ forloop.counter0 }}"></div>
+                            {% endfor %}
                         </div>
 
-                        {% if session.notes %}
-                            <div class="mt-3.5 pt-2.5 border-t border-white/[0.05] flex gap-2 items-start text-[10px] text-neutral-400 italic">
-                                <span class="material-symbols-outlined text-[12px] mt-0.5">notes</span>
-                                <p class="flex-1">{{ session.notes }}</p>
-                            </div>
-                        {% endif %}
+                        <button type="button" onclick="scrollNext()" class="w-8 h-8 rounded-full border border-zinc-800 hover:border-[#caf300] hover:bg-[#caf300] hover:text-[#131313] text-zinc-400 flex items-center justify-center transition-all select-none">
+                            <span class="material-symbols-outlined text-base">chevron_right</span>
+                        </button>
                     </div>
-                {% endfor %}
+                {% endif %}
             </div>
+
+            <!-- Slider logic script -->
+            <script>
+                (function() {
+                    const container = document.getElementById('workout-history-slider-container');
+                    if (!container) return;
+                    
+                    const cards = Array.from(container.children);
+                    if (cards.length === 0) return;
+
+                    // Sync pagination dots on scroll
+                    container.addEventListener('scroll', () => {
+                        const index = Math.round(container.scrollLeft / container.clientWidth);
+                        cards.forEach((_, idx) => {
+                            const dot = document.getElementById(`workout-dot-${idx}`);
+                            if (dot) {
+                                if (idx === index) {
+                                    dot.style.width = '18px';
+                                    dot.style.backgroundColor = '#caf300';
+                                } else {
+                                    dot.style.width = '6px';
+                                    dot.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                                }
+                            }
+                        });
+                    });
+
+                    window.scrollNext = function() {
+                        container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
+                    }
+
+                    window.scrollPrev = function() {
+                        container.scrollBy({ left: -container.clientWidth, behavior: 'smooth' });
+                    }
+
+                    // Calculate reps and volume dynamically for each card
+                    cards.forEach(card => {
+                        // Check if card has exercises, if not show placeholder
+                        const exercises = card.querySelectorAll('.exercise-item-row');
+                        if (exercises.length === 0) {
+                            const placeholder = card.querySelector('.empty-session-placeholder');
+                            if (placeholder) placeholder.classList.remove('hidden');
+                        }
+
+                        let totalReps = 0;
+                        let totalVolume = 0;
+                        
+                        card.querySelectorAll('[data-reps]').forEach(item => {
+                            const reps = parseFloat(item.getAttribute('data-reps')) || 0;
+                            const weight = parseFloat(item.getAttribute('data-weight')) || 0;
+                            totalReps += reps;
+                            totalVolume += reps * weight;
+                        });
+                        
+                        const repsEl = card.querySelector('[id^="stats-reps-"]');
+                        const volEl = card.querySelector('[id^="stats-vol-"]');
+                        if (repsEl) repsEl.textContent = totalReps;
+                        if (volEl) volEl.textContent = totalVolume.toLocaleString() + ' kg';
+                    });
+                })();
+            </script>
         {% else %}
             <!-- Empty Placeholder -->
             <div class="flex flex-col items-center justify-center py-8 text-center gap-3 border border-dashed border-white/[0.06] rounded-2xl bg-transparent">

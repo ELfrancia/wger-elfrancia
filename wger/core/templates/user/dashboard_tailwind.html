@@ -38,10 +38,8 @@
 
         <div class="flex flex-col gap-2.5">
             {% for session in completed_sessions %}
-                <div class="flex items-center justify-between p-3.5 bg-surface-card rounded-[20px] border border-outline/50 hover:bg-[#1D1E22] hover:scale-[1.01] hover:border-primary/30 transition-all duration-200 cursor-pointer"
-                     hx-get="{% url 'core:session-details' session.id %}"
-                     hx-target="#session-detail-content"
-                     onclick="openSessionModal()">
+                <a href="{% url 'core:session-details' session.id %}"
+                   class="flex items-center justify-between p-3.5 bg-surface-card rounded-[20px] border border-outline/50 hover:bg-[#1D1E22] hover:scale-[1.01] hover:border-primary/30 transition-all duration-200 cursor-pointer">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-surface border border-outline flex items-center justify-center text-primary">
                             {% if session.day.name and "running" in session.day.name|lower or "corsa" in session.day.name|lower or "walk" in session.day.name|lower %}
@@ -75,7 +73,7 @@
                         <span>{{ session.date|date:"d M" }}</span>
                         <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                     </div>
-                </div>
+                </a>
             {% empty %}
                 <div class="flex flex-col items-center justify-center py-6 px-4 bg-surface-card rounded-[20px] border border-outline text-center gap-3">
                     <span class="material-symbols-outlined text-primary text-3xl">fitness_center</span>

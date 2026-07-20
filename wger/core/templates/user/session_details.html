@@ -1,7 +1,21 @@
+{% extends 'template_tailwind.html' %}
 {% load i18n %}
-<div class="flex flex-col gap-6 text-white">
+
+{% block title %}ONYX - Dettaglio Sessione{% endblock %}
+
+{% block content %}
+<main class="max-w-md mx-auto px-4 mt-2 flex flex-col gap-5 pb-24 text-white">
+    <!-- Header Bar (Back button + Title) -->
+    <header class="flex items-center justify-between mb-2">
+        <a href="{% url 'core:dashboard' %}" class="w-10 h-10 rounded-full bg-surface border border-outline text-secondary hover:text-white flex items-center justify-center active:scale-95 transition-all duration-200 shadow-md">
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+        </a>
+        <h1 class="text-xs font-black uppercase tracking-widest text-zinc-400 font-display">Resoconto Allenamento</h1>
+        <div class="w-10"></div>
+    </header>
+
     <!-- Session Info Card -->
-    <div class="bg-gradient-to-br from-[#16171A] to-[#101114] border border-outline rounded-3xl p-6 shadow-xl relative overflow-hidden">
+    <div class="bg-gradient-to-br from-[#16171A] to-[#101114] border border-outline rounded-[28px] p-6 shadow-xl relative overflow-hidden">
         <!-- Floating Accent Background Glow -->
         <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
         
@@ -112,7 +126,7 @@
         <div class="relative w-full">
             <div class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-full gap-4 py-2" id="modal-exercises-slider-container">
                 {% for exercise, logs in grouped_logs %}
-                    <div class="snap-center shrink-0 w-full bg-[#18181B] border border-outline rounded-3xl p-5 shadow-xl flex flex-col justify-between min-h-[360px] exercise-card-container" data-exercise-id="{{ forloop.counter }}">
+                    <div class="snap-center shrink-0 w-full bg-[#18181B] border border-outline rounded-[22px] p-5 shadow-xl flex flex-col justify-between min-h-[360px] exercise-card-container" data-exercise-id="{{ forloop.counter }}">
                         <!-- Header -->
                         <div class="flex justify-between items-center pb-3.5 border-b border-outline/35 gap-2.5">
                             <div class="flex items-center gap-3">
@@ -151,16 +165,30 @@
                                 <!-- Rows -->
                                 {% for log in logs %}
                                     <div class="grid grid-cols-3 {% if not forloop.last %}border-b border-zinc-800/60{% endif %} py-3 set-row-container"
+                                         data-log-id="{{ log.id }}"
                                          data-reps="{{ log.repetitions|floatformat:"-2" }}"
                                          data-weight="{% if log.weight is not None %}{{ log.weight|floatformat:"-2" }}{% else %}0{% endif %}">
-                                        <div class="border-r border-zinc-800 text-zinc-400 text-xs">#{{ forloop.counter }}</div>
-                                        <div class="border-r border-zinc-800 font-extrabold text-white text-base">{{ log.repetitions|floatformat:"-2" }}</div>
-                                        <div class="text-white font-extrabold text-base">
-                                            {% if log.weight == 0 %}
-                                                <span class="text-zinc-400 font-semibold font-sans text-xs">Corpo Libero</span>
-                                            {% else %}
-                                                {{ log.weight|floatformat:"-2" }} <span class="text-[10px] text-zinc-500 font-bold uppercase font-sans">{{ log.weight_unit.name|default:"kg" }}</span>
-                                            {% endif %}
+                                        <div class="border-r border-zinc-800 text-zinc-400 text-xs flex items-center justify-center">#{{ forloop.counter }}</div>
+                                        
+                                        <!-- Reps Column -->
+                                        <div class="border-r border-zinc-800 font-extrabold text-white text-base flex items-center justify-center">
+                                            <span class="view-mode">{{ log.repetitions|floatformat:"-2" }}</span>
+                                            <input type="number" class="edit-mode hidden w-16 bg-zinc-900 border border-zinc-800 text-white font-mono text-center rounded py-0.5 focus:border-primary focus:outline-none" value="{{ log.repetitions|floatformat:"-2" }}" onchange="updateRowMetric(this, 'reps')">
+                                        </div>
+                                        
+                                        <!-- Weight Column -->
+                                        <div class="text-white font-extrabold text-base flex items-center justify-center gap-1">
+                                            <div class="view-mode">
+                                                {% if log.weight == 0 %}
+                                                    <span class="text-zinc-400 font-semibold font-sans text-xs">Corpo Libero</span>
+                                                {% else %}
+                                                    {{ log.weight|floatformat:"-2" }} <span class="text-[10px] text-zinc-500 font-bold uppercase font-sans">{{ log.weight_unit.name|default:"kg" }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="edit-mode hidden flex items-center gap-1 justify-center">
+                                                <input type="number" step="0.5" class="w-16 bg-zinc-900 border border-zinc-800 text-white font-mono text-center rounded py-0.5 focus:border-primary focus:outline-none" value="{% if log.weight is not None %}{{ log.weight|floatformat:"-2" }}{% else %}0{% endif %}" onchange="updateRowMetric(this, 'weight')">
+                                                <span class="text-[10px] text-zinc-500 font-bold uppercase font-sans">kg</span>
+                                            </div>
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -191,31 +219,129 @@
                 {% endfor %}
             </div>
         {% endif %}
-    </div>
-</div>
 
-<!-- Script to calculate metrics dynamically inside the modal -->
+        <!-- Edit Session Logs Action Button below the dots -->
+        <div class="flex justify-center mt-6">
+            <button onclick="toggleEditMode()" id="edit-toggle-btn" class="w-full bg-[#18181B] border border-outline hover:border-primary/30 text-white hover:text-primary font-bold text-xs uppercase tracking-widest py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 shadow-md">
+                <span class="material-symbols-outlined text-sm" id="edit-icon">edit</span>
+                <span id="edit-text">Modifica Allenamento</span>
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- Script to calculate metrics dynamically and edit logs -->
 <script>
-    (function() {
-        // 1. Calculate stats
-        document.querySelectorAll('.exercise-card-container').forEach(card => {
-            let totalReps = 0;
-            let totalVolume = 0;
+    let editMode = false;
+
+    function toggleEditMode() {
+        editMode = !editMode;
+        const editIcon = document.getElementById('edit-icon');
+        const editBtn = document.getElementById('edit-toggle-btn');
+        const editText = document.getElementById('edit-text');
+        
+        if (editMode) {
+            // Enter edit mode
+            document.querySelectorAll('.view-mode').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('hidden'));
+            editIcon.textContent = 'check';
+            editText.textContent = 'Completa Modifica';
+            editBtn.classList.remove('bg-[#18181B]', 'border-outline', 'text-white');
+            editBtn.classList.add('bg-primary/10', 'border-primary/45', 'text-primary');
+        } else {
+            // Exit edit mode
+            document.querySelectorAll('.edit-mode').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.view-mode').forEach(el => el.classList.remove('hidden'));
+            editIcon.textContent = 'edit';
+            editText.textContent = 'Modifica Allenamento';
+            editBtn.classList.remove('bg-primary/10', 'border-primary/45', 'text-primary');
+            editBtn.classList.add('bg-[#18181B]', 'border-outline', 'text-white');
             
-            card.querySelectorAll('.set-row-container').forEach(row => {
-                const reps = parseFloat(row.getAttribute('data-reps')) || 0;
-                const weight = parseFloat(row.getAttribute('data-weight')) || 0;
-                totalReps += reps;
-                totalVolume += reps * weight;
+            // Sync visible view text elements with the latest values from input fields
+            document.querySelectorAll('.set-row-container').forEach(row => {
+                const repsInput = row.querySelector('input[onchange*="reps"]');
+                const weightInput = row.querySelector('input[onchange*="weight"]');
+                const repsVal = parseFloat(repsInput.value) || 0;
+                const weightVal = parseFloat(weightInput.value) || 0;
+                
+                const repsView = row.querySelector('.border-r .view-mode');
+                if (repsView) repsView.textContent = repsVal;
+                
+                const weightView = row.querySelector('div.view-mode');
+                if (weightView) {
+                    if (weightVal === 0) {
+                        weightView.innerHTML = `<span class="text-zinc-400 font-semibold font-sans text-xs">Corpo Libero</span>`;
+                    } else {
+                        weightView.innerHTML = `${weightVal} <span class="text-[10px] text-zinc-500 font-bold uppercase font-sans">kg</span>`;
+                    }
+                }
             });
-            
-            const repsEl = card.querySelector('.reps-placeholder');
-            const volEl = card.querySelector('.volume-placeholder');
-            if (repsEl) repsEl.textContent = totalReps;
-            if (volEl) volEl.textContent = totalVolume.toLocaleString() + ' kg';
+        }
+    }
+
+    function updateRowMetric(input, type) {
+        const row = input.closest('.set-row-container');
+        const logId = row.getAttribute('data-log-id');
+        const value = parseFloat(input.value) || 0;
+        
+        // Update local dataset attributes
+        row.setAttribute('data-' + type, value);
+        
+        // Recalculate card totals immediately
+        const card = row.closest('.exercise-card-container');
+        calculateCardStats(card);
+        
+        const reps = parseFloat(row.getAttribute('data-reps')) || 0;
+        const weight = parseFloat(row.getAttribute('data-weight')) || 0;
+        
+        // Trigger auto-save via AJAX
+        fetch("{% url 'core:update-log-ajax' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                log_id: logId,
+                reps: reps,
+                weight: weight
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                console.error('Failed to auto-save:', data.message);
+            }
+        })
+        .catch(err => {
+            console.error('Error auto-saving:', err);
+        });
+    }
+
+    function calculateCardStats(card) {
+        let totalReps = 0;
+        let totalVolume = 0;
+        
+        card.querySelectorAll('.set-row-container').forEach(row => {
+            const reps = parseFloat(row.getAttribute('data-reps')) || 0;
+            const weight = parseFloat(row.getAttribute('data-weight')) || 0;
+            totalReps += reps;
+            totalVolume += reps * weight;
+        });
+        
+        const repsEl = card.querySelector('.reps-placeholder');
+        const volEl = card.querySelector('.volume-placeholder');
+        if (repsEl) repsEl.textContent = totalReps;
+        if (volEl) volEl.textContent = totalVolume.toLocaleString() + ' kg';
+    }
+
+    // Initialize stats calculations on load
+    (function() {
+        document.querySelectorAll('.exercise-card-container').forEach(card => {
+            calculateCardStats(card);
         });
 
-        // 2. Sync slider dots
+        // Sync slider dots
         const container = document.getElementById('modal-exercises-slider-container');
         if (container) {
             const dots = Array.from(document.querySelectorAll('[id^="modal-dot-"]'));
@@ -224,7 +350,7 @@
                 dots.forEach((dot, idx) => {
                     if (idx === index) {
                         dot.style.width = '16px';
-                        dot.style.backgroundColor = '#caf300'; // Brand lime color
+                        dot.style.backgroundColor = '#caf300';
                     } else {
                         dot.style.width = '6px';
                         dot.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
@@ -234,4 +360,4 @@
         }
     })();
 </script>
-
+{% endblock %}

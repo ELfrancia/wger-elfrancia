@@ -64,7 +64,7 @@
                                 <!-- Circular preview container -->
                                 <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
                                     {% if ex.preview_url %}
-                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy">
+                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
                                     {% else %}
                                         <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
                                     {% endif %}
@@ -139,15 +139,19 @@
 </section>
 
 <!-- Custom Exercise Modal -->
-<div id="custom-exercise-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-[#131313] border border-surface-container-high rounded-[28px] w-full max-w-lg p-6 flex flex-col gap-5 shadow-2xl transform scale-95 transition-transform duration-300">
-        <div class="flex items-center justify-between border-b border-surface-container-high/40 pb-3">
-            <h3 class="text-xl font-extrabold text-primary flex items-center gap-2">
+<div id="custom-exercise-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-end sm:items-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-[#131313] border border-surface-container-high w-full max-w-lg p-5 pb-8 sm:p-6 sm:pb-6 flex flex-col gap-5 shadow-2xl transition-all duration-300 transform translate-y-full sm:translate-y-0 sm:scale-95 rounded-t-[28px] sm:rounded-[28px] max-h-[92vh] sm:max-h-none overflow-y-auto sm:overflow-visible">
+        
+        <!-- Mobile Grab Handle Indicator -->
+        <div class="w-12 h-1.5 bg-neutral-800 rounded-full mx-auto mb-1 sm:hidden flex-shrink-0"></div>
+
+        <div class="flex items-center justify-between border-b border-surface-container-high/40 pb-3 flex-shrink-0">
+            <h3 class="text-lg sm:text-xl font-extrabold text-primary flex items-center gap-2">
                 <span class="material-symbols-outlined text-[#caf300]">fitness_center</span>
                 {% translate "Create Custom Exercise" %}
             </h3>
-            <button type="button" id="close-custom-modal-btn" class="text-on-surface-variant hover:text-primary transition-colors">
-                <span class="material-symbols-outlined">close</span>
+            <button type="button" id="close-custom-modal-btn" class="text-on-surface-variant hover:text-primary transition-colors p-1">
+                <span class="material-symbols-outlined text-xl">close</span>
             </button>
         </div>
         
@@ -158,46 +162,100 @@
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Name" %}</label>
                 <input type="text" name="name" required placeholder="{% translate 'e.g. Archer Push-up' %}"
-                       class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm">
+                       class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3.5 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm">
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Skill Family -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Skill Family" %}</label>
-                    <select name="skill_family" class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-3 py-3 text-primary text-sm focus:outline-none focus:border-[#caf300]">
-                        <option value="other">{% translate "Other" %}</option>
-                        <option value="push_up">{% translate "Push Up" %}</option>
-                        <option value="pull_up">{% translate "Pull Up" %}</option>
-                        <option value="dip">{% translate "Dip" %}</option>
-                        <option value="handstand">{% translate "Handstand" %}</option>
-                        <option value="front_lever">{% translate "Front Lever" %}</option>
-                        <option value="back_lever">{% translate "Back Lever" %}</option>
-                        <option value="l_sit">{% translate "L Sit" %}</option>
-                        <option value="planche">{% translate "Planche" %}</option>
-                        <option value="squat">{% translate "Squat" %}</option>
-                    </select>
-                </div>
+            <!-- Skill Family (Custom Inline Accordion Dropdown) -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Skill Family" %}</label>
                 
-                <!-- Target Muscle -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Target Muscle" %}</label>
-                    <select name="target_muscle" class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-3 py-3 text-primary text-sm focus:outline-none focus:border-[#caf300]">
-                        <option value="">{% translate "None" %}</option>
+                <button type="button" id="skill-family-trigger" class="w-full bg-[#1c1b1b] border border-surface-container-high hover:border-zinc-700 rounded-xl px-4 py-3.5 text-primary text-sm flex items-center justify-between focus:outline-none focus:border-[#caf300] transition-all">
+                    <span id="skill-family-label" class="font-semibold">{% translate "Other" %}</span>
+                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-250" id="skill-family-arrow">expand_more</span>
+                </button>
+                
+                <input type="hidden" name="skill_family" id="custom-skill-family" value="other">
+                
+                <div id="skill-family-list-container" class="max-h-0 overflow-hidden transition-all duration-300 bg-[#161616] rounded-xl flex flex-col">
+                    <div class="p-1.5 flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar" id="skill-options-list">
+                        <button type="button" data-value="other" data-label="{% translate 'Other' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60">
+                            <span>{% translate "Other" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator">check</span>
+                        </button>
+                        <button type="button" data-value="push_up" data-label="{% translate 'Push Up' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Push Up" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="pull_up" data-label="{% translate 'Pull Up' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Pull Up" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="dip" data-label="{% translate 'Dip' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Dip" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="handstand" data-label="{% translate 'Handstand' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Handstand" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="front_lever" data-label="{% translate 'Front Lever' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Front Lever" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="back_lever" data-label="{% translate 'Back Lever' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Back Lever" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="l_sit" data-label="{% translate 'L Sit' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "L Sit" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="planche" data-label="{% translate 'Planche' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Planche" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                        <button type="button" data-value="squat" data-label="{% translate 'Squat' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <span>{% translate "Squat" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Target Muscle (Custom Inline Accordion Dropdown) -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Target Muscle" %}</label>
+                
+                <button type="button" id="target-muscle-trigger" class="w-full bg-[#1c1b1b] border border-surface-container-high hover:border-zinc-700 rounded-xl px-4 py-3.5 text-primary text-sm flex items-center justify-between focus:outline-none focus:border-[#caf300] transition-all">
+                    <span id="target-muscle-label" class="font-semibold">{% translate "None" %}</span>
+                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-250" id="target-muscle-arrow">expand_more</span>
+                </button>
+                
+                <input type="hidden" name="target_muscle" id="custom-target-muscle" value="">
+                
+                <div id="target-muscle-list-container" class="max-h-0 overflow-hidden transition-all duration-300 bg-[#161616] rounded-xl flex flex-col">
+                    <div class="p-1.5 flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar" id="muscle-options-list">
+                        <button type="button" data-value="" data-label="{% translate 'None' %}" class="muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60">
+                            <span>{% translate "None" %}</span>
+                            <span class="material-symbols-outlined text-primary text-sm check-indicator">check</span>
+                        </button>
                         {% for muscle in muscles_list %}
-                            <option value="{{ muscle }}">{{ muscle }}</option>
+                            <button type="button" data-value="{{ muscle }}" data-label="{{ muscle }}" class="muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                                <span>{{ muscle }}</span>
+                                <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            </button>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
             </div>
 
             <!-- Weighted Toggle -->
-            <div class="flex items-center justify-between bg-surface-container/30 border border-surface-container-high/60 rounded-xl p-3">
-                <div class="flex flex-col">
+            <div class="flex items-center justify-between bg-[#1c1b1b] border border-surface-container-high rounded-xl p-3.5 transition-all hover:bg-surface-container-low/80">
+                <div class="flex flex-col pr-4">
                     <span class="text-sm font-bold text-primary">{% translate "Weighted / Zavorrato" %}</span>
-                    <span class="text-xs text-on-surface-variant">Check if the exercise requires extra weights or is weighted</span>
+                    <span class="text-xs text-on-surface-variant/80">Check if the exercise requires extra weights or is weighted</span>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer">
+                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                     <input type="checkbox" name="weighted" class="sr-only peer">
                     <div class="w-11 h-6 bg-[#2a2a2a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#caf300] peer-checked:after:bg-[#131313]"></div>
                 </label>
@@ -207,15 +265,15 @@
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Instructions" %}</label>
                 <textarea name="instructions" rows="3" placeholder="{% translate 'Step 1...\nStep 2...' %}"
-                          class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm resize-none"></textarea>
+                          class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3.5 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm resize-none"></textarea>
             </div>
 
             <!-- Form Buttons -->
             <div class="flex gap-3 mt-2">
-                <button type="submit" class="flex-1 bg-[#caf300] text-[#131313] py-3 rounded-full font-bold hover:opacity-90 transition-opacity">
+                <button type="submit" class="flex-1 bg-[#caf300] text-[#131313] py-3.5 rounded-full font-bold hover:opacity-90 active:scale-[0.98] transition-all text-sm font-display uppercase tracking-wider">
                     {% translate "Save Exercise" %}
                 </button>
-                <button type="button" id="cancel-custom-modal-btn" class="flex-1 border border-surface-container-high text-primary py-3 rounded-full font-bold hover:bg-surface-container transition-colors">
+                <button type="button" id="cancel-custom-modal-btn" class="flex-1 border border-surface-container-high text-primary py-3.5 rounded-full font-bold hover:bg-surface-container active:scale-[0.98] transition-all text-sm font-display uppercase tracking-wider">
                     {% translate "Cancel" %}
                 </button>
             </div>
@@ -443,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 5. Custom Exercise Modal
+    // 5. Custom Exercise Modal & Interactions
     const modal = document.getElementById('custom-exercise-modal');
     const openBtn = document.getElementById('open-custom-modal-btn');
     const closeBtn = document.getElementById('close-custom-modal-btn');
@@ -451,20 +509,186 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('custom-exercise-form');
     const exerciseListContainer = document.getElementById('exercise-list-container');
 
+    // Skill Family custom selector logic
+    const skillTrigger = document.getElementById('skill-family-trigger');
+    const skillList = document.getElementById('skill-family-list-container');
+    const skillArrow = document.getElementById('skill-family-arrow');
+    const hiddenSkillInput = document.getElementById('custom-skill-family');
+    const skillLabel = document.getElementById('skill-family-label');
+    const skillOptions = document.querySelectorAll('.skill-option');
+
+    function openSkillList() {
+        if (!skillList) return;
+        skillList.style.maxHeight = '200px';
+        skillList.style.border = '1px solid #262626';
+        skillList.style.marginTop = '4px';
+        if (skillArrow) skillArrow.style.transform = 'rotate(180deg)';
+    }
+
+    function closeSkillList() {
+        if (!skillList) return;
+        skillList.style.maxHeight = '0px';
+        skillList.style.border = '0';
+        skillList.style.marginTop = '0';
+        if (skillArrow) skillArrow.style.transform = 'rotate(0deg)';
+    }
+
+    if (skillTrigger) {
+        skillTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (skillList.style.maxHeight && skillList.style.maxHeight !== '0px') {
+                closeSkillList();
+            } else {
+                openSkillList();
+            }
+        });
+    }
+
+    skillOptions.forEach(opt => {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Reset styling on all options
+            skillOptions.forEach(o => {
+                o.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
+                const check = o.querySelector('.check-indicator');
+                if (check) check.classList.add('opacity-0');
+            });
+
+            // Set styling on selected option
+            this.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
+            const currentCheck = this.querySelector('.check-indicator');
+            if (currentCheck) currentCheck.classList.remove('opacity-0');
+
+            // Update label & hidden input
+            if (skillLabel) skillLabel.innerText = this.dataset.label;
+            if (hiddenSkillInput) hiddenSkillInput.value = this.dataset.value;
+
+            // Close list
+            closeSkillList();
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (skillTrigger && skillList && !skillTrigger.contains(e.target) && !skillList.contains(e.target)) {
+            closeSkillList();
+        }
+        if (muscleTrigger && muscleList && !muscleTrigger.contains(e.target) && !muscleList.contains(e.target)) {
+            closeMuscleList();
+        }
+    });
+
+    // Target Muscle custom selector logic
+    const muscleTrigger = document.getElementById('target-muscle-trigger');
+    const muscleList = document.getElementById('target-muscle-list-container');
+    const muscleArrow = document.getElementById('target-muscle-arrow');
+    const hiddenMuscleInput = document.getElementById('custom-target-muscle');
+    const muscleLabel = document.getElementById('target-muscle-label');
+    const muscleOptions = document.querySelectorAll('.muscle-option');
+
+    function openMuscleList() {
+        if (!muscleList) return;
+        muscleList.style.maxHeight = '200px';
+        muscleList.style.border = '1px solid #262626';
+        muscleList.style.marginTop = '4px';
+        if (muscleArrow) muscleArrow.style.transform = 'rotate(180deg)';
+    }
+
+    function closeMuscleList() {
+        if (!muscleList) return;
+        muscleList.style.maxHeight = '0px';
+        muscleList.style.border = '0';
+        muscleList.style.marginTop = '0';
+        if (muscleArrow) muscleArrow.style.transform = 'rotate(0deg)';
+    }
+
+    if (muscleTrigger) {
+        muscleTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (muscleList.style.maxHeight && muscleList.style.maxHeight !== '0px') {
+                closeMuscleList();
+            } else {
+                openMuscleList();
+            }
+        });
+    }
+
+    muscleOptions.forEach(opt => {
+        opt.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            muscleOptions.forEach(o => {
+                o.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
+                const check = o.querySelector('.check-indicator');
+                if (check) check.classList.add('opacity-0');
+            });
+
+            this.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
+            const currentCheck = this.querySelector('.check-indicator');
+            if (currentCheck) currentCheck.classList.remove('opacity-0');
+
+            if (muscleLabel) muscleLabel.innerText = this.dataset.label;
+            if (hiddenMuscleInput) hiddenMuscleInput.value = this.dataset.value;
+
+            closeMuscleList();
+        });
+    });
+
+    function resetCustomFormSelects() {
+        // Reset Skill Family trigger
+        if (skillLabel) skillLabel.innerText = "{% translate 'Other' %}";
+        if (hiddenSkillInput) hiddenSkillInput.value = "other";
+        skillOptions.forEach((o, index) => {
+            const check = o.querySelector('.check-indicator');
+            if (index === 0) {
+                o.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
+                if (check) check.classList.remove('opacity-0');
+            } else {
+                o.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
+                if (check) check.classList.add('opacity-0');
+            }
+        });
+
+        // Reset Target Muscle trigger
+        if (muscleLabel) muscleLabel.innerText = "{% translate 'None' %}";
+        if (hiddenMuscleInput) hiddenMuscleInput.value = "";
+        muscleOptions.forEach((o, index) => {
+            const check = o.querySelector('.check-indicator');
+            if (index === 0) {
+                o.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
+                if (check) check.classList.remove('opacity-0');
+            } else {
+                o.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
+                if (check) check.classList.add('opacity-0');
+            }
+        });
+    }
+
     function openModal() {
         modal.classList.remove('hidden');
         setTimeout(() => {
             modal.classList.remove('opacity-0');
-            modal.querySelector('div').classList.remove('scale-95');
+            const inner = modal.querySelector('div');
+            if (inner) {
+                inner.classList.remove('translate-y-full', 'scale-95');
+                inner.classList.add('translate-y-0', 'scale-100');
+            }
         }, 10);
     }
 
     function closeModal() {
         modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
+        const inner = modal.querySelector('div');
+        if (inner) {
+            inner.classList.add('translate-y-full', 'scale-95');
+            inner.classList.remove('translate-y-0', 'scale-100');
+        }
         setTimeout(() => {
             modal.classList.add('hidden');
-            form.reset();
+            if (form) form.reset();
+            resetCustomFormSelects();
+            closeSkillList();
+            closeMuscleList();
         }, 300);
     }
 

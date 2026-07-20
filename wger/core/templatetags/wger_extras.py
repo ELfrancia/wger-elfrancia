@@ -46,9 +46,29 @@ def language_select(context, language):
 @register.filter
 def get_item(dictionary, key):
     """
-    Allows to access a specific key in a dictionary in a template
+    Allows to access a specific key in a dictionary in a template,
+    robust to integer/string representation differences.
     """
-    return dictionary.get(key)
+    if not dictionary:
+        return None
+
+    val = dictionary.get(key)
+    if val is not None:
+        return val
+
+    if isinstance(key, int):
+        val = dictionary.get(str(key))
+        if val is not None:
+            return val
+
+    try:
+        val = dictionary.get(int(key))
+        if val is not None:
+            return val
+    except (ValueError, TypeError):
+        pass
+
+    return None
 
 
 @register.filter
