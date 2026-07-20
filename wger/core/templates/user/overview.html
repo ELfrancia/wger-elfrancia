@@ -106,8 +106,11 @@
         {{log.notes|default:'-/-'|truncatewords:6}}
     </td>
     <td>
-        {% if log.time_start and log.time_end %}
-            {{log.time_start|time:"H:i"}} - {{log.time_end|time:"H:i"}}
+        {% if log.time_start %}
+            {{log.time_start|time:"H:i"}} - {% if log.time_end %}{{log.time_end|time:"H:i"}}{% else %}--:--{% endif %}
+            {% if log.duration %}
+                ({{ log.duration }})
+            {% endif %}
         {% else %}
             -/-
         {% endif %}

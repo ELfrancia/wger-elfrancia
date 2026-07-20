@@ -891,14 +891,15 @@ def dashboard_tailwind(request):
     from django.utils import timezone
     import datetime
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
-    latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date').first()
+    latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date', '-time_start').first()
     activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
     profile = request.user.userprofile
     ten_days_ago = timezone.localdate() - datetime.timedelta(days=10)
+    from django.db.models import Count
     completed_sessions = WorkoutSession.objects.filter(
         user=request.user,
         date__gte=ten_days_ago
-    ).select_related('day', 'routine').order_by('-date')
+    ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).select_related('day', 'routine').order_by('-date', '-time_start')
     return render(request, 'user/dashboard_tailwind.html', {
         'stats': stats,
         'latest_session': latest_session,
@@ -1022,4 +1023,72 @@ def log_daily_activity(request):
         'activity': activity,
         'profile': profile,
     })
+
+
+@login_required
+def session_details_tailwind(request, session_id):
+    from wger.manager.models import WorkoutSession, WorkoutLog
+    from collections import OrderedDict
+    import datetime
+
+    session = get_object_or_404(WorkoutSession, id=session_id)
+    if session.user != request.user:
+        return HttpResponseForbidden()
+
+    from django.utils import timezone
+    time_start_local = None
+    if session.time_start:
+        dt = datetime.datetime.combine(session.date, session.time_start)
+        dt_utc = timezone.make_aware(dt, timezone.UTC)
+        dt_local = timezone.localtime(dt_utc)
+        time_start_local = dt_local.time()
+
+    time_end_local = None
+    if session.time_end:
+        dt = datetime.datetime.combine(session.date, session.time_end)
+        dt_utc = timezone.make_aware(dt, timezone.UTC)
+        dt_local = timezone.localtime(dt_utc)
+        time_end_local = dt_local.time()
+
+    # Get duration if available
+    duration_str = None
+    if time_start_local and time_end_local:
+        start_dt = datetime.datetime.combine(session.date, time_start_local)
+        end_dt = datetime.datetime.combine(session.date, time_end_local)
+        if end_dt < start_dt:
+            end_dt += datetime.timedelta(days=1)
+        total_seconds = int((end_dt - start_dt).total_seconds())
+        if total_seconds < 60:
+            duration_str = f"{total_seconds} sec"
+        else:
+            duration_mins = total_seconds // 60
+            duration_str = f"{duration_mins} min"
+
+    # Get logs grouped by exercise, preserving chronological order of logs
+    logs = session.logs.select_related('exercise', 'weight_unit', 'repetitions_unit').order_by('date')
+    
+    grouped_logs = OrderedDict()
+    for log in logs:
+        exercise = log.exercise
+        if exercise not in grouped_logs:
+            grouped_logs[exercise] = []
+        grouped_logs[exercise].append(log)
+
+    # Human-readable impression
+    impression_mapping = {
+        WorkoutSession.IMPRESSION_BAD: _('Bad') + ' 🔴',
+        WorkoutSession.IMPRESSION_NEUTRAL: _('Neutral') + ' 🟡',
+        WorkoutSession.IMPRESSION_GOOD: _('Good') + ' 🟢',
+    }
+    impression_text = impression_mapping.get(session.impression, _('Neutral') + ' 🟡')
+
+    return render(request, 'user/session_details_modal.html', {
+        'session': session,
+        'duration_str': duration_str,
+        'grouped_logs': grouped_logs.items(),
+        'impression_text': impression_text,
+        'time_start_local': time_start_local,
+        'time_end_local': time_end_local,
+    })
+
 

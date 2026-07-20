@@ -197,6 +197,7 @@ urlpatterns = [
     path('', misc.index, name='index'),
     path('dashboard', user.dashboard_tailwind, name='dashboard'),
     path('profile', user.profile_tailwind, name='profile_tailwind'),
+    path('session/<uuid:session_id>/details', user.session_details_tailwind, name='session-details'),
     path(
         'imprint',
         TemplateView.as_view(template_name='misc/about.html'),

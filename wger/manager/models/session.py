@@ -129,6 +129,25 @@ class WorkoutSession(models.Model):
         """
         return f'{self.routine} - {self.date}'
 
+    @property
+    def duration(self):
+        """
+        Returns the duration of the workout session as a formatted string
+        """
+        if not self.time_start or not self.time_end:
+            return None
+        dt1 = datetime.datetime.combine(self.date, self.time_start)
+        dt2 = datetime.datetime.combine(self.date, self.time_end)
+        if dt2 < dt1:
+            dt2 += datetime.timedelta(days=1)
+        diff = dt2 - dt1
+        total_seconds = int(diff.total_seconds())
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+        return f"{minutes} min"
+
     class Meta:
         """
         Set other properties

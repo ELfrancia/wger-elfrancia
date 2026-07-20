@@ -67,8 +67,14 @@
             <div id="workout-progress-bar" class="h-full bg-[#caf300] shadow-[0_0_8px_rgba(202,243,0,0.4)] transition-all duration-500" style="width: {{ progress_percentage }}%;"></div>
         </div>
         <div class="w-full flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
-            <span>{% translate "Progresso" %}</span>
-            <span id="workout-progress-text">{{ progress_percentage }}%</span>
+            <div class="flex items-center gap-1.5">
+                <span>{% translate "Progresso" %}</span>
+                <span id="workout-progress-text">{{ progress_percentage }}%</span>
+            </div>
+            <div class="flex items-center gap-1 text-[#caf300] font-mono font-black tracking-wider text-xs">
+                <span class="material-symbols-outlined text-[14px]">timer</span>
+                <span id="total-workout-timer">00:00:00</span>
+            </div>
         </div>
         <div class="w-full text-center flex justify-between items-center">
             <span class="font-label-caps text-xs text-gray-400 uppercase tracking-widest font-bold">{{ day.routine.name }} - {{ day.name }}</span>
@@ -149,10 +155,14 @@
             </button>
         </form>
         {% endif %}
-        <a href="{% url 'core:dashboard' %}" class="w-full {% if progress_percentage > 0 %}sm:w-auto flex-1{% endif %} bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] shadow-md hover:shadow-lg transition-all duration-300 glow-btn">
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">done_all</span>
-            {% translate "FINISH WORKOUT" %}
-        </a>
+        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full {% if progress_percentage > 0 %}sm:w-auto flex-1{% endif %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="finish_workout">
+            <button type="submit" class="w-full bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] shadow-md hover:shadow-lg transition-all duration-300 glow-btn">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">done_all</span>
+                {% translate "FINISH WORKOUT" %}
+            </button>
+        </form>
     </div>
 </main>
 {% endblock %}
@@ -419,21 +429,23 @@
             row.classList.add('bg-primary/5', 'border-primary/20', 'opacity-70');
             row.setAttribute('data-completed', 'true');
             
-            // Disable inputs (except hidden inputs needed for serialization)
-            row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
-                input.disabled = true;
-                input.classList.remove('text-white', 'text-primary');
-                input.classList.add('text-gray-400');
-            });
-            
-            // Set checkmark button to active completed state
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.remove('text-zinc-500', 'hover:text-primary', 'border-[#222429]');
-                submitBtn.classList.add('bg-primary/20', 'border-primary/40', 'text-primary');
-                submitBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] font-black">check</span>';
-            }
+            // Defer input/button disabling to allow HTMX to serialize form parameters first
+            setTimeout(() => {
+                row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
+                    input.disabled = true;
+                    input.classList.remove('text-white', 'text-primary');
+                    input.classList.add('text-gray-400');
+                });
+                
+                // Set checkmark button to active completed state
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.remove('text-zinc-500', 'hover:text-primary', 'border-[#222429]');
+                    submitBtn.classList.add('bg-primary/20', 'border-primary/40', 'text-primary');
+                    submitBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] font-black">check</span>';
+                }
+            }, 0);
 
             // Check if all sets in the same exercise group are completed
             const card = row.closest('.exercise-group');
@@ -569,8 +581,31 @@
         }
     });
 
+    // Total Workout Timer Stopwatch
+    let elapsedSeconds = {{ elapsed_seconds|default:0 }};
+    const totalTimerDisplay = document.getElementById('total-workout-timer');
+
+    function formatTotalTime(seconds) {
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function updateTotalTimer() {
+        if (totalTimerDisplay) {
+            totalTimerDisplay.innerText = formatTotalTime(elapsedSeconds);
+        }
+    }
+
+    setInterval(() => {
+        elapsedSeconds++;
+        updateTotalTimer();
+    }, 1000);
+
     // Initial render
     updateDisplay();
     updateProgressBar();
+    updateTotalTimer();
 </script>
 {% endblock %}

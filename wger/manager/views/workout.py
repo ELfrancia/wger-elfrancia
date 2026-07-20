@@ -26,7 +26,8 @@ def log_tailwind(request, routine_pk, day_pk):
             user=request.user,
             routine_id=routine_pk,
             day=day,
-            date=datetime.date.today()
+            date=datetime.date.today(),
+            time_start=timezone.localtime(timezone.now()).time()
         )
         request.session[session_key] = str(session.id)
         return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
@@ -50,9 +51,14 @@ def log_tailwind(request, routine_pk, day_pk):
                 user=request.user,
                 routine_id=routine_pk,
                 day=day,
-                date=datetime.date.today()
+                date=datetime.date.today(),
+                time_start=timezone.localtime(timezone.now()).time()
             )
         request.session[session_key] = str(session.id)
+
+    if session and not session.time_start:
+        session.time_start = timezone.localtime(timezone.now()).time()
+        session.save()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -72,7 +78,17 @@ def log_tailwind(request, routine_pk, day_pk):
 
         if action == 'restart_workout':
             session.logs.all().delete()
+            session.time_start = timezone.localtime(timezone.now()).time()
+            session.time_end = None
+            session.save()
             return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+        elif action == 'finish_workout':
+            session.time_end = timezone.localtime(timezone.now()).time()
+            session.save()
+            if session_key in request.session:
+                del request.session[session_key]
+            return redirect('weight:overview')
 
         elif action == 'complete_exercise':
             if slot:
@@ -204,6 +220,15 @@ def log_tailwind(request, routine_pk, day_pk):
     completed_sets = len(logged_set_ids)
     progress_percentage = int((completed_sets / total_sets) * 100) if total_sets > 0 else 0
 
+    elapsed_seconds = 0
+    if session.time_start:
+        now = timezone.localtime(timezone.now())
+        start_datetime = datetime.datetime.combine(session.date, session.time_start)
+        if timezone.is_naive(start_datetime):
+            start_datetime = timezone.make_aware(start_datetime)
+        elapsed = (now - start_datetime).total_seconds()
+        elapsed_seconds = max(0, int(elapsed))
+
     logged_set_ids_set = set(logged_set_ids)
     completed_exercise_ids = []
     for s in day.slots.all():
@@ -217,6 +242,7 @@ def log_tailwind(request, routine_pk, day_pk):
         'session': session,
         'logged_set_ids': logged_set_ids,
         'completed_exercise_ids': completed_exercise_ids,
-        'progress_percentage': progress_percentage
+        'progress_percentage': progress_percentage,
+        'elapsed_seconds': elapsed_seconds,
     })
 

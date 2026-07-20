@@ -38,7 +38,10 @@
 
         <div class="flex flex-col gap-2.5">
             {% for session in completed_sessions %}
-                <div class="flex items-center justify-between p-3.5 bg-surface-card rounded-[20px] border border-outline/50">
+                <div class="flex items-center justify-between p-3.5 bg-surface-card rounded-[20px] border border-outline/50 hover:bg-[#1D1E22] hover:scale-[1.01] hover:border-primary/30 transition-all duration-200 cursor-pointer"
+                     hx-get="{% url 'core:session-details' session.id %}"
+                     hx-target="#session-detail-content"
+                     onclick="openSessionModal()">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-surface border border-outline flex items-center justify-center text-primary">
                             {% if session.day.name and "running" in session.day.name|lower or "corsa" in session.day.name|lower or "walk" in session.day.name|lower %}
@@ -88,4 +91,81 @@
         </div>
     </div>
 </main>
+
+<!-- Workout Session Details Modal Overlay -->
+<div id="session-detail-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <!-- Modal Content Card -->
+    <div id="session-modal-card" class="bg-background border border-outline rounded-t-[2.2rem] sm:rounded-[2.2rem] w-full max-w-lg p-5 flex flex-col gap-4 shadow-2xl relative max-h-[85vh] sm:max-h-[80vh] overflow-y-auto no-scrollbar transform translate-y-10 transition-transform duration-300">
+        
+        <!-- Header Controls -->
+        <div class="flex justify-between items-center pb-2 border-b border-outline/30">
+            <h3 class="text-white font-bold text-base tracking-tight font-display flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+                Dettaglio Sessione
+            </h3>
+            <button onclick="closeSessionModal()" class="w-8 h-8 rounded-full bg-surface border border-outline text-secondary hover:text-white flex items-center justify-center active:scale-95 transition-all duration-200" title="Chiudi">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <!-- Dynamic Content Slot -->
+        <div id="session-detail-content" class="flex flex-col gap-4">
+            <!-- Loading Indicator -->
+            <div id="session-detail-loader" class="flex flex-col items-center justify-center py-16 gap-3">
+                <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs font-bold text-secondary">Caricamento dettagli...</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function openSessionModal() {
+        const modal = document.getElementById('session-detail-modal');
+        const card = document.getElementById('session-modal-card');
+        
+        // Show modal container
+        modal.classList.remove('pointer-events-none');
+        modal.classList.add('opacity-100');
+        modal.classList.remove('opacity-0');
+        
+        // Slide up card
+        card.classList.remove('translate-y-10');
+        card.classList.add('translate-y-0');
+        
+        // Clear previous content and show loader
+        const content = document.getElementById('session-detail-content');
+        content.innerHTML = `
+            <div id="session-detail-loader" class="flex flex-col items-center justify-center py-16 gap-3">
+                <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                <span class="text-xs font-bold text-secondary">Caricamento dettagli...</span>
+            </div>
+        `;
+    }
+
+    function closeSessionModal() {
+        const modal = document.getElementById('session-detail-modal');
+        const card = document.getElementById('session-modal-card');
+        
+        // Hide modal container
+        modal.classList.add('pointer-events-none');
+        modal.classList.add('opacity-0');
+        modal.classList.remove('opacity-100');
+        
+        // Slide down card
+        card.classList.add('translate-y-10');
+        card.classList.remove('translate-y-0');
+    }
+
+    // Close modal when clicking on the backdrop (the outer overlay)
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('session-detail-modal');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeSessionModal();
+            }
+        });
+    });
+</script>
 {% endblock %}
