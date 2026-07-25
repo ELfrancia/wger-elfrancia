@@ -1,0 +1,131 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}ONYX — {% translate "Lista Utenti" %}{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-4xl mx-auto mt-2 flex flex-col gap-6 pb-24">
+
+    <!-- TOP NAVIGATION & CTA BAR -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <a href="{% url 'core:profile_tailwind' %}" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-colors bg-neutral-900 border border-neutral-800 px-4 py-2.5 rounded-xl self-start">
+            <span class="material-symbols-outlined text-base leading-none select-none">arrow_back</span>
+            <span>{% translate "Torna al Profilo" %}</span>
+        </a>
+
+        <a href="{% url 'core:user:add-user' %}" class="inline-flex items-center gap-2 bg-primary hover:bg-[#b5d900] text-black font-display font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-colors cursor-pointer self-start sm:self-auto">
+            <span class="material-symbols-outlined text-lg leading-none select-none">person_add</span>
+            <span>{% translate "+ CREA NUOVO UTENTE" %}</span>
+        </a>
+    </div>
+
+    <!-- MAIN CONTAINER (CLEAN MINIMALIST DARK SURFACE) -->
+    <div class="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 w-full flex flex-col gap-6">
+
+        <!-- HEADER & LIVE SEARCH -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-5">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-primary text-black flex items-center justify-center font-bold shrink-0 aspect-square">
+                    <span class="material-symbols-outlined text-2xl leading-none select-none">group</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-display font-black text-xl sm:text-2xl text-white uppercase tracking-tight">{% translate "Lista Utenti" %}</h1>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">ADMIN</span>
+                    </div>
+                    <p class="text-xs text-neutral-400 font-sans mt-0.5">{% translate "Gestione completa dei membri registrati sulla piattaforma" %}</p>
+                </div>
+            </div>
+
+            <!-- Search input -->
+            <div class="relative min-w-[240px]">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-base leading-none select-none">search</span>
+                <input type="text" id="user-search-input" onkeyup="filterUsers()" placeholder="Cerca utente..."
+                       class="w-full bg-neutral-950 border border-neutral-800 focus:border-primary text-white font-sans text-xs rounded-xl pl-9 pr-4 py-2.5 focus:outline-none transition-colors placeholder:text-neutral-600">
+            </div>
+        </div>
+
+        <!-- USERS LIST CARDS -->
+        <div class="flex flex-col gap-3" id="users-container">
+            {% for item in user_table.users %}
+                <div class="user-row-card bg-neutral-950 border border-neutral-800/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-neutral-700 transition-colors"
+                     data-search="{{ item.obj.username }} {{ item.obj.first_name }} {{ item.obj.last_name }} {{ item.obj.email }}">
+                    
+                    <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                        <!-- Avatar -->
+                        <div class="w-11 h-11 rounded-full overflow-hidden border border-neutral-800 bg-neutral-900 shrink-0 aspect-square flex items-center justify-center text-primary font-bold">
+                            {% if item.obj.userprofile.avatar_url %}
+                                <img src="{{ item.obj.userprofile.avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                            {% else %}
+                                <span class="material-symbols-outlined text-2xl leading-none select-none">person</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- User Info -->
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2 mb-0.5">
+                                <h3 class="font-display font-bold text-sm text-white truncate">
+                                    {% if item.obj.first_name or item.obj.last_name %}
+                                        {{ item.obj.first_name }} {{ item.obj.last_name }}
+                                    {% else %}
+                                        {{ item.obj.username }}
+                                    {% endif %}
+                                </h3>
+                                <span class="text-xs text-neutral-500 font-mono">(@{{ item.obj.username }})</span>
+
+                                <!-- Role Badges -->
+                                {% if item.obj.is_superuser %}
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">SUPERUSER</span>
+                                {% elif item.obj.is_staff %}
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-300 border border-purple-500/20">STAFF</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold text-neutral-400 bg-neutral-900 border border-neutral-800">ATLETA</span>
+                                {% endif %}
+                            </div>
+
+                            <p class="text-xs text-neutral-400 font-sans flex items-center gap-1 truncate">
+                                <span class="material-symbols-outlined text-sm text-neutral-500 leading-none select-none">mail</span>
+                                {{ item.obj.email|default:"Nessuna email registrata" }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <a href="{% url 'core:user:overview' item.obj.pk %}" class="bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-display font-bold text-xs uppercase tracking-wider px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-base leading-none select-none">visibility</span>
+                            <span>{% translate "Dettagli" %}</span>
+                        </a>
+
+                        <a href="{% url 'core:user:edit' item.obj.pk %}" class="bg-neutral-900 border border-neutral-800 hover:border-amber-500/50 text-neutral-300 hover:text-amber-400 font-display font-bold text-xs uppercase tracking-wider px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-base leading-none select-none">edit</span>
+                            <span>{% translate "Modifica" %}</span>
+                        </a>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="p-8 text-center bg-neutral-950 rounded-2xl border border-neutral-800 flex flex-col items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-3xl text-neutral-500">group_off</span>
+                    <p class="text-sm font-bold text-neutral-400">{% translate "Nessun utente trovato." %}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function filterUsers() {
+        const query = document.getElementById('user-search-input').value.toLowerCase();
+        const cards = document.querySelectorAll('.user-row-card');
+        cards.forEach(card => {
+            const searchData = card.getAttribute('data-search').toLowerCase();
+            if (searchData.includes(query)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

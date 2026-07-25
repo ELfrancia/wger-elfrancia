@@ -1,27 +1,24 @@
-{% extends "base.html" %}
-{% load i18n static wger_extras django_bootstrap_breadcrumbs %}
+{% extends "template_tailwind.html" %}
+{% load i18n static %}
 
-{% block title %}{% translate "User list" %}{% endblock %}
-
+{% block title %}ONYX — {% translate "Lista Utenti" %}{% endblock %}
 
 {% block content %}
-    {% include 'gym/partial_user_list.html' %}
-{% endblock %}
+<div class="w-full max-w-5xl mx-auto mt-2 flex flex-col gap-6 pb-24">
+    <!-- TOP NAVIGATION BAR -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'core:profile_tailwind' %}" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-colors bg-neutral-900 border border-neutral-800 px-4 py-2.5 rounded-xl">
+            <span class="material-symbols-outlined text-base leading-none select-none">arrow_back</span>
+            <span>{% translate "Torna al Profilo" %}</span>
+        </a>
 
-
-{% block sidebar %}
-    {% if request.user.is_superuser %}
-    <div class="card mb-3">
-        <div class="card-header">
-            <span class="{% fa_class 'user-plus' %} me-1"></span>
-            {% translate "Admin actions" %}
-        </div>
-        <div class="card-body">
-            <a href="{% url 'core:user:add-user' %}" class="btn btn-success w-100">
-                <span class="{% fa_class 'plus' %} me-1"></span>
-                {% translate "Add User" %}
-            </a>
-        </div>
+        <a href="{% url 'core:user:add-user' %}" class="inline-flex items-center gap-2 bg-primary hover:bg-[#b5d900] text-black font-display font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-colors cursor-pointer">
+            <span class="material-symbols-outlined text-lg leading-none select-none">person_add</span>
+            <span>{% translate "+ CREA NUOVO UTENTE" %}</span>
+        </a>
     </div>
-    {% endif %}
+
+    <!-- PARTIAL USER LIST -->
+    {% include 'gym/partial_user_list.html' %}
+</div>
 {% endblock %}

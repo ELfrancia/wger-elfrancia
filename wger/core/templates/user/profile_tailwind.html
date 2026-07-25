@@ -160,13 +160,6 @@
             <span class="material-symbols-outlined text-base leading-none select-none shrink-0">security</span>
             <span>{% translate "Sicurezza & Impostazioni" %}</span>
         </button>
-
-        {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer or user.is_superuser or user.is_staff %}
-        <button type="button" onclick="switchProfileTab('admin')" id="tab-btn-admin" class="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 text-neutral-400 hover:text-white flex items-center justify-center gap-2 font-display">
-            <span class="material-symbols-outlined text-base leading-none select-none shrink-0">admin_panel_settings</span>
-            <span>{% translate "Gestione Admin" %}</span>
-        </button>
-        {% endif %}
     </div>
 
     <!-- TAB 1: GOALS & AVATAR SETTINGS -->
@@ -299,9 +292,6 @@
                             <p class="text-xs sm:text-sm text-neutral-200 font-medium truncate mt-0.5" title="{{ user.email }}">{{ user.email }}</p>
                         </div>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0 self-start sm:self-auto">
-                        {% translate "Verificato" %}
-                    </span>
                 </div>
 
                 <!-- Password Change Link -->
@@ -335,146 +325,92 @@
         </div>
     </div>
 
-    <!-- TAB 3: ADMIN & MANAGEMENT (IF PERMITTED) -->
-    {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer or user.is_superuser or user.is_staff %}
-    <div id="tab-content-admin" class="flex flex-col gap-6 hidden w-full">
-        <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] p-6 sm:p-8 shadow-xl w-full">
-            <div class="flex items-center gap-3.5 mb-6 border-b border-surface-container-high/50 pb-4">
-                <div class="w-11 h-11 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0 aspect-square">
-                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">admin_panel_settings</span>
-                </div>
-                <div>
-                    <h3 class="font-display font-bold text-lg text-white">{% translate "Pannello di Amministrazione" %}</h3>
-                    <p class="text-xs text-neutral-400">{% translate "Accesso rapido alle funzionalità gestionali della piattaforma" %}</p>
-                </div>
+    <!-- DEDICATED ADMIN SECTION DIRECTLY ABOVE LOGOUT (CLEAN MINIMALIST DARK SURFACE) -->
+    <div class="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-7 w-full flex flex-col gap-5">
+        <div class="flex items-center gap-3.5 border-b border-neutral-800 pb-4">
+            <div class="w-12 h-12 rounded-xl bg-primary text-black flex items-center justify-center font-bold shrink-0 aspect-square">
+                <span class="material-symbols-outlined text-2xl leading-none select-none">admin_panel_settings</span>
             </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                {% if perms.gym.manage_gyms or user.is_superuser %}
-                    <!-- User list -->
-                    <a href="{% url 'core:user:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">group</span>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Lista Utenti" %}</h4>
-                                <p class="text-[11px] text-neutral-400">{% translate "Visualizza e gestisci tutti gli utenti registrati" %}</p>
-                            </div>
-                        </div>
-                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                    </a>
-
-                    <!-- Add User -->
-                    <a href="{% url 'core:user:add-user' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">person_add</span>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Aggiungi Utente" %}</h4>
-                                <p class="text-[11px] text-neutral-400">{% translate "Crea un nuovo profilo utente a sistema" %}</p>
-                            </div>
-                        </div>
-                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                    </a>
-
-                    <!-- Gym list -->
-                    <a href="{% url 'gym:gym:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">corporate_fare</span>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Palestre" %}</h4>
-                                <p class="text-[11px] text-neutral-400">{% translate "Gestisci le strutture e le sedi collegate" %}</p>
-                            </div>
-                        </div>
-                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                    </a>
-
-                    <!-- Add Gym -->
-                    <a href="{% url 'gym:gym:add' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">add_business</span>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Aggiungi Palestra" %}</h4>
-                                <p class="text-[11px] text-neutral-400">{% translate "Configura una nuova struttura palestra" %}</p>
-                            </div>
-                        </div>
-                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                    </a>
-                {% endif %}
-
-                {% if perms.gym.gym_trainer or perms.gym.manage_gym %}
-                    {% if user.userprofile.gym %}
-                        <!-- Gym Members list -->
-                        <a href="{% url 'gym:gym:user-list' user.userprofile.gym.pk %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                            <div class="flex items-center gap-3.5">
-                                <div class="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">groups</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{{ user.userprofile.gym.name }} - Membri</h4>
-                                    <p class="text-[11px] text-neutral-400">{% translate "Gestisci gli iscritti della tua palestra" %}</p>
-                                </div>
-                            </div>
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                        </a>
-
-                        <!-- Add Gym Member -->
-                        <a href="{% url 'gym:gym:add-user' user.userprofile.gym.pk %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                            <div class="flex items-center gap-3.5">
-                                <div class="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">person_add_alt</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Aggiungi Membro Palestra" %}</h4>
-                                    <p class="text-[11px] text-neutral-400">{% translate "Iscrivi un nuovo membro alla tua palestra" %}</p>
-                                </div>
-                            </div>
-                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                        </a>
-                    {% endif %}
-                {% endif %}
-
-                {% if perms.core.change_language %}
-                    <!-- Languages -->
-                    <a href="{% url 'core:language:overview' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">translate</span>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Lingue" %}</h4>
-                                <p class="text-[11px] text-neutral-400">{% translate "Gestisci le lingue dell'applicazione" %}</p>
-                            </div>
-                        </div>
-                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                    </a>
-                {% endif %}
-
-                {% if perms.core.change_license %}
-                    <!-- Licenses -->
-                    <a href="{% url 'core:license:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
-                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">description</span>
-                            </div>
-                            <div>
-                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Licenze" %}</h4>
-                                <p class="text-[11px] text-neutral-400">{% translate "Gestisci le licenze dei contenuti" %}</p>
-                            </div>
-                        </div>
-                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
-                    </a>
-                {% endif %}
+            <div>
+                <div class="flex items-center gap-2">
+                    <h3 class="font-display font-black text-lg text-white uppercase tracking-wide">{% translate "Sezione Amministrazione" %}</h3>
+                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">ADMIN</span>
+                </div>
+                <p class="text-xs text-neutral-400 font-sans mt-0.5">{% translate "Gestione utenti, palestre e configurazioni del sistema" %}</p>
             </div>
         </div>
+
+        <!-- Quick User Creation & List Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <a href="{% url 'core:user:add-user' %}" class="bg-primary hover:bg-[#b5d900] text-black font-display font-black text-xs uppercase tracking-wider py-3.5 px-5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                <span class="material-symbols-outlined text-lg leading-none select-none">person_add</span>
+                <span>{% translate "+ CREA NUOVO UTENTE" %}</span>
+            </a>
+            <a href="{% url 'core:user:list' %}" class="bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-white font-display font-bold text-xs uppercase tracking-wider py-3.5 px-5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                <span class="material-symbols-outlined text-lg text-primary leading-none select-none">group</span>
+                <span>{% translate "LISTA UTENTI" %}</span>
+            </a>
+        </div>
+
+        <!-- Additional Admin Links Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-surface-container-high/40">
+            <!-- Gym list -->
+            <a href="{% url 'gym:gym:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                        <span class="material-symbols-outlined text-lg leading-none select-none shrink-0">corporate_fare</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-xs group-hover:text-primary transition-colors">{% translate "Palestre" %}</h4>
+                        <p class="text-[10px] text-neutral-400">{% translate "Gestisci le strutture e le sedi" %}</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all text-sm leading-none select-none shrink-0">chevron_right</span>
+            </a>
+
+            <!-- Add Gym -->
+            <a href="{% url 'gym:gym:add' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                        <span class="material-symbols-outlined text-lg leading-none select-none shrink-0">add_business</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-xs group-hover:text-primary transition-colors">{% translate "Aggiungi Palestra" %}</h4>
+                        <p class="text-[10px] text-neutral-400">{% translate "Configura una nuova struttura" %}</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all text-sm leading-none select-none shrink-0">chevron_right</span>
+            </a>
+
+            <!-- Languages -->
+            <a href="{% url 'core:language:overview' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                        <span class="material-symbols-outlined text-lg leading-none select-none shrink-0">translate</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-xs group-hover:text-primary transition-colors">{% translate "Lingue" %}</h4>
+                        <p class="text-[10px] text-neutral-400">{% translate "Gestisci le lingue dell'app" %}</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all text-sm leading-none select-none shrink-0">chevron_right</span>
+            </a>
+
+            <!-- Licenses -->
+            <a href="{% url 'core:license:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                        <span class="material-symbols-outlined text-lg leading-none select-none shrink-0">description</span>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-xs group-hover:text-primary transition-colors">{% translate "Licenze" %}</h4>
+                        <p class="text-[10px] text-neutral-400">{% translate "Gestisci le licenze dei contenuti" %}</p>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all text-sm leading-none select-none shrink-0">chevron_right</span>
+            </a>
+        </div>
     </div>
-    {% endif %}
 
     <!-- LOGOUT CTA -->
     <a href="{% url 'core:user:logout' %}" class="w-full bg-surface-card border border-red-500/30 hover:border-red-500/60 hover:bg-red-950/30 text-red-400 min-h-[56px] py-4 rounded-2xl flex items-center justify-center gap-2 font-display font-bold text-sm uppercase tracking-wider transition-all shadow-lg active:scale-[0.99] group mt-2">
@@ -487,7 +423,7 @@
 <script>
     function switchProfileTab(tabName) {
         // Tab buttons
-        const tabs = ['goals', 'security', 'admin'];
+        const tabs = ['goals', 'security'];
         tabs.forEach(t => {
             const btn = document.getElementById('tab-btn-' + t);
             const content = document.getElementById('tab-content-' + t);

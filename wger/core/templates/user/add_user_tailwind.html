@@ -1,0 +1,213 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n %}
+
+{% block title %}ONYX — {% translate "Crea Nuovo Utente" %}{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-2xl mx-auto mt-2 flex flex-col gap-6 pb-24">
+
+    <!-- TOP NAVIGATION BAR -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'core:profile_tailwind' %}" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-colors bg-neutral-900 border border-neutral-800 px-4 py-2.5 rounded-xl">
+            <span class="material-symbols-outlined text-base leading-none select-none">arrow_back</span>
+            <span>{% translate "Torna al Profilo" %}</span>
+        </a>
+
+        <a href="{% url 'core:user:list' %}" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-colors bg-neutral-900 border border-neutral-800 px-4 py-2.5 rounded-xl">
+            <span class="material-symbols-outlined text-base leading-none select-none">group</span>
+            <span>{% translate "Lista Utenti" %}</span>
+        </a>
+    </div>
+
+    <!-- MAIN FORM CONTAINER (CLEAN MINIMALIST DARK SURFACE) -->
+    <div class="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 w-full flex flex-col gap-6">
+
+        <!-- HEADER & TITLE -->
+        <div class="flex flex-col gap-2.5 border-b border-neutral-800 pb-5">
+            <div class="flex items-center justify-between">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                    AMMINISTRAZIONE
+                </span>
+                <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">ONYX SYSTEM</span>
+            </div>
+
+            <div class="flex items-center gap-3.5 mt-1">
+                <div class="w-12 h-12 rounded-xl bg-primary text-black flex items-center justify-center font-bold shrink-0 aspect-square">
+                    <span class="material-symbols-outlined text-2xl leading-none select-none">person_add</span>
+                </div>
+                <div>
+                    <h1 class="font-display font-black text-xl sm:text-2xl text-white uppercase tracking-tight">{% translate "Crea Nuovo Utente" %}</h1>
+                    <p class="text-xs text-neutral-400 font-sans mt-0.5">{% translate "Registra un nuovo membro con credenziali di primo accesso" %}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM ERRORS -->
+        {% if form.errors %}
+            <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex flex-col gap-1.5 text-xs text-red-400">
+                <div class="flex items-center gap-2 font-bold text-red-400">
+                    <span class="material-symbols-outlined text-base leading-none select-none">error</span>
+                    <span>{% translate "Impossibile salvare l'utente:" %}</span>
+                </div>
+                <ul class="list-disc list-inside space-y-0.5 pl-1">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <!-- FORM FIELDS -->
+        <form method="post" action="" class="flex flex-col gap-5" id="add-user-form">
+            {% csrf_token %}
+
+            <!-- USERNAME -->
+            <div class="flex flex-col gap-1.5">
+                <label for="id_username" class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base text-primary leading-none select-none">account_circle</span>
+                        {% translate "Nome Utente (Username)" %} *
+                    </span>
+                </label>
+                <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" required autocomplete="off" placeholder="es. mario.rossi"
+                       class="w-full bg-neutral-950 border border-neutral-800 focus:border-primary text-white font-sans text-sm rounded-xl px-4 py-3 focus:outline-none transition-colors placeholder:text-neutral-600">
+                <p class="text-[11px] text-neutral-500">{% translate "Max 150 caratteri. Solo lettere, cifre e caratteri @/./+/-/_" %}</p>
+            </div>
+
+            <!-- EMAIL -->
+            <div class="flex flex-col gap-1.5">
+                <label for="id_email" class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-base text-neutral-400 leading-none select-none">mail</span>
+                    {% translate "Indirizzo Email" %}
+                </label>
+                <input type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}" autocomplete="off" placeholder="es. mario.rossi@email.com"
+                       class="w-full bg-neutral-950 border border-neutral-800 focus:border-primary text-white font-sans text-sm rounded-xl px-4 py-3 focus:outline-none transition-colors placeholder:text-neutral-600">
+            </div>
+
+            <!-- FIRST & LAST NAME GRID -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- First Name -->
+                <div class="flex flex-col gap-1.5">
+                    <label for="id_first_name" class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base text-neutral-400 leading-none select-none">badge</span>
+                        {% translate "Nome" %}
+                    </label>
+                    <input type="text" name="first_name" id="id_first_name" value="{{ form.first_name.value|default:'' }}" placeholder="es. Mario"
+                           class="w-full bg-neutral-950 border border-neutral-800 focus:border-primary text-white font-sans text-sm rounded-xl px-4 py-3 focus:outline-none transition-colors placeholder:text-neutral-600">
+                </div>
+
+                <!-- Last Name -->
+                <div class="flex flex-col gap-1.5">
+                    <label for="id_last_name" class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base text-neutral-400 leading-none select-none">badge</span>
+                        {% translate "Cognome" %}
+                    </label>
+                    <input type="text" name="last_name" id="id_last_name" value="{{ form.last_name.value|default:'' }}" placeholder="es. Rossi"
+                           class="w-full bg-neutral-950 border border-neutral-800 focus:border-primary text-white font-sans text-sm rounded-xl px-4 py-3 focus:outline-none transition-colors placeholder:text-neutral-600">
+                </div>
+            </div>
+
+            <!-- TEMPORARY PASSWORD -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                    <label for="id_password" class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base text-amber-400 leading-none select-none">lock</span>
+                        {% translate "Password Temporanea" %} *
+                    </label>
+                    <button type="button" onclick="generatePassword()" class="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer">
+                        <span class="material-symbols-outlined text-xs leading-none select-none">key</span>
+                        <span>{% translate "Genera Password Casuale" %}</span>
+                    </button>
+                </div>
+
+                <div class="relative flex items-center">
+                    <input type="password" name="password" id="id_password" required autocomplete="new-password" placeholder="Inserisci o genera una password"
+                           class="w-full bg-neutral-950 border border-neutral-800 focus:border-primary text-white font-mono text-sm rounded-xl pl-4 pr-12 py-3 focus:outline-none transition-colors placeholder:text-neutral-600">
+                    <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 text-neutral-400 hover:text-white p-1 transition-colors cursor-pointer" title="{% translate 'Mostra/Nascondi' %}">
+                        <span id="pwd-eye-icon" class="material-symbols-outlined text-lg leading-none select-none">visibility</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PASSWORD REQUIREMENTS CLEAN PANEL -->
+            <div class="bg-neutral-950 border border-neutral-800/80 rounded-2xl p-4 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base text-primary leading-none select-none">shield</span>
+                        {% translate "Requisiti Password" %}
+                    </span>
+                    <span class="text-[10px] text-neutral-500 font-mono">SECURE</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-neutral-400">
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary font-bold">✓</span>
+                        <span>{% translate "Minimo 8 caratteri" %}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary font-bold">✓</span>
+                        <span>{% translate "Almeno 1 maiuscola" %}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-primary font-bold">✓</span>
+                        <span>{% translate "Almeno 1 minuscola" %}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-amber-400 font-bold">!</span>
+                        <span>{% translate "Cambio obbligatorio al 1° accesso" %}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="flex flex-col sm:flex-row items-center gap-3 mt-2">
+                <button type="submit" class="w-full sm:flex-1 bg-primary hover:bg-[#b5d900] text-black font-display font-black text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-lg leading-none select-none">person_add</span>
+                    <span>{% translate "CREA NUOVO UTENTE" %}</span>
+                </button>
+
+                <a href="{% url 'core:profile_tailwind' %}" class="w-full sm:w-auto bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl transition-colors text-center cursor-pointer">
+                    {% translate "Annulla" %}
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    function togglePasswordVisibility() {
+        const pwdInput = document.getElementById('id_password');
+        const eyeIcon = document.getElementById('pwd-eye-icon');
+        if (pwdInput && eyeIcon) {
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                eyeIcon.textContent = 'visibility_off';
+            } else {
+                pwdInput.type = 'password';
+                eyeIcon.textContent = 'visibility';
+            }
+        }
+    }
+
+    function generatePassword() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
+        let pwd = '';
+        const length = 12;
+        for (let i = 0; i < length; i++) {
+            pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        const pwdInput = document.getElementById('id_password');
+        const eyeIcon = document.getElementById('pwd-eye-icon');
+        if (pwdInput) {
+            pwdInput.value = pwd;
+            pwdInput.type = 'text';
+            if (eyeIcon) eyeIcon.textContent = 'visibility_off';
+            pwdInput.classList.add('border-primary');
+            setTimeout(() => pwdInput.classList.remove('border-primary'), 800);
+        }
+    }
+</script>
+{% endblock %}

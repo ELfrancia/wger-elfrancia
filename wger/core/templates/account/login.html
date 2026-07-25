@@ -4,95 +4,146 @@
 {% block title %}{% translate "Login" %} - ONYX{% endblock %}
 
 {% block content %}
-<main class="max-w-md mx-auto px-4 mt-16 flex flex-col gap-6">
-    <div class="text-center flex flex-col gap-2">
-        <h1 class="font-headline-lg text-headline-lg tracking-tighter font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#caf300]">ONYX ATHLETIC</h1>
-        <p class="text-neutral-400 font-body-md">{% translate "Sign in to continue your performance training." %}</p>
+<style>
+    /* Custom input autofill override for dark theme */
+    .onyx-input:-webkit-autofill,
+    .onyx-input:-webkit-autofill:hover,
+    .onyx-input:-webkit-autofill:focus,
+    .onyx-input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0px 1000px #1c1d21 inset !important;
+        -webkit-text-fill-color: #ffffff !important;
+        caret-color: #ffffff !important;
+        transition: background-color 5000s ease-in-out 0s !important;
+    }
+</style>
+
+<main class="max-w-md mx-auto px-4 py-8 sm:py-12 flex flex-col gap-6">
+    <!-- Header / Brand -->
+    <div class="text-center flex flex-col items-center gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#caf300]/20 via-[#caf300]/10 to-transparent border border-[#caf300]/30 flex items-center justify-center shadow-[0_0_24px_rgba(202,243,0,0.15)] mb-1">
+            <span class="material-symbols-outlined text-[#caf300] text-3xl font-black">fitness_center</span>
+        </div>
+        <h1 class="text-3xl font-black tracking-tight uppercase font-display text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#caf300]">
+            ONYX ATHLETIC
+        </h1>
+        <p class="text-neutral-400 text-sm font-medium">
+            {% translate "Sign in to continue your performance training." %}
+        </p>
     </div>
 
+    <!-- Global Messages -->
     {% if messages %}
-        {% for message in messages %}
-            <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-sm font-semibold {% if message.tags == 'error' %}text-red-400{% else %}text-[#caf300]{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
+        <div class="flex flex-col gap-2">
+            {% for message in messages %}
+                <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-sm font-semibold flex items-center gap-3 {% if message.tags == 'error' %}text-red-400{% else %}text-[#caf300]{% endif %}">
+                    <span class="material-symbols-outlined text-lg flex-shrink-0">info</span>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
 
-    <div class="bg-[#161616]/80 backdrop-blur-md border border-[#262626] rounded-[32px] p-8 flex flex-col gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-        <form method="post" class="flex flex-col gap-4" novalidate>
+    <!-- Card Container -->
+    <div class="bg-[#141517]/90 backdrop-blur-xl border border-[#26282e] rounded-[28px] p-6 sm:p-8 flex flex-col gap-6 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
+        <form method="post" class="flex flex-col gap-5" novalidate>
             {% csrf_token %}
             {% if redirect_field_value %}
                 <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
             {% endif %}
 
             {% for error in form.non_field_errors %}
-                <div class="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-2xl text-xs font-semibold text-center">
-                    {{ error }}
+                <div class="bg-red-500/10 border border-red-500/30 text-red-400 p-3.5 rounded-2xl text-xs font-semibold text-center flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">warning</span>
+                    <span>{{ error }}</span>
                 </div>
             {% endfor %}
 
             <!-- Username Field -->
-            <div class="flex flex-col gap-2">
-                <label for="{{ form.login.id_for_label }}" class="text-xs text-neutral-400 uppercase tracking-widest font-bold px-2">
+            <div class="flex flex-col gap-1.5">
+                <label for="{{ form.login.id_for_label }}" class="text-[11px] text-neutral-400 uppercase tracking-widest font-extrabold px-1 font-display">
                     {{ form.login.label }}
                 </label>
-                <input type="text" name="{{ form.login.html_name }}" id="{{ form.login.id_for_label }}" required
-                       class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-md transition-all duration-300 outline-none placeholder-neutral-600 text-sm"
-                       placeholder="{% translate "Username" %}">
+                <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-4 text-neutral-500 text-xl pointer-events-none select-none">person</span>
+                    <input type="text" 
+                           name="{{ form.login.html_name }}" 
+                           id="{{ form.login.id_for_label }}" 
+                           value="{{ form.login.value|default:'' }}"
+                           required
+                           autocomplete="username"
+                           class="onyx-input w-full bg-[#1c1d21] border border-[#2a2d34] rounded-2xl h-14 pl-12 pr-4 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/20 transition-all duration-200 outline-none placeholder-neutral-500 text-sm font-medium"
+                           placeholder="{% translate "Username" %}">
+                </div>
                 {% for error in form.login.errors %}
-                    <span class="text-red-400 text-xs px-2 mt-1 font-medium block">{{ error }}</span>
+                    <span class="text-red-400 text-xs px-2 mt-0.5 font-medium block">{{ error }}</span>
                 {% endfor %}
             </div>
 
             <!-- Password Field -->
-            <div class="flex flex-col gap-2">
-                <label for="{{ form.password.id_for_label }}" class="text-xs text-neutral-400 uppercase tracking-widest font-bold px-2">
+            <div class="flex flex-col gap-1.5">
+                <label for="{{ form.password.id_for_label }}" class="text-[11px] text-neutral-400 uppercase tracking-widest font-extrabold px-1 font-display">
                     {{ form.password.label }}
                 </label>
-                <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" required
-                       class="w-full bg-[#1c1c1c] border border-[#262626] rounded-full h-14 px-6 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/10 focus:shadow-md transition-all duration-300 outline-none placeholder-neutral-600 text-sm"
-                       placeholder="{% translate "Password" %}">
+                <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-4 text-neutral-500 text-xl pointer-events-none select-none">lock</span>
+                    <input type="password" 
+                           name="{{ form.password.html_name }}" 
+                           id="{{ form.password.id_for_label }}" 
+                           required
+                           autocomplete="current-password"
+                           class="onyx-input w-full bg-[#1c1d21] border border-[#2a2d34] rounded-2xl h-14 pl-12 pr-12 text-white focus:border-[#caf300] focus:ring-2 focus:ring-[#caf300]/20 transition-all duration-200 outline-none placeholder-neutral-500 text-sm font-medium"
+                           placeholder="{% translate "Password" %}">
+                    <button type="button" 
+                            onclick="togglePasswordVisibility('{{ form.password.id_for_label }}', this)" 
+                            class="absolute right-4 text-neutral-500 hover:text-white transition-colors focus:outline-none select-none"
+                            title="Mostra/Nascondi password">
+                        <span class="material-symbols-outlined text-xl block">visibility</span>
+                    </button>
+                </div>
                 {% for error in form.password.errors %}
-                    <span class="text-red-400 text-xs px-2 mt-1 font-medium block">{{ error }}</span>
+                    <span class="text-red-400 text-xs px-2 mt-0.5 font-medium block">{{ error }}</span>
                 {% endfor %}
             </div>
 
-            <!-- Options -->
-            <div class="flex justify-between items-center text-xs px-2">
+            <!-- Options Bar (Remember me & Forgot Password) -->
+            <div class="flex flex-row justify-between items-center text-xs px-1 pt-1 gap-4 min-h-[24px]">
                 {% if form.remember %}
-                    <label class="flex items-center gap-2 cursor-pointer text-neutral-400 hover:text-white transition-colors">
-                        <input type="checkbox" name="{{ form.remember.html_name }}" id="{{ form.remember.id_for_label }}"
-                               class="rounded border-[#262626] bg-[#1c1c1c] text-[#caf300] focus:ring-0 focus:ring-offset-0">
-                        {{ form.remember.label }}
+                    <label for="{{ form.remember.id_for_label }}" class="inline-flex items-center gap-2 cursor-pointer text-neutral-400 hover:text-white transition-colors select-none">
+                        <input type="checkbox" 
+                               name="{{ form.remember.html_name }}" 
+                               id="{{ form.remember.id_for_label }}"
+                               class="w-4 h-4 rounded border-[#2a2d34] bg-[#1c1d21] text-[#caf300] focus:ring-[#caf300]/20 focus:ring-offset-0 cursor-pointer accent-[#caf300]">
+                        <span class="font-medium text-xs">{{ form.remember.label }}</span>
                     </label>
                 {% endif %}
-                <a href="{% url 'core:user:password_reset' %}" class="text-[#caf300] hover:underline font-semibold">
+                <a href="{% url 'core:user:password_reset' %}" class="text-[#caf300] hover:text-[#d7fa33] font-bold hover:underline transition-colors whitespace-nowrap ml-auto">
                     {% translate "Forgot password?" %}
                 </a>
             </div>
 
-            <!-- Submit -->
-            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#b8dd00] text-[#131313] h-14 rounded-full flex items-center justify-center font-extrabold tracking-wider hover:shadow-lg transition-all duration-300 mt-2">
-                {% translate "LOG IN" %}
+            <!-- Submit Button -->
+            <button type="submit" class="w-full bg-[#caf300] hover:bg-[#d4f826] active:scale-[0.99] text-[#0a0a0c] font-black tracking-wider uppercase h-14 rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(202,243,0,0.25)] hover:shadow-[0_6px_28px_rgba(202,243,0,0.35)] transition-all duration-200 mt-2 font-display">
+                <span>{% translate "LOG IN" %}</span>
+                <span class="material-symbols-outlined text-xl">arrow_forward</span>
             </button>
         </form>
 
         <!-- Passkeys & Social logins (required by Allauth and test cases) -->
         {% if PASSKEY_LOGIN_ENABLED or use_social_auth %}
-            <div class="flex flex-col gap-4 border-t border-[#262626] pt-6">
+            <div class="flex flex-col gap-4 border-t border-[#26282e] pt-6">
                 {% if PASSKEY_LOGIN_ENABLED %}
                     <button type="submit" form="mfa_login" id="passkey_login"
-                            class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-300 gap-2">
-                        <span class="material-symbols-outlined text-sm">key</span>
-                        {% translate "Sign in with a passkey" %}
+                            class="w-full bg-[#1c1d21] border border-[#2a2d34] text-white hover:text-[#caf300] hover:border-[#caf300]/40 h-14 rounded-2xl flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-200 gap-2">
+                        <span class="material-symbols-outlined text-xl text-[#caf300]">key</span>
+                        <span>{% translate "Sign in with a passkey" %}</span>
                     </button>
                 {% endif %}
 
                 {% if PASSKEY_LOGIN_ENABLED and use_social_auth %}
-                    <div class="flex items-center gap-4 text-neutral-500 text-xs justify-center">
-                        <hr class="w-8 border-[#262626]">
+                    <div class="flex items-center gap-4 text-neutral-500 text-xs justify-center font-medium">
+                        <hr class="w-8 border-[#26282e]">
                         <span>{% translate "or sign in with" %}</span>
-                        <hr class="w-8 border-[#262626]">
+                        <hr class="w-8 border-[#26282e]">
                     </div>
                 {% endif %}
 
@@ -104,18 +155,39 @@
             </div>
         {% endif %}
 
+        <!-- Registration Link -->
         {% if allow_registration %}
-            <div class="flex items-center gap-4 text-neutral-500 text-xs">
-                <hr class="flex-1 border-[#262626]">
+            <div class="flex items-center gap-4 text-neutral-500 text-xs font-medium pt-2">
+                <hr class="flex-1 border-[#26282e]">
                 <span>{% translate "No account?" %}</span>
-                <hr class="flex-1 border-[#262626]">
+                <hr class="flex-1 border-[#26282e]">
             </div>
-            <a href="{% url 'core:user:registration' %}" class="w-full bg-[#1c1c1c] border border-[#262626] text-white hover:text-[#caf300] hover:border-[#caf300]/30 h-14 rounded-full flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-300">
+            <a href="{% url 'core:user:registration' %}" class="w-full bg-[#1c1d21] border border-[#2a2d34] text-white hover:text-[#caf300] hover:border-[#caf300]/40 h-14 rounded-2xl flex items-center justify-center font-bold tracking-wide hover:shadow-md transition-all duration-200 font-display">
                 {% translate "REGISTER" %}
             </a>
         {% endif %}
     </div>
 </main>
+
+<script>
+    function togglePasswordVisibility(fieldId, btn) {
+        const input = document.getElementById(fieldId);
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (!input || !icon) return;
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+            btn.classList.add('text-[#caf300]');
+            btn.classList.remove('text-neutral-500');
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+            btn.classList.remove('text-[#caf300]');
+            btn.classList.add('text-neutral-500');
+        }
+    }
+</script>
 {% endblock %}
 
 {% block extra_body %}
@@ -123,3 +195,4 @@
         {% include "mfa/webauthn/snippets/login_script.html" %}
     {% endif %}
 {% endblock %}
+

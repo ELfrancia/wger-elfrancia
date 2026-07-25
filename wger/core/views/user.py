@@ -641,6 +641,8 @@ class UserDetailView(LoginRequiredMixin, WgerMultiplePermissionRequiredMixin, De
         if (
             (user.has_perm('gym.manage_gym') or user.has_perm('gym.gym_trainer'))
             and not user.has_perm('gym.manage_gyms')
+            and not user.is_superuser
+            and not user.is_staff
             and not is_same_gym(user, self.get_object())
         ):
             return HttpResponseForbidden()
@@ -683,14 +685,16 @@ class UserDetailView(LoginRequiredMixin, WgerMultiplePermissionRequiredMixin, De
         return context
 
 
-class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class UserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """
     Overview of all users in the instance
     """
 
     model = User
-    permission_required = ('gym.manage_gyms',)
-    template_name = 'user/list.html'
+    template_name = 'user/user_list_tailwind.html'
+
+    def test_func(self):
+        return self.request.user.is_authenticated
 
     def get_queryset(self):
         """
@@ -725,11 +729,11 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = User
     form_class = UserAddForm
-    template_name = 'form_content.html'
+    template_name = 'user/add_user_tailwind.html'
     success_url = reverse_lazy('core:user:list')
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.user.is_authenticated
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
