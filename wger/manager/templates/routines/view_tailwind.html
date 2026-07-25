@@ -4,6 +4,7 @@
 {% block title %}{{ routine.name }} - {% translate "Workout Details" %}{% endblock %}
 
 {% block content %}
+<main class="w-full max-w-5xl mx-auto px-4 sm:px-6 mt-2 flex flex-col gap-6 pb-28">
 <!-- Hero Section (Matching Screen 1 cover card format) -->
 <div class="relative w-full h-56 rounded-[2.2rem] overflow-hidden bg-cover bg-center border border-[#222429] shadow-lg mb-5" 
      style="background-image: linear-gradient(to bottom, rgba(8, 9, 10, 0.05), rgba(8, 9, 10, 0.9)), url('https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=800');">
@@ -400,6 +401,7 @@
         </div>
     {% endfor %}
 </div>
+</main>
 {% endblock %}
 
 {% block extra_body %}
