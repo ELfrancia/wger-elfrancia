@@ -1,302 +1,535 @@
 {% extends 'template_tailwind.html' %}
 {% load i18n %}
 
-{% block title %}ONYX - Profile{% endblock %}
+{% block title %}ONYX - {% translate "Profilo Utente" %}{% endblock %}
 
 {% block content %}
-<main class="max-w-3xl mx-auto px-4 mt-6 flex flex-col gap-6 pb-24">
-    <!-- User Avatar & Profile Card -->
-    <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6 flex flex-col items-center gap-4 text-center">
-        <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-[#caf300] bg-neutral-900 flex items-center justify-center shadow-lg">
-            <img src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' }}" alt="Avatar" class="w-full h-full object-cover">
-        </div>
-        <div>
-            <h2 class="font-headline-md text-headline-md font-black text-white uppercase tracking-tight">{{ user.username }}</h2>
-            <p class="text-neutral-500 font-body-md mt-1">{{ user.email }}</p>
-        </div>
-    </div>
+<div class="w-full max-w-none mx-auto mt-2 flex flex-col gap-6 pb-28">
 
-    <!-- Stats grid -->
-    <div class="grid grid-cols-2 gap-4">
-        <div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-5">
-            <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold mb-1">{% translate "Workouts" %}</div>
-            <div class="font-headline-md text-headline-md font-extrabold text-primary">{{ stats.total_workouts|default:"0" }}</div>
-        </div>
-        <div class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-5">
-            <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-bold mb-1">{% translate "Current Streak" %}</div>
-            <div class="font-headline-md text-headline-md font-extrabold text-primary-fixed">{{ stats.current_streak|default:"0" }} {% translate "Days" %}</div>
-        </div>
-    </div>
+    <!-- HERO PROFILE CARD -->
+    <div class="relative overflow-hidden bg-surface-card border border-surface-container-high/80 rounded-[32px] p-6 sm:p-8 shadow-2xl backdrop-blur-xl w-full">
+        <!-- Ambient Background Glow -->
+        <div class="absolute -top-24 -left-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- Settings & Quick Links -->
-    <div class="bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden">
-        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase p-6 pb-2">{% translate "Account Settings" %}</h3>
-        
-        <div class="flex flex-col">
-            <!-- Email -->
-            <div class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0">
-                <div class="flex items-center gap-4">
-                    <span class="material-symbols-outlined text-[#c5c9ac]">mail</span>
-                    <div>
-                        <h4 class="text-primary font-bold">{% translate "Email Address" %}</h4>
-                        <p class="text-caption text-on-surface-variant">{{ user.email }}</p>
+        <div class="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+            <!-- Avatar with ring and direct photo upload click trigger -->
+            <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('id_avatar_file').click()" title="{% translate 'Clicca per cambiare la foto del profilo' %}">
+                <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-primary/90 bg-neutral-950 shadow-[0_0_25px_rgba(202,243,0,0.25)] transition-transform duration-300 group-hover:scale-105 relative shrink-0 aspect-square">
+                    <img id="main-avatar-img" src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80' }}" alt="Avatar" class="w-full h-full object-cover">
+                    
+                    <!-- Hover overlay for desktop/mobile feedback -->
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-[2px]">
+                        <span class="material-symbols-outlined text-2xl text-primary leading-none select-none shrink-0">photo_camera</span>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-white">Carica Foto</span>
                     </div>
+                </div>
+                
+                <!-- Quick Avatar Edit Camera Badge -->
+                <button type="button" onclick="event.stopPropagation(); document.getElementById('id_avatar_file').click()" class="absolute bottom-1 right-1 w-9 h-9 shrink-0 aspect-square rounded-full bg-primary text-black border-2 border-background flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer" title="{% translate 'Carica Foto' %}">
+                    <span class="material-symbols-outlined text-lg leading-none select-none shrink-0">photo_camera</span>
+                </button>
+            </div>
+
+            <!-- Profile Info & Badges -->
+            <div class="flex-1 flex flex-col justify-center min-w-0">
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
+                    {% if user.is_superuser %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/20 text-primary border border-primary/30">
+                            {% translate "SUPERUSER" %}
+                        </span>
+                    {% elif perms.gym.gym_trainer %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            {% translate "TRAINER" %}
+                        </span>
+                    {% elif user.userprofile.is_temporary %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {% translate "GUEST" %}
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            {% translate "ATHLETE PRO" %}
+                        </span>
+                    {% endif %}
+
+                    {% if profile.gym %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold text-neutral-400 bg-surface-container border border-surface-container-high flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-primary leading-none select-none shrink-0">fitness_center</span>
+                            {{ profile.gym.name }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <h1 class="font-display font-black text-2xl sm:text-3xl text-white uppercase tracking-tight truncate">
+                    {% if user.first_name or user.last_name %}
+                        {{ user.first_name }} {{ user.last_name }}
+                    {% else %}
+                        {{ user.username }}
+                    {% endif %}
+                </h1>
+
+                <p class="text-neutral-400 font-sans text-sm flex items-center justify-center sm:justify-start gap-1.5 mt-1 truncate">
+                    <span class="material-symbols-outlined text-base text-neutral-500 leading-none select-none shrink-0">mail</span>
+                    {{ user.email }}
+                </p>
+
+                <div class="flex items-center justify-center sm:justify-start gap-4 mt-3 text-xs text-neutral-500 font-semibold">
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-primary leading-none select-none shrink-0">calendar_today</span>
+                        {% translate "Iscritto dal" %} {{ user.date_joined|date:"M Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SINGLE UNIFIED METRICS DASHBOARD SECTION -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] overflow-hidden p-6 sm:p-7 shadow-xl w-full flex flex-col gap-5">
+        <!-- Section Header -->
+        <div class="flex items-center justify-between border-b border-surface-container-high/50 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 aspect-square">
+                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">analytics</span>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-base sm:text-lg text-white">{% translate "Panoramica Prestazioni" %}</h3>
+                    <p class="text-xs text-neutral-400">{% translate "I tuoi indicatori di forma e progresso in tempo reale" %}</p>
+                </div>
+            </div>
+            <span class="hidden sm:flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-surface-container text-neutral-400 border border-surface-container-high">
+                {% translate "Metriche Live" %}
+            </span>
+        </div>
+
+        <!-- 4 Metrics Grid inside the single section -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 divide-y sm:divide-y-0 divide-surface-container-high/30">
+            <!-- 1: Allenamenti -->
+            <div class="flex flex-col justify-between pt-2 sm:pt-0 sm:pr-4">
+                <div class="mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400">{% translate "Allenamenti" %}</span>
+                </div>
+                <div class="font-display font-black text-2xl sm:text-3xl text-white">
+                    {{ stats.total_workouts|default:"0" }}
+                </div>
+                <span class="text-[10px] text-neutral-500 font-bold mt-1">{% translate "Sessioni completate" %}</span>
+            </div>
+
+            <!-- 2: Streak -->
+            <div class="flex flex-col justify-between pt-2 sm:pt-0 sm:px-4">
+                <div class="mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400">{% translate "Streak" %}</span>
+                </div>
+                <div class="font-display font-black text-2xl sm:text-3xl text-amber-400">
+                    {{ stats.current_streak|default:"0" }} <span class="text-xs font-bold text-neutral-400">{% translate "giorni" %}</span>
+                </div>
+                <span class="text-[10px] text-neutral-500 font-bold mt-1">{% translate "Continuità attiva" %}</span>
+            </div>
+
+            <!-- 3: Weight -->
+            <div class="flex flex-col justify-between pt-3 sm:pt-0 sm:px-4">
+                <div class="mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400">{% translate "Peso Corporeo" %}</span>
+                </div>
+                <div class="font-display font-black text-2xl sm:text-3xl text-white">
+                    {% if profile.weight %}{{ profile.weight }} <span class="text-xs font-bold text-neutral-400">{{ profile.weight_unit }}</span>{% else %}--{% endif %}
+                </div>
+                <span class="text-[10px] text-neutral-500 font-bold mt-1">{% translate "Ultimo inserimento" %}</span>
+            </div>
+
+            <!-- 4: Water Target -->
+            <div class="flex flex-col justify-between pt-3 sm:pt-0 sm:pl-4">
+                <div class="mb-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400">{% translate "Target Acqua" %}</span>
+                </div>
+                <div class="font-display font-black text-2xl sm:text-3xl text-sky-400">
+                    {{ profile.water_goal }} <span class="text-xs font-bold text-neutral-400">L</span>
+                </div>
+                <span class="text-[10px] text-neutral-500 font-bold mt-1">{% translate "Obiettivo idratazione" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEGMENTED TAB NAVIGATION -->
+    <div class="bg-surface-card border border-surface-container-high/70 p-1.5 rounded-2xl flex gap-1 shadow-lg w-full">
+        <button type="button" onclick="switchProfileTab('goals')" id="tab-btn-goals" class="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 bg-primary text-black shadow-md flex items-center justify-center gap-2 font-display">
+            <span class="material-symbols-outlined text-base leading-none select-none shrink-0">track_changes</span>
+            <span>{% translate "Obiettivi & Foto" %}</span>
+        </button>
+        
+        <button type="button" onclick="switchProfileTab('security')" id="tab-btn-security" class="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 text-neutral-400 hover:text-white flex items-center justify-center gap-2 font-display">
+            <span class="material-symbols-outlined text-base leading-none select-none shrink-0">security</span>
+            <span>{% translate "Sicurezza & Impostazioni" %}</span>
+        </button>
+
+        {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer or user.is_superuser or user.is_staff %}
+        <button type="button" onclick="switchProfileTab('admin')" id="tab-btn-admin" class="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 text-neutral-400 hover:text-white flex items-center justify-center gap-2 font-display">
+            <span class="material-symbols-outlined text-base leading-none select-none shrink-0">admin_panel_settings</span>
+            <span>{% translate "Gestione Admin" %}</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- TAB 1: GOALS & AVATAR SETTINGS -->
+    <div id="tab-content-goals" class="flex flex-col gap-6 w-full">
+        <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] p-6 sm:p-8 shadow-xl w-full">
+            <div class="flex items-center gap-3.5 mb-6 border-b border-surface-container-high/50 pb-4">
+                <div class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 aspect-square">
+                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">tune</span>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-lg text-white">{% translate "Impostazioni Profilo & Obiettivi" %}</h3>
+                    <p class="text-xs text-neutral-400">{% translate "Carica la tua foto profilo e configura i tuoi target di salute quotidiani" %}</p>
                 </div>
             </div>
 
-            <!-- Password -->
-            <a href="{% url 'core:user:change-password' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                <div class="flex items-center gap-4">
-                    <span class="material-symbols-outlined text-[#c5c9ac]">lock</span>
-                    <div>
-                        <h4 class="text-primary font-bold">{% translate "Change Password" %}</h4>
-                        <p class="text-caption text-on-surface-variant">{% translate "Update your security credentials" %}</p>
-                    </div>
-                </div>
-                <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-            </a>
+            <form method="post" action="{% url 'core:profile_tailwind' %}" enctype="multipart/form-data" class="flex flex-col gap-6" id="profile-settings-form">
+                {% csrf_token %}
 
-            <!-- API Key -->
-            <a href="{% url 'core:user:api-key' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                <div class="flex items-center gap-4">
-                    <span class="material-symbols-outlined text-[#c5c9ac]">vpn_key</span>
-                    <div>
-                        <h4 class="text-primary font-bold">{% translate "API Credentials" %}</h4>
-                        <p class="text-caption text-on-surface-variant">{% translate "Manage external app integrations" %}</p>
+                <!-- Hidden file input triggered directly by clicking on the avatar photo or button -->
+                <input type="file" name="avatar_file" id="id_avatar_file" accept="image/*" class="hidden" onchange="previewUpload(this)">
+
+                <!-- Direct Photo Upload Section -->
+                <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 aspect-square">
+                            <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">add_a_photo</span>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-sm">{% translate "Carica Foto Profilo" %}</h4>
+                            <p id="file-name" class="text-xs text-neutral-400 font-medium">{% translate "Formati supportati: JPG, PNG, WEBP" %}</p>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="document.getElementById('id_avatar_file').click()" class="bg-primary hover:bg-[#b5d900] text-black font-display font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center shrink-0">
+                        <span class="material-symbols-outlined text-base leading-none select-none shrink-0">cloud_upload</span>
+                        {% translate "Sfoglia Foto" %}
+                    </button>
+                </div>
+
+                <!-- Goals Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    <!-- Steps Goal Card -->
+                    <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <label for="id_steps_goal" class="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-base text-primary leading-none select-none shrink-0">directions_walk</span>
+                                {% translate "Obiettivo Passi" %}
+                            </label>
+                            <span class="text-[10px] text-neutral-500 font-bold">{% translate "passi/giorno" %}</span>
+                        </div>
+                        <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal }}" class="bg-neutral-900 border border-neutral-800 focus:border-primary text-primary font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                        <!-- Quick presets -->
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="setGoal('id_steps_goal', 8000)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary/20 hover:text-primary text-[10px] font-bold text-neutral-400 transition-colors">8K</button>
+                            <button type="button" onclick="setGoal('id_steps_goal', 10000)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary/20 hover:text-primary text-[10px] font-bold text-neutral-400 transition-colors">10K</button>
+                            <button type="button" onclick="setGoal('id_steps_goal', 12000)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary/20 hover:text-primary text-[10px] font-bold text-neutral-400 transition-colors">12K</button>
+                            <button type="button" onclick="setGoal('id_steps_goal', 15000)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary/20 hover:text-primary text-[10px] font-bold text-neutral-400 transition-colors">15K</button>
+                        </div>
+                    </div>
+
+                    <!-- Calories Goal Card -->
+                    <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <label for="id_calories_goal" class="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-base text-red-400 leading-none select-none shrink-0">local_fire_department</span>
+                                {% translate "Obiettivo Calorie" %}
+                            </label>
+                            <span class="text-[10px] text-neutral-500 font-bold">{% translate "kcal/giorno" %}</span>
+                        </div>
+                        <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal }}" class="bg-neutral-900 border border-neutral-800 focus:border-red-400 text-red-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                        <!-- Quick presets -->
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="setGoal('id_calories_goal', 400)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 hover:text-red-400 text-[10px] font-bold text-neutral-400 transition-colors">400</button>
+                            <button type="button" onclick="setGoal('id_calories_goal', 600)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 hover:text-red-400 text-[10px] font-bold text-neutral-400 transition-colors">600</button>
+                            <button type="button" onclick="setGoal('id_calories_goal', 800)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 hover:text-red-400 text-[10px] font-bold text-neutral-400 transition-colors">800</button>
+                            <button type="button" onclick="setGoal('id_calories_goal', 1000)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 hover:text-red-400 text-[10px] font-bold text-neutral-400 transition-colors">1000</button>
+                        </div>
+                    </div>
+
+                    <!-- Water Goal Card -->
+                    <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <label for="id_water_goal" class="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-base text-sky-400 leading-none select-none shrink-0">water_drop</span>
+                                {% translate "Obiettivo Acqua" %}
+                            </label>
+                            <span class="text-[10px] text-neutral-500 font-bold">{% translate "Litri/giorno" %}</span>
+                        </div>
+                        <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal }}" class="bg-neutral-900 border border-neutral-800 focus:border-sky-400 text-sky-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                        <!-- Quick presets -->
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="setGoal('id_water_goal', 2.0)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-sky-500/20 hover:text-sky-400 text-[10px] font-bold text-neutral-400 transition-colors">2.0L</button>
+                            <button type="button" onclick="setGoal('id_water_goal', 2.5)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-sky-500/20 hover:text-sky-400 text-[10px] font-bold text-neutral-400 transition-colors">2.5L</button>
+                            <button type="button" onclick="setGoal('id_water_goal', 3.0)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-sky-500/20 hover:text-sky-400 text-[10px] font-bold text-neutral-400 transition-colors">3.0L</button>
+                            <button type="button" onclick="setGoal('id_water_goal', 3.5)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-sky-500/20 hover:text-sky-400 text-[10px] font-bold text-neutral-400 transition-colors">3.5L</button>
+                        </div>
                     </div>
                 </div>
-                <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-            </a>
+
+                <button type="submit" class="bg-primary hover:bg-[#b5d900] text-black font-display font-black text-sm uppercase tracking-wider py-4 rounded-2xl shadow-[0_4px_20px_rgba(202,243,0,0.25)] hover:shadow-[0_6px_24px_rgba(202,243,0,0.35)] active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2 w-full">
+                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">save</span>
+                    {% translate "SALVA MODIFICHE" %}
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Manage / Administration section for administrators -->
+    <!-- TAB 2: SECURITY & ACCOUNT SETTINGS -->
+    <div id="tab-content-security" class="flex flex-col gap-6 hidden w-full">
+        <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] overflow-hidden shadow-xl w-full">
+            <div class="p-6 border-b border-surface-container-high/50 flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 aspect-square">
+                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">shield</span>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-lg text-white">{% translate "Sicurezza & Integrazioni" %}</h3>
+                    <p class="text-xs text-neutral-400">{% translate "Gestisci le tue credenziali, la password e le chiavi API" %}</p>
+                </div>
+            </div>
+
+            <div class="divide-y divide-surface-container-high/40 w-full">
+                <!-- Email Info -->
+                <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface-container/30 transition-colors">
+                    <div class="flex items-center gap-4 min-w-0 flex-1">
+                        <div class="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 shrink-0 aspect-square">
+                            <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">mail</span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-white font-bold text-sm">{% translate "Indirizzo Email" %}</h4>
+                            <p class="text-xs sm:text-sm text-neutral-200 font-medium truncate mt-0.5" title="{{ user.email }}">{{ user.email }}</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0 self-start sm:self-auto">
+                        {% translate "Verificato" %}
+                    </span>
+                </div>
+
+                <!-- Password Change Link -->
+                <a href="{% url 'core:user:change-password' %}" class="p-6 flex items-center justify-between hover:bg-surface-container/40 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-primary transition-colors shrink-0 aspect-square">
+                            <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">lock</span>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Cambia Password" %}</h4>
+                            <p class="text-xs text-neutral-400">{% translate "Aggiorna la tua password di accesso in modo sicuro" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                </a>
+
+                <!-- API Keys Link -->
+                <a href="{% url 'core:user:api-key' %}" class="p-6 flex items-center justify-between hover:bg-surface-container/40 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-primary transition-colors shrink-0 aspect-square">
+                            <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">vpn_key</span>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Credenziali API & App Mobile" %}</h4>
+                            <p class="text-xs text-neutral-400">{% translate "Gestisci le integrazioni con l'app mobile Onyx e terze parti" %}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: ADMIN & MANAGEMENT (IF PERMITTED) -->
     {% if user.userprofile.has_exercise_permission or perms.gym.manage_gyms or perms.gym.manage_gym or perms.gym.gym_trainer or user.is_superuser or user.is_staff %}
-    <div class="bg-[#161616] border border-[#262626] rounded-[32px] overflow-hidden">
-        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase p-6 pb-2">{% translate "MANAGE" %}</h3>
-        
-        <div class="flex flex-col">
-            {% if perms.gym.manage_gyms or user.is_superuser %}
-                <!-- User list -->
-                <a href="{% url 'core:user:list' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-[#c5c9ac]">group</span>
-                        <div>
-                            <h4 class="text-primary font-bold">{% translate "User list" %}</h4>
-                            <p class="text-caption text-on-surface-variant">{% translate "View and manage registered users" %}</p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-                </a>
+    <div id="tab-content-admin" class="flex flex-col gap-6 hidden w-full">
+        <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] p-6 sm:p-8 shadow-xl w-full">
+            <div class="flex items-center gap-3.5 mb-6 border-b border-surface-container-high/50 pb-4">
+                <div class="w-11 h-11 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0 aspect-square">
+                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">admin_panel_settings</span>
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-lg text-white">{% translate "Pannello di Amministrazione" %}</h3>
+                    <p class="text-xs text-neutral-400">{% translate "Accesso rapido alle funzionalità gestionali della piattaforma" %}</p>
+                </div>
+            </div>
 
-                <!-- Add User -->
-                <a href="{% url 'core:user:add-user' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-[#c5c9ac]">person_add</span>
-                        <div>
-                            <h4 class="text-primary font-bold">{% translate "Add User" %}</h4>
-                            <p class="text-caption text-on-surface-variant">{% translate "Physically add a new user to the database" %}</p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-                </a>
-
-                <!-- Gym list -->
-                <a href="{% url 'gym:gym:list' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-[#c5c9ac]">corporate_fare</span>
-                        <div>
-                            <h4 class="text-primary font-bold">{% translate "Gyms" %}</h4>
-                            <p class="text-caption text-on-surface-variant">{% translate "Manage gyms and branches" %}</p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-                </a>
-
-                <!-- Add Gym -->
-                <a href="{% url 'gym:gym:add' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-[#c5c9ac]">add_business</span>
-                        <div>
-                            <h4 class="text-primary font-bold">{% translate "Add Gym" %}</h4>
-                            <p class="text-caption text-on-surface-variant">{% translate "Create a new gym structure" %}</p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-                </a>
-            {% endif %}
-
-            {% if perms.gym.gym_trainer or perms.gym.manage_gym %}
-                {% if user.userprofile.gym %}
-                    <!-- Gym Members list -->
-                    <a href="{% url 'gym:gym:user-list' user.userprofile.gym.pk %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                        <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-[#c5c9ac]">group</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                {% if perms.gym.manage_gyms or user.is_superuser %}
+                    <!-- User list -->
+                    <a href="{% url 'core:user:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">group</span>
+                            </div>
                             <div>
-                                <h4 class="text-primary font-bold">{{ user.userprofile.gym }} (Membri)</h4>
-                                <p class="text-caption text-on-surface-variant">{% translate "Manage members of your gym" %}</p>
+                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Lista Utenti" %}</h4>
+                                <p class="text-[11px] text-neutral-400">{% translate "Visualizza e gestisci tutti gli utenti registrati" %}</p>
                             </div>
                         </div>
-                        <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
                     </a>
 
-                    <!-- Add Gym Member -->
-                    <a href="{% url 'gym:gym:add-user' user.userprofile.gym.pk %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                        <div class="flex items-center gap-4">
-                            <span class="material-symbols-outlined text-[#c5c9ac]">person_add</span>
+                    <!-- Add User -->
+                    <a href="{% url 'core:user:add-user' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">person_add</span>
+                            </div>
                             <div>
-                                <h4 class="text-primary font-bold">{% translate "Add Gym Member" %}</h4>
-                                <p class="text-caption text-on-surface-variant">{% translate "Create a new member for your gym" %}</p>
+                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Aggiungi Utente" %}</h4>
+                                <p class="text-[11px] text-neutral-400">{% translate "Crea un nuovo profilo utente a sistema" %}</p>
                             </div>
                         </div>
-                        <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
+                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                    </a>
+
+                    <!-- Gym list -->
+                    <a href="{% url 'gym:gym:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">corporate_fare</span>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Palestre" %}</h4>
+                                <p class="text-[11px] text-neutral-400">{% translate "Gestisci le strutture e le sedi collegate" %}</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                    </a>
+
+                    <!-- Add Gym -->
+                    <a href="{% url 'gym:gym:add' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">add_business</span>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Aggiungi Palestra" %}</h4>
+                                <p class="text-[11px] text-neutral-400">{% translate "Configura una nuova struttura palestra" %}</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
                     </a>
                 {% endif %}
-            {% endif %}
 
-            {% if perms.core.change_language %}
-                <!-- Languages -->
-                <a href="{% url 'core:language:overview' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-[#c5c9ac]">translate</span>
-                        <div>
-                            <h4 class="text-primary font-bold">{% translate "Languages" %}</h4>
-                            <p class="text-caption text-on-surface-variant">{% translate "Manage application languages" %}</p>
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-                </a>
-            {% endif %}
+                {% if perms.gym.gym_trainer or perms.gym.manage_gym %}
+                    {% if user.userprofile.gym %}
+                        <!-- Gym Members list -->
+                        <a href="{% url 'gym:gym:user-list' user.userprofile.gym.pk %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">groups</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{{ user.userprofile.gym.name }} - Membri</h4>
+                                    <p class="text-[11px] text-neutral-400">{% translate "Gestisci gli iscritti della tua palestra" %}</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                        </a>
 
-            {% if perms.core.change_license %}
-                <!-- Licenses -->
-                <a href="{% url 'core:license:list' %}" class="flex items-center justify-between p-6 border-b border-[#262626]/50 last:border-0 hover:bg-[#201f1f] transition-colors">
-                    <div class="flex items-center gap-4">
-                        <span class="material-symbols-outlined text-[#c5c9ac]">description</span>
-                        <div>
-                            <h4 class="text-primary font-bold">{% translate "Licenses" %}</h4>
-                            <p class="text-caption text-on-surface-variant">{% translate "Manage content licenses" %}</p>
+                        <!-- Add Gym Member -->
+                        <a href="{% url 'gym:gym:add-user' user.userprofile.gym.pk %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                    <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">person_add_alt</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Aggiungi Membro Palestra" %}</h4>
+                                    <p class="text-[11px] text-neutral-400">{% translate "Iscrivi un nuovo membro alla tua palestra" %}</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                        </a>
+                    {% endif %}
+                {% endif %}
+
+                {% if perms.core.change_language %}
+                    <!-- Languages -->
+                    <a href="{% url 'core:language:overview' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">translate</span>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Lingue" %}</h4>
+                                <p class="text-[11px] text-neutral-400">{% translate "Gestisci le lingue dell'applicazione" %}</p>
+                            </div>
                         </div>
-                    </div>
-                    <span class="material-symbols-outlined text-[#c5c9ac]">chevron_right</span>
-                </a>
-            {% endif %}
+                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                    </a>
+                {% endif %}
+
+                {% if perms.core.change_license %}
+                    <!-- Licenses -->
+                    <a href="{% url 'core:license:list' %}" class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-5 flex items-center justify-between hover:border-primary/50 hover:bg-surface-container/50 transition-all group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0 aspect-square">
+                                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">description</span>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-bold text-sm group-hover:text-primary transition-colors">{% translate "Licenze" %}</h4>
+                                <p class="text-[11px] text-neutral-400">{% translate "Gestisci le licenze dei contenuti" %}</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all leading-none select-none shrink-0">chevron_right</span>
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
     {% endif %}
 
-    <!-- Daily Activity Goals & Settings -->
-    <div class="bg-[#161616] border border-[#262626] rounded-[32px] p-6">
-        <h3 class="font-label-caps text-label-caps text-[#c5c9ac] uppercase mb-4">{% translate "Profile & Activity Settings" %}</h3>
-        
-        <form method="post" action="{% url 'core:profile_tailwind' %}" enctype="multipart/form-data" class="flex flex-col gap-4">
-            {% csrf_token %}
-            
-            <!-- Profile Picture Settings -->
-            <div class="flex flex-col gap-3 border-b border-white/[0.05] pb-5 mb-2">
-                <label for="id_avatar_url" class="text-xs font-semibold text-[#8e8e93]">{% translate "Profile Picture URL" %}</label>
-                <input type="url" name="avatar_url" id="id_avatar_url" value="{{ profile.avatar_url }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300] text-xs" placeholder="https://example.com/image.jpg">
-                
-                <!-- File Upload -->
-                <div class="flex flex-col gap-1.5 mt-1">
-                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{% translate "Or upload an image file:" %}</span>
-                    <div class="flex items-center gap-3">
-                        <input type="file" name="avatar_file" id="id_avatar_file" accept="image/*" class="hidden" onchange="previewUpload(this)">
-                        <button type="button" onclick="document.getElementById('id_avatar_file').click()" class="bg-[#1c1c1e] border border-white/[0.08] hover:border-[#caf300]/30 text-white rounded-xl px-4 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
-                            <span class="material-symbols-outlined text-base">upload_file</span>
-                            {% translate "Choose File" %}
-                        </button>
-                        <span id="file-name" class="text-xs text-neutral-500 font-semibold truncate max-w-[200px]">{% translate "No file chosen" %}</span>
-                    </div>
-                </div>
-
-                <!-- Presets selection -->
-                <div class="flex flex-col gap-2 mt-2">
-                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{% translate "Or choose a preset portrait:" %}</span>
-                    <div class="flex gap-3 mt-1">
-                        <!-- Preset 1 -->
-                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
-                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 1" class="w-full h-full object-cover">
-                        </button>
-                        <!-- Preset 2 -->
-                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
-                            <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 2" class="w-full h-full object-cover">
-                        </button>
-                        <!-- Preset 3 -->
-                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
-                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 3" class="w-full h-full object-cover">
-                        </button>
-                        <!-- Preset 4 -->
-                        <button type="button" onclick="selectPreset('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&h=120&q=80')" class="w-10 h-10 rounded-full overflow-hidden border border-white/[0.1] hover:border-[#caf300] focus:outline-none transition-all duration-200">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=50&h=50&q=80" alt="Preset 4" class="w-full h-full object-cover">
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Steps Goal -->
-            <div class="flex flex-col gap-1.5">
-                <label for="id_steps_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Steps Goal" %}</label>
-                <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#caf300]">
-            </div>
-
-            <!-- Calories Goal -->
-            <div class="flex flex-col gap-1.5">
-                <label for="id_calories_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Burned Calories Goal (Cal)" %}</label>
-                <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#ff453a]">
-            </div>
-
-            <!-- Water Goal -->
-            <div class="flex flex-col gap-1.5">
-                <label for="id_water_goal" class="text-xs font-semibold text-[#8e8e93]">{% translate "Water Goal (L)" %}</label>
-                <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal }}" class="bg-[#1f1f1f] border border-[#262626] text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-[#00d2ff]">
-            </div>
-
-            <button type="submit" class="bg-[#caf300] hover:bg-[#b0d500] text-[#131313] min-h-[48px] py-2.5 rounded-full font-bold tracking-tight mt-2 transition-colors">
-                {% translate "SAVE SETTINGS" %}
-            </button>
-        </form>
-    </div>
-    
-    <script>
-        function selectPreset(url) {
-            const input = document.getElementById('id_avatar_url');
-            if (input) {
-                input.value = url;
-                const previewImg = document.querySelector('.w-24.h-24 img');
-                if (previewImg) previewImg.src = url;
-                
-                // Instantly submit the form to save
-                input.closest('form').submit();
-            }
-            document.getElementById('id_avatar_file').value = '';
-            document.getElementById('file-name').textContent = '{% translate "No file chosen" %}';
-        }
-
-        function previewUpload(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                document.getElementById('file-name').textContent = file.name;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewImg = document.querySelector('.w-24.h-24 img');
-                    if (previewImg) previewImg.src = e.target.result;
-                    const urlInput = document.getElementById('id_avatar_url');
-                    if (urlInput) urlInput.value = '';
-                    
-                    // Instantly submit the form to save
-                    input.closest('form').submit();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-    </script>
-
-    <!-- Logout CTA -->
-    <a href="{% url 'core:user:logout' %}" class="w-full bg-[#2a2a2a] border border-[#333333] text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-body-lg text-body-lg font-bold hover:bg-red-950/20 hover:text-red-400 hover:border-red-500/20 transition-colors">
-        <span class="material-symbols-outlined">logout</span>
-        {% translate "LOG OUT" %}
+    <!-- LOGOUT CTA -->
+    <a href="{% url 'core:user:logout' %}" class="w-full bg-surface-card border border-red-500/30 hover:border-red-500/60 hover:bg-red-950/30 text-red-400 min-h-[56px] py-4 rounded-2xl flex items-center justify-center gap-2 font-display font-bold text-sm uppercase tracking-wider transition-all shadow-lg active:scale-[0.99] group mt-2">
+        <span class="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform leading-none select-none shrink-0">logout</span>
+        {% translate "DISCONNETTI ACCOUNT" %}
     </a>
-</main>
+
+</div>
+
+<script>
+    function switchProfileTab(tabName) {
+        // Tab buttons
+        const tabs = ['goals', 'security', 'admin'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('tab-btn-' + t);
+            const content = document.getElementById('tab-content-' + t);
+            
+            if (btn && content) {
+                if (t === tabName) {
+                    btn.className = "flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 bg-primary text-black shadow-md flex items-center justify-center gap-2 font-display";
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 text-neutral-400 hover:text-white flex items-center justify-center gap-2 font-display";
+                    content.classList.add('hidden');
+                }
+            }
+        });
+    }
+
+    function setGoal(inputId, val) {
+        const el = document.getElementById(inputId);
+        if (el) {
+            el.value = val;
+            el.classList.add('ring-2', 'ring-primary');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 600);
+        }
+    }
+
+    function previewUpload(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const fileNameSpan = document.getElementById('file-name');
+            if (fileNameSpan) fileNameSpan.textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mainImg = document.getElementById('main-avatar-img');
+                if (mainImg) mainImg.src = e.target.result;
+                
+                // Auto submit profile form to upload and save image instantly
+                const form = document.getElementById('profile-settings-form');
+                if (form) form.submit();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+</script>
 {% endblock %}

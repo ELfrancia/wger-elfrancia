@@ -46,7 +46,7 @@
 <!-- Training Days List -->
 <div class="flex flex-col gap-5">
     {% for day in routine.days.all %}
-        <div class="bg-surface border border-outline rounded-[2.2rem] p-5 flex flex-col gap-4 shadow-md">
+        <div class="bg-surface border border-outline rounded-[2.2rem] p-3 sm:p-5 flex flex-col gap-4 shadow-md w-full">
             
             <!-- Day Header -->
             <div class="flex justify-between items-center border-b border-[#222429]/35 pb-4">
@@ -153,60 +153,38 @@
                                                         {% for entry in slot.entries.all %}
                                                             {% if entry.exercise_id == exercise.id %}
                                                                 <div class="flex flex-col gap-1 w-full">
-                                                                     <div class="set-row flex items-center justify-between gap-1 sm:gap-2 p-1.5 sm:p-2 bg-[#121315] border border-outline rounded-xl transition-all duration-200" data-set-index="{{ entry.set_index }}">
-                                                                         <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
-                                                                             {% csrf_token %}
-                                                                             <!-- Set Number Badge -->
-                                                                             <div class="set-badge flex-shrink-0 w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700/60 text-[11px] font-extrabold font-mono text-zinc-300 flex items-center justify-center select-none">
-                                                                                 {{ entry.set_index }}
-                                                                             </div>
-                                                                             
-                                                                             <!-- Inputs -->
-                                                                             <div class="flex items-center gap-1 flex-1 min-w-0 justify-center">
-                                                                                 <div class="flex items-center bg-[#090a0c] border border-zinc-700/70 focus-within:border-[#caf300] rounded-md px-1 py-0.5 w-14 sm:w-16 h-7 transition-colors flex-shrink-0">
-                                                                                     <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-full bg-transparent text-white border-none p-0 text-xs font-extrabold text-center focus:ring-0">
-                                                                                     <span class="text-[9px] text-zinc-400 font-bold uppercase ml-0.5 select-none flex-shrink-0">r</span>
-                                                                                 </div>
-                                                                                 <span class="text-zinc-600 text-xs font-bold flex-shrink-0 select-none px-0.5">×</span>
-                                                                                 <div class="flex items-center bg-[#090a0c] border border-zinc-700/70 focus-within:border-[#caf300] rounded-md px-1 py-0.5 w-16 sm:w-20 h-7 transition-colors flex-shrink-0">
-                                                                                     <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1" class="w-full bg-transparent text-[#caf300] border-none p-0 text-xs font-extrabold text-center focus:ring-0">
-                                                                                     <span class="text-[9px] text-[#caf300]/80 font-bold uppercase ml-0.5 select-none flex-shrink-0">kg</span>
-                                                                                 </div>
-                                                                             </div>
-                                                                             
-                                                                             <!-- Save Button -->
-                                                                             <button type="submit" class="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-zinc-800 border border-zinc-700/70 hover:border-[#caf300] text-zinc-400 hover:text-[#caf300] transition-all active:scale-95" title="Salva set">
-                                                                                 <span class="material-symbols-outlined text-[15px]">save</span>
-                                                                             </button>
-                                                                         </form>
-                                                                         
-                                                                         <div class="flex items-center gap-1 flex-shrink-0">
-                                                                             <!-- Note Toggle Button -->
-                                                                             <button type="button" onclick="toggleNoteField('note-container-{{ entry.pk }}')" class="w-6 h-6 rounded-md flex items-center justify-center border border-zinc-700/60 hover:border-[#caf300] text-zinc-500 hover:text-[#caf300] transition-all" id="note-toggle-{{ entry.pk }}" title="Note">
-                                                                                 <span class="material-symbols-outlined text-[14px]">notes</span>
-                                                                             </button>
-                                                                             <!-- Delete Button -->
-                                                                             <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
-                                                                                 {% csrf_token %}
-                                                                                 <button type="submit" class="w-6 h-6 rounded-md flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Elimina set">
-                                                                                     <span class="material-symbols-outlined text-[13px]">close</span>
-                                                                                 </button>
-                                                                             </form>
-                                                                         </div>
-                                                                     </div>
-                                                                 </div>
-                                                                     <!-- Expandable Note Container -->
-                                                                     <div id="note-container-{{ entry.pk }}" class="{% if not entry.comment %}hidden{% endif %} mt-2 w-full">
-                                                                         <form hx-post="{% url 'manager:routine:update-set-notes' routine.pk day.pk slot.pk entry.pk %}" class="relative flex items-center w-full bg-[#141517] border border-[#222429] px-4 py-3 rounded-2xl group">
-                                                                             {% csrf_token %}
-                                                                             <span class="material-symbols-outlined text-gray-500 absolute left-4 text-sm pointer-events-none">notes</span>
-                                                                             <input type="text" name="comment" value="{{ entry.comment }}" placeholder="{% translate 'Add set note...' %}" class="bg-transparent border-none p-0 flex-1 pl-7 text-sm text-gray-300 placeholder-gray-600 focus:ring-0">
-                                                                             <button type="submit" class="text-gray-500 hover:text-primary transition-colors duration-200">
-                                                                                 <span class="material-symbols-outlined text-[14px]">save</span>
-                                                                             </button>
-                                                                         </form>
-                                                                     </div>
-                                                                 </div>
+                                                                       <div class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#121315] border border-outline rounded-xl transition-all duration-200 w-full" data-set-index="{{ entry.set_index }}">
+                                                                           <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-3">
+                                                                               {% csrf_token %}
+                                                                                <!-- Set Number Only (No SET badge) -->
+                                                                                <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-zinc-400 select-none shrink-0">{{ entry.set_index }}</span>
+                                                                                
+                                                                                <!-- Reps & Weight Inputs (Borderless, Auto-saving) -->
+                                                                                <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
+                                                                                    <!-- Reps Input -->
+                                                                                    <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                                    
+                                                                                    <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
+                                                                                    
+                                                                                    <!-- Weight Input -->
+                                                                                    <div class="flex items-center gap-1 shrink-0">
+                                                                                        <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                                        <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
+                                                                                    </div>
+                                                                                </div> 
+                                                                           </form>
+                                                                           
+                                                                           <div class="flex items-center gap-1 shrink-0">
+                                                                               <!-- Delete Button Only -->
+                                                                               <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
+                                                                                   {% csrf_token %}
+                                                                                   <button type="submit" class="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all" title="Elimina set">
+                                                                                       <span class="material-symbols-outlined text-xs">close</span>
+                                                                                   </button>
+                                                                               </form>
+                                                                           </div>
+                                                                       </div>
+                                                                   </div>
                                                              {% endif %}
                                                          {% endfor %}
                                                      </div>
@@ -323,58 +301,37 @@
                                                 <div class="sets-list flex flex-col gap-2.5">
                                                     {% for entry in slot.entries.all %}
                                                         <div class="flex flex-col gap-1 w-full">
-                                                            <div class="set-row flex items-center justify-between gap-1 sm:gap-2 p-1.5 sm:p-2 bg-[#121315] border border-outline rounded-xl transition-all duration-200" data-set-index="{{ entry.set_index }}">
-                                                                <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
-                                                                    {% csrf_token %}
-                                                                    <!-- Set Number Badge -->
-                                                                    <div class="set-badge flex-shrink-0 w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700/60 text-[11px] font-extrabold font-mono text-zinc-300 flex items-center justify-center select-none">
-                                                                        {{ entry.set_index }}
-                                                                    </div>
-                                                                    
-                                                                    <!-- Inputs -->
-                                                                    <div class="flex items-center gap-1 flex-1 min-w-0 justify-center">
-                                                                        <div class="flex items-center bg-[#090a0c] border border-zinc-700/70 focus-within:border-[#caf300] rounded-md px-1 py-0.5 w-14 sm:w-16 h-7 transition-colors flex-shrink-0">
-                                                                            <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-full bg-transparent text-white border-none p-0 text-xs font-extrabold text-center focus:ring-0">
-                                                                            <span class="text-[9px] text-zinc-400 font-bold uppercase ml-0.5 select-none flex-shrink-0">r</span>
-                                                                        </div>
-                                                                        <span class="text-zinc-600 text-xs font-bold flex-shrink-0 select-none px-0.5">×</span>
-                                                                        <div class="flex items-center bg-[#090a0c] border border-zinc-700/70 focus-within:border-[#caf300] rounded-md px-1 py-0.5 w-16 sm:w-20 h-7 transition-colors flex-shrink-0">
-                                                                            <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1" class="w-full bg-transparent text-[#caf300] border-none p-0 text-xs font-extrabold text-center focus:ring-0">
-                                                                            <span class="text-[9px] text-[#caf300]/80 font-bold uppercase ml-0.5 select-none flex-shrink-0">kg</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    
-                                                                    <!-- Save Button -->
-                                                                    <button type="submit" class="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-zinc-800 border border-zinc-700/70 hover:border-[#caf300] text-zinc-400 hover:text-[#caf300] transition-all active:scale-95" title="Salva set">
-                                                                        <span class="material-symbols-outlined text-[15px]">save</span>
-                                                                    </button>
-                                                                </form>
-                                                                
-                                                                <div class="flex items-center gap-1 flex-shrink-0">
-                                                                    <!-- Note Toggle Button -->
-                                                                    <button type="button" onclick="toggleNoteField('note-container-{{ entry.pk }}')" class="w-6 h-6 rounded-md flex items-center justify-center border border-zinc-700/60 hover:border-[#caf300] text-zinc-500 hover:text-[#caf300] transition-all" id="note-toggle-{{ entry.pk }}" title="Note">
-                                                                        <span class="material-symbols-outlined text-[14px]">notes</span>
-                                                                    </button>
-                                                                    <!-- Delete Button -->
-                                                                    <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
-                                                                        {% csrf_token %}
-                                                                        <button type="submit" class="w-6 h-6 rounded-md flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Elimina set">
-                                                                            <span class="material-symbols-outlined text-[13px]">close</span>
-                                                                        </button>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                            <!-- Expandable Note Container -->
-                                                            <div id="note-container-{{ entry.pk }}" class="{% if not entry.comment %}hidden{% endif %} mt-2 w-full">
-                                                                <form hx-post="{% url 'manager:routine:update-set-notes' routine.pk day.pk slot.pk entry.pk %}" class="relative flex items-center w-full bg-[#141517] border border-[#222429] px-4 py-3 rounded-2xl group">
-                                                                    {% csrf_token %}
-                                                                    <span class="material-symbols-outlined text-gray-500 absolute left-4 text-sm pointer-events-none">notes</span>
-                                                                    <input type="text" name="comment" value="{{ entry.comment }}" placeholder="{% translate 'Add set note...' %}" class="bg-transparent border-none p-0 flex-1 pl-7 text-sm text-gray-300 placeholder-gray-600 focus:ring-0">
-                                                                    <button type="submit" class="text-gray-500 hover:text-primary transition-colors duration-200">
-                                                                        <span class="material-symbols-outlined text-[14px]">save</span>
-                                                                    </button>
-                                                                </form>
-                                                            </div>
+                                                             <div class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#121315] border border-outline rounded-xl transition-all duration-200 w-full" data-set-index="{{ entry.set_index }}">
+                                                                 <form hx-post="{% url 'manager:routine:update-set' routine.pk day.pk slot.pk entry.pk %}" class="flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-3">
+                                                                     {% csrf_token %}
+                                                                     <!-- Set Number Only (No SET badge) -->
+                                                                     <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-zinc-400 select-none shrink-0">{{ entry.set_index }}</span>
+                                                                     
+                                                                     <!-- Reps & Weight Inputs (Borderless, Auto-saving) -->
+                                                                     <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
+                                                                         <!-- Reps Input -->
+                                                                         <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                         
+                                                                         <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
+                                                                         
+                                                                         <!-- Weight Input -->
+                                                                         <div class="flex items-center gap-1 shrink-0">
+                                                                             <input type="number" name="weight" value="{{ entry.weight_config.weight }}" required min="0" step="0.1" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                             <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
+                                                                         </div>
+                                                                     </div>   
+                                                                 </form>
+                                                                 
+                                                                 <div class="flex items-center gap-1 shrink-0">
+                                                                     <!-- Delete Button Only -->
+                                                                     <form hx-post="{% url 'manager:routine:delete-set' routine.pk day.pk slot.pk entry.pk %}" hx-confirm="{% translate 'Remove this set?' %}" class="inline">
+                                                                         {% csrf_token %}
+                                                                         <button type="submit" class="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all" title="Elimina set">
+                                                                             <span class="material-symbols-outlined text-xs">close</span>
+                                                                         </button>
+                                                                     </form>
+                                                                 </div>
+                                                             </div>
                                                         </div>
                                                     {% empty %}
                                                         <span class="text-xs text-gray-500 pl-4">{% translate "No sets configured" %}</span>
