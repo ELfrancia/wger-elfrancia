@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 import datetime
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.db import models as django_models
 from wger.manager.models import Day, WorkoutSession, WorkoutLog, SlotEntry, SetsConfig, RepetitionsConfig, WeightConfig
 from wger.manager.helpers import reset_routine_cache
+from wger.gallery.models.image import Image
+from wger.gallery.forms import ImageForm
+
 
 
 @login_required
@@ -90,6 +94,40 @@ def log_tailwind(request, routine_pk, day_pk):
             session.time_start = timezone.localtime(timezone.now()).time()
             session.time_end = None
             session.save()
+            return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+        elif action == 'upload_condition_photo':
+            photo = request.FILES.get('image')
+            description = request.POST.get('description', '')
+            finish_after = request.POST.get('finish_workout') == 'true'
+
+            if photo:
+                default_desc = f"Foto condizione: {day.routine.name} - {day.name} ({datetime.date.today().strftime('%d/%m/%Y')})"
+                final_desc = description.strip() if description.strip() else default_desc
+                
+                img_obj = Image(
+                    user=request.user,
+                    date=datetime.date.today(),
+                    description=final_desc
+                )
+                img_obj.image.save(photo.name, photo, save=True)
+
+            if finish_after:
+                session.time_end = timezone.localtime(timezone.now()).time()
+                session.save()
+                if session_key in request.session:
+                    del request.session[session_key]
+                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
+                return redirect('weight:overview')
+
+            today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
+            if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'ok',
+                    'message': 'Foto caricata con successo!',
+                    'photos_count': today_photos_count
+                })
             return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
         elif action == 'finish_workout':
@@ -260,6 +298,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 completed_exercise_ids.append(s.obj.id)
 
     session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
+    today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
 
     return render(request, 'workout/log_tailwind.html', {
         'day': day,
@@ -270,5 +309,6 @@ def log_tailwind(request, routine_pk, day_pk):
         'progress_percentage': progress_percentage,
         'elapsed_seconds': elapsed_seconds,
         'session_logs_map': session_logs_map,
+        'today_photos_count': today_photos_count,
     })
 

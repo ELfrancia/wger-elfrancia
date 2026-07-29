@@ -1,205 +1,228 @@
 {% load i18n %}
 
-<div id="activity-calendar-container" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="flex flex-col gap-5 w-full">
+<div id="activity-calendar-container" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="flex flex-col gap-6 w-full">
     <!-- 1. Activity Calendar Section -->
-    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-5 shadow-md">
-        <h3 class="text-white font-bold text-base tracking-tight text-center mb-4">{% translate "Calendario Attività" %}</h3>
+    <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-4 sm:p-5 shadow-lg">
+        <!-- Month Navigation Header -->
+        <div class="flex items-center justify-between mb-4 px-1">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#caf300] text-lg">calendar_month</span>
+                <span class="text-white text-xs sm:text-sm font-extrabold uppercase tracking-wider font-display">{{ current_month_name }}</span>
+            </div>
+
+            <div class="flex items-center gap-1">
+                <button hx-get="{% url 'weight:overview' %}?selected_date={{ prev_week_date|date:'Y-m-d' }}" 
+                        hx-target="#activity-calendar-container" 
+                        hx-swap="outerHTML"
+                        class="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/10 hover:text-white text-neutral-400 flex items-center justify-center transition-all" title="Settimana precedente">
+                    <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <button hx-get="{% url 'weight:overview' %}?selected_date={{ next_week_date|date:'Y-m-d' }}" 
+                        hx-target="#activity-calendar-container" 
+                        hx-swap="outerHTML"
+                        class="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/10 hover:text-white text-neutral-400 flex items-center justify-center transition-all" title="Settimana successiva">
+                    <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+            </div>
+        </div>
         
         <!-- Days Grid -->
-        <div class="grid grid-cols-7 gap-1.5 w-full">
+        <div class="grid grid-cols-7 gap-1.5 sm:gap-2 w-full">
             {% for day in week_days %}
                 <button hx-get="{% url 'weight:overview' %}?selected_date={{ day.date|date:'Y-m-d' }}" 
                         hx-target="#activity-calendar-container" 
                         hx-swap="outerHTML"
-                        class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all duration-300 {% if day.is_selected %}bg-[#caf300] text-[#131313] font-black shadow-[0_0_12px_rgba(202,243,0,0.3)] scale-105{% else %}bg-[#1c1c1e] hover:bg-[#252528] text-neutral-400 hover:text-white border border-white/[0.02]{% endif %}">
-                    <span class="text-[9px] font-bold uppercase tracking-wider mb-0.5">{{ day.day_name }}</span>
-                    <span class="text-xs font-black">{{ day.day_num }}</span>
-                    {% if day.has_workout and not day.is_selected %}
-                        <div class="w-1.5 h-1.5 bg-[#caf300] rounded-full mt-0.5"></div>
+                        class="flex flex-col items-center justify-center py-3 px-1 rounded-2xl transition-all duration-200 relative group {% if day.is_selected %}bg-[#caf300] text-[#090a0c] font-black shadow-md scale-[1.02]{% else %}bg-[#16171b] hover:bg-[#1f2025] text-neutral-400 hover:text-white border border-white/[0.04]{% endif %}">
+                    <span class="text-[10px] font-bold uppercase tracking-wider mb-1 {% if day.is_selected %}text-[#090a0c]/80{% else %}text-neutral-500{% endif %}">{{ day.day_name }}</span>
+                    <span class="text-sm font-extrabold font-display leading-none">{{ day.day_num }}</span>
+                    {% if day.has_workout %}
+                        <div class="w-1.5 h-1.5 rounded-full mt-1.5 {% if day.is_selected %}bg-[#090a0c]{% else %}bg-[#caf300] shadow-[0_0_6px_rgba(202,243,0,0.6)]{% endif %}"></div>
+                    {% else %}
+                        <div class="w-1.5 h-1.5 mt-1.5"></div>
                     {% endif %}
                 </button>
             {% endfor %}
         </div>
-
-        <!-- Month Navigation Row -->
-        <div class="flex items-center justify-between mt-4 px-2 text-xs font-bold text-neutral-400">
-            <button hx-get="{% url 'weight:overview' %}?selected_date={{ prev_week_date|date:'Y-m-d' }}" 
-                    hx-target="#activity-calendar-container" 
-                    hx-swap="outerHTML"
-                    class="hover:text-white flex items-center justify-center p-1 transition-colors">
-                <span class="material-symbols-outlined text-[16px]">arrow_back_ios</span>
-            </button>
-            <span class="text-white uppercase tracking-wider font-extrabold text-[10px]">{{ current_month_name }}</span>
-            <button hx-get="{% url 'weight:overview' %}?selected_date={{ next_week_date|date:'Y-m-d' }}" 
-                    hx-target="#activity-calendar-container" 
-                    hx-swap="outerHTML"
-                    class="hover:text-white flex items-center justify-center p-1 transition-colors">
-                <span class="material-symbols-outlined text-[16px]">arrow_forward_ios</span>
-            </button>
-        </div>
     </div>
 
     <!-- 2. Concentric Progress Rings and Logs Card -->
-    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col gap-6 relative overflow-hidden">
-        <div class="flex items-center justify-between">
-            <h3 class="text-white font-bold text-sm tracking-tight">{% translate "Resoconto Giornaliero" %}</h3>
-            <span class="text-[10px] text-neutral-500 font-bold font-mono">{{ selected_date_display }}</span>
+    <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg flex flex-col gap-6 relative overflow-hidden">
+        <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#caf300] text-lg">monitoring</span>
+                <h3 class="text-white font-bold text-sm tracking-tight font-display">{% translate "Resoconto Attività Giornaliera" %}</h3>
+            </div>
+            <span class="text-[11px] text-neutral-400 font-semibold font-mono bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">{{ selected_date_display }}</span>
         </div>
 
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-            <!-- Left side inputs list -->
-            <div class="flex flex-col gap-4 w-full md:w-1/2">
-                <!-- Steps -->
-                <div class="flex flex-col border-b border-white/[0.05] pb-3">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <!-- Left side inputs list (lg:col-span-7) -->
+            <div class="lg:col-span-7 flex flex-col gap-4 w-full">
+                <!-- Steps Tile -->
+                <div class="bg-[#16171b] border border-white/[0.05] rounded-2xl p-3.5 flex flex-col gap-2.5">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-[#caf300]" style="font-variation-settings: 'FILL' 1;">directions_walk</span>
-                            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{% translate "Passi" %}</span>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300]">
+                                <span class="material-symbols-outlined text-base">directions_walk</span>
+                            </div>
+                            <span class="text-xs font-bold text-white uppercase tracking-wider">{% translate "Passi" %}</span>
                         </div>
-                        <div class="text-right">
-                            <span class="text-sm font-black text-[#caf300]">{{ activity.steps|default:"0" }}</span>
+                        <div class="text-right font-mono">
+                            <span class="text-sm font-extrabold text-[#caf300]">{{ activity.steps|default:"0" }}</span>
                             <span class="text-[10px] text-neutral-500">/ {{ profile.steps_goal|default:"16000" }}</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between mt-2 gap-2">
-                        <div class="flex gap-1">
-                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "steps", "amount": 1000, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
-                                +1k
+                    
+                    <!-- Increments & Quick Add Form -->
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04]">
+                        <div class="flex gap-1.5">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "steps", "amount": 1000, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.04] hover:bg-[#caf300] hover:text-[#090a0c] text-neutral-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/[0.06] transition-all">
+                                +1.000
                             </button>
-                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "steps", "amount": 5000, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
-                                +5k
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "steps", "amount": 5000, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.04] hover:bg-[#caf300] hover:text-[#090a0c] text-neutral-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/[0.06] transition-all">
+                                +5.000
                             </button>
                         </div>
                         <form hx-post="{% url 'weight:overview' %}" hx-target="#activity-calendar-container" hx-swap="outerHTML" class="flex items-center gap-1">
                             <input type="hidden" name="selected_date" value="{{ selected_date|date:'Y-m-d' }}">
                             <input type="hidden" name="activity_type" value="steps">
-                            <input type="number" name="amount" placeholder="+Passi" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
-                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                            <input type="number" name="amount" placeholder="+ Passi" class="w-20 bg-[#090a0c] border border-white/10 text-white text-[11px] rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#caf300] placeholder-neutral-600 text-center font-mono">
+                            <button type="submit" class="bg-white/10 hover:bg-[#caf300] hover:text-[#090a0c] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all">+</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Calories -->
-                <div class="flex flex-col border-b border-white/[0.05] pb-3">
+                <!-- Calories Tile -->
+                <div class="bg-[#16171b] border border-white/[0.05] rounded-2xl p-3.5 flex flex-col gap-2.5">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-[#caf300]/85" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
-                            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{% translate "Calorie" %}</span>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300]">
+                                <span class="material-symbols-outlined text-base">local_fire_department</span>
+                            </div>
+                            <span class="text-xs font-bold text-white uppercase tracking-wider">{% translate "Calorie" %}</span>
                         </div>
-                        <div class="text-right">
-                            <span class="text-sm font-black text-[#caf300]/85">{{ activity.calories|default:"0" }}</span>
-                            <span class="text-[10px] text-neutral-500">/ {{ profile.calories_goal|default:"680" }} Cal</span>
+                        <div class="text-right font-mono">
+                            <span class="text-sm font-extrabold text-[#caf300]">{{ activity.calories|default:"0" }}</span>
+                            <span class="text-[10px] text-neutral-500">/ {{ profile.calories_goal|default:"680" }} kcal</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between mt-2 gap-2">
-                        <div class="flex gap-1">
-                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "calories", "amount": 100, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                    
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04]">
+                        <div class="flex gap-1.5">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "calories", "amount": 100, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.04] hover:bg-[#caf300] hover:text-[#090a0c] text-neutral-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/[0.06] transition-all">
                                 +100
                             </button>
-                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "calories", "amount": 250, "date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "calories", "amount": 250, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.04] hover:bg-[#caf300] hover:text-[#090a0c] text-neutral-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/[0.06] transition-all">
                                 +250
                             </button>
                         </div>
                         <form hx-post="{% url 'weight:overview' %}" hx-target="#activity-calendar-container" hx-swap="outerHTML" class="flex items-center gap-1">
                             <input type="hidden" name="selected_date" value="{{ selected_date|date:'Y-m-d' }}">
                             <input type="hidden" name="activity_type" value="calories">
-                            <input type="number" name="amount" placeholder="+Cal" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
-                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                            <input type="number" name="amount" placeholder="+ Cal" class="w-20 bg-[#090a0c] border border-white/10 text-white text-[11px] rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#caf300] placeholder-neutral-600 text-center font-mono">
+                            <button type="submit" class="bg-white/10 hover:bg-[#caf300] hover:text-[#090a0c] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all">+</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Water -->
-                <div class="flex flex-col pb-1">
+                <!-- Water Tile -->
+                <div class="bg-[#16171b] border border-white/[0.05] rounded-2xl p-3.5 flex flex-col gap-2.5">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-[#caf300]/70" style="font-variation-settings: 'FILL' 1;">local_drink</span>
-                            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{% translate "Acqua" %}</span>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300]">
+                                <span class="material-symbols-outlined text-base">local_drink</span>
+                            </div>
+                            <span class="text-xs font-bold text-white uppercase tracking-wider">{% translate "Acqua" %}</span>
                         </div>
-                        <div class="text-right">
-                            <span class="text-sm font-black text-[#caf300]/70">{{ activity.water|default:"0.0" }}</span>
+                        <div class="text-right font-mono">
+                            <span class="text-sm font-extrabold text-[#caf300]">{{ activity.water|default:"0.0" }}</span>
                             <span class="text-[10px] text-neutral-500">/ {{ profile.water_goal|default:"2.5" }} L</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between mt-2 gap-2">
-                        <div class="flex gap-1">
-                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "water", "amount": 0.25, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
-                                +0.25L
+                    
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04]">
+                        <div class="flex gap-1.5">
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "water", "amount": 0.25, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.04] hover:bg-[#caf300] hover:text-[#090a0c] text-neutral-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/[0.06] transition-all">
+                                +0,25L
                             </button>
-                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "water", "amount": 0.5, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.03] border border-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-[#eaeaea] text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">
-                                +0.5L
+                            <button hx-post="{% url 'weight:overview' %}" hx-vals='{"activity_type": "water", "amount": 0.5, "selected_date": "{{ selected_date|date:"Y-m-d" }}"}' hx-target="#activity-calendar-container" hx-swap="outerHTML" class="bg-white/[0.04] hover:bg-[#caf300] hover:text-[#090a0c] text-neutral-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/[0.06] transition-all">
+                                +0,50L
                             </button>
                         </div>
                         <form hx-post="{% url 'weight:overview' %}" hx-target="#activity-calendar-container" hx-swap="outerHTML" class="flex items-center gap-1">
                             <input type="hidden" name="selected_date" value="{{ selected_date|date:'Y-m-d' }}">
                             <input type="hidden" name="activity_type" value="water">
-                            <input type="number" step="0.05" name="amount" placeholder="+L" class="w-16 bg-[#131313] border border-white/[0.08] text-white text-[10px] rounded-full px-2 py-0.5 focus:outline-none focus:border-[#caf300] placeholder-neutral-700 text-center">
-                            <button type="submit" class="bg-white/[0.05] hover:bg-[#caf300] hover:text-[#131313] text-white text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-200">{% translate "Add" %}</button>
+                            <input type="number" step="0.05" name="amount" placeholder="+ Litri" class="w-20 bg-[#090a0c] border border-white/10 text-white text-[11px] rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#caf300] placeholder-neutral-600 text-center font-mono">
+                            <button type="submit" class="bg-white/10 hover:bg-[#caf300] hover:text-[#090a0c] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all">+</button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- SVG Concentric rings -->
-            <div class="relative w-36 h-36 flex items-center justify-center bg-black/10 border border-white/[0.02] rounded-full p-2">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 110 110">
-                    <circle cx="55" cy="55" r="45" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
-                    <circle cx="55" cy="55" r="34" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
-                    <circle cx="55" cy="55" r="23" stroke="#1f1f1f" stroke-width="8" fill="transparent" />
-                    
-                    <circle id="ring-detail-steps" cx="55" cy="55" r="45" stroke="#caf300" stroke-width="8" fill="transparent" 
-                            stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
-                    <circle id="ring-detail-calories" cx="55" cy="55" r="34" stroke="#9fbd00" stroke-width="8" fill="transparent" 
-                            stroke-dasharray="213.63" stroke-dashoffset="213.63" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
-                    <circle id="ring-detail-water" cx="55" cy="55" r="23" stroke="#748b00" stroke-width="8" fill="transparent" 
-                            stroke-dasharray="144.51" stroke-dashoffset="144.51" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
-                </svg>
-            </div>
-        </div>
+            <!-- SVG Concentric rings (lg:col-span-5) -->
+            <div class="lg:col-span-5 flex flex-col items-center justify-center p-4 bg-[#16171b]/60 border border-white/[0.04] rounded-2xl">
+                <div class="relative w-40 h-40 flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r="45" stroke="#222429" stroke-width="7" fill="transparent" />
+                        <circle cx="55" cy="55" r="34" stroke="#222429" stroke-width="7" fill="transparent" />
+                        <circle cx="55" cy="55" r="23" stroke="#222429" stroke-width="7" fill="transparent" />
+                        
+                        <circle id="ring-detail-steps" cx="55" cy="55" r="45" stroke="#caf300" stroke-width="7" fill="transparent" 
+                                stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                        <circle id="ring-detail-calories" cx="55" cy="55" r="34" stroke="#a4c600" stroke-width="7" fill="transparent" 
+                                stroke-dasharray="213.63" stroke-dashoffset="213.63" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                        <circle id="ring-detail-water" cx="55" cy="55" r="23" stroke="#7e9900" stroke-width="7" fill="transparent" 
+                                stroke-dasharray="144.51" stroke-dashoffset="144.51" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                    </svg>
+                </div>
 
-        <!-- Details list (Distance and Calorie output) -->
-        <div class="flex flex-col gap-2 mt-4 pt-4 border-t border-white/[0.05] text-[11px] font-bold text-neutral-400">
-            <div class="flex justify-between items-center">
-                <span>{% translate "Distance while active" %}</span>
-                <span class="text-white text-xs font-extrabold">{{ distance_active|floatformat:2 }} km</span>
-            </div>
-            <div class="flex justify-between items-center mt-1">
-                <span>{% translate "Total burnt calories" %}</span>
-                <span class="text-white text-xs font-extrabold">{{ activity.calories|default:"0" }} Cal</span>
+                <div class="grid grid-cols-2 gap-4 w-full mt-4 pt-3 border-t border-white/[0.04] text-[11px] font-semibold text-neutral-400">
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] text-neutral-500 uppercase tracking-wider">Distanza Attiva</span>
+                        <span class="text-white text-xs font-bold font-mono mt-0.5">{{ distance_active|floatformat:2 }} km</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] text-neutral-500 uppercase tracking-wider">Calorie Bruciate</span>
+                        <span class="text-white text-xs font-bold font-mono mt-0.5">{{ activity.calories|default:"0" }} kcal</span>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Hourly Activity Chart -->
-        <div class="mt-4 pt-4 border-t border-white/[0.05] flex flex-col gap-3">
-            <h4 class="text-white font-bold text-[11px] tracking-wide">{% translate "Attività Oraria (Allenamenti)" %}</h4>
-            <div class="relative w-full h-[120px]">
+        <div class="pt-4 border-t border-white/[0.06] flex flex-col gap-2">
+            <h4 class="text-neutral-400 font-semibold text-xs tracking-wider uppercase">{% translate "Attività Oraria (Allenamenti)" %}</h4>
+            <div class="relative w-full h-[110px]">
                 <canvas id="hourlyActivityChart"></canvas>
             </div>
         </div>
     </div>
 
     <!-- 3. Workout Summary Card -->
-    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-5 shadow-md">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-white font-bold text-xs tracking-tight">{% translate "Resoconto Allenamenti" %}</h3>
-            <span class="text-[10px] text-neutral-500 font-bold font-mono">{{ selected_date_display }}</span>
+    <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#caf300] text-lg">fitness_center</span>
+                <h3 class="text-white font-bold text-sm tracking-tight font-display">{% translate "Resoconto Allenamenti" %}</h3>
+            </div>
+            <span class="text-[11px] text-neutral-400 font-semibold font-mono bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">{{ selected_date_display }}</span>
         </div>
 
         {% if selected_sessions %}
             <!-- Scroll Slider Container -->
             <div class="relative w-full">
-                <div class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-full gap-4 py-2" id="workout-history-slider-container">
+                <div class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-full gap-4 py-1" id="workout-history-slider-container">
                     {% for session in selected_sessions %}
-                        <div class="snap-center shrink-0 w-full bg-[#18181b] border border-white/[0.05] rounded-3xl p-5 shadow-lg flex flex-col justify-between transition-all duration-300" id="session-card-{{ forloop.counter0 }}">
+                        <div class="snap-center shrink-0 w-full bg-[#16171b] border border-white/[0.05] rounded-2xl p-5 shadow-md flex flex-col justify-between transition-all duration-200" id="session-card-{{ forloop.counter0 }}">
                             
                             <!-- Card Header -->
-                            <div class="flex justify-between items-start pb-3.5 border-b border-white/[0.04] gap-2.5">
+                            <div class="flex justify-between items-start pb-3 border-b border-white/[0.04] gap-2.5">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-[#caf300] flex items-center justify-center shadow-inner animate-pulse-slow">
+                                    <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 text-[#caf300] flex items-center justify-center">
                                         <span class="material-symbols-outlined text-base">fitness_center</span>
                                     </div>
                                     <div class="flex flex-col">
-                                        <h4 class="text-xs font-black text-white font-display tracking-tight uppercase leading-none">
+                                        <h4 class="text-xs font-bold text-white font-display tracking-wide uppercase leading-none">
                                             {% if session.routine %}
                                                 {{ session.routine.name }}
                                             {% elif session.day %}
@@ -208,14 +231,14 @@
                                                 {% translate "Allenamento" %}
                                             {% endif %}
                                         </h4>
-                                        <div class="flex items-center gap-1.5 mt-1.5 text-zinc-400 text-[10px] font-medium font-mono select-none">
+                                        <div class="flex items-center gap-1.5 mt-1.5 text-neutral-400 text-[10px] font-mono select-none">
                                             {% if session.time_start %}
                                                 <span class="material-symbols-outlined text-[12px] text-[#caf300]/80">schedule</span>
                                                 <span>{{ session.time_start|time:"H:i" }} - {% if session.time_end %}{{ session.time_end|time:"H:i" }}{% else %}--:--{% endif %}</span>
                                             {% endif %}
                                             {% if session.duration %}
                                                 {% if session.time_start %}
-                                                    <span class="text-zinc-650 font-black">•</span>
+                                                    <span class="text-neutral-600 font-black">•</span>
                                                 {% endif %}
                                                 <span class="material-symbols-outlined text-[12px] text-[#caf300]/80">hourglass_empty</span>
                                                 <span>{{ session.duration }}</span>

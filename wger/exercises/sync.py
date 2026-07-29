@@ -80,6 +80,18 @@ def sync_exercises(
         uuid = data['uuid']
         created = data['created']
         license_id = data['license']['id']
+        if not License.objects.filter(pk=license_id).exists():
+            short_name = data['license'].get('short_name') or f'lic_{license_id}'
+            lic = License.objects.filter(short_name=short_name).first()
+            if not lic:
+                License.objects.create(
+                    pk=license_id,
+                    short_name=short_name,
+                    full_name=data['license'].get('full_name', f'License {license_id}'),
+                    url=data['license'].get('url', '')
+                )
+            else:
+                license_id = lic.pk
         category_id = data['category']['id']
         license_author = data['license_author']
         equipment = [Equipment.objects.get(pk=i['id']) for i in data['equipment']]
@@ -107,17 +119,24 @@ def sync_exercises(
             description = translation_data['description']
             description_source = translation_data['description_source']
             language_id = translation_data['language']
+            if not Language.objects.filter(pk=language_id).exists():
+                Language.objects.create(
+                    pk=language_id,
+                    short_name=f'lang_{language_id}',
+                    full_name=f'Language {language_id}',
+                    full_name_en=f'Language {language_id}',
+                )
 
             translation, translation_created = Translation.objects.update_or_create(
-                uuid=trans_uuid,
+                exercise=exercise,
+                language_id=language_id,
                 defaults={
-                    'exercise': exercise,
+                    'uuid': trans_uuid,
                     'name': name,
                     'description': description,
                     'description_source': description_source,
                     'license_id': license_id,
                     'license_author': license_author,
-                    'language_id': language_id,
                 },
             )
             out = (

@@ -390,6 +390,7 @@ def weight_overview_tailwind(request):
     # Serialize to JSON strings
     weight_data_json = json.dumps(weight_data)
     activity_data_json = json.dumps(activity_data)
+    exercise_stats_json = json.dumps(exercise_stats)
 
     # Calculate hourly distribution of workout sets for the selected date
     hourly_distribution = [0] * 24
@@ -409,6 +410,7 @@ def weight_overview_tailwind(request):
         'weight_change': weight_change,
         'avg_weight': avg_weight,
         'exercise_stats': exercise_stats,
+        'exercise_stats_json': exercise_stats_json,
         'weight_data_json': weight_data_json,
         'activity_data_json': activity_data_json,
         

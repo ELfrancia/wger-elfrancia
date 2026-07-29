@@ -260,7 +260,12 @@ AXES_ENABLED = env.bool('AXES_ENABLED', True)
 AXES_LOCKOUT_PARAMETERS = env.list('AXES_LOCKOUT_PARAMETERS', default=['ip_address'])
 AXES_FAILURE_LIMIT = env.int('AXES_FAILURE_LIMIT', 10)
 AXES_COOLOFF_TIME = timedelta(minutes=env.float('AXES_COOLOFF_TIME', 30))
-AXES_HANDLER = env.str('AXES_HANDLER', 'axes.handlers.cache.AxesCacheHandler')
+AXES_HANDLER = env.str(
+    'AXES_HANDLER',
+    'axes.handlers.cache.AxesCacheHandler'
+    if os.environ.get('DJANGO_CACHE_BACKEND')
+    else 'axes.handlers.database.AxesDatabaseHandler',
+)
 AXES_IPWARE_PROXY_COUNT = env.int('AXES_IPWARE_PROXY_COUNT', 0)
 AXES_IPWARE_META_PRECEDENCE_ORDER = env.list(
     'AXES_IPWARE_META_PRECEDENCE_ORDER', default=['REMOTE_ADDR']

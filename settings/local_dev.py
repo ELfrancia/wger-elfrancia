@@ -52,6 +52,8 @@ EXPOSE_PROMETHEUS_METRICS = True
 
 COMPRESS_ENABLED = False
 AXES_ENABLED = False
+AXES_HANDLER = 'axes.handlers.database.AxesDatabaseHandler'
+
 
 
 # Does not really cache anything
@@ -137,6 +139,11 @@ from django.dispatch import receiver
 def configure_sqlite(sender, connection, **kwargs):
     if connection.vendor == 'sqlite':
         cursor = connection.cursor()
-        cursor.execute('PRAGMA journal_mode = DELETE;')
+        cursor.execute('PRAGMA journal_mode = WAL;')
+        cursor.execute('PRAGMA synchronous = NORMAL;')
+        cursor.execute('PRAGMA cache_size = -64000;')
+        cursor.execute('PRAGMA temp_store = MEMORY;')
+        cursor.execute('PRAGMA mmap_size = 268435456;')
         cursor.execute('PRAGMA busy_timeout = 20000;')
+
 

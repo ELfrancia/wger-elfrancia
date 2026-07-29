@@ -103,3 +103,35 @@ class WorkoutViewsTestCase(WgerTestCase):
         }, HTTP_HX_REQUEST='true')
         self.assertEqual(response.status_code, 200)
         self.assertFalse(session.logs.filter(slot_entry_id=slot_entry.id).exists())
+
+    def test_upload_condition_photo(self):
+        import io
+        from PIL import Image as PILImage
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from wger.gallery.models.image import Image
+        import datetime
+
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        
+        # Create a valid PNG image in memory
+        img_bytes = io.BytesIO()
+        PILImage.new('RGB', (100, 100), color='red').save(img_bytes, format='PNG')
+        img_bytes.seek(0)
+        uploaded_file = SimpleUploadedFile('test_photo.png', img_bytes.read(), content_type='image/png')
+
+        response = self.client.post(url, {
+            'action': 'upload_condition_photo',
+            'image': uploaded_file,
+            'description': 'Test foto condizione post-workout'
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
+        self.assertEqual(response.status_code, 200)
+        json_data = response.json()
+        self.assertEqual(json_data['status'], 'ok')
+        self.assertGreaterEqual(json_data['photos_count'], 1)
+
+        # Verify image object created in gallery
+        gallery_img = Image.objects.filter(user=self.user, date=datetime.date.today()).first()
+        self.assertIsNotNone(gallery_img)
+        self.assertIn('Test foto condizione', gallery_img.description)
+

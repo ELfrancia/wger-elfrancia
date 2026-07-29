@@ -1,46 +1,46 @@
 {% extends 'template_tailwind.html' %}
 {% load i18n %}
 
-{% block title %}{% translate "Scheda di Progressi" %}{% endblock %}
+{% block title %}{% translate "Scheda Allenamenti Giornalieri" %}{% endblock %}
 
 {% block header %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-6 py-6">
+<div class="flex flex-col gap-6 py-2 max-w-5xl mx-auto">
     <!-- Header with Toggle Range Switch -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-white/[0.06]">
         <div>
-            <h2 class="font-headline-lg-mobile text-2xl md:text-3xl text-white font-bold tracking-tighter">
-                {% translate "Scheda di Progressi" %}
-            </h2>
-            <p class="text-sm text-[#888888]">
-                {% translate "Tieni traccia delle tue statistiche di allenamento e peso." %}
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">
+                {% translate "Scheda Allenamenti" %}
+            </h1>
+            <p class="text-xs sm:text-sm text-neutral-400 mt-0.5">
+                {% translate "Panoramica delle sessioni giornaliere, volume di carico e metriche." %}
             </p>
         </div>
         
         <!-- View and Period Selectors -->
-        <div class="flex flex-wrap gap-3 items-center self-start sm:self-center">
-            <!-- Glassmorphic View Toggle -->
-            <div class="flex bg-[#161616]/80 backdrop-blur-md border border-white/[0.08] p-1 rounded-full w-fit shadow-lg">
-                <button id="btn-view-dati" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 bg-[#caf300] text-[#131313] font-bold shadow-sm">
+        <div class="flex flex-wrap gap-2.5 items-center">
+            <!-- Mode Toggle (Dati / Grafici) -->
+            <div class="flex bg-[#121316] border border-white/10 p-1 rounded-xl shadow-inner">
+                <button id="btn-view-dati" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-[#caf300] text-[#090a0c]">
                     {% translate "Dati" %}
                 </button>
-                <button id="btn-view-grafici" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 text-[#888888] hover:text-white hover:bg-white/[0.04]">
+                <button id="btn-view-grafici" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white transition-all duration-200">
                     {% translate "Grafici" %}
                 </button>
             </div>
 
-            <!-- Glassmorphic Period Selector -->
-            <div class="flex bg-[#161616]/80 backdrop-blur-md border border-white/[0.08] p-1 rounded-full w-fit shadow-lg">
-                <a href="?range=weekly" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 {% if range == 'weekly' %}bg-[#caf300] text-[#131313] font-bold shadow-sm{% else %}text-[#888888] hover:text-white hover:bg-white/[0.04]{% endif %}">
+            <!-- Period Selector (Settimanale / Mensile / Annuale) -->
+            <div class="flex bg-[#121316] border border-white/10 p-1 rounded-xl shadow-inner text-xs font-semibold">
+                <a href="?range=weekly" class="px-3 py-1.5 rounded-lg transition-all duration-200 {% if range == 'weekly' %}bg-white/10 text-white font-bold{% else %}text-neutral-400 hover:text-white{% endif %}">
                     {% translate "Settimanale" %}
                 </a>
-                <a href="?range=monthly" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 {% if range == 'monthly' %}bg-[#caf300] text-[#131313] font-bold shadow-sm{% else %}text-[#888888] hover:text-white hover:bg-white/[0.04]{% endif %}">
+                <a href="?range=monthly" class="px-3 py-1.5 rounded-lg transition-all duration-200 {% if range == 'monthly' %}bg-white/10 text-white font-bold{% else %}text-neutral-400 hover:text-white{% endif %}">
                     {% translate "Mensile" %}
                 </a>
-                <a href="?range=yearly" class="px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 {% if range == 'yearly' %}bg-[#caf300] text-[#131313] font-bold shadow-sm{% else %}text-[#888888] hover:text-white hover:bg-white/[0.04]{% endif %}">
+                <a href="?range=yearly" class="px-3 py-1.5 rounded-lg transition-all duration-200 {% if range == 'yearly' %}bg-white/10 text-white font-bold{% else %}text-neutral-400 hover:text-white{% endif %}">
                     {% translate "Annuale" %}
                 </a>
             </div>
@@ -52,145 +52,103 @@
         {% include 'weight/calendar_fragment.html' %}
 
     <!-- Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Completed Workouts -->
-        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col justify-between hover:border-[#caf300]/30 transition-all duration-300 group">
-            <div class="flex items-center justify-between mb-4">
-                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Allenamenti Completati" %}</span>
-                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
-                    <span class="material-symbols-outlined text-[#caf300] text-xl">fitness_center</span>
+        <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 shadow-lg flex flex-col justify-between hover:border-[#caf300]/40 transition-all duration-200 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{% translate "Allenamenti Completati" %}</span>
+                <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300]/10 transition-all">
+                    <span class="material-symbols-outlined text-lg">fitness_center</span>
                 </div>
             </div>
             <div>
-                <h3 class="text-4xl font-extrabold text-white tracking-tight mb-1">
+                <h3 class="text-3xl font-extrabold text-white tracking-tight font-display mb-0.5">
                     {{ workouts_completed }}
                 </h3>
-                <p class="text-xs text-[#888888]">
-                    {% translate "Sessioni registrate nel periodo" %}
+                <p class="text-[11px] text-neutral-500">
+                    {% translate "Sessioni nel periodo" %}
                 </p>
             </div>
         </div>
 
         <!-- Total Volume -->
-        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col justify-between hover:border-[#caf300]/30 transition-all duration-300 group">
-            <div class="flex items-center justify-between mb-4">
-                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Volume Totale" %}</span>
-                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
-                    <span class="material-symbols-outlined text-[#caf300] text-xl">monitoring</span>
+        <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 shadow-lg flex flex-col justify-between hover:border-[#caf300]/40 transition-all duration-200 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{% translate "Volume Totale" %}</span>
+                <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300]/10 transition-all">
+                    <span class="material-symbols-outlined text-lg">monitoring</span>
                 </div>
             </div>
             <div>
-                <h3 class="text-4xl font-extrabold text-white tracking-tight mb-1">
-                    {{ total_volume }} <span class="text-lg font-normal text-[#888888]">kg</span>
+                <h3 class="text-3xl font-extrabold text-white tracking-tight font-display mb-0.5">
+                    {{ total_volume }} <span class="text-sm font-normal text-neutral-400 font-sans">kg</span>
                 </h3>
-                <p class="text-xs text-[#888888]">
-                    {% translate "Volume complessivo (ripetizioni &times; peso)" %}
+                <p class="text-[11px] text-neutral-500">
+                    {% translate "Ripetizioni &times; peso" %}
                 </p>
             </div>
         </div>
 
         <!-- Total Repetitions -->
-        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md flex flex-col justify-between hover:border-[#caf300]/30 transition-all duration-300 group">
-            <div class="flex items-center justify-between mb-4">
-                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Ripetizioni Totali" %}</span>
-                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
-                    <span class="material-symbols-outlined text-[#caf300] text-xl">replay</span>
+        <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 shadow-lg flex flex-col justify-between hover:border-[#caf300]/40 transition-all duration-200 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{% translate "Ripetizioni Totali" %}</span>
+                <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300]/10 transition-all">
+                    <span class="material-symbols-outlined text-lg">replay</span>
                 </div>
             </div>
             <div>
-                <h3 class="text-4xl font-extrabold text-white tracking-tight mb-1">
+                <h3 class="text-3xl font-extrabold text-white tracking-tight font-display mb-0.5">
                     {{ total_repetitions }}
                 </h3>
-                <p class="text-xs text-[#888888]">
-                    {% translate "Ripetizioni totali eseguite" %}
+                <p class="text-[11px] text-neutral-500">
+                    {% translate "Ripetizioni eseguite" %}
                 </p>
             </div>
-        </div>
-
-        <!-- Weight Progress Card -->
-        <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md hover:border-[#caf300]/30 transition-all duration-300 group">
-            <div class="flex items-center justify-between mb-4">
-                <span class="font-label-caps text-[#888888] uppercase tracking-wider text-xs">{% translate "Andamento Peso" %}</span>
-                <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center group-hover:bg-[#caf300]/10 group-hover:border-[#caf300]/20 transition-all duration-300">
-                    <span class="material-symbols-outlined text-[#caf300] text-xl">scale</span>
-                </div>
-            </div>
-            {% if starting_weight %}
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <span class="text-[10px] text-[#888888] uppercase tracking-wider font-bold block mb-0.5">{% translate "Ultimo Rilevato" %}</span>
-                    <h4 class="text-2xl font-bold text-white mb-1">{{ ending_weight }} kg</h4>
-                    <p class="text-xs text-[#888888]">{% translate "Iniziale:" %} {{ starting_weight }} kg</p>
-                </div>
-                <div class="text-right flex flex-col justify-end">
-                    <span class="font-label-caps text-[10px] text-[#888888] uppercase tracking-wider font-bold block mb-1">{% translate "Variazione" %}</span>
-                    <div>
-                        {% if weight_change > 0 %}
-                        <span class="inline-flex items-center text-emerald-400 font-bold text-md bg-emerald-950/40 border border-emerald-500/25 px-2 py-0.5 rounded-xl shadow-[0_0_12px_rgba(52,211,153,0.15)]">
-                            <span class="material-symbols-outlined text-sm mr-0.5">arrow_upward</span>
-                            +{{ weight_change|floatformat:2 }} kg
-                        </span>
-                        {% elif weight_change < 0 %}
-                        <span class="inline-flex items-center text-rose-400 font-bold text-md bg-rose-950/40 border border-rose-500/25 px-2 py-0.5 rounded-xl shadow-[0_0_12px_rgba(251,113,133,0.15)]">
-                            <span class="material-symbols-outlined text-sm mr-0.5">arrow_downward</span>
-                            {{ weight_change|floatformat:2 }} kg
-                        </span>
-                        {% else %}
-                        <span class="inline-flex items-center text-gray-400 font-bold text-md bg-gray-900/40 border border-gray-800 px-2 py-0.5 rounded-xl">
-                            0.00 kg
-                        </span>
-                        {% endif %}
-                    </div>
-                    <p class="text-xs text-[#888888] mt-1">{% translate "Media:" %} {{ avg_weight|floatformat:2 }} kg</p>
-                </div>
-            </div>
-            {% else %}
-            <div class="flex flex-col items-center justify-center py-2 text-[#888888]">
-                <p class="text-xs mb-2">{% translate "Nessun dato sul peso in questo periodo" %}</p>
-                <a href="{% url 'weight:import-csv' %}" class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] hover:bg-[#caf300]/10 hover:border-[#caf300]/20 text-[10px] text-[#caf300] font-bold uppercase tracking-wider transition-colors duration-300">
-                    {% translate "Importa dati" %}
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
 
     <!-- Top Exercises Section -->
-    <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 md:p-8 shadow-md mt-2">
-        <div class="flex items-center justify-between mb-6">
+    <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg mt-2">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-white/[0.06]">
             <div>
-                <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Analisi Esercizi Top" %}</h3>
-                <p class="text-xs text-[#888888]">{% translate "I 10 esercizi con maggior volume di allenamento." %}</p>
+                <h3 class="text-lg font-bold text-white tracking-tight font-display">{% translate "Analisi Esercizi Top" %}</h3>
+                <p class="text-xs text-neutral-400 mt-0.5">{% translate "I 10 esercizi con maggior volume di allenamento." %}</p>
             </div>
-            <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
-                <span class="material-symbols-outlined text-[#caf300] text-xl">bar_chart</span>
+            <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300]">
+                <span class="material-symbols-outlined text-lg">bar_chart</span>
             </div>
         </div>
 
         {% if exercise_stats %}
-        <div class="space-y-6">
+        <div class="space-y-4">
             {% for stat in exercise_stats %}
-            <div class="group">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="min-w-0 pr-4">
-                        <span class="text-white font-bold block truncate group-hover:text-[#caf300] transition-colors duration-200">
-                            {{ stat.name }}
+            <div class="group flex flex-col gap-1.5">
+                <div class="flex justify-between items-start">
+                    <div class="min-w-0 pr-4 flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-lg bg-white/[0.04] text-neutral-400 font-mono text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                            {{ forloop.counter }}
                         </span>
-                        <span class="text-xs text-[#888888]">
-                            {{ stat.sets_completed }} {% translate "serie" %} &bull; {{ stat.total_repetitions }} {% translate "reps" %}
-                        </span>
+                        <div>
+                            <span class="text-sm text-white font-bold block truncate group-hover:text-[#caf300] transition-colors">
+                                {{ stat.name }}
+                            </span>
+                            <span class="text-[11px] text-neutral-400 font-mono">
+                                {{ stat.sets_completed }} serie &bull; {{ stat.total_repetitions }} reps
+                            </span>
+                        </div>
                     </div>
-                    <div class="text-right flex-shrink-0">
-                        <span class="text-white font-bold block">
-                            {{ stat.total_volume }} <span class="text-xs text-[#888888]">kg vol</span>
+                    <div class="text-right flex-shrink-0 font-mono">
+                        <span class="text-white text-xs font-bold block">
+                            {{ stat.total_volume }} <span class="text-[10px] text-neutral-400">kg vol</span>
                         </span>
-                        <span class="text-xs text-[#888888]">{% translate "Max:" %} {{ stat.max_weight }} kg</span>
+                        <span class="text-[10px] text-neutral-400">Max: {{ stat.max_weight }} kg</span>
                     </div>
                 </div>
                 
                 <!-- Progress Bar -->
-                <div class="w-full bg-[#201f1f] h-2.5 rounded-full overflow-hidden">
-                    <div class="bg-[#caf300] h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(202,243,0,0.35)]" 
+                <div class="w-full bg-[#181a1f] h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-[#caf300] h-full rounded-full transition-all duration-500" 
                          style="width: {{ stat.volume_percentage }}%"></div>
                 </div>
             </div>
@@ -203,42 +161,42 @@
     <!-- Grafici View (Charts View) -->
     <div id="view-section-grafici" class="hidden space-y-6 transition-all duration-300">
         <div class="grid grid-cols-1 gap-6">
-            <!-- Weight Trend Chart Card -->
-            <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md hover:border-[#caf300]/30 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
+            <!-- Training Volume & Activity Chart Card (Primary) -->
+            <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
                     <div>
-                        <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Andamento Peso" %}</h3>
-                        <p class="text-xs text-[#888888]">{% translate "Evoluzione del tuo peso nel periodo selezionato" %}</p>
+                        <h3 class="text-lg font-bold text-white tracking-tight font-display">{% translate "Volume di Allenamento & Attività" %}</h3>
+                        <p class="text-xs text-neutral-400 mt-0.5">{% translate "Volume giornaliero in kg (barre) e sessioni completate (linea)" %}</p>
                     </div>
-                    <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
-                        <span class="material-symbols-outlined text-[#caf300] text-xl">scale</span>
-                    </div>
-                </div>
-                <div class="relative w-full h-[320px] flex items-center justify-center">
-                    <canvas id="weightChart"></canvas>
-                    <div id="weightChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-[#888888]">
-                        <span class="material-symbols-outlined text-4xl mb-2 text-white/20">scale</span>
-                        <p class="text-xs">{% translate "Nessun dato sul peso in questo periodo" %}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Training Volume & Activity Chart Card -->
-            <div class="bg-[#161616]/70 backdrop-blur-lg border border-white/[0.06] rounded-[2rem] p-6 shadow-md hover:border-[#caf300]/30 transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Volume di Allenamento & Attività" %}</h3>
-                        <p class="text-xs text-[#888888]">{% translate "Volume giornaliero (barre) e sessioni completate (linea)" %}</p>
-                    </div>
-                    <div class="w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
-                        <span class="material-symbols-outlined text-[#caf300] text-xl">monitoring</span>
+                    <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300]">
+                        <span class="material-symbols-outlined text-lg">monitoring</span>
                     </div>
                 </div>
                 <div class="relative w-full h-[320px] flex items-center justify-center">
                     <canvas id="activityChart"></canvas>
-                    <div id="activityChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-[#888888]">
-                        <span class="material-symbols-outlined text-4xl mb-2 text-white/20">fitness_center</span>
+                    <div id="activityChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
+                        <span class="material-symbols-outlined text-3xl mb-2 text-white/20">fitness_center</span>
                         <p class="text-xs">{% translate "Nessun allenamento registrato in questo periodo" %}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Exercises Volume Distribution Chart Card -->
+            <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+                    <div>
+                        <h3 class="text-lg font-bold text-white tracking-tight font-display">{% translate "Distribuzione Volume per Esercizio" %}</h3>
+                        <p class="text-xs text-neutral-400 mt-0.5">{% translate "Confronto tra gli esercizi a maggior carico totale" %}</p>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300]">
+                        <span class="material-symbols-outlined text-lg">bar_chart</span>
+                    </div>
+                </div>
+                <div class="relative w-full h-[320px] flex items-center justify-center">
+                    <canvas id="exerciseVolumeChart"></canvas>
+                    <div id="exerciseVolumeChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
+                        <span class="material-symbols-outlined text-3xl mb-2 text-white/20">fitness_center</span>
+                        <p class="text-xs">{% translate "Nessun dato esercizi disponibile" %}</p>
                     </div>
                 </div>
             </div>
@@ -250,8 +208,8 @@
 {% block extra_body %}
 <script>
     // Safely parse JSON datasets passed from the Django view
-    const weightData = JSON.parse('{{ weight_data_json|escapejs }}');
     const activityData = JSON.parse('{{ activity_data_json|escapejs }}');
+    const exerciseStatsData = JSON.parse('{{ exercise_stats_json|escapejs }}');
     const rangeParam = '{{ range }}';
 
     // Helper function to format dates nicely based on period
@@ -305,40 +263,35 @@
         setViewMode(savedMode === 'grafici' ? 'grafici' : 'dati');
     }
 
-    // Weight Chart initialization
-    const weightCanvas = document.getElementById('weightChart');
-    if (weightCanvas && weightData.length > 0) {
-        const ctx = weightCanvas.getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(202, 243, 0, 0.25)');
-        gradient.addColorStop(1, 'rgba(202, 243, 0, 0.0)');
+    // Top Exercises Volume Bar Chart initialization
+    const exerciseVolumeCanvas = document.getElementById('exerciseVolumeChart');
+    if (exerciseVolumeCanvas && exerciseStatsData && exerciseStatsData.length > 0) {
+        const ctx = exerciseVolumeCanvas.getContext('2d');
+        const exLabels = exerciseStatsData.slice(0, 6).map(e => e.name.length > 15 ? e.name.substring(0, 15) + '...' : e.name);
+        const exVolumes = exerciseStatsData.slice(0, 6).map(e => e.total_volume);
+
+        const gradient = ctx.createLinearGradient(0, 0, 300, 0);
+        gradient.addColorStop(0, '#caf300');
+        gradient.addColorStop(1, 'rgba(202, 243, 0, 0.4)');
 
         new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
-                labels: weightData.map(d => formatDate(d.date, rangeParam)),
+                labels: exLabels,
                 datasets: [{
-                    label: 'Peso (kg)',
-                    data: weightData.map(d => d.weight),
-                    borderColor: '#caf300',
+                    label: 'Volume Totale (kg)',
+                    data: exVolumes,
                     backgroundColor: gradient,
-                    fill: true,
-                    borderWidth: 3,
-                    tension: 0.3,
-                    pointBackgroundColor: '#caf300',
-                    pointBorderColor: '#131313',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    borderRadius: 6,
+                    barPercentage: 0.65,
                 }]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: '#161616',
                         titleColor: '#ffffff',
@@ -347,49 +300,35 @@
                         borderWidth: 1,
                         cornerRadius: 8,
                         padding: 12,
-                        displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                return `${context.parsed.y.toFixed(2)} kg`;
+                                return `${context.parsed.x.toLocaleString()} kg volume`;
                             }
                         }
                     }
                 },
                 scales: {
                     x: {
-                        grid: {
-                            color: '#2a2a2a',
-                            drawBorder: false
-                        },
+                        grid: { color: '#2a2a2a' },
                         ticks: {
                             color: '#888888',
-                            font: {
-                                family: 'Inter',
-                                size: 10
-                            },
-                            autoSkip: true,
-                            maxTicksLimit: rangeParam === 'yearly' ? 12 : (rangeParam === 'monthly' ? 8 : 7)
+                            font: { family: 'Inter', size: 10 },
+                            callback: function(v) { return v + ' kg'; }
                         }
                     },
                     y: {
-                        grid: {
-                            color: '#2a2a2a',
-                            drawBorder: false
-                        },
+                        grid: { display: false },
                         ticks: {
-                            color: '#888888',
-                            font: {
-                                family: 'Inter',
-                                size: 10
-                            }
+                            color: '#ffffff',
+                            font: { family: 'Inter', size: 10, weight: 'bold' }
                         }
                     }
                 }
             }
         });
     } else {
-        if (weightCanvas) weightCanvas.style.display = 'none';
-        document.getElementById('weightChartEmpty')?.classList.remove('hidden');
+        if (exerciseVolumeCanvas) exerciseVolumeCanvas.style.display = 'none';
+        document.getElementById('exerciseVolumeChartEmpty')?.classList.remove('hidden');
     }
 
     // Activity & Volume Chart initialization

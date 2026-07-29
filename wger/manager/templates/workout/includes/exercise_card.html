@@ -38,7 +38,7 @@
                         event,
                         '{{ exercise.id|unlocalize }}', 
                         '{{ exercise.get_translation.name|escapejs }}', 
-                        '{% if exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% endif %}', 
+                        '{% if exercise.main_video %}{{ exercise.main_video.video.url|escapejs }}{% elif exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% elif exercise.demo_media_url %}{{ exercise.demo_media_url|escapejs }}{% endif %}', 
                         '{{ exercise.category.name|escapejs }}', 
                         [{% for m in exercise.muscles.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
                         [{% for m in exercise.muscles_secondary.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 

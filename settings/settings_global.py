@@ -140,6 +140,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     # Prometheus
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -660,3 +661,19 @@ STORAGES = {
         'BACKEND': 'wger.core.storage.LenientManifestStaticFilesStorage',
     },
 }
+
+# High-Performance SQLite Configuration Signal
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
+
+@receiver(connection_created)
+def configure_sqlite_global(sender, connection, **kwargs):
+    if connection.vendor == 'sqlite':
+        cursor = connection.cursor()
+        cursor.execute('PRAGMA journal_mode = WAL;')
+        cursor.execute('PRAGMA synchronous = NORMAL;')
+        cursor.execute('PRAGMA cache_size = -64000;')
+        cursor.execute('PRAGMA temp_store = MEMORY;')
+        cursor.execute('PRAGMA mmap_size = 268435456;')
+        cursor.execute('PRAGMA busy_timeout = 20000;')
+

@@ -178,28 +178,114 @@
         </div>
     </div>
 
-    <!-- Finish Session Button -->
-    <div class="w-full flex {% if progress_percentage > 0 %}flex-col sm:flex-row{% endif %} justify-center items-center pb-16 pt-8 gap-4 px-2.5 sm:px-6 mt-auto">
-        {% if progress_percentage > 0 %}
-        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full sm:w-auto flex-1">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="restart_workout">
-            <button type="submit" onclick="return confirm('{% translate "Sei sicuro di voler resettare questo allenamento? Perderai tutti i set registrati oggi." %}')" class="w-full bg-[#1A1B1E] text-red-500 border border-red-500/20 hover:border-red-500 hover:bg-red-500/5 min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] transition-all duration-300">
-                <span class="material-symbols-outlined">restart_alt</span>
-                {% translate "RESTART" %}
+    <!-- Finish Session & Action Buttons -->
+    <div class="w-full flex flex-col items-center pb-16 pt-8 gap-3 px-2.5 sm:px-6 mt-auto">
+        <!-- Secondary Actions Row (Foto Condizione & Restart) -->
+        <div class="w-full flex gap-3">
+            {% if progress_percentage > 0 %}
+            <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="flex-1">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="restart_workout">
+                <button type="submit" onclick="return confirm('{% translate "Sei sicuro di voler resettare questo allenamento? Perderai tutti i set registrati oggi." %}')" class="w-full bg-[#1A1B1E] text-red-500 border border-red-500/20 hover:border-red-500 hover:bg-red-500/5 min-h-[48px] py-3 rounded-full flex items-center justify-center gap-2 font-bold text-xs tracking-widest uppercase hover:scale-[1.01] transition-all duration-300">
+                    <span class="material-symbols-outlined text-base">restart_alt</span>
+                    {% translate "RESTART" %}
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Carica Foto Condizione Button -->
+            <button type="button" onclick="openConditionPhotoModal()" class="w-full flex-1 bg-[#16171A] text-[#caf300] border border-[#caf300]/40 hover:border-[#caf300] hover:bg-[#caf300]/10 min-h-[48px] py-3 px-4 rounded-full flex items-center justify-center gap-2 font-bold text-xs tracking-widest uppercase hover:scale-[1.01] transition-all duration-300 shadow-sm">
+                <span class="material-symbols-outlined text-base">add_a_photo</span>
+                <span>{% translate "FOTO CONDIZIONE" %}</span>
+                <span id="condition-photo-badge" class="ml-1 px-2 py-0.5 rounded-full bg-[#caf300] text-black text-[10px] font-black {% if today_photos_count == 0 %}hidden{% endif %}">
+                    {% if today_photos_count > 0 %}{{ today_photos_count }}{% else %}0{% endif %}
+                </span>
             </button>
-        </form>
-        {% endif %}
-        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full {% if progress_percentage > 0 %}sm:w-auto flex-1{% endif %}">
+        </div>
+
+        <!-- Main Prominent FINISH WORKOUT Button -->
+        <form id="finish-workout-form" method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full">
             {% csrf_token %}
             <input type="hidden" name="action" value="finish_workout">
-            <button type="submit" class="w-full bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold text-sm tracking-widest uppercase hover:scale-[1.02] shadow-md hover:shadow-lg transition-all duration-300 glow-btn">
-                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">done_all</span>
+            <button type="submit" class="w-full bg-[#caf300] text-[#131313] min-h-[58px] py-4 rounded-full flex items-center justify-center gap-2.5 font-black text-sm sm:text-base tracking-widest uppercase hover:scale-[1.02] shadow-lg hover:shadow-xl transition-all duration-300 glow-btn">
+                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">done_all</span>
                 {% translate "FINISH WORKOUT" %}
             </button>
         </form>
     </div>
 </main>
+
+<!-- Condition Photo Modal -->
+<div id="condition-photo-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0">
+    <div class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95" id="condition-photo-modal-card">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                    <span class="material-symbols-outlined text-xl">photo_camera</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Foto Condizione Fisico" %}</h3>
+                    <p class="text-[10px] text-zinc-400 font-medium">{% translate "Traccia i tuoi progressi di oggi" %}</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeConditionPhotoModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 flex flex-col gap-4">
+            <!-- Dropzone / Image Picker -->
+            <div id="photo-dropzone" onclick="document.getElementById('condition-photo-input').click()" class="border-2 border-dashed border-white/20 hover:border-[#caf300]/60 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer bg-white/[0.02] hover:bg-[#caf300]/[0.02] transition-all group">
+                <input type="file" id="condition-photo-input" name="image" accept="image/*" capture="environment" onchange="handlePhotoSelect(event)" class="hidden">
+                <div class="w-14 h-14 rounded-2xl bg-white/[0.04] group-hover:bg-[#caf300]/10 border border-white/10 group-hover:border-[#caf300]/40 flex items-center justify-center text-zinc-400 group-hover:text-[#caf300] transition-all">
+                    <span class="material-symbols-outlined text-3xl">add_a_photo</span>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">{% translate "Scatta o seleziona una foto" %}</p>
+                    <p class="text-[10px] text-zinc-500 mt-0.5">PNG, JPG, WEBP fino a 10MB</p>
+                </div>
+            </div>
+
+            <!-- Image Preview Card (hidden by default) -->
+            <div id="photo-preview-card" class="relative rounded-2xl overflow-hidden border border-[#caf300]/40 bg-[#0a0b0d] hidden flex-col">
+                <img id="photo-preview-img" src="" class="w-full max-h-64 object-contain bg-black" alt="Anteprima foto">
+                <div class="p-3 bg-[#16171A] border-t border-white/10 flex justify-between items-center">
+                    <span id="photo-file-info" class="text-xs text-zinc-300 font-mono truncate max-w-[200px]">filename.jpg</span>
+                    <button type="button" onclick="clearSelectedPhoto()" class="text-xs font-bold text-red-400 hover:text-red-300 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                        {% translate "Rimuovi" %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Description Input -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">{% translate "Descrizione / Note (Opzionale)" %}</label>
+                <input type="text" id="condition-photo-desc" value="Fine allenamento: {{ day.routine.name }} - {{ day.name }}" placeholder="Es. Fine sessione petto/bicipiti - sensazioni al top" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:outline-none transition-colors">
+            </div>
+
+            <!-- Status Alert Message -->
+            <div id="condition-photo-status" class="hidden p-3 rounded-xl text-xs font-bold text-center"></div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex flex-col sm:flex-row gap-2 justify-end">
+            <button type="button" onclick="closeConditionPhotoModal()" class="px-4 py-2.5 rounded-full border border-white/20 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all">
+                {% translate "Annulla" %}
+            </button>
+            <button id="btn-save-photo" type="button" onclick="submitConditionPhoto(false)" disabled class="px-5 py-2.5 rounded-full bg-[#caf300] text-black opacity-50 cursor-not-allowed font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all">
+                <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                <span>{% translate "Carica Foto" %}</span>
+            </button>
+            <button id="btn-save-finish-photo" type="button" onclick="submitConditionPhoto(true)" disabled class="px-5 py-2.5 rounded-full bg-white/10 text-white border border-white/20 opacity-50 cursor-not-allowed font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all hover:bg-white/20">
+                <span class="material-symbols-outlined text-sm">task_alt</span>
+                <span>{% translate "Carica & Concludi" %}</span>
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_body %}
@@ -663,6 +749,156 @@
         elapsedSeconds++;
         updateTotalTimer();
     }, 1000);
+
+    // Condition Photo Modal Functions
+    let selectedPhotoFile = null;
+
+    function openConditionPhotoModal() {
+        const modal = document.getElementById('condition-photo-modal');
+        const card = document.getElementById('condition-photo-modal-card');
+        if (modal && card) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+    }
+
+    function closeConditionPhotoModal() {
+        const modal = document.getElementById('condition-photo-modal');
+        const card = document.getElementById('condition-photo-modal-card');
+        if (modal && card) {
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    }
+
+    function handlePhotoSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        selectedPhotoFile = file;
+        const dropzone = document.getElementById('photo-dropzone');
+        const previewCard = document.getElementById('photo-preview-card');
+        const previewImg = document.getElementById('photo-preview-img');
+        const fileInfo = document.getElementById('photo-file-info');
+        const saveBtn = document.getElementById('btn-save-photo');
+        const saveFinishBtn = document.getElementById('btn-save-finish-photo');
+
+        if (previewImg) previewImg.src = URL.createObjectURL(file);
+        if (fileInfo) fileInfo.innerText = `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+
+        if (dropzone) dropzone.classList.add('hidden');
+        if (previewCard) {
+            previewCard.classList.remove('hidden');
+            previewCard.classList.add('flex');
+        }
+
+        [saveBtn, saveFinishBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+    }
+
+    function clearSelectedPhoto() {
+        selectedPhotoFile = null;
+        const input = document.getElementById('condition-photo-input');
+        if (input) input.value = '';
+
+        const dropzone = document.getElementById('photo-dropzone');
+        const previewCard = document.getElementById('photo-preview-card');
+        const saveBtn = document.getElementById('btn-save-photo');
+        const saveFinishBtn = document.getElementById('btn-save-finish-photo');
+
+        if (dropzone) dropzone.classList.remove('hidden');
+        if (previewCard) {
+            previewCard.classList.add('hidden');
+            previewCard.classList.remove('flex');
+        }
+
+        [saveBtn, saveFinishBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
+    }
+
+    function submitConditionPhoto(finishWorkout = false) {
+        if (!selectedPhotoFile) return;
+
+        const formData = new FormData();
+        formData.append('action', 'upload_condition_photo');
+        formData.append('image', selectedPhotoFile);
+        formData.append('description', document.getElementById('condition-photo-desc').value || '');
+        if (finishWorkout) {
+            formData.append('finish_workout', 'true');
+        }
+
+        const csrfToken = '{{ csrf_token }}';
+        const saveBtn = document.getElementById('btn-save-photo');
+        const saveFinishBtn = document.getElementById('btn-save-finish-photo');
+        const statusEl = document.getElementById('condition-photo-status');
+
+        if (saveBtn) saveBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Caricamento...';
+        if (saveFinishBtn) saveFinishBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Caricamento...';
+        [saveBtn, saveFinishBtn].forEach(b => b && (b.disabled = true));
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+
+            if (data.status === 'ok') {
+                if (statusEl) {
+                    statusEl.innerText = data.message || 'Foto caricata con successo!';
+                    statusEl.className = 'p-3 rounded-xl text-xs font-bold text-center bg-[#caf300]/20 border border-[#caf300]/40 text-[#caf300]';
+                    statusEl.classList.remove('hidden');
+                }
+                const badge = document.getElementById('condition-photo-badge');
+                if (badge) {
+                    badge.innerText = data.photos_count || '1';
+                    badge.classList.remove('hidden');
+                }
+                setTimeout(() => {
+                    closeConditionPhotoModal();
+                    clearSelectedPhoto();
+                    if (statusEl) statusEl.classList.add('hidden');
+                    if (saveBtn) saveBtn.innerHTML = '<span class="material-symbols-outlined text-sm">cloud_upload</span> Carica Foto';
+                    if (saveFinishBtn) saveFinishBtn.innerHTML = '<span class="material-symbols-outlined text-sm">task_alt</span> Carica & Concludi';
+                }, 1200);
+            }
+        })
+        .catch(err => {
+            console.error('Error uploading photo:', err);
+            if (statusEl) {
+                statusEl.innerText = 'Errore nel caricamento della foto. Riprova.';
+                statusEl.className = 'p-3 rounded-xl text-xs font-bold text-center bg-red-500/20 border border-red-500/40 text-red-400';
+                statusEl.classList.remove('hidden');
+            }
+            if (saveBtn) saveBtn.innerHTML = '<span class="material-symbols-outlined text-sm">cloud_upload</span> Carica Foto';
+            if (saveFinishBtn) saveFinishBtn.innerHTML = '<span class="material-symbols-outlined text-sm">task_alt</span> Carica & Concludi';
+            [saveBtn, saveFinishBtn].forEach(b => b && (b.disabled = false));
+        });
+    }
 
     // Initial render
     updateDisplay();

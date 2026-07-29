@@ -100,7 +100,7 @@ class Command(BaseCommand):
             if not eid:
                 continue
 
-            slug = slugify(item['name'])
+            slug = f"{slugify(item['name'])}-{eid}"
             
             # Static Hold detection
             is_static = any(kw in name_lower for kw in ['plank', 'hold', 'lever', 'sit', 'stand', 'flag'])

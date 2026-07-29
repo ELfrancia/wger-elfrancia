@@ -19,6 +19,12 @@
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'images/logos/logo-512.png' %}">
     <link rel="apple-touch-icon" sizes="512x512" href="{% static 'images/logos/logo-512.png' %}">
 
+    <!-- High-Performance Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -46,17 +52,21 @@
         }
       });
 
-      function triggerPwaInstall() {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-              console.log('User accepted PWA installation');
-            }
-            deferredPrompt = null;
-          });
+      function toggleAppFullscreen() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(err => {
+              console.log('Fullscreen error:', err);
+            });
+          } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+          }
         } else {
-          alert('Per installare l\'App Onyx senza barra IP e senza schede Chrome:\n\n1. Tocca i 3 pallini (⋮) in alto a destra su Chrome.\n2. Seleziona "Installa applicazione" (o "Aggiungi a Schermata Home").\n3. Apri l\'icona Onyx creata sulla Home del tuo telefono!');
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
         }
       }
 
@@ -86,6 +96,21 @@
       }
     </script>
     <style>
+      html, body {
+        height: 100%;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overscroll-behavior-y: none;
+        touch-action: manipulation;
+        background-color: #08090A;
+      }
+
+      @media all and (display-mode: standalone), (display-mode: fullscreen) {
+        body {
+          user-select: none;
+          -webkit-user-select: none;
+        }
+      }
       /* Hide number input spinners */
       input[type=number]::-webkit-inner-spin-button, 
       input[type=number]::-webkit-outer-spin-button { 
@@ -490,8 +515,8 @@
     {% block header %}{% endblock %}
 </head>
 <body class="bg-background text-[#e5e2e1] font-sans antialiased pb-24 min-h-screen">
-    <!-- Page Loader Overlay -->
-    <div id="page-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#08090A]">
+    <!-- Page Loader Overlay (Nascosto di default, visibile solo all'avvio allenamento o con data-show-loader) -->
+    <div id="page-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#08090A] fade-out">
         <div class="relative w-28 h-28 flex items-center justify-center">
             <!-- Background Outline Dumbbell (Sagoma trasparente) -->
             <svg class="absolute w-full h-full text-primary/10" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -551,26 +576,26 @@
         <div class="w-full max-w-lg mx-auto flex flex-col gap-5 pb-32">
             
             <!-- Full-Bleed Media Header with Floating Controls -->
-            <div class="relative w-full h-72 rounded-[2.2rem] overflow-hidden bg-[#0C0D0F] border border-outline shadow-xl flex items-center justify-center p-2">
+            <div id="official-exercise-media-container" class="relative w-full h-72 rounded-[2.2rem] overflow-hidden bg-[#0C0D0F] border border-outline shadow-xl flex items-center justify-center p-2">
                 <img id="official-exercise-gif" src="" alt="Esercizio Animato" class="max-w-full max-h-full object-contain rounded-2xl select-none" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
                 
                 <!-- Gradient Overlay for Legibility -->
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30 pointer-events-none"></div>
 
                 <!-- Floating Back Button (Touch target 44x44px equivalent bounds) -->
-                <button onclick="closeExerciseOfficialPage()" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all duration-200" title="Torna indietro">
+                <button onclick="closeExerciseOfficialPage()" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all duration-200 z-10" title="Torna indietro">
                     <span class="material-symbols-outlined text-xl">arrow_back</span>
                 </button>
 
                 <!-- Floating Favorite/Pin Button -->
-                <button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all duration-200" title="Aggiungi ai preferiti">
+                <button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all duration-200 z-10" title="Aggiungi ai preferiti">
                     <svg class="w-4.5 h-4.5 text-primary" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                     </svg>
                 </button>
 
                 <!-- Exercise Title Overlay inside the media -->
-                <div class="absolute bottom-5 left-5 right-5 flex flex-col">
+                <div class="absolute bottom-5 left-5 right-5 flex flex-col z-10">
                     <span class="text-[10px] font-black uppercase text-primary tracking-widest font-display">SCHEDA TECNICA</span>
                     <h1 id="official-exercise-name" class="text-2xl font-black font-display text-white tracking-tight mt-0.5">Nome Esercizio</h1>
                 </div>
@@ -802,11 +827,49 @@
 
             // Populate overlay elements
             document.getElementById('official-exercise-name').innerText = name || '';
-            let safeGif = gif;
-            if (!safeGif || safeGif.includes('exercisedb') || safeGif.includes('404')) {
-                safeGif = '/media/exercises/4GqRrAk.gif';
+            let safeMedia = gif || '';
+            if (!safeMedia || safeMedia.includes('404')) {
+                safeMedia = '/media/exercises/4GqRrAk.mp4';
             }
-            document.getElementById('official-exercise-gif').src = safeGif;
+            
+            // Check for MP4 video asset
+            const mediaContainer = document.getElementById('official-exercise-media-container');
+            if (mediaContainer) {
+                let mp4Url = safeMedia;
+                if (mp4Url.endsWith('.gif')) {
+                    mp4Url = mp4Url.replace(/\.gif$/i, '.mp4');
+                }
+                
+                // Clear existing video or img
+                const oldMedia = mediaContainer.querySelector('video, img#official-exercise-gif');
+                if (oldMedia) oldMedia.remove();
+                
+                const videoEl = document.createElement('video');
+                videoEl.id = 'official-exercise-gif';
+                videoEl.src = mp4Url;
+                videoEl.autoplay = true;
+                videoEl.loop = true;
+                videoEl.muted = true;
+                videoEl.playsInline = true;
+                videoEl.setAttribute('playsinline', '');
+                videoEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                
+                videoEl.onerror = function() {
+                    console.warn("MP4 video failed, falling back to image:", safeMedia);
+                    const imgEl = document.createElement('img');
+                    imgEl.id = 'official-exercise-gif';
+                    imgEl.src = safeMedia;
+                    imgEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                    imgEl.onerror = function() {
+                        this.src = '/media/exercises/4GqRrAk.gif';
+                    };
+                    if (videoEl.parentNode) {
+                        videoEl.parentNode.replaceChild(imgEl, videoEl);
+                    }
+                };
+                
+                mediaContainer.insertBefore(videoEl, mediaContainer.firstChild);
+            }
             
             // Format muscles list to string
             let primStr = '';
@@ -959,7 +1022,16 @@
                 overlay.classList.add('translate-x-full', 'opacity-0');
                 setTimeout(() => {
                     overlay.classList.add('hidden');
-                    document.getElementById('official-exercise-gif').src = '';
+                    const mediaContainer = document.getElementById('official-exercise-media-container');
+                    if (mediaContainer) {
+                        const media = mediaContainer.querySelector('video, img#official-exercise-gif');
+                        if (media) {
+                            if (media.tagName.toLowerCase() === 'video') {
+                                media.pause();
+                            }
+                            media.src = '';
+                        }
+                    }
                 }, 300);
             }
         }
@@ -1014,10 +1086,10 @@
     <!-- Page Loader JS logic -->
     <script>
         (function() {
-            const minDisplayTime = 700; // ms
+            const minDisplayTime = 150; // ms (Ultra-fast response)
             let startTime = Date.now();
             
-            function hidePageLoader() {
+            window.hidePageLoader = function() {
                 const elapsed = Date.now() - startTime;
                 const delay = Math.max(minDisplayTime - elapsed, 0);
                 setTimeout(() => {
@@ -1028,42 +1100,70 @@
                         }
                     });
                 }, delay);
-            }
+            };
+
+            window.showPageLoader = function() {
+                const loader = document.getElementById('page-loader');
+                if (loader) {
+                    const clip = loader.querySelector('.loader-progress-clip');
+                    if (clip) {
+                        clip.style.animation = 'none';
+                        clip.offsetHeight; // trigger reflow
+                        clip.style.animation = null;
+                    }
+                    loader.classList.remove('fade-out');
+                    startTime = Date.now();
+                }
+            };
             
             if (document.readyState === 'loading') {
-                window.addEventListener('DOMContentLoaded', hidePageLoader);
+                window.addEventListener('DOMContentLoaded', window.hidePageLoader);
             } else {
-                hidePageLoader();
+                window.hidePageLoader();
             }
 
-            // HTMX integration for dynamic page swaps
+            // Verifico se un elemento deve mostrare l'overlay di caricamento col manubrio
+            function shouldShowLoader(elt) {
+                if (!elt) return false;
+                const targetEl = elt.closest ? elt.closest('[data-show-loader], [data-loader], .show-page-loader, a, button') : null;
+                if (!targetEl) return false;
+                
+                // Presenza esplicita di attributi o classi di attivazione
+                if (targetEl.hasAttribute('data-show-loader') || targetEl.hasAttribute('data-loader') || targetEl.classList.contains('show-page-loader')) {
+                    return true;
+                }
+                
+                // Controllo se l'URL del link o form corrisponde all'avvio di un allenamento
+                const href = (targetEl.getAttribute('href') || targetEl.getAttribute('action') || targetEl.getAttribute('hx-get') || targetEl.getAttribute('hx-post') || '').toLowerCase();
+                if (href.includes('start=true') || href.includes('/workout/start') || href.includes('start_workout') || href.includes('/session/start')) {
+                    return true;
+                }
+
+                // Controllo testo esatto del solo pulsante o link
+                const text = (targetEl.textContent || '').trim().toLowerCase();
+                const exactMatch = text === 'start' || text === 'avvia' || text === 'inizia allenamento' || text === 'start workout' || text === 'avvia allenamento';
+                return exactMatch;
+            }
+
+            // Click listener globale per intercettare l'avvio degli allenamenti
+            document.addEventListener('click', (evt) => {
+                if (shouldShowLoader(evt.target)) {
+                    window.showPageLoader();
+                }
+            });
+
+            // Integrazione HTMX: Mostra il caricamento col manubrio SOLO per azioni di allenamento o con data-show-loader
             document.addEventListener('htmx:beforeRequest', (evt) => {
-                const target = evt.detail.target;
-                if (target && (target.tagName === 'BODY' || target.id === 'main-content' || target.id === 'content')) {
-                    const loader = document.getElementById('page-loader');
-                    if (loader) {
-                        const clip = loader.querySelector('.loader-progress-clip');
-                        if (clip) {
-                            clip.style.animation = 'none';
-                            clip.offsetHeight; // trigger reflow
-                            clip.style.animation = null;
-                        }
-                        loader.classList.remove('fade-out');
-                        startTime = Date.now();
-                    }
+                const triggerElt = evt.detail.elt;
+                if (triggerElt && shouldShowLoader(triggerElt)) {
+                    window.showPageLoader();
                 }
             });
 
             document.addEventListener('htmx:afterSettle', () => {
                 const loader = document.getElementById('page-loader');
                 if (loader && !loader.classList.contains('fade-out')) {
-                    const elapsed = Date.now() - startTime;
-                    const delay = Math.max(minDisplayTime - elapsed, 0);
-                    setTimeout(() => {
-                        requestAnimationFrame(() => {
-                            loader.classList.add('fade-out');
-                        });
-                    }, delay);
+                    window.hidePageLoader();
                 }
             });
         })();

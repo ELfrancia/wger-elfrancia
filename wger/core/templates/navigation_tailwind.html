@@ -1,44 +1,119 @@
 {% load static i18n %}
 <!-- TopAppBar (Web & Mobile) -->
-<header class="w-full sticky top-0 z-50 bg-[#08090A]/95 backdrop-blur-md flex justify-between items-center px-4 py-4 pt-[max(env(safe-area-inset-top),16px)] border-b border-[#222429]">
-    <div class="flex items-center gap-3">
-        <h1 class="text-md text-white tracking-tight font-extrabold uppercase font-display">ONYX CLUB</h1>
+<header class="w-full sticky top-0 z-50 bg-[#08090A]/95 backdrop-blur-md border-b border-[#222429]">
+    <div class="w-full max-w-5xl mx-auto flex justify-between items-center px-4 sm:px-6 py-3.5 pt-[max(env(safe-area-inset-top),14px)]">
+        <div class="flex items-center gap-3">
+            <h1 class="text-md text-white tracking-tight font-extrabold uppercase font-display">ONYX CLUB</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleAppFullscreen()" class="w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-[#caf300]/10 hover:border-[#caf300]/20 text-[#888888] hover:text-[#caf300] transition-all duration-200" title="{% translate 'Modalità Schermo Intero / Standalone' %}">
+                <span class="material-symbols-outlined text-lg">fullscreen</span>
+            </button>
+            <button class="w-9 h-9 flex items-center justify-center hover:opacity-80 transition-opacity">
+                <span class="material-symbols-outlined text-primary text-xl">notifications</span>
+            </button>
+        </div>
     </div>
-    <button class="min-w-[44px] min-h-[44px] flex items-center justify-center hover:opacity-80 transition-opacity">
-        <span class="material-symbols-outlined text-primary text-2xl">notifications</span>
-    </button>
 </header>
 
-<!-- BottomNavBar (Mobile Only) -->
-<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#101114] rounded-t-[32px] border-t border-[#222429] flex justify-around items-center h-[calc(84px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-4 shadow-[0_-8px_30px_rgba(0,0,0,0.6)]">
-    <!-- Home -->
-    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
-        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:dashboard' %}1{% else %}0{% endif %};">home</span>
-        <span class="text-[10px] font-semibold tracking-wide">{% translate "Home" %}</span>
-    </a>
-    
-    <!-- Routines -->
-    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if 'manager:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'manager:routine:overview' %}">
-        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'manager:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">fitness_center</span>
-        <span class="text-[10px] font-semibold tracking-wide">{% translate "Routines" %}</span>
-    </a>
-    
-    <!-- Add Button (Centered, popping out) -->
-    <div class="-mt-8 relative z-10">
-        <a href="{% url 'manager:routine:add' %}" class="w-14 h-14 rounded-full bg-[#caf300] text-[#121214] flex items-center justify-center shadow-lg hover:scale-105 transition-transform duration-300 border-4 border-[#101114]">
-            <span class="material-symbols-outlined text-2xl font-black" style="font-variation-settings: 'wght' 700;">add</span>
+<!-- Quick Action Speed-Dial Sheet Overlay -->
+<div id="onyx-quick-action-overlay" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 flex flex-col justify-end pb-28 px-4">
+    <div onclick="toggleQuickActionMenu()" class="absolute inset-0"></div>
+    <div id="onyx-quick-action-sheet" class="relative z-10 w-full max-w-sm mx-auto bg-[#16171A] border border-[#222429] rounded-3xl p-3 shadow-2xl transition-all duration-300 transform translate-y-8 scale-95 opacity-0 pointer-events-none">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-[#8e8e93] px-3 pt-2 pb-1 font-display text-center select-none">
+            {% translate "Azioni Rapide" %}
+        </div>
+        <div class="grid grid-cols-1 gap-1.5 mt-1">
+            <a href="{% url 'manager:routine:overview' %}" class="flex items-center gap-3.5 p-3 rounded-2xl bg-[#101114]/80 border border-[#222429] hover:border-[#caf300]/40 transition-all duration-200 group">
+                <div class="w-10 h-10 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300] group-hover:text-[#08090A] transition-colors">
+                    <span class="material-symbols-outlined text-xl">fitness_center</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-white group-hover:text-[#caf300] transition-colors">{% translate "I Tuoi Programmi" %}</span>
+                    <span class="text-xs text-[#8e8e93]">{% translate "Visualizza e avvia le tue schede" %}</span>
+                </div>
+            </a>
+            <a href="{% url 'manager:routine:add' %}" class="flex items-center gap-3.5 p-3 rounded-2xl bg-[#101114]/80 border border-[#222429] hover:border-[#caf300]/40 transition-all duration-200 group">
+                <div class="w-10 h-10 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300] group-hover:text-[#08090A] transition-colors">
+                    <span class="material-symbols-outlined text-xl">edit_note</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-white group-hover:text-[#caf300] transition-colors">{% translate "Crea Nuova Scheda" %}</span>
+                    <span class="text-xs text-[#8e8e93]">{% translate "Pianifica una nuova routine" %}</span>
+                </div>
+            </a>
+            <a href="{% url 'weight:overview' %}" class="flex items-center gap-3.5 p-3 rounded-2xl bg-[#101114]/80 border border-[#222429] hover:border-[#caf300]/40 transition-all duration-200 group">
+                <div class="w-10 h-10 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300] group-hover:text-[#08090A] transition-colors">
+                    <span class="material-symbols-outlined text-xl">monitor_weight</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-white group-hover:text-[#caf300] transition-colors">{% translate "Registra Peso & Misure" %}</span>
+                    <span class="text-xs text-[#8e8e93]">{% translate "Traccia i tuoi progressi corporei" %}</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- BottomNavBar (Mobile & Desktop Unified) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#101114] border-t border-[#222429] shadow-[0_-8px_30px_rgba(0,0,0,0.6)] pb-[env(safe-area-inset-bottom)]">
+    <div class="w-full max-w-5xl mx-auto grid grid-cols-5 items-center h-[84px] px-2 sm:px-4">
+        <!-- Home (Col 1) -->
+        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:dashboard' %}1{% else %}0{% endif %};">home</span>
+            <span class="text-[10px] font-semibold tracking-wide">{% translate "Home" %}</span>
+        </a>
+        
+        <!-- Routines (Col 2) -->
+        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if 'manager:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'manager:routine:overview' %}">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'manager:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">fitness_center</span>
+            <span class="text-[10px] font-semibold tracking-wide">{% translate "Programmi" %}</span>
+        </a>
+        
+        <!-- Add Button (Col 3: Integrated Dock FAB Button) -->
+        <div class="flex items-center justify-center h-full relative">
+            <div class="w-[60px] h-[60px] -mt-6 rounded-full bg-[#101114] border border-[#222429] p-1 flex items-center justify-center relative z-10">
+                <button onclick="toggleQuickActionMenu()" id="onyx-fab-button" class="w-full h-full rounded-full bg-[#caf300] text-[#08090A] flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200" title="{% translate 'Azioni Rapide' %}">
+                    <span id="onyx-fab-icon" class="material-symbols-outlined text-2xl font-black transition-transform duration-300 select-none" style="font-variation-settings: 'wght' 700;">add</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Daily Workouts (Col 4) -->
+        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if 'weight:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'weight:overview' %}">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'weight:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">analytics</span>
+            <span class="text-[10px] font-semibold tracking-wide">{% translate "Allenamenti" %}</span>
+        </a>
+        
+        <!-- Profile (Col 5) -->
+        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:profile_tailwind' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:profile_tailwind' %}">
+            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:profile_tailwind' %}1{% else %}0{% endif %};">person</span>
+            <span class="text-[10px] font-semibold tracking-wide">{% translate "Profile" %}</span>
         </a>
     </div>
-    
-    <!-- Progress -->
-    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if 'weight:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'weight:overview' %}">
-        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'weight:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">equalizer</span>
-        <span class="text-[10px] font-semibold tracking-wide">{% translate "Progress" %}</span>
-    </a>
-    
-    <!-- Profile -->
-    <a class="flex flex-col items-center justify-center min-w-[64px] min-h-[64px] transition-all duration-200 {% if request.resolver_match.view_name == 'core:profile_tailwind' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:profile_tailwind' %}">
-        <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:profile_tailwind' %}1{% else %}0{% endif %};">person</span>
-        <span class="text-[10px] font-semibold tracking-wide">{% translate "Profile" %}</span>
-    </a>
 </nav>
+
+<script>
+    function toggleQuickActionMenu() {
+        const overlay = document.getElementById('onyx-quick-action-overlay');
+        const sheet = document.getElementById('onyx-quick-action-sheet');
+        const icon = document.getElementById('onyx-fab-icon');
+        
+        if (!overlay || !sheet || !icon) return;
+        
+        const isOpen = !overlay.classList.contains('opacity-0');
+        
+        if (isOpen) {
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            sheet.classList.add('translate-y-8', 'scale-95', 'opacity-0', 'pointer-events-none');
+            sheet.classList.remove('translate-y-0', 'scale-100', 'opacity-100', 'pointer-events-auto');
+            icon.classList.remove('rotate-45');
+        } else {
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            sheet.classList.remove('translate-y-8', 'scale-95', 'opacity-0', 'pointer-events-none');
+            sheet.classList.add('translate-y-0', 'scale-100', 'opacity-100', 'pointer-events-auto');
+            icon.classList.add('rotate-45');
+        }
+    }
+</script>
+
