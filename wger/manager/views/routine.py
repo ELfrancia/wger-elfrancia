@@ -286,6 +286,19 @@ MUSCLE_KEYWORDS = {
     'obliques': ['abs', 'core', 'obliques', 'addominali obliqui'],
 }
 
+SKILL_KEYWORDS = {
+    'push up': ['push up', 'pushup', 'push-up', 'piegamenti', 'flessioni', 'piegamento'],
+    'pull up': ['pull up', 'pullup', 'pull-up', 'trazioni', 'trazione', 'sbarra'],
+    'dip': ['dip', 'dips', 'parallele', 'dip bar'],
+    'handstand': ['handstand', 'verticale', 'verticali', 'hspu', 'handstand pushup'],
+    'front lever': ['front lever', 'frontlever', 'lever', 'tirata'],
+    'back lever': ['back lever', 'backlever', 'lever'],
+    'l sit': ['l sit', 'l-sit', 'lsit', 'v sit', 'core', 'addominali'],
+    'planche': ['planche', 'planche lean', 'maltese'],
+    'squat': ['squat', 'accosciata', 'gambe', 'pistol squat'],
+    'muscle up': ['muscle up', 'muscleup', 'sbarra', 'anelli'],
+}
+
 
 @login_required
 def add_exercise_tailwind(request, routine_pk, day_pk):
@@ -352,6 +365,7 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
     for ex in exercise_qs:
         translation = ex.get_translation()
         cal = calisthenics_map.get(str(ex.uuid))
+        is_calisthenics = bool(cal and cal.discipline == 'calisthenics')
         
         if translation and translation.name:
             name = translation.name
@@ -383,6 +397,9 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
             muscles = [cal.target_muscle.title()]
 
         search_terms = set()
+        for word in name.lower().split():
+            search_terms.add(word)
+
         for m in muscles:
             muscles_set.add(m)
             m_lower = m.lower()
@@ -392,6 +409,10 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
 
         if skill_family:
             skills_set.add(skill_family)
+            sk_lower = skill_family.lower()
+            search_terms.add(sk_lower)
+            for kw in SKILL_KEYWORDS.get(sk_lower, []):
+                search_terms.add(kw)
             
         equipment = [eq.name for eq in ex.equipment.all()]
         if not equipment and cal:
@@ -399,12 +420,14 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
         for eq in equipment:
             equipment_set.add(eq)
             
-        cat_name = ex.category.name if ex.category else ('Calisthenics' if cal else 'General')
+        cat_name = ex.category.name if ex.category else ('Calisthenics' if is_calisthenics else 'General')
         if cat_name and cat_name not in ['Another category', 'Yet another category', 'I will be deleted', 'Category']:
             categories_set.add(cat_name)
         else:
-            cat_name = 'Gym' if not cal else 'Calisthenics'
+            cat_name = 'Gym' if not is_calisthenics else 'Calisthenics'
             categories_set.add(cat_name)
+
+        search_blob = f"{name} {skill_family} {' '.join(search_terms)} {' '.join(equipment)} {cat_name}".lower()
 
         exercises_list.append({
             'id': ex.id,
@@ -416,7 +439,8 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
             'equipment': ','.join(equipment),
             'equipment_display': ' • '.join(equipment) if equipment else '',
             'category': cat_name,
-            'is_calisthenics': bool(cal),
+            'is_calisthenics': is_calisthenics,
+            'search_blob': search_blob,
         })
         
     exercises_list = sorted(exercises_list, key=lambda x: x['name'].lower())
@@ -426,7 +450,9 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
         'calisthenics': sum(exercise['is_calisthenics'] for exercise in exercises_list),
     }
     muscles_list = sorted(list(muscles_set))
-    skills_list = sorted(list(skills_set))
+    skills_list = [s for s in sorted(list(skills_set)) if s != 'Other']
+    if 'Other' in skills_set:
+        skills_list.append('Other')
     equipment_list = sorted(list(equipment_set))
     categories_list = sorted(list(categories_set))
         
@@ -711,4 +737,3 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
         'muscles': target_muscle_name,
         'skill_family': skill_family.replace('_', ' ').title()
     })
-

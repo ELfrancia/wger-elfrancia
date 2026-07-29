@@ -140,7 +140,8 @@
                          data-equipment="{{ ex.equipment }}"
                          data-category="{{ ex.category }}"
                          data-calisthenics="{{ ex.is_calisthenics|yesno:'true,false' }}"
-                         data-skill="{{ ex.skill_family }}">
+                         data-skill="{{ ex.skill_family }}"
+                         data-search-blob="{{ ex.search_blob }}">
                         
                         <div class="flex items-center gap-3.5 min-w-0 flex-1">
                             <!-- Preview Thumbnail -->
@@ -149,7 +150,8 @@
                                     {% if '.mp4' in ex.preview_url.lower or '.webm' in ex.preview_url.lower or '.mov' in ex.preview_url.lower %}
                                         <video src="{{ ex.preview_url }}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
                                     {% else %}
-                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.style.display='none'; this.parentElement.querySelector('.preview-fallback').classList.remove('hidden');">
+                                        <span class="preview-fallback material-symbols-outlined hidden text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
                                     {% endif %}
                                 {% else %}
                                     <span class="material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
@@ -457,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = searchInput.value.toLowerCase().trim();
         const muscleDropdown = muscleSelect.value.toLowerCase();
         const equipmentDropdown = equipmentSelect ? equipmentSelect.value.toLowerCase() : '';
-        const skill = skillSelect.value;
+        const skill = skillSelect.value ? skillSelect.value.toLowerCase() : '';
         
         if (query) {
             clearSearchBtn.classList.remove('hidden');
@@ -474,10 +476,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const isCal = categoryRaw === 'calisthenics' || item.dataset.calisthenics === 'true';
             const musclesList = musclesRaw.split(',').map(m => m.trim());
             const equipmentList = equipmentRaw.split(',').map(e => e.trim());
-            const itemSkill = item.dataset.skill;
-            
-            const matchesQuery = !query || name.includes(query) || musclesRaw.includes(query) || equipmentRaw.includes(query) || categoryRaw.includes(query);
-            
+            const itemSkill = (item.dataset.skill || 'other').toLowerCase();
+            const searchBlob = (item.dataset.searchBlob || `${name} ${itemSkill} ${musclesRaw} ${equipmentRaw} ${categoryRaw}`).toLowerCase();
+
+            // Global search query matching across name, muscles, equipment, category, skill family and skill synonyms
+            const queryTokens = query.split(/\s+/).filter(Boolean);
+            const matchesQuery = queryTokens.length === 0 || queryTokens.every(token => searchBlob.includes(token));
+
+            // Global search mode: when text query is entered, perform global search across ALL exercises!
+            if (query.length > 0) {
+                if (matchesQuery) {
+                    item.classList.remove('hidden');
+                    item.classList.add('flex');
+                    visibleCount++;
+                } else {
+                    item.classList.remove('flex');
+                    item.classList.add('hidden');
+                }
+                return;
+            }
+
+            // Filter mode (when query is empty)
             let matchesDiscipline = true;
             if (activeDiscipline === 'gym') {
                 matchesDiscipline = !isCal;
@@ -485,11 +504,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesDiscipline = isCal;
             }
 
+            // If a specific skill is selected in the Skill filter dropdown, don't let activeDiscipline block matching skill exercises
+            if (skill && skill !== '' && skill !== 'other') {
+                if (itemSkill === skill) {
+                    matchesDiscipline = true;
+                }
+            }
+
             let matchesMuscle = true;
             if (activeChipValue) {
                 matchesMuscle = musclesRaw.includes(activeChipValue);
             } else if (muscleDropdown) {
-                matchesMuscle = musclesList.includes(muscleDropdown);
+                matchesMuscle = musclesList.includes(muscleDropdown) || musclesRaw.includes(muscleDropdown);
             }
 
             let matchesEquipment = true;
@@ -497,9 +523,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesEquipment = equipmentList.includes(equipmentDropdown) || equipmentRaw.includes(equipmentDropdown);
             }
 
-            const matchesSkill = !skill || itemSkill === skill;
-            
-            if (matchesQuery && matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill) {
+            let matchesSkill = true;
+            if (skill) {
+                matchesSkill = (itemSkill === skill);
+            }
+
+            if (matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill) {
                 item.classList.remove('hidden');
                 item.classList.add('flex');
                 visibleCount++;
@@ -546,7 +575,24 @@ document.addEventListener('DOMContentLoaded', function() {
     if (equipmentSelect) {
         equipmentSelect.addEventListener('change', filterExercises);
     }
-    skillSelect.addEventListener('change', filterExercises);
+    skillSelect.addEventListener('change', function() {
+        if (skillSelect.value && skillSelect.value.toLowerCase() !== 'other') {
+            // When selecting a skill, auto-switch active discipline tab to "Tutti" if Gym was active
+            if (activeDiscipline === 'gym') {
+                activeDiscipline = '';
+                disciplineTabs.forEach((t, idx) => {
+                    if (idx === 0) {
+                        t.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                        t.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                    } else {
+                        t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                        t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                    }
+                });
+            }
+        }
+        filterExercises();
+    });
 
     clearSearchBtn.addEventListener('click', function() {
         searchInput.value = '';

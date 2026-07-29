@@ -235,29 +235,46 @@ class Exercise(AbstractLicenseModel, AbstractHistoryMixin, models.Model):
     @property
     def main_video(self):
         """
-        Return the main video for the exercise or the first available video
+        Return the main video for the exercise or the first available video that exists on disk
         """
-        vid = self.exercisevideo_set.filter(is_main=True).first()
-        if not vid:
-            vid = self.exercisevideo_set.first()
-        return vid
+        import os
+        vids = self.exercisevideo_set.all().order_by('-is_main')
+        for vid in vids:
+            if vid and vid.video:
+                try:
+                    if os.path.exists(vid.video.path) and os.path.getsize(vid.video.path) > 0:
+                        return vid
+                except Exception:
+                    pass
+        return None
 
     @property
     def demo_media_url(self):
         """
         Return video URL, image URL, calisthenics demo_media_url, or smart muscle fallback
         """
+        import os
+        from django.conf import settings
         vid = self.main_video
         if vid and vid.video:
             return vid.video.url
+
         img = self.main_image
         if img and img.image:
-            return img.image.url
+            try:
+                if os.path.exists(img.image.path) and os.path.getsize(img.image.path) > 0:
+                    return img.image.url
+            except Exception:
+                pass
+
         try:
             from wger.exercises.models import CalisthenicsExercise
             cal = CalisthenicsExercise.objects.filter(id=str(self.uuid)).first()
             if cal and cal.demo_media_url:
-                return cal.demo_media_url
+                rel_path = cal.demo_media_url.lstrip('/')
+                full_path = os.path.join(settings.BASE_DIR, rel_path)
+                if os.path.exists(full_path):
+                    return cal.demo_media_url
         except Exception:
             pass
 
