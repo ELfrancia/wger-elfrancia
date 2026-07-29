@@ -326,6 +326,7 @@
     </div>
 
     <!-- DEDICATED ADMIN SECTION DIRECTLY ABOVE LOGOUT (CLEAN MINIMALIST DARK SURFACE) -->
+    {% if user.is_superuser or user.is_staff or perms.gym.manage_gym or perms.gym.manage_gyms or perms.gym.gym_trainer or perms.auth.add_user %}
     <div class="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-7 w-full flex flex-col gap-5">
         <div class="flex items-center gap-3.5 border-b border-neutral-800 pb-4">
             <div class="w-12 h-12 rounded-xl bg-primary text-black flex items-center justify-center font-bold shrink-0 aspect-square">
@@ -341,11 +342,13 @@
         </div>
 
         <!-- Quick User Creation & List Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div class="grid grid-cols-1 {% if user.is_superuser %}sm:grid-cols-2{% endif %} gap-3.5">
+            {% if user.is_superuser %}
             <a href="{% url 'core:user:add-user' %}" class="bg-primary hover:bg-[#b5d900] text-black font-display font-black text-xs uppercase tracking-wider py-3.5 px-5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer">
                 <span class="material-symbols-outlined text-lg leading-none select-none">person_add</span>
                 <span>{% translate "+ CREA NUOVO UTENTE" %}</span>
             </a>
+            {% endif %}
             <a href="{% url 'core:user:list' %}" class="bg-neutral-950 border border-neutral-800 hover:border-neutral-700 text-white font-display font-bold text-xs uppercase tracking-wider py-3.5 px-5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer">
                 <span class="material-symbols-outlined text-lg text-primary leading-none select-none">group</span>
                 <span>{% translate "LISTA UTENTI" %}</span>
@@ -411,6 +414,7 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
     <!-- LOGOUT CTA -->
     <a href="{% url 'core:user:logout' %}" class="w-full bg-surface-card border border-red-500/30 hover:border-red-500/60 hover:bg-red-950/30 text-red-400 min-h-[56px] py-4 rounded-2xl flex items-center justify-center gap-2 font-display font-bold text-sm uppercase tracking-wider transition-all shadow-lg active:scale-[0.99] group mt-2">

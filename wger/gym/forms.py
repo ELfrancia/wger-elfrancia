@@ -112,3 +112,44 @@ class GymUserAddForm(GymUserPermissionForm, UserPersonalInformationForm):
         except User.DoesNotExist:
             return username
         raise forms.ValidationError(_('A user with that username already exists.'))
+
+
+class GymAssignExistingUserForm(forms.Form):
+    """
+    Form used by gym managers/trainers to assign an existing user (created by admin) to a gym
+    """
+    user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        label=_('User'),
+        required=True,
+    )
+    role = forms.MultipleChoiceField(
+        choices=(),
+        initial=['user'],
+        widget=BootstrapSelectMultiple(),
+        label=_('Role'),
+    )
+
+    def __init__(self, available_roles=None, gym_pk=None, instance=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if available_roles is None:
+            available_roles = []
+        field_choices = [(GymUserPermissionForm.USER, _('User'))]
+        if 'trainer' in available_roles:
+            field_choices.append((GymUserPermissionForm.TRAINER, _('Trainer')))
+        if 'admin' in available_roles:
+            field_choices.append((GymUserPermissionForm.GYM_ADMIN, _('Gym administrator')))
+        if 'manager' in available_roles:
+            field_choices.append((GymUserPermissionForm.MANAGER, _('General manager')))
+
+        self.fields['role'].choices = field_choices
+
+        if gym_pk:
+            self.fields['user'].queryset = User.objects.exclude(userprofile__gym_id=gym_pk).order_by('username')
+        else:
+            self.fields['user'].queryset = User.objects.all().order_by('username')
+
+        self.helper = FormHelper()
+        self.helper.form_class = 'wger-form'
+        self.helper.add_input(Submit('submit', _('Save'), css_class='btn-success btn-block'))
+

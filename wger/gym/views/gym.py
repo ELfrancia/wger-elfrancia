@@ -21,6 +21,7 @@ import logging
 
 # Django
 from django import forms
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
@@ -67,6 +68,7 @@ from crispy_forms.layout import (
 # wger
 from wger.config.models import GymConfig as GlobalGymConfig
 from wger.gym.forms import (
+    GymAssignExistingUserForm,
     GymUserAddForm,
     GymUserPermissionForm,
 )
@@ -370,7 +372,9 @@ class GymAddUserView(
     CreateView,
 ):
     """
-    View to add a user to a new gym
+    View to add a user to a gym.
+    Superusers can create a new user or add an existing user.
+    Gym managers/trainers can ONLY assign existing users created by the admin.
     """
 
     model = User
@@ -388,34 +392,45 @@ class GymAddUserView(
 
     def dispatch(self, request, *args, **kwargs):
         """
-        Only managers for this gym can add new members
+        Only managers for this gym can add members
         """
         if not request.user.is_authenticated:
             return HttpResponseForbidden()
 
         if not request.user.has_perm('gym.manage_gyms') and not request.user.has_perm(
             'gym.manage_gym'
-        ):
+        ) and not request.user.is_superuser:
             return HttpResponseForbidden()
 
-        # Gym managers can edit their own gym only, general gym managers
-        # can edit all gyms
         if (
             request.user.has_perm('gym.manage_gym')
             and not request.user.has_perm('gym.manage_gyms')
+            and not request.user.is_superuser
             and request.user.userprofile.gym_id != int(self.kwargs['gym_pk'])
         ):
             return HttpResponseForbidden()
 
         return super(GymAddUserView, self).dispatch(request, *args, **kwargs)
 
-    def get_form(self):
+    def get_form_class(self):
+        if self.request.user.is_superuser:
+            return GymUserAddForm
+        return GymAssignExistingUserForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['available_roles'] = get_permission_list(self.request.user)
+        if not self.request.user.is_superuser:
+            kwargs['gym_pk'] = self.kwargs['gym_pk']
+        return kwargs
+
+    def get_form(self, form_class=None):
         """
         Set available user permissions
         """
-        form = self.form_class(
-            available_roles=get_permission_list(self.request.user), **self.get_form_kwargs()
-        )
+        if form_class is None:
+            form_class = self.get_form_class()
+        form = form_class(**self.get_form_kwargs())
         form.helper = FormHelper()
         form.helper.form_id = slugify(self.request.path)
         form.helper.form_method = 'post'
@@ -426,51 +441,77 @@ class GymAddUserView(
 
     def form_valid(self, form):
         """
-        Create the user, set the user permissions and gym
+        Add the user to the gym
         """
         gym = Gym.objects.get(pk=self.kwargs['gym_pk'])
-        password = password_generator()
-        user = User.objects.create_user(
-            form.cleaned_data['username'], form.cleaned_data['email'], password
-        )
-        user.first_name = form.cleaned_data['first_name']
-        user.last_name = form.cleaned_data['last_name']
-        form.instance = user
 
-        # Update profile
-        user.userprofile.gym = gym
-        user.userprofile.birthdate = form.cleaned_data['birthdate']
-        user.userprofile.needs_password_change = True
-        user.userprofile.save()
+        if self.request.user.is_superuser and isinstance(form, GymUserAddForm):
+            password = password_generator()
+            user = User.objects.create_user(
+                form.cleaned_data['username'], form.cleaned_data['email'], password
+            )
+            user.first_name = form.cleaned_data['first_name']
+            user.last_name = form.cleaned_data['last_name']
+            form.instance = user
 
-        # Register the email with allauth so the member can log in by email
-        # and receive a confirmation link
-        if user.email:
-            EmailAddress.objects.add_email(self.request, user, user.email, confirm=True)
+            # Update profile
+            user.userprofile.gym = gym
+            user.userprofile.birthdate = form.cleaned_data['birthdate']
+            user.userprofile.needs_password_change = True
+            user.userprofile.save()
 
-        # Set appropriate permission groups
-        if 'user' in form.cleaned_data['role']:
-            user.groups.add(Group.objects.get(name='gym_member'))
-        if 'trainer' in form.cleaned_data['role']:
-            user.groups.add(Group.objects.get(name='gym_trainer'))
-        if 'admin' in form.cleaned_data['role']:
-            user.groups.add(Group.objects.get(name='gym_manager'))
-        if 'manager' in form.cleaned_data['role']:
-            user.groups.add(Group.objects.get(name='general_gym_manager'))
+            # Register the email with allauth so the member can log in by email
+            # and receive a confirmation link
+            if user.email:
+                EmailAddress.objects.add_email(self.request, user, user.email, confirm=True)
 
-        self.request.session['gym.user'] = {'user_pk': user.pk, 'password': password}
+            # Set appropriate permission groups
+            if 'user' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='gym_member'))
+            if 'trainer' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='gym_trainer'))
+            if 'admin' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='gym_manager'))
+            if 'manager' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='general_gym_manager'))
 
-        # Create config
-        if is_any_gym_admin(user):
-            config = GymAdminConfig()
+            self.request.session['gym.user'] = {'user_pk': user.pk, 'password': password}
+
+            # Create config
+            if is_any_gym_admin(user):
+                config = GymAdminConfig()
+            else:
+                config = GymUserConfig()
+
+            config.user = user
+            config.gym = gym
+            config.save()
+
+            return HttpResponseRedirect(self.get_success_url())
+
         else:
-            config = GymUserConfig()
+            # Gym manager/trainer assigning an existing user (created by admin) to gym
+            user = form.cleaned_data['user']
+            self.object = user
+            user.userprofile.gym = gym
+            user.userprofile.save()
 
-        config.user = user
-        config.gym = gym
-        config.save()
+            if 'user' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='gym_member'))
+            if 'trainer' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='gym_trainer'))
+            if 'admin' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='gym_manager'))
+            if 'manager' in form.cleaned_data['role']:
+                user.groups.add(Group.objects.get(name='general_gym_manager'))
 
-        return super(GymAddUserView, self).form_valid(form)
+            if is_any_gym_admin(user):
+                GymAdminConfig.objects.get_or_create(user=user, gym=gym)
+            else:
+                GymUserConfig.objects.get_or_create(user=user, gym=gym)
+
+            messages.success(self.request, _('User successfully added to gym.'))
+            return HttpResponseRedirect(reverse('gym:gym:user-list', kwargs={'pk': gym.pk}))
 
 
 class GymUpdateView(WgerFormMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):

@@ -694,7 +694,15 @@ class UserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     template_name = 'user/user_list_tailwind.html'
 
     def test_func(self):
-        return self.request.user.is_authenticated
+        user = self.request.user
+        return user.is_authenticated and (
+            user.is_superuser
+            or user.is_staff
+            or user.has_perm('gym.manage_gym')
+            or user.has_perm('gym.manage_gyms')
+            or user.has_perm('gym.gym_trainer')
+            or user.has_perm('auth.view_user')
+        )
 
     def get_queryset(self):
         """
@@ -733,7 +741,7 @@ class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     success_url = reverse_lazy('core:user:list')
 
     def test_func(self):
-        return self.request.user.is_authenticated
+        return self.request.user.is_authenticated and self.request.user.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -37,8 +37,14 @@ from wger.gym.models import (
 
 class GymAddUserTestCase(WgerTestCase):
     """
-    Tests admin adding users to gyms
+    Tests admin adding users to gyms and managers assigning existing users
     """
+
+    def setUp(self):
+        super().setUp()
+        self.admin = User.objects.get(username='admin')
+        self.admin.is_superuser = True
+        self.admin.save()
 
     def add_user(self, fail=False):
         """
@@ -87,10 +93,20 @@ class GymAddUserTestCase(WgerTestCase):
 
     def test_add_user_authorized2(self):
         """
-        Tests adding a user as authorized user
+        Tests assigning an existing user to a gym as non-superuser manager
         """
+        existing_user = User.objects.create_user(username='existing_cletus', email='existing@example.com')
         self.user_login('general_manager1')
-        self.add_user()
+        response = self.client.post(
+            reverse('gym:gym:add-user', kwargs={'gym_pk': 1}),
+            {
+                'user': existing_user.pk,
+                'role': 'user',
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        existing_user.refresh_from_db()
+        self.assertEqual(existing_user.userprofile.gym_id, 1)
 
     def test_add_user_sets_needs_password_change(self):
         """

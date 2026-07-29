@@ -13,10 +13,12 @@
             <span>{% translate "Torna al Profilo" %}</span>
         </a>
 
+        {% if user.is_superuser %}
         <a href="{% url 'core:user:add-user' %}" class="inline-flex items-center gap-2 bg-primary hover:bg-[#b5d900] text-black font-display font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-colors cursor-pointer self-start sm:self-auto">
             <span class="material-symbols-outlined text-lg leading-none select-none">person_add</span>
             <span>{% translate "+ CREA NUOVO UTENTE" %}</span>
         </a>
+        {% endif %}
     </div>
 
     <!-- MAIN CONTAINER (CLEAN MINIMALIST DARK SURFACE) -->
