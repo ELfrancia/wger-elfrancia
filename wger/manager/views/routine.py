@@ -376,9 +376,7 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
                 skill_family = cal.skill_family.replace('_', ' ').title()
                 
         if not preview_url:
-            img = ex.exerciseimage_set.first()
-            if img:
-                preview_url = img.image.url
+            preview_url = ex.demo_media_url
                 
         muscles = [m.name for m in ex.muscles.all()]
         if not muscles and cal and cal.target_muscle:

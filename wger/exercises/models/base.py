@@ -225,9 +225,66 @@ class Exercise(AbstractLicenseModel, AbstractHistoryMixin, models.Model):
     @property
     def main_image(self):
         """
-        Return the main image for the exercise or None if nothing is found
+        Return the main image for the exercise or the first available image
         """
-        return self.exerciseimage_set.all().filter(is_main=True).first()
+        img = self.exerciseimage_set.filter(is_main=True).first()
+        if not img:
+            img = self.exerciseimage_set.first()
+        return img
+
+    @property
+    def main_video(self):
+        """
+        Return the main video for the exercise or the first available video
+        """
+        vid = self.exercisevideo_set.filter(is_main=True).first()
+        if not vid:
+            vid = self.exercisevideo_set.first()
+        return vid
+
+    @property
+    def demo_media_url(self):
+        """
+        Return video URL, image URL, calisthenics demo_media_url, or smart muscle fallback
+        """
+        vid = self.main_video
+        if vid and vid.video:
+            return vid.video.url
+        img = self.main_image
+        if img and img.image:
+            return img.image.url
+        try:
+            from wger.exercises.models import CalisthenicsExercise
+            cal = CalisthenicsExercise.objects.filter(id=str(self.uuid)).first()
+            if cal and cal.demo_media_url:
+                return cal.demo_media_url
+        except Exception:
+            pass
+
+        # Fallback by muscle / category
+        fallback_map = {
+            'biceps': '/media/exercises/0br45wL.mp4',
+            'triceps': '/media/exercises/x6KpKpq.mp4',
+            'chest': '/media/exercises/edb-001.mp4',
+            'pectoral': '/media/exercises/edb-001.mp4',
+            'quadriceps': '/media/exercises/QpXqiq8.mp4',
+            'leg': '/media/exercises/QpXqiq8.mp4',
+            'latissimus': '/media/exercises/lBDjFxJ.mp4',
+            'lats': '/media/exercises/lBDjFxJ.mp4',
+            'back': '/media/exercises/lBDjFxJ.mp4',
+            'deltoid': '/media/exercises/gw9PqGk.mp4',
+            'shoulder': '/media/exercises/gw9PqGk.mp4',
+            'abdominis': '/media/exercises/IaGQCrC.mp4',
+            'abs': '/media/exercises/IaGQCrC.mp4',
+        }
+
+        for m in self.muscles.all():
+            m_name = m.name.lower()
+            for key, url in fallback_map.items():
+                if key in m_name:
+                    return url
+
+        return '/media/exercises/4GqRrAk.gif'
 
     @property
     def languages(self) -> List[Language]:

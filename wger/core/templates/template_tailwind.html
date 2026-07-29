@@ -829,46 +829,67 @@
             document.getElementById('official-exercise-name').innerText = name || '';
             let safeMedia = gif || '';
             if (!safeMedia || safeMedia.includes('404')) {
-                safeMedia = '/media/exercises/4GqRrAk.mp4';
+                safeMedia = '/media/exercises/4GqRrAk.gif';
             }
             
-            // Check for MP4 video asset
+            // Check for MP4 / MOV video asset vs image / GIF
             const mediaContainer = document.getElementById('official-exercise-media-container');
             if (mediaContainer) {
-                let mp4Url = safeMedia;
-                if (mp4Url.endsWith('.gif')) {
-                    mp4Url = mp4Url.replace(/\.gif$/i, '.mp4');
-                }
-                
                 // Clear existing video or img
                 const oldMedia = mediaContainer.querySelector('video, img#official-exercise-gif');
                 if (oldMedia) oldMedia.remove();
                 
-                const videoEl = document.createElement('video');
-                videoEl.id = 'official-exercise-gif';
-                videoEl.src = mp4Url;
-                videoEl.autoplay = true;
-                videoEl.loop = true;
-                videoEl.muted = true;
-                videoEl.playsInline = true;
-                videoEl.setAttribute('playsinline', '');
-                videoEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                const isVideo = /\.(mp4|mov|webm|m4v)(\?.*)?$/i.test(safeMedia);
                 
-                videoEl.onerror = function() {
-                    console.warn("MP4 video failed, falling back to image:", safeMedia);
-                    const imgEl = document.createElement('img');
-                    imgEl.id = 'official-exercise-gif';
-                    imgEl.src = safeMedia;
-                    imgEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
-                    imgEl.onerror = function() {
-                        this.src = '/media/exercises/4GqRrAk.gif';
+                if (isVideo) {
+                    const videoEl = document.createElement('video');
+                    videoEl.id = 'official-exercise-gif';
+                    videoEl.src = safeMedia;
+                    videoEl.autoplay = true;
+                    videoEl.loop = true;
+                    videoEl.muted = true;
+                    videoEl.playsInline = true;
+                    videoEl.setAttribute('playsinline', '');
+                    videoEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                    videoEl.onerror = function() {
+                        const imgEl = document.createElement('img');
+                        imgEl.id = 'official-exercise-gif';
+                        imgEl.src = '/media/exercises/4GqRrAk.gif';
+                        imgEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                        if (videoEl.parentNode) videoEl.parentNode.replaceChild(imgEl, videoEl);
                     };
-                    if (videoEl.parentNode) {
-                        videoEl.parentNode.replaceChild(imgEl, videoEl);
+                    mediaContainer.insertBefore(videoEl, mediaContainer.firstChild);
+                } else {
+                    let mp4Url = safeMedia;
+                    if (mp4Url.endsWith('.gif')) {
+                        mp4Url = mp4Url.replace(/\.gif$/i, '.mp4');
                     }
-                };
-                
-                mediaContainer.insertBefore(videoEl, mediaContainer.firstChild);
+                    
+                    const videoEl = document.createElement('video');
+                    videoEl.id = 'official-exercise-gif';
+                    videoEl.src = mp4Url;
+                    videoEl.autoplay = true;
+                    videoEl.loop = true;
+                    videoEl.muted = true;
+                    videoEl.playsInline = true;
+                    videoEl.setAttribute('playsinline', '');
+                    videoEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                    
+                    videoEl.onerror = function() {
+                        const imgEl = document.createElement('img');
+                        imgEl.id = 'official-exercise-gif';
+                        imgEl.src = safeMedia;
+                        imgEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                        imgEl.onerror = function() {
+                            this.src = '/media/exercises/4GqRrAk.gif';
+                        };
+                        if (videoEl.parentNode) {
+                            videoEl.parentNode.replaceChild(imgEl, videoEl);
+                        }
+                    };
+                    
+                    mediaContainer.insertBefore(videoEl, mediaContainer.firstChild);
+                }
             }
             
             // Format muscles list to string

@@ -146,7 +146,11 @@
                             <!-- Preview Thumbnail -->
                             <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors">
                                 {% if ex.preview_url %}
-                                    <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                                    {% if '.mp4' in ex.preview_url.lower or '.webm' in ex.preview_url.lower or '.mov' in ex.preview_url.lower %}
+                                        <video src="{{ ex.preview_url }}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
+                                    {% else %}
+                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                                    {% endif %}
                                 {% else %}
                                     <span class="material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
                                 {% endif %}
@@ -404,6 +408,31 @@
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #caf300;
+    }
+
+    /* Force black text & icons when discipline tab or muscle chip is active or hovered while active */
+    .discipline-tab.active,
+    .discipline-tab.active:hover,
+    .discipline-tab.active:focus,
+    .discipline-tab.active:active,
+    .muscle-chip.active,
+    .muscle-chip.active:hover,
+    .muscle-chip.active:focus,
+    .muscle-chip.active:active {
+        background-color: #caf300 !important;
+        color: #131313 !important;
+        border-color: transparent !important;
+    }
+
+    .discipline-tab.active *,
+    .discipline-tab.active:hover *,
+    .discipline-tab.active:focus *,
+    .discipline-tab.active:active *,
+    .muscle-chip.active *,
+    .muscle-chip.active:hover *,
+    .muscle-chip.active:focus *,
+    .muscle-chip.active:active * {
+        color: #131313 !important;
     }
 </style>
 
