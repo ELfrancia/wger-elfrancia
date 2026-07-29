@@ -104,11 +104,9 @@ class AddExerciseForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filter exercises having an English translation, sorting by name
-        qs = Exercise.objects.filter(translations__language__short_name='en').distinct()
-        if not qs.exists():
-            qs = Exercise.objects.all()
-        self.fields['exercise'].queryset = qs.order_by('translations__name')
+        # Include all exercises, prioritizing those with translations
+        qs = Exercise.objects.all().distinct()
+        self.fields['exercise'].queryset = qs
 
 
 

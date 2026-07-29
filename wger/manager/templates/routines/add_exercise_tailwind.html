@@ -1,156 +1,269 @@
 {% extends 'template_tailwind.html' %}
 {% load i18n %}
-{% block title %}{% translate "Add Exercise" %} - Onyx{% endblock %}
-{% block content %}
-<section class="mb-6">
-    <div class="flex items-center gap-2">
-        <a href="{% url 'manager:routine:view' day.routine.pk %}" class="text-primary-fixed hover:underline flex items-center text-xs font-bold gap-1">
-            <span class="material-symbols-outlined text-sm">arrow_back</span> BACK TO ROUTINE
-        </a>
-    </div>
-    <div class="mt-4">
-        <span class="text-xs text-primary-fixed uppercase font-bold tracking-wider">Day: {{ day.name }}</span>
-        <h2 class="text-2xl font-extrabold text-primary mt-1">{% translate "Add Exercise" %}</h2>
-        <p class="text-on-surface-variant text-sm mt-1">Select an exercise and configure the initial target sets, repetitions, and weight.</p>
-    </div>
-</section>
+{% block title %}{% translate "Add Exercise" %} - Onyx Club{% endblock %}
 
-<section class="bg-surface-container-low border border-surface-container-high rounded-[24px] p-4 sm:p-6 mb-12">
-    <form method="post" class="flex flex-col gap-6" hx-boost="true">
-        {% csrf_token %}
+{% block content %}
+<main class="w-full max-w-5xl mx-auto px-4 sm:px-6 mt-2 flex flex-col gap-6 pb-28">
+    <!-- Header Section -->
+    <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+            <a href="{% url 'manager:routine:view' day.routine.pk %}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
+                <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
+                {% translate "BACK TO ROUTINE" %}
+            </a>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/25">
+                Day: {{ day.name }}
+            </span>
+        </div>
         
-        <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                {% translate "Exercise" %}
-            </label>
+        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {% translate "Add Exercise" %}
+            </h1>
+            <span class="text-xs font-bold text-zinc-400">
+                {{ exercises_list|length }} {% translate "Exercises available" %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Main Card Container -->
+    <div class="bg-[#161618] border border-white/[0.08] rounded-2xl p-4 sm:p-6 flex flex-col gap-5 shadow-lg">
+        <form method="post" class="flex flex-col gap-5" hx-boost="true">
+            {% csrf_token %}
             
-            <!-- Custom Exercise Selector UI -->
+            <!-- Controls Section -->
             <div id="exercise-picker" class="flex flex-col gap-4">
-                <!-- Search & Filters -->
-                <div class="flex flex-col gap-3">
-                    <div class="relative w-full">
-                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
-                        <input type="text" id="exercise-search" placeholder="{% translate 'Search exercises...' %}" 
-                               class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl pl-11 pr-4 py-3 text-primary placeholder-on-surface-variant/50 focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed text-sm font-medium">
+                
+                <!-- Search Bar -->
+                <div class="relative w-full">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-lg pointer-events-none">search</span>
+                    <input type="text" id="exercise-search" placeholder="{% translate 'Search exercises by name or muscle...' %}" 
+                           class="w-full bg-[#111113] border border-white/[0.08] rounded-xl pl-11 pr-10 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-[#caf300] text-sm font-medium transition-colors">
+                    <button type="button" id="clear-search-btn" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors hidden p-1">
+                        <span class="material-symbols-outlined text-lg">close</span>
+                    </button>
+                </div>
+
+                <!-- Category Discipline Tabs (Palestra vs Calisthenics vs Tutti) -->
+                <div class="flex items-center gap-2 border-b border-white/[0.08] pb-3 select-none overflow-x-auto custom-scrollbar">
+                    <button type="button" data-discipline="" class="discipline-tab active px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#caf300] text-[#131313] shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                        <span class="material-symbols-outlined text-sm">apps</span>
+                        {% translate "Tutti" %} ({{ exercise_counts.all }})
+                    </button>
+                    <button type="button" data-discipline="gym" class="discipline-tab px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40 flex items-center gap-1.5 whitespace-nowrap">
+                        <span class="material-symbols-outlined text-sm">fitness_center</span>
+                        {% translate "Palestra / Pesi" %} ({{ exercise_counts.gym }})
+                    </button>
+                    <button type="button" data-discipline="calisthenics" class="discipline-tab px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40 flex items-center gap-1.5 whitespace-nowrap">
+                        <span class="material-symbols-outlined text-sm">sports_gymnastics</span>
+                        {% translate "Calisthenics" %} ({{ exercise_counts.calisthenics }})
+                    </button>
+                </div>
+
+                <!-- Quick Filter Muscle Chips (With Official #caf300 Accent) -->
+                <div class="flex flex-col gap-2">
+                    <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">{% translate "Filter by Muscle" %}</span>
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar scroll-smooth select-none">
+                        <button type="button" data-chip="" class="muscle-chip active px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#caf300] text-[#131313]">
+                            {% translate "All" %}
+                        </button>
+                        <button type="button" data-chip="chest" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Petto" %}
+                        </button>
+                        <button type="button" data-chip="lats" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Back / Lats" %}
+                        </button>
+                        <button type="button" data-chip="quadriceps" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Gambe" %}
+                        </button>
+                        <button type="button" data-chip="deltoids" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Spalle" %}
+                        </button>
+                        <button type="button" data-chip="biceps" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Bicipiti" %}
+                        </button>
+                        <button type="button" data-chip="triceps" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Tricipiti" %}
+                        </button>
+                        <button type="button" data-chip="abs" class="muscle-chip px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap bg-[#111113] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-[#caf300]/40">
+                            {% translate "Core / Addome" %}
+                        </button>
                     </div>
-                    <div class="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full">
-                        <select id="filter-muscle" class="w-full sm:w-auto flex-1 min-w-0 bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-primary text-xs sm:text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed truncate">
+                </div>
+
+                <!-- Dropdown Filters & Custom Exercise Button -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
+                    <div class="relative min-w-0">
+                        <select id="filter-muscle" class="w-full bg-[#111113] border border-white/[0.08] hover:border-zinc-600 rounded-xl px-3.5 py-2.5 text-zinc-200 text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#caf300] transition-colors truncate cursor-pointer appearance-none pr-8">
                             <option value="">{% translate "All Muscles" %}</option>
                             {% for muscle in muscles_list %}
                                 <option value="{{ muscle }}">{{ muscle }}</option>
                             {% endfor %}
                         </select>
-                        <select id="filter-skill" class="w-full sm:w-auto flex-1 min-w-0 bg-[#1c1b1b] border border-surface-container-high rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 text-primary text-xs sm:text-sm font-bold focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed truncate">
+                        <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none text-base">expand_more</span>
+                    </div>
+
+                    <div class="relative min-w-0">
+                        <select id="filter-equipment" class="w-full bg-[#111113] border border-white/[0.08] hover:border-zinc-600 rounded-xl px-3.5 py-2.5 text-zinc-200 text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#caf300] transition-colors truncate cursor-pointer appearance-none pr-8">
+                            <option value="">{% translate "All Equipment" %}</option>
+                            {% for eq in equipment_list %}
+                                <option value="{{ eq }}">{{ eq }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none text-base">expand_more</span>
+                    </div>
+
+                    <div class="relative min-w-0">
+                        <select id="filter-skill" class="w-full bg-[#111113] border border-white/[0.08] hover:border-zinc-600 rounded-xl px-3.5 py-2.5 text-zinc-200 text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#caf300] transition-colors truncate cursor-pointer appearance-none pr-8">
                             <option value="">{% translate "All Skills" %}</option>
                             {% for skill in skills_list %}
                                 <option value="{{ skill }}">{{ skill }}</option>
                             {% endfor %}
                         </select>
-                        <button type="button" id="open-custom-modal-btn" class="col-span-2 sm:col-span-1 w-full sm:w-auto bg-[#1c1b1b] border border-surface-container-high hover:border-[#caf300] text-primary rounded-2xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-1 transition-all flex-shrink-0">
-                            <span class="material-symbols-outlined text-sm">add</span> {% translate "Custom" %}
-                        </button>
+                        <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none text-base">expand_more</span>
                     </div>
-                </div>
 
-                <!-- Exercise List -->
-                <div id="exercise-list-container" class="max-h-[380px] overflow-y-auto pr-1 flex flex-col gap-2 rounded-2xl border border-surface-container-high p-2 bg-[#131313] custom-scrollbar">
-                    {% for ex in exercises_list %}
-                        <div class="exercise-item flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-surface-container-highest hover:bg-surface-container-low transition-all cursor-pointer select-none" 
-                             data-id="{{ ex.id }}" 
-                             data-name="{{ ex.name }}" 
-                             data-muscles="{{ ex.muscles }}" 
-                             data-skill="{{ ex.skill_family }}">
-                            <div class="flex items-center gap-3 min-w-0 flex-1">
-                                <!-- Circular preview container -->
-                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
-                                    {% if ex.preview_url %}
-                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                    <button type="button" id="open-custom-modal-btn" class="w-full bg-[#111113] border border-[#caf300]/40 text-[#caf300] hover:bg-[#caf300]/10 hover:border-[#caf300] hover:text-white rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all flex-shrink-0">
+                        <span class="material-symbols-outlined text-base">add</span>
+                        {% translate "Custom" %}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Exercise List Cards Container -->
+            <div id="exercise-list-container" class="max-h-[460px] overflow-y-auto flex flex-col gap-2 rounded-xl border border-white/[0.08] p-2 bg-[#111113] custom-scrollbar">
+                {% for ex in exercises_list %}
+                    <div class="exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]" 
+                         data-id="{{ ex.id }}" 
+                         data-name="{{ ex.name }}" 
+                         data-muscles="{{ ex.muscles }}" 
+                         data-equipment="{{ ex.equipment }}"
+                         data-category="{{ ex.category }}"
+                         data-calisthenics="{{ ex.is_calisthenics|yesno:'true,false' }}"
+                         data-skill="{{ ex.skill_family }}">
+                        
+                        <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                            <!-- Preview Thumbnail -->
+                            <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors">
+                                {% if ex.preview_url %}
+                                    <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                                {% else %}
+                                    <span class="material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex flex-col min-w-0 flex-1 py-0.5 justify-center">
+                                <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">
+                                    {{ ex.name }}
+                                </span>
+                                
+                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                                    {% if ex.muscles_display %}
+                                        <span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/20 truncate">
+                                            {{ ex.muscles_display }}
+                                        </span>
                                     {% else %}
-                                        <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
+                                        <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-white/[0.04]">
+                                            {% translate "General" %}
+                                        </span>
+                                    {% endif %}
+
+                                    {% if ex.equipment_display %}
+                                        <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/[0.06] truncate">
+                                            {{ ex.equipment_display }}
+                                        </span>
+                                    {% endif %}
+
+                                    {% if ex.skill_family and ex.skill_family != 'Other' %}
+                                        <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-white/[0.06]">
+                                            {{ ex.skill_family }}
+                                        </span>
                                     {% endif %}
                                 </div>
-                                <div class="flex flex-col min-w-0 flex-1">
-                                    <span class="text-sm font-bold text-primary truncate">{{ ex.name }}</span>
-                                    <span class="text-xs text-on-surface-variant truncate">
-                                        {% if ex.muscles_display %}
-                                            {{ ex.muscles_display }}
-                                        {% else %}
-                                            {% translate "No muscle info" %}
-                                        {% endif %}
-                                        {% if ex.skill_family and ex.skill_family != 'Other' %}
-                                             • {{ ex.skill_family }}
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                            <!-- Selection Checkmark -->
-                            <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity flex-shrink-0 ml-2">
-                                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                             </div>
                         </div>
-                    {% empty %}
-                        <div class="text-center py-8 text-on-surface-variant text-sm font-medium">
-                            {% translate "No exercises found." %}
+
+                        <!-- Selection Indicator -->
+                        <div class="selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3">
+                            <span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
                         </div>
-                    {% endfor %}
+                    </div>
+                {% empty %}
+                    <div class="text-center py-12 px-4 flex flex-col items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-3xl text-zinc-600">search_off</span>
+                        <p class="text-zinc-400 text-sm font-medium">{% translate "No exercises found." %}</p>
+                    </div>
+                {% endfor %}
+
+                <!-- Dynamic Empty State -->
+                <div id="no-results-placeholder" class="hidden text-center py-12 px-4 flex-col items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-3xl text-zinc-600">search_off</span>
+                    <p class="text-zinc-400 text-sm font-medium">{% translate "No exercises match the selected filters." %}</p>
+                    <button type="button" id="reset-filters-btn" class="text-xs text-[#caf300] hover:underline font-bold mt-1">
+                        {% translate "Reset filters" %}
+                    </button>
                 </div>
             </div>
             
             {% if form.exercise.errors %}
-                <span class="text-xs text-error font-medium">{{ form.exercise.errors.0 }}</span>
+                <span class="text-xs text-red-400 font-medium flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">error</span>
+                    {{ form.exercise.errors.0 }}
+                </span>
             {% endif %}
-        </div>
 
-        <!-- Superset Actions & Selected Exercises Area -->
-        <div class="flex flex-col gap-4">
-            <!-- Selected Exercises Container -->
-            <div id="superset-container" class="hidden flex-col gap-3 p-4 bg-[#161616] border border-[#262626] rounded-[24px]">
-                <div class="flex items-center justify-between border-b border-[#262626]/40 pb-2">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Exercises in Superset</span>
-                    <span class="text-[9px] font-bold text-[#caf300] bg-[#caf300]/10 border border-[#caf300]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">SUPERSET MODE</span>
+            <!-- Superset Panel & Selection Controls -->
+            <div class="flex flex-col gap-3">
+                <div id="superset-container" class="hidden flex-col gap-2.5 p-4 bg-[#111113] border border-[#caf300]/30 rounded-xl">
+                    <div class="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                        <span class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm text-[#caf300]">link</span>
+                            {% translate "Superset Exercises" %}
+                        </span>
+                        <span class="text-[10px] font-bold text-[#caf300] bg-[#caf300]/10 border border-[#caf300]/25 px-2 py-0.5 rounded">
+                            SUPERSET
+                        </span>
+                    </div>
+                    <div id="superset-list" class="flex flex-col gap-2">
+                        <!-- Dynamically populated -->
+                    </div>
                 </div>
-                <div id="superset-list" class="flex flex-col gap-2">
-                    <!-- Dynamically populated -->
-                </div>
-            </div>
-            
-            <div id="hidden-exercises-inputs"></div>
-
-            <div class="flex flex-col md:flex-row gap-3 mt-4">
-                <!-- Add to Superset Button -->
-                <button type="button" id="add-to-superset-btn" disabled class="flex-1 border border-[#262626] text-[#caf300] hover:text-white min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight opacity-50 cursor-not-allowed transition-all duration-300">
-                    <span class="material-symbols-outlined">link</span>
-                    {% translate "ADD TO SUPERSET" %}
-                </button>
-
-                <!-- Main Submit Button -->
-                <button type="submit" id="submit-btn" disabled class="flex-1 bg-[#caf300] text-[#131313] min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight opacity-50 cursor-not-allowed hover:opacity-90 transition-opacity">
-                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
-                    <span id="submit-btn-text">{% translate "ADD EXERCISE" %}</span>
-                </button>
                 
-                <!-- Cancel Button -->
-                <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 border border-surface-container-high text-primary min-h-[56px] py-4 rounded-full flex items-center justify-center gap-2 font-bold tracking-tight hover:bg-surface-container transition-colors">
-                    {% translate "CANCEL" %}
-                </a>
+                <div id="hidden-exercises-inputs"></div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-2.5 mt-2 pt-3 border-t border-white/[0.06]">
+                    <button type="button" id="add-to-superset-btn" disabled class="flex-1 bg-[#18181a] border border-[#caf300]/30 text-[#caf300] hover:bg-[#caf300]/10 hover:text-white h-11 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider opacity-50 cursor-not-allowed transition-all">
+                        <span class="material-symbols-outlined text-base">link</span>
+                        {% translate "ADD TO SUPERSET" %}
+                    </button>
+
+                    <button type="submit" id="submit-btn" disabled class="flex-1 bg-[#caf300] text-[#131313] hover:bg-[#d4ff00] h-11 px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider opacity-50 cursor-not-allowed transition-all">
+                        <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                        <span id="submit-btn-text">{% translate "ADD EXERCISE" %}</span>
+                    </button>
+                    
+                    <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 sm:flex-initial border border-white/[0.08] text-zinc-400 hover:text-white h-11 px-5 rounded-xl flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider hover:bg-[#18181a] transition-all">
+                        {% translate "CANCEL" %}
+                    </a>
+                </div>
             </div>
-        </div>
-    </form>
-</section>
+        </form>
+    </div>
+</main>
 
-<!-- Custom Exercise Modal -->
-<div id="custom-exercise-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-end sm:items-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-[#131313] border border-surface-container-high w-full max-w-lg p-5 pb-8 sm:p-6 sm:pb-6 flex flex-col gap-5 shadow-2xl transition-all duration-300 transform translate-y-full sm:translate-y-0 sm:scale-95 rounded-t-[28px] sm:rounded-[28px] max-h-[92vh] sm:max-h-none overflow-y-auto sm:overflow-visible">
+<!-- Custom Exercise Modal Sheet -->
+<div id="custom-exercise-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-end sm:items-center hidden opacity-0 transition-opacity duration-200 p-0 sm:p-4">
+    <div class="bg-[#161618] border border-white/[0.08] w-full max-w-lg p-5 sm:p-6 flex flex-col gap-4 shadow-xl transition-all duration-200 transform translate-y-full sm:translate-y-0 sm:scale-95 rounded-t-2xl sm:rounded-2xl max-h-[92vh] overflow-y-auto custom-scrollbar">
         
-        <!-- Mobile Grab Handle Indicator -->
-        <div class="w-12 h-1.5 bg-neutral-800 rounded-full mx-auto mb-1 sm:hidden flex-shrink-0"></div>
+        <div class="w-12 h-1 bg-zinc-800 rounded-full mx-auto sm:hidden flex-shrink-0"></div>
 
-        <div class="flex items-center justify-between border-b border-surface-container-high/40 pb-3 flex-shrink-0">
-            <h3 class="text-lg sm:text-xl font-extrabold text-primary flex items-center gap-2">
+        <div class="flex items-center justify-between border-b border-white/[0.06] pb-3 flex-shrink-0">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
                 <span class="material-symbols-outlined text-[#caf300]">fitness_center</span>
                 {% translate "Create Custom Exercise" %}
             </h3>
-            <button type="button" id="close-custom-modal-btn" class="text-on-surface-variant hover:text-primary transition-colors p-1">
+            <button type="button" id="close-custom-modal-btn" class="text-zinc-400 hover:text-white transition-colors p-1">
                 <span class="material-symbols-outlined text-xl">close</span>
             </button>
         </div>
@@ -158,122 +271,116 @@
         <form id="custom-exercise-form" method="post" action="{% url 'manager:routine:add-custom-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-4">
             {% csrf_token %}
             
-            <!-- Name -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Name" %}</label>
+                <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider">{% translate "Name" %}</label>
                 <input type="text" name="name" required placeholder="{% translate 'e.g. Archer Push-up' %}"
-                       class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3.5 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm">
+                       class="w-full bg-[#111113] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#caf300] text-sm font-medium">
             </div>
 
-            <!-- Skill Family (Custom Inline Accordion Dropdown) -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Skill Family" %}</label>
+                <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider">{% translate "Skill Family" %}</label>
                 
-                <button type="button" id="skill-family-trigger" class="w-full bg-[#1c1b1b] border border-surface-container-high hover:border-zinc-700 rounded-xl px-4 py-3.5 text-primary text-sm flex items-center justify-between focus:outline-none focus:border-[#caf300] transition-all">
-                    <span id="skill-family-label" class="font-semibold">{% translate "Other" %}</span>
-                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-250" id="skill-family-arrow">expand_more</span>
+                <button type="button" id="skill-family-trigger" class="w-full bg-[#111113] border border-white/[0.08] hover:border-zinc-600 rounded-xl px-4 py-2.5 text-white text-sm flex items-center justify-between focus:outline-none focus:border-[#caf300] transition-all">
+                    <span id="skill-family-label" class="font-medium">{% translate "Other" %}</span>
+                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-200" id="skill-family-arrow">expand_more</span>
                 </button>
                 
                 <input type="hidden" name="skill_family" id="custom-skill-family" value="other">
                 
-                <div id="skill-family-list-container" class="max-h-0 overflow-hidden transition-all duration-300 bg-[#161616] rounded-xl flex flex-col">
+                <div id="skill-family-list-container" class="max-h-0 overflow-hidden transition-all duration-200 bg-[#111113] rounded-xl flex flex-col">
                     <div class="p-1.5 flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar" id="skill-options-list">
-                        <button type="button" data-value="other" data-label="{% translate 'Other' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60">
+                        <button type="button" data-value="other" data-label="{% translate 'Other' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-zinc-800">
                             <span>{% translate "Other" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator">check</span>
                         </button>
-                        <button type="button" data-value="push_up" data-label="{% translate 'Push Up' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="push_up" data-label="{% translate 'Push Up' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Push Up" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="pull_up" data-label="{% translate 'Pull Up' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="pull_up" data-label="{% translate 'Pull Up' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Pull Up" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="dip" data-label="{% translate 'Dip' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="dip" data-label="{% translate 'Dip' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Dip" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="handstand" data-label="{% translate 'Handstand' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="handstand" data-label="{% translate 'Handstand' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Handstand" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="front_lever" data-label="{% translate 'Front Lever' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="front_lever" data-label="{% translate 'Front Lever' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Front Lever" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="back_lever" data-label="{% translate 'Back Lever' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="back_lever" data-label="{% translate 'Back Lever' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Back Lever" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="l_sit" data-label="{% translate 'L Sit' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="l_sit" data-label="{% translate 'L Sit' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "L Sit" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="planche" data-label="{% translate 'Planche' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="planche" data-label="{% translate 'Planche' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Planche" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
-                        <button type="button" data-value="squat" data-label="{% translate 'Squat' %}" class="skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                        <button type="button" data-value="squat" data-label="{% translate 'Squat' %}" class="skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                             <span>{% translate "Squat" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                         </button>
                     </div>
                 </div>
             </div>
             
-            <!-- Target Muscle (Custom Inline Accordion Dropdown) -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Target Muscle" %}</label>
+                <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider">{% translate "Target Muscle" %}</label>
                 
-                <button type="button" id="target-muscle-trigger" class="w-full bg-[#1c1b1b] border border-surface-container-high hover:border-zinc-700 rounded-xl px-4 py-3.5 text-primary text-sm flex items-center justify-between focus:outline-none focus:border-[#caf300] transition-all">
-                    <span id="target-muscle-label" class="font-semibold">{% translate "None" %}</span>
-                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-250" id="target-muscle-arrow">expand_more</span>
+                <button type="button" id="target-muscle-trigger" class="w-full bg-[#111113] border border-white/[0.08] hover:border-zinc-600 rounded-xl px-4 py-2.5 text-white text-sm flex items-center justify-between focus:outline-none focus:border-[#caf300] transition-all">
+                    <span id="target-muscle-label" class="font-medium">{% translate "None" %}</span>
+                    <span class="material-symbols-outlined text-zinc-500 transition-transform duration-200" id="target-muscle-arrow">expand_more</span>
                 </button>
                 
                 <input type="hidden" name="target_muscle" id="custom-target-muscle" value="">
                 
-                <div id="target-muscle-list-container" class="max-h-0 overflow-hidden transition-all duration-300 bg-[#161616] rounded-xl flex flex-col">
+                <div id="target-muscle-list-container" class="max-h-0 overflow-hidden transition-all duration-200 bg-[#111113] rounded-xl flex flex-col">
                     <div class="p-1.5 flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar" id="muscle-options-list">
-                        <button type="button" data-value="" data-label="{% translate 'None' %}" class="muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60">
+                        <button type="button" data-value="" data-label="{% translate 'None' %}" class="muscle-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-zinc-800">
                             <span>{% translate "None" %}</span>
-                            <span class="material-symbols-outlined text-primary text-sm check-indicator">check</span>
+                            <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator">check</span>
                         </button>
                         {% for muscle in muscles_list %}
-                            <button type="button" data-value="{{ muscle }}" data-label="{{ muscle }}" class="muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40">
+                            <button type="button" data-value="{{ muscle }}" data-label="{{ muscle }}" class="muscle-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50">
                                 <span>{{ muscle }}</span>
-                                <span class="material-symbols-outlined text-primary text-sm check-indicator opacity-0">check</span>
+                                <span class="material-symbols-outlined text-[#caf300] text-sm check-indicator opacity-0">check</span>
                             </button>
                         {% endfor %}
                     </div>
                 </div>
             </div>
 
-            <!-- Weighted Toggle -->
-            <div class="flex items-center justify-between bg-[#1c1b1b] border border-surface-container-high rounded-xl p-3.5 transition-all hover:bg-surface-container-low/80">
+            <div class="flex items-center justify-between bg-[#111113] border border-white/[0.08] rounded-xl p-3">
                 <div class="flex flex-col pr-4">
-                    <span class="text-sm font-bold text-primary">{% translate "Weighted / Zavorrato" %}</span>
-                    <span class="text-xs text-on-surface-variant/80">Check if the exercise requires extra weights or is weighted</span>
+                    <span class="text-xs font-bold text-white uppercase tracking-wider">{% translate "Weighted / Zavorrato" %}</span>
+                    <span class="text-[11px] text-zinc-400">Requires extra weights / plates</span>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                     <input type="checkbox" name="weighted" class="sr-only peer">
-                    <div class="w-11 h-6 bg-[#2a2a2a] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#caf300] peer-checked:after:bg-[#131313]"></div>
+                    <div class="w-10 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-200 after:border-gray-200 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#caf300] peer-checked:after:bg-black"></div>
                 </label>
             </div>
 
-            <!-- Instructions -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{% translate "Instructions" %}</label>
+                <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider">{% translate "Instructions" %}</label>
                 <textarea name="instructions" rows="3" placeholder="{% translate 'Step 1...\nStep 2...' %}"
-                          class="w-full bg-[#1c1b1b] border border-surface-container-high rounded-xl px-4 py-3.5 text-primary placeholder-on-surface-variant/40 focus:outline-none focus:border-[#caf300] text-sm resize-none"></textarea>
+                          class="w-full bg-[#111113] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#caf300] text-sm resize-none"></textarea>
             </div>
 
-            <!-- Form Buttons -->
-            <div class="flex gap-3 mt-2">
-                <button type="submit" class="flex-1 bg-[#caf300] text-[#131313] py-3.5 rounded-full font-bold hover:opacity-90 active:scale-[0.98] transition-all text-sm font-display uppercase tracking-wider">
+            <div class="flex gap-2.5 mt-2">
+                <button type="submit" class="flex-1 bg-[#caf300] text-[#131313] hover:bg-[#d4ff00] py-3 rounded-xl font-black transition-all text-xs uppercase tracking-wider">
                     {% translate "Save Exercise" %}
                 </button>
-                <button type="button" id="cancel-custom-modal-btn" class="flex-1 border border-surface-container-high text-primary py-3.5 rounded-full font-bold hover:bg-surface-container active:scale-[0.98] transition-all text-sm font-display uppercase tracking-wider">
+                <button type="button" id="cancel-custom-modal-btn" class="flex-1 border border-white/[0.08] text-zinc-300 hover:text-white hover:bg-zinc-800/50 py-3 rounded-xl font-bold transition-all text-xs uppercase tracking-wider">
                     {% translate "Cancel" %}
                 </button>
             </div>
@@ -284,60 +391,186 @@
 
 {% block extra_body %}
 <style>
-    /* Custom thin scrollbar for exercise list */
     .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
+        width: 5px;
+        height: 5px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
         background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #2a2a2a;
-        border-radius: 3px;
+        background: #27272a;
+        border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #353534;
+        background: #caf300;
     }
 </style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('exercise-search');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
     const muscleSelect = document.getElementById('filter-muscle');
+    const equipmentSelect = document.getElementById('filter-equipment');
     const skillSelect = document.getElementById('filter-skill');
+    const muscleChips = document.querySelectorAll('.muscle-chip');
+    const disciplineTabs = document.querySelectorAll('.discipline-tab');
+    const noResultsPlaceholder = document.getElementById('no-results-placeholder');
+    const resetFiltersBtn = document.getElementById('reset-filters-btn');
 
+    let activeChipValue = '';
+    let activeDiscipline = '';
     let selectedExercises = []; // Array of { id: int, name: string }
     let activeSelection = null;  // { id: int, name: string }
 
-    // 1. Filtering Logic
     function filterExercises() {
         const query = searchInput.value.toLowerCase().trim();
-        const muscle = muscleSelect.value;
+        const muscleDropdown = muscleSelect.value.toLowerCase();
+        const equipmentDropdown = equipmentSelect ? equipmentSelect.value.toLowerCase() : '';
         const skill = skillSelect.value;
         
+        if (query) {
+            clearSearchBtn.classList.remove('hidden');
+        } else {
+            clearSearchBtn.classList.add('hidden');
+        }
+
+        let visibleCount = 0;
         document.querySelectorAll('.exercise-item').forEach(item => {
             const name = item.dataset.name.toLowerCase();
-            const muscles = item.dataset.muscles.split(',');
+            const musclesRaw = (item.dataset.muscles || '').toLowerCase();
+            const equipmentRaw = (item.dataset.equipment || '').toLowerCase();
+            const categoryRaw = (item.dataset.category || '').toLowerCase();
+            const isCal = categoryRaw === 'calisthenics' || item.dataset.calisthenics === 'true';
+            const musclesList = musclesRaw.split(',').map(m => m.trim());
+            const equipmentList = equipmentRaw.split(',').map(e => e.trim());
             const itemSkill = item.dataset.skill;
             
-            const matchesQuery = !query || name.includes(query);
-            const matchesMuscle = !muscle || muscles.includes(muscle);
+            const matchesQuery = !query || name.includes(query) || musclesRaw.includes(query) || equipmentRaw.includes(query) || categoryRaw.includes(query);
+            
+            let matchesDiscipline = true;
+            if (activeDiscipline === 'gym') {
+                matchesDiscipline = !isCal;
+            } else if (activeDiscipline === 'calisthenics') {
+                matchesDiscipline = isCal;
+            }
+
+            let matchesMuscle = true;
+            if (activeChipValue) {
+                matchesMuscle = musclesRaw.includes(activeChipValue);
+            } else if (muscleDropdown) {
+                matchesMuscle = musclesList.includes(muscleDropdown);
+            }
+
+            let matchesEquipment = true;
+            if (equipmentDropdown) {
+                matchesEquipment = equipmentList.includes(equipmentDropdown) || equipmentRaw.includes(equipmentDropdown);
+            }
+
             const matchesSkill = !skill || itemSkill === skill;
             
-            if (matchesQuery && matchesMuscle && matchesSkill) {
+            if (matchesQuery && matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill) {
                 item.classList.remove('hidden');
                 item.classList.add('flex');
+                visibleCount++;
             } else {
                 item.classList.remove('flex');
                 item.classList.add('hidden');
             }
         });
+
+        if (noResultsPlaceholder) {
+            if (visibleCount === 0) {
+                noResultsPlaceholder.classList.remove('hidden');
+                noResultsPlaceholder.classList.add('flex');
+            } else {
+                noResultsPlaceholder.classList.remove('flex');
+                noResultsPlaceholder.classList.add('hidden');
+            }
+        }
     }
 
+    disciplineTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            disciplineTabs.forEach(t => {
+                t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+            });
+            this.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+            this.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+            activeDiscipline = this.dataset.discipline;
+            filterExercises();
+        });
+    });
+
     searchInput.addEventListener('input', filterExercises);
-    muscleSelect.addEventListener('change', filterExercises);
+    muscleSelect.addEventListener('change', function() {
+        if (muscleSelect.value) {
+            activeChipValue = '';
+            muscleChips.forEach(c => setChipInactive(c));
+            const firstChip = document.querySelector('.muscle-chip[data-chip=""]');
+            if (firstChip) setChipActive(firstChip);
+        }
+        filterExercises();
+    });
+    if (equipmentSelect) {
+        equipmentSelect.addEventListener('change', filterExercises);
+    }
     skillSelect.addEventListener('change', filterExercises);
 
-    // 2. UI Syncing Logic
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filterExercises();
+        searchInput.focus();
+    });
+
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            muscleSelect.value = '';
+            if (equipmentSelect) equipmentSelect.value = '';
+            skillSelect.value = '';
+            activeChipValue = '';
+            activeDiscipline = '';
+
+            disciplineTabs.forEach((t, idx) => {
+                if (idx === 0) {
+                    t.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                    t.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                } else {
+                    t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                    t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                }
+            });
+
+            muscleChips.forEach(c => setChipInactive(c));
+            const firstChip = document.querySelector('.muscle-chip[data-chip=""]');
+            if (firstChip) setChipActive(firstChip);
+            filterExercises();
+        });
+    }
+
+    function setChipActive(chip) {
+        chip.classList.add('active', 'bg-[#caf300]', 'text-[#131313]');
+        chip.classList.remove('bg-[#111113]', 'text-zinc-400', 'border-white/[0.08]');
+    }
+
+    function setChipInactive(chip) {
+        chip.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]');
+        chip.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+    }
+
+    muscleChips.forEach(chip => {
+        chip.addEventListener('click', function() {
+            muscleChips.forEach(c => setChipInactive(c));
+            setChipActive(this);
+            activeChipValue = this.dataset.chip.toLowerCase();
+            muscleSelect.value = '';
+            filterExercises();
+        });
+    });
+
     function syncUI() {
         const supersetContainer = document.getElementById('superset-container');
         const supersetList = document.getElementById('superset-list');
@@ -346,34 +579,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtnText = document.getElementById('submit-btn-text');
         const addToSupersetBtn = document.getElementById('add-to-superset-btn');
 
-        // Clear hidden inputs & render list
         hiddenInputs.innerHTML = '';
         supersetList.innerHTML = '';
 
         selectedExercises.forEach((ex, idx) => {
-            const letter = String.fromCharCode(65 + idx); // A, B, C...
+            const letter = String.fromCharCode(65 + idx);
 
-            // Create hidden input
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'exercise';
             input.value = ex.id;
             hiddenInputs.appendChild(input);
 
-            // Create list item
             const row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-3 bg-[#131313] border border-[#262626] rounded-xl';
+            row.className = 'flex items-center justify-between p-2.5 bg-[#18181a] border border-[#caf300]/30 rounded-lg';
             row.innerHTML = `
                 <div class="flex items-center gap-2">
-                    <span class="bg-[#caf300] text-[#131313] text-xs font-mono font-extrabold w-5 h-5 rounded-full flex items-center justify-center">${letter}</span>
+                    <span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${letter}</span>
                     <span class="text-sm font-bold text-white">${ex.name}</span>
                 </div>
-                <button type="button" class="remove-btn text-gray-500 hover:text-red-400 flex items-center" data-id="${ex.id}">
-                    <span class="material-symbols-outlined text-sm">close</span>
+                <button type="button" class="remove-btn text-zinc-400 hover:text-red-400 flex items-center p-1" data-id="${ex.id}">
+                    <span class="material-symbols-outlined text-base">close</span>
                 </button>
             `;
             
-            // Wire up remove button
             row.querySelector('.remove-btn').addEventListener('click', function(e) {
                 e.stopPropagation();
                 removeExercise(ex.id);
@@ -382,7 +611,6 @@ document.addEventListener('DOMContentLoaded', function() {
             supersetList.appendChild(row);
         });
 
-        // Add active selection to hidden inputs
         if (activeSelection) {
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -391,7 +619,6 @@ document.addEventListener('DOMContentLoaded', function() {
             hiddenInputs.appendChild(input);
         }
 
-        // Toggle container visibility
         if (selectedExercises.length > 0) {
             supersetContainer.classList.remove('hidden');
             supersetContainer.classList.add('flex');
@@ -400,7 +627,6 @@ document.addEventListener('DOMContentLoaded', function() {
             supersetContainer.classList.add('hidden');
         }
 
-        // Configure buttons
         const totalSelected = selectedExercises.length + (activeSelection ? 1 : 0);
         if (totalSelected === 0) {
             mainSubmitBtn.disabled = true;
@@ -416,18 +642,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Enable or disable Add to Superset button
         if (activeSelection) {
             addToSupersetBtn.disabled = false;
             addToSupersetBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            addToSupersetBtn.classList.add('border-[#caf300]/40');
         } else {
             addToSupersetBtn.disabled = true;
             addToSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            addToSupersetBtn.classList.remove('border-[#caf300]/40');
         }
 
-        // Sync list checkmarks
         document.querySelectorAll('.exercise-item').forEach(item => {
             const id = parseInt(item.dataset.id);
             const indicator = item.querySelector('.selected-indicator');
@@ -435,27 +657,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const isActive = activeSelection && activeSelection.id === id;
 
             if (isActive) {
-                item.classList.remove('border-transparent');
-                item.classList.add('border-primary-fixed', 'bg-surface-container/60');
+                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
+                item.classList.add('border-[#caf300]', 'bg-[#caf300]/10');
                 if (indicator) {
-                    indicator.classList.remove('opacity-0');
                     const nextLetter = String.fromCharCode(65 + selectedExercises.length);
-                    indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-[10px] font-mono font-extrabold w-5 h-5 rounded-full flex items-center justify-center">${nextLetter}</span>`;
+                    indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${nextLetter}</span>`;
                 }
             } else if (inSupersetIdx !== -1) {
-                item.classList.remove('border-transparent');
+                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
                 item.classList.add('border-[#caf300]/40', 'bg-[#caf300]/5');
                 if (indicator) {
-                    indicator.classList.remove('opacity-0');
                     const letter = String.fromCharCode(65 + inSupersetIdx);
-                    indicator.innerHTML = `<span class="bg-gray-800 text-[#caf300] text-[10px] font-mono font-extrabold w-5 h-5 rounded-full border border-[#caf300]/30 flex items-center justify-center">${letter}</span>`;
+                    indicator.innerHTML = `<span class="bg-zinc-800 text-[#caf300] text-xs font-bold w-5 h-5 rounded border border-[#caf300]/30 flex items-center justify-center">${letter}</span>`;
                 }
             } else {
-                item.classList.remove('border-primary-fixed', 'border-[#caf300]/40', 'bg-surface-container/60', 'bg-[#caf300]/5');
-                item.classList.add('border-transparent');
+                item.classList.remove('border-[#caf300]', 'border-[#caf300]/40', 'bg-[#caf300]/10', 'bg-[#caf300]/5');
+                item.classList.add('border-white/[0.04]', 'bg-[#18181a]');
                 if (indicator) {
-                    indicator.classList.add('opacity-0');
-                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>`;
+                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl text-zinc-600 group-hover:text-[#caf300]">radio_button_unchecked</span>`;
                 }
             }
         });
@@ -466,12 +685,10 @@ document.addEventListener('DOMContentLoaded', function() {
         syncUI();
     }
 
-    // 3. Selection Logic
     function selectItem(item) {
         const id = parseInt(item.dataset.id);
         const name = item.dataset.name;
 
-        // Ignore if already in superset
         if (selectedExercises.some(ex => ex.id === id)) {
             return;
         }
@@ -484,14 +701,12 @@ document.addEventListener('DOMContentLoaded', function() {
         syncUI();
     }
 
-    // Setup initial click handlers
     document.querySelectorAll('.exercise-item').forEach(item => {
         item.addEventListener('click', function() {
             selectItem(item);
         });
     });
 
-    // 4. Add to Superset Event Listener
     document.getElementById('add-to-superset-btn').addEventListener('click', function(e) {
         e.preventDefault();
         if (activeSelection) {
@@ -501,7 +716,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 5. Custom Exercise Modal & Interactions
     const modal = document.getElementById('custom-exercise-modal');
     const openBtn = document.getElementById('open-custom-modal-btn');
     const closeBtn = document.getElementById('close-custom-modal-btn');
@@ -509,7 +723,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('custom-exercise-form');
     const exerciseListContainer = document.getElementById('exercise-list-container');
 
-    // Skill Family custom selector logic
     const skillTrigger = document.getElementById('skill-family-trigger');
     const skillList = document.getElementById('skill-family-list-container');
     const skillArrow = document.getElementById('skill-family-arrow');
@@ -520,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function openSkillList() {
         if (!skillList) return;
         skillList.style.maxHeight = '200px';
-        skillList.style.border = '1px solid #262626';
+        skillList.style.border = '1px solid rgba(255,255,255,0.08)';
         skillList.style.marginTop = '4px';
         if (skillArrow) skillArrow.style.transform = 'rotate(180deg)';
     }
@@ -548,37 +761,23 @@ document.addEventListener('DOMContentLoaded', function() {
         opt.addEventListener('click', function(e) {
             e.stopPropagation();
             
-            // Reset styling on all options
             skillOptions.forEach(o => {
-                o.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
+                o.className = "skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50";
                 const check = o.querySelector('.check-indicator');
                 if (check) check.classList.add('opacity-0');
             });
 
-            // Set styling on selected option
-            this.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
+            this.className = "skill-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-zinc-800";
             const currentCheck = this.querySelector('.check-indicator');
             if (currentCheck) currentCheck.classList.remove('opacity-0');
 
-            // Update label & hidden input
             if (skillLabel) skillLabel.innerText = this.dataset.label;
             if (hiddenSkillInput) hiddenSkillInput.value = this.dataset.value;
 
-            // Close list
             closeSkillList();
         });
     });
 
-    document.addEventListener('click', function(e) {
-        if (skillTrigger && skillList && !skillTrigger.contains(e.target) && !skillList.contains(e.target)) {
-            closeSkillList();
-        }
-        if (muscleTrigger && muscleList && !muscleTrigger.contains(e.target) && !muscleList.contains(e.target)) {
-            closeMuscleList();
-        }
-    });
-
-    // Target Muscle custom selector logic
     const muscleTrigger = document.getElementById('target-muscle-trigger');
     const muscleList = document.getElementById('target-muscle-list-container');
     const muscleArrow = document.getElementById('target-muscle-arrow');
@@ -589,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function openMuscleList() {
         if (!muscleList) return;
         muscleList.style.maxHeight = '200px';
-        muscleList.style.border = '1px solid #262626';
+        muscleList.style.border = '1px solid rgba(255,255,255,0.08)';
         muscleList.style.marginTop = '4px';
         if (muscleArrow) muscleArrow.style.transform = 'rotate(180deg)';
     }
@@ -618,12 +817,12 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             
             muscleOptions.forEach(o => {
-                o.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
+                o.className = "muscle-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-zinc-800/50";
                 const check = o.querySelector('.check-indicator');
                 if (check) check.classList.add('opacity-0');
             });
 
-            this.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
+            this.className = "muscle-option w-full text-left px-3.5 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-zinc-800";
             const currentCheck = this.querySelector('.check-indicator');
             if (currentCheck) currentCheck.classList.remove('opacity-0');
 
@@ -634,35 +833,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    function resetCustomFormSelects() {
-        // Reset Skill Family trigger
-        if (skillLabel) skillLabel.innerText = "{% translate 'Other' %}";
-        if (hiddenSkillInput) hiddenSkillInput.value = "other";
-        skillOptions.forEach((o, index) => {
-            const check = o.querySelector('.check-indicator');
-            if (index === 0) {
-                o.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
-                if (check) check.classList.remove('opacity-0');
-            } else {
-                o.className = "skill-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
-                if (check) check.classList.add('opacity-0');
-            }
-        });
-
-        // Reset Target Muscle trigger
-        if (muscleLabel) muscleLabel.innerText = "{% translate 'None' %}";
-        if (hiddenMuscleInput) hiddenMuscleInput.value = "";
-        muscleOptions.forEach((o, index) => {
-            const check = o.querySelector('.check-indicator');
-            if (index === 0) {
-                o.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-white font-semibold bg-surface-container/60";
-                if (check) check.classList.remove('opacity-0');
-            } else {
-                o.className = "muscle-option w-full text-left px-4 py-3 rounded-lg text-sm transition-all flex items-center justify-between text-secondary hover:text-white hover:bg-surface-container/40";
-                if (check) check.classList.add('opacity-0');
-            }
-        });
-    }
+    document.addEventListener('click', function(e) {
+        if (skillTrigger && skillList && !skillTrigger.contains(e.target) && !skillList.contains(e.target)) {
+            closeSkillList();
+        }
+        if (muscleTrigger && muscleList && !muscleTrigger.contains(e.target) && !muscleList.contains(e.target)) {
+            closeMuscleList();
+        }
+    });
 
     function openModal() {
         modal.classList.remove('hidden');
@@ -686,10 +864,9 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             modal.classList.add('hidden');
             if (form) form.reset();
-            resetCustomFormSelects();
             closeSkillList();
             closeMuscleList();
-        }, 300);
+        }, 200);
     }
 
     if (openBtn) openBtn.addEventListener('click', openModal);
@@ -717,58 +894,53 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error('Network response failed');
                 }
                 return response.json();
             })
             .then(data => {
                 if (data.status === 'success') {
-                    // Create new HTML element in list
                     const newItem = document.createElement('div');
-                    newItem.className = "exercise-item flex items-center justify-between p-3 rounded-2xl border border-transparent hover:border-surface-container-highest hover:bg-surface-container-low transition-all cursor-pointer select-none";
+                    newItem.className = "exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]";
                     newItem.setAttribute('data-id', data.id);
                     newItem.setAttribute('data-name', data.name);
                     newItem.setAttribute('data-muscles', data.muscles || '');
                     newItem.setAttribute('data-skill', data.skill_family || '');
                     
                     newItem.innerHTML = `
-                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#0e0e0e] border border-surface-container-high flex items-center justify-center">
-                                <span class="material-symbols-outlined text-on-surface-variant text-lg">fitness_center</span>
+                        <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] flex items-center justify-center">
+                                <span class="material-symbols-outlined text-zinc-500 text-lg">fitness_center</span>
                             </div>
-                            <div class="flex flex-col min-w-0 flex-1">
-                                <span class="text-sm font-bold text-primary truncate">${data.name}</span>
-                                <span class="text-xs text-on-surface-variant truncate">
-                                    ${data.muscles || "{% translate 'No muscle info' %}"}
-                                    ${data.skill_family && data.skill_family !== 'Other' ? ' • ' + data.skill_family : ''}
-                                </span>
+                            <div class="flex flex-col min-w-0 flex-1 py-0.5 justify-center">
+                                <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">${data.name}</span>
+                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                                    <span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/20 truncate">
+                                        ${data.muscles || "{% translate 'Custom' %}"}
+                                    </span>
+                                    ${data.skill_family && data.skill_family !== 'Other' ? `<span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-white/[0.04]">${data.skill_family}</span>` : ''}
+                                </div>
                             </div>
                         </div>
-                        <div class="selected-indicator text-primary-fixed opacity-0 transition-opacity flex-shrink-0 ml-2">
-                            <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        <div class="selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3">
+                            <span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
                         </div>
                     `;
 
-                    // Prepend to list
                     if (exerciseListContainer) {
                         exerciseListContainer.insertBefore(newItem, exerciseListContainer.firstChild);
                     }
 
-                    // Add click handler for the new item
                     newItem.addEventListener('click', function() {
                         selectItem(newItem);
                     });
 
-                    // Automatically select the new item
                     selectItem(newItem);
-                    
-                    // Close the modal
                     closeModal();
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Error creating custom exercise. Please try again.');
+                console.error('Error saving custom exercise:', error);
             });
         });
     }

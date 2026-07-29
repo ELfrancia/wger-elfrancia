@@ -1,45 +1,36 @@
-import os
-import django
-import sys
+import os, sys, django, datetime
 
-# Add current directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.main")
+sys.path.insert(0, '.')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.main')
 django.setup()
 
-from django.template.loader import get_template
-from django.template import Context
-from wger.manager.models import WorkoutSession
+from wger.manager.views import routine
+from django.test import RequestFactory
+from django.contrib.auth.models import User
+from wger.manager.models import Day, Routine
+from wger.core.models import UserProfile
+from wger.gym.models import Gym
 
+u = User.objects.first()
+up, _ = UserProfile.objects.get_or_create(user=u)
 try:
-    print("Loading session_details_modal.html...")
-    template = get_template('user/session_details_modal.html')
-    print("Template loaded successfully!")
-    
-    # Try to render it with dummy context or actual database objects
-    session = WorkoutSession.objects.first()
-    if session:
-        print(f"Rendering template with WorkoutSession ID: {session.id}")
-        # Mimic view context
-        from wger.core.views.user import session_details_tailwind
-        from django.test import RequestFactory
-        
-        request = RequestFactory().get('/')
-        request.user = session.user
-        
-        # Add session support to RequestFactory request
-        from django.contrib.sessions.middleware import SessionMiddleware
-        middleware = SessionMiddleware(lambda r: None)
-        middleware.process_request(request)
-        request.session.save()
-        
-        # Call the view to see if it raises a 500 error!
-        response = session_details_tailwind(request, session.id)
-        print("Template rendered successfully! Status code:", response.status_code)
-    else:
-        print("No WorkoutSession objects found in database to test rendering.")
-except Exception as e:
-    import traceback
-    print("ERROR DURING RENDER:")
-    traceback.print_exc()
+    g = up.gym
+except Exception:
+    g = Gym.objects.create(name="Default Gym", userprofile=up)
+
+r, _ = Routine.objects.get_or_create(
+    name="Test Routine",
+    user=u,
+    defaults={"start": datetime.date.today(), "end": datetime.date.today() + datetime.timedelta(days=30)}
+)
+d, _ = Day.objects.get_or_create(routine=r, name="Day 1")
+
+req = RequestFactory().get('/')
+req.user = u
+req.session = {}
+res = routine.add_exercise_tailwind(req, r.pk, d.pk)
+html = res.content.decode('utf-8')
+
+print("Rendered HTML length:", len(html))
+print("data-calisthenics=\"false\" count:", html.count('data-calisthenics="false"'))
+print("data-calisthenics=\"true\" count:", html.count('data-calisthenics="true"'))

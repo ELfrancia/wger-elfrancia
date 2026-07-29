@@ -246,6 +246,47 @@ def delete_day_tailwind(request, routine_pk, day_pk):
     return redirect('manager:routine:view', pk=routine_pk)
 
 
+MUSCLE_KEYWORDS = {
+    'pectoralis major': ['chest', 'pectorals', 'pectoralis major', 'petto', 'pettorali'],
+    'pectorals': ['chest', 'pectorals', 'pectoralis major', 'petto', 'pettorali'],
+    'chest': ['chest', 'pectorals', 'pectoralis major', 'petto', 'pettorali'],
+    
+    'latissimus dorsi': ['lats', 'latissimus dorsi', 'back', 'upper back', 'dorsali', 'schiena'],
+    'lats': ['lats', 'latissimus dorsi', 'back', 'upper back', 'dorsali', 'schiena'],
+    'upper back': ['lats', 'back', 'upper back', 'dorsali', 'schiena', 'traps', 'rhomboids'],
+    'trapezius': ['back', 'traps', 'trapezius', 'trapezi'],
+    'traps': ['back', 'traps', 'trapezius', 'trapezi'],
+    'rhomboids': ['back', 'rhomboids', 'romboidi'],
+    
+    'biceps brachii': ['biceps', 'biceps brachii', 'bicipiti', 'braccia', 'arms'],
+    'biceps': ['biceps', 'biceps brachii', 'bicipiti', 'braccia', 'arms'],
+    'brachialis': ['biceps', 'brachialis', 'bicipiti', 'braccia', 'arms'],
+    
+    'triceps brachii': ['triceps', 'triceps brachii', 'tricipiti', 'braccia', 'arms'],
+    'triceps': ['triceps', 'triceps brachii', 'tricipiti', 'braccia', 'arms'],
+    
+    'anterior deltoid': ['deltoids', 'shoulders', 'anterior deltoid', 'spalle', 'deltoidi'],
+    'deltoids': ['deltoids', 'shoulders', 'deltoidi', 'spalle'],
+    'shoulders': ['deltoids', 'shoulders', 'deltoidi', 'spalle'],
+    'rear deltoids': ['deltoids', 'shoulders', 'rear deltoids', 'deltoidi posteriori', 'spalle'],
+    
+    'quadriceps femoris': ['quadriceps', 'quads', 'legs', 'quadriceps femoris', 'gambe', 'quadricipiti'],
+    'quadriceps': ['quadriceps', 'quads', 'legs', 'gambe', 'quadricipiti'],
+    'quads': ['quadriceps', 'quads', 'legs', 'gambe', 'quadricipiti'],
+    'biceps femoris': ['legs', 'hamstrings', 'biceps femoris', 'femorali', 'gambe'],
+    'gluteus maximus': ['glutes', 'legs', 'gluteus maximus', 'glutei', 'gambe'],
+    'glutes': ['glutes', 'legs', 'glutei', 'gambe'],
+    'gastrocnemius': ['calves', 'legs', 'polpacci', 'gambe'],
+    'soleus': ['calves', 'legs', 'polpacci', 'gambe'],
+    'adductors': ['legs', 'adductors', 'adduttori', 'gambe'],
+    
+    'rectus abdominis': ['abs', 'core', 'rectus abdominis', 'addominali', 'addome'],
+    'obliquus externus abdominis': ['abs', 'core', 'obliques', 'addominali obliqui'],
+    'abs': ['abs', 'core', 'addominali', 'addome'],
+    'obliques': ['abs', 'core', 'obliques', 'addominali obliqui'],
+}
+
+
 @login_required
 def add_exercise_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
@@ -285,7 +326,7 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
         form = AddExerciseForm()
         
     # Build exercises list with prefetching to avoid N+1 queries
-    exercise_qs = form.fields['exercise'].queryset.prefetch_related('muscles', 'translations')
+    exercise_qs = form.fields['exercise'].queryset.prefetch_related('muscles', 'translations', 'equipment', 'category')
     
     from wger.exercises.models import CalisthenicsExercise
     calisthenics_map = {
@@ -295,12 +336,38 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
     exercises_list = []
     muscles_set = set()
     skills_set = set()
+    equipment_set = set()
+    categories_set = set()
+    
+    DUMMY_NAMES = {
+        'needed for demo user',
+        'pending exercise',
+        'an exercise',
+        'very cool exercise',
+        'boring exercise',
+        'test pushup',
+        'i will be deleted'
+    }
     
     for ex in exercise_qs:
         translation = ex.get_translation()
-        name = translation.name if translation else "Unnamed Exercise"
         cal = calisthenics_map.get(str(ex.uuid))
         
+        if translation and translation.name:
+            name = translation.name
+        elif cal and cal.name:
+            name = cal.name
+        else:
+            name = f"Exercise #{ex.id}"
+            
+        # Skip dummy placeholder exercises from default wger fixtures
+        if name.strip().lower() in DUMMY_NAMES or 'needed for demo user' in name.lower():
+            continue
+            
+        # Clean capitalization if name is all lowercase
+        if name and name.islower():
+            name = name.title()
+            
         preview_url = None
         skill_family = 'Other'
         if cal:
@@ -314,22 +381,56 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
                 preview_url = img.image.url
                 
         muscles = [m.name for m in ex.muscles.all()]
+        if not muscles and cal and cal.target_muscle:
+            muscles = [cal.target_muscle.title()]
+
+        search_terms = set()
         for m in muscles:
             muscles_set.add(m)
+            m_lower = m.lower()
+            search_terms.add(m_lower)
+            for kw in MUSCLE_KEYWORDS.get(m_lower, []):
+                search_terms.add(kw)
+
         if skill_family:
             skills_set.add(skill_family)
             
+        equipment = [eq.name for eq in ex.equipment.all()]
+        if not equipment and cal:
+            equipment = [cal.equipment or 'Body weight']
+        for eq in equipment:
+            equipment_set.add(eq)
+            
+        cat_name = ex.category.name if ex.category else ('Calisthenics' if cal else 'General')
+        if cat_name and cat_name not in ['Another category', 'Yet another category', 'I will be deleted', 'Category']:
+            categories_set.add(cat_name)
+        else:
+            cat_name = 'Gym' if not cal else 'Calisthenics'
+            categories_set.add(cat_name)
+
         exercises_list.append({
             'id': ex.id,
             'name': name,
             'preview_url': preview_url or '',
-            'muscles': ','.join(muscles),
+            'muscles': ','.join(search_terms),
             'muscles_display': ' • '.join(muscles),
             'skill_family': skill_family,
+            'equipment': ','.join(equipment),
+            'equipment_display': ' • '.join(equipment) if equipment else '',
+            'category': cat_name,
+            'is_calisthenics': bool(cal),
         })
         
+    exercises_list = sorted(exercises_list, key=lambda x: x['name'].lower())
+    exercise_counts = {
+        'all': len(exercises_list),
+        'gym': sum(not exercise['is_calisthenics'] for exercise in exercises_list),
+        'calisthenics': sum(exercise['is_calisthenics'] for exercise in exercises_list),
+    }
     muscles_list = sorted(list(muscles_set))
     skills_list = sorted(list(skills_set))
+    equipment_list = sorted(list(equipment_set))
+    categories_list = sorted(list(categories_set))
         
     return render(request, 'routines/add_exercise_tailwind.html', {
         'form': form,
@@ -337,6 +438,9 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
         'exercises_list': exercises_list,
         'muscles_list': muscles_list,
         'skills_list': skills_list,
+        'equipment_list': equipment_list,
+        'categories_list': categories_list,
+        'exercise_counts': exercise_counts,
     })
 
 
@@ -609,5 +713,4 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
         'muscles': target_muscle_name,
         'skill_family': skill_family.replace('_', ' ').title()
     })
-
 
