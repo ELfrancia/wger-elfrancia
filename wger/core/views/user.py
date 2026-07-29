@@ -934,13 +934,15 @@ def profile_tailwind(request):
         updated = False
         if steps_goal is not None and steps_goal != '':
             try:
-                profile.steps_goal = max(1, int(steps_goal))
+                clean_steps = str(steps_goal).replace('.', '').replace(',', '').replace(' ', '')
+                profile.steps_goal = max(1, int(clean_steps))
                 updated = True
             except (ValueError, TypeError):
                 pass
         if calories_goal is not None and calories_goal != '':
             try:
-                profile.calories_goal = max(1, int(calories_goal))
+                clean_cals = str(calories_goal).replace('.', '').replace(',', '').replace(' ', '')
+                profile.calories_goal = max(1, int(clean_cals))
                 updated = True
             except (ValueError, TypeError):
                 pass
@@ -965,6 +967,10 @@ def profile_tailwind(request):
             updated = True
 
         if updated:
+            if profile.gym_id:
+                from wger.gym.models import Gym
+                if not Gym.objects.filter(id=profile.gym_id).exists():
+                    profile.gym = None
             profile.save()
             messages.success(request, _('Profile settings successfully updated.'))
             return redirect('core:profile_tailwind')
