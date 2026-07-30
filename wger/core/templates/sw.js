@@ -32,8 +32,13 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Let the browser handle foreign domains, API, and authentication/POST requests naturally.
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/v2/') || event.request.url.includes('/account/')) {
+  // Let the browser handle foreign domains, API, user auth/POST requests naturally.
+  if (
+    event.request.method !== 'GET' || 
+    event.request.url.includes('/api/v2/') || 
+    event.request.url.includes('/account/') ||
+    event.request.url.includes('/user/')
+  ) {
     return;
   }
   
@@ -46,7 +51,7 @@ self.addEventListener('fetch', event => {
               return response;
             }
             // Fallback for document navigation if offline
-            if (event.request.headers.get('accept').includes('text/html')) {
+            if (event.request.headers && event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
               return caches.match('/');
             }
           });
