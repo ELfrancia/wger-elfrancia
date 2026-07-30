@@ -52,5 +52,10 @@ EXPOSE 8000
 # Set default settings module
 ENV DJANGO_SETTINGS_MODULE=settings.local_dev
 
-# Run django dev server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Make entrypoint script executable
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Entrypoint script will run migrations on startup without touching user data
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
