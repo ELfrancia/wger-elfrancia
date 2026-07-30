@@ -431,7 +431,6 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
             'day',
             'date',
             'notes',
-            'impression',
             'time_start',
             'time_end',
         )

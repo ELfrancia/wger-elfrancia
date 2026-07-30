@@ -60,12 +60,22 @@ class ImageForm(ModelForm):
     def _get_exif_date(self, image_file):
         try:
             img = PilImage.open(image_file)
-            exif_data = img._getexif()
+            exif_data = None
+            if hasattr(img, '_getexif') and callable(img._getexif):
+                exif_data = img._getexif()
+            if not exif_data and hasattr(img, 'getexif'):
+                exif_obj = img.getexif()
+                if exif_obj:
+                    if hasattr(exif_obj, 'get_ifd'):
+                        exif_data = exif_obj.get_ifd(0x8769)
+                    else:
+                        exif_data = exif_obj
+
             if exif_data:
-                # EXIF constant index for date and datetime format
+                # EXIF constant index 36867 for DateTimeOriginal
                 date_str = exif_data.get(36867)
                 if date_str:
-                    return datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S').date()
-        except Exception as e:
+                    return datetime.strptime(str(date_str), '%Y:%m:%d %H:%M:%S').date()
+        except Exception:
             pass
         return None

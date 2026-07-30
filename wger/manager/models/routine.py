@@ -127,6 +127,16 @@ class Routine(models.Model):
         default=False,
     )
 
+    current_week = models.IntegerField(
+        verbose_name='Current week',
+        default=1,
+    )
+
+    total_weeks = models.IntegerField(
+        verbose_name='Total weeks',
+        default=4,
+    )
+
     def get_absolute_url(self):
         """
         Returns the canonical URL to view a workout

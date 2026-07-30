@@ -1,17 +1,27 @@
 # -*- coding: utf-8 -*-
 import datetime
+from decimal import Decimal
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db import models as django_models
 from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.db import models as django_models
-from wger.manager.models import Day, WorkoutSession, WorkoutLog, SlotEntry, SetsConfig, RepetitionsConfig, WeightConfig
+from wger.manager.models import (
+    Day,
+    WorkoutSession,
+    WorkoutLog,
+    Slot,
+    SlotEntry,
+    SetsConfig,
+    RepetitionsConfig,
+    WeightConfig,
+)
 from wger.manager.helpers import reset_routine_cache
 from wger.gallery.models.image import Image
 from wger.gallery.forms import ImageForm
-
 
 
 @login_required
@@ -23,46 +33,74 @@ def log_tailwind(request, routine_pk, day_pk):
     # Track active session ID for this day using django session cookies
     session_key = f'active_session_{day_pk}'
     session = None
-    
+    cutoff_24h = timezone.now() - datetime.timedelta(hours=24)
+
     # If ?start=true is passed, we explicitly want to start a brand new session
     if request.GET.get('start') == 'true':
+        WorkoutSession.objects.filter(
+            user=request.user,
+            routine_id=routine_pk,
+            day=day,
+            status='active'
+        ).update(status='interrupted')
+
         session = WorkoutSession.objects.create(
             user=request.user,
             routine_id=routine_pk,
             day=day,
             date=datetime.date.today(),
-            time_start=timezone.localtime(timezone.now()).time()
+            time_start=timezone.localtime(timezone.now()).time(),
+            status='active',
         )
         request.session[session_key] = str(session.id)
         return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
-    # Otherwise, try to load existing active session
+    # 1. Try to load existing active session from session key
     session_id = request.session.get(session_key)
     if session_id:
-        session = WorkoutSession.objects.filter(id=session_id, user=request.user).first()
+        s = WorkoutSession.objects.filter(id=session_id, user=request.user).first()
+        if s:
+            s_dt = datetime.datetime.combine(s.date, s.time_start or datetime.time.min)
+            if timezone.is_naive(s_dt):
+                s_dt = timezone.make_aware(s_dt)
+            if s_dt >= cutoff_24h:
+                session = s
 
-    # Fallback to the latest session for today, or create one if none exists
+    # 2. Server-Side Draft Lookup: Any active WorkoutSession created in the last 24h for this day/user
     if not session:
-        session = WorkoutSession.objects.filter(
+        active_candidates = WorkoutSession.objects.filter(
             user=request.user,
             routine_id=routine_pk,
             day=day,
-            date=datetime.date.today()
-        ).order_by('-id').first()
-        
-        if not session:
-            session = WorkoutSession.objects.create(
-                user=request.user,
-                routine_id=routine_pk,
-                day=day,
-                date=datetime.date.today(),
-                time_start=timezone.localtime(timezone.now()).time()
-            )
-        request.session[session_key] = str(session.id)
+            status='active',
+        ).order_by('-date', '-time_start', '-id')
+
+        for candidate in active_candidates:
+            c_dt = datetime.datetime.combine(candidate.date, candidate.time_start or datetime.time.min)
+            if timezone.is_naive(c_dt):
+                c_dt = timezone.make_aware(c_dt)
+            if c_dt >= cutoff_24h:
+                session = candidate
+                break
+
+    # 3. Create a new active session draft if none found within 24h
+    if not session:
+        session = WorkoutSession.objects.create(
+            user=request.user,
+            routine_id=routine_pk,
+            day=day,
+            date=datetime.date.today(),
+            time_start=timezone.localtime(timezone.now()).time(),
+            status='active',
+        )
+    request.session[session_key] = str(session.id)
 
     if session and not session.time_start:
         session.time_start = timezone.localtime(timezone.now()).time()
         session.save()
+
+    if session.user != request.user:
+        return HttpResponseForbidden()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -71,12 +109,12 @@ def log_tailwind(request, routine_pk, day_pk):
         slot_id = request.POST.get('slot_id')
 
         # Sanitize integer IDs in case of localized formatting
-        if exercise_id:
-            exercise_id = ''.join(c for c in str(exercise_id) if c.isdigit())
-        if slot_entry_id:
-            slot_entry_id = ''.join(c for c in str(slot_entry_id) if c.isdigit())
-        if slot_id:
-            slot_id = ''.join(c for c in str(slot_id) if c.isdigit())
+        if exercise_id and str(exercise_id).isdigit():
+            exercise_id = int(exercise_id)
+        if slot_entry_id and str(slot_entry_id).isdigit():
+            slot_entry_id = int(slot_entry_id)
+        if slot_id and str(slot_id).isdigit():
+            slot_id = int(slot_id)
 
         # Determine target slot first, if possible
         slot = None
@@ -89,30 +127,63 @@ def log_tailwind(request, routine_pk, day_pk):
         if not slot and exercise_id:
             slot = day.slots.filter(entries__exercise_id=exercise_id).distinct().first()
 
-        if action == 'restart_workout':
-            session.logs.all().delete()
-            session.time_start = timezone.localtime(timezone.now()).time()
-            session.time_end = None
-            session.save()
-            return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+        with transaction.atomic():
+            if action == 'restart_workout':
+                session.logs.all().delete()
+                session.status = 'active'
+                session.time_start = timezone.localtime(timezone.now()).time()
+                session.time_end = None
+                session.save()
+                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
-        elif action == 'upload_condition_photo':
-            photo = request.FILES.get('image')
-            description = request.POST.get('description', '')
-            finish_after = request.POST.get('finish_workout') == 'true'
+            elif action == 'upload_condition_photo':
+                photo = request.FILES.get('image')
+                description = request.POST.get('description', '')
+                finish_after = request.POST.get('finish_workout') == 'true'
 
-            if photo:
-                default_desc = f"Foto condizione: {day.routine.name} - {day.name} ({datetime.date.today().strftime('%d/%m/%Y')})"
-                final_desc = description.strip() if description.strip() else default_desc
-                
-                img_obj = Image(
-                    user=request.user,
-                    date=datetime.date.today(),
-                    description=final_desc
-                )
-                img_obj.image.save(photo.name, photo, save=True)
+                img_obj = None
+                if photo:
+                    default_desc = f"Foto condizione: {day.routine.name} - {day.name} ({datetime.date.today().strftime('%d/%m/%Y')})"
+                    final_desc = description.strip() if description.strip() else default_desc
 
-            if finish_after:
+                    img_obj = Image(
+                        user=request.user,
+                        date=datetime.date.today(),
+                        description=final_desc,
+                    )
+                    img_obj.image.save(photo.name, photo, save=True)
+                    session.condition_photo = img_obj
+                    session.save()
+
+                if finish_after:
+                    session.status = 'finished'
+                    session.time_end = timezone.localtime(timezone.now()).time()
+                    session.save()
+                    if session_key in request.session:
+                        del request.session[session_key]
+                    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
+                    return redirect('weight:overview')
+
+                today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
+                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'status': 'ok',
+                        'message': 'Foto caricata con successo!',
+                        'photos_count': today_photos_count,
+                    })
+                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+            elif action == 'finish_workout':
+                session.status = 'finished'
+                session.time_end = timezone.localtime(timezone.now()).time()
+                session.save()
+                if session_key in request.session:
+                    del request.session[session_key]
+                return redirect('weight:overview')
+
+            elif action == 'interrupt_workout':
+                session.status = 'interrupted'
                 session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
                 if session_key in request.session:
@@ -121,130 +192,221 @@ def log_tailwind(request, routine_pk, day_pk):
                     return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
                 return redirect('weight:overview')
 
-            today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
-            if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'status': 'ok',
-                    'message': 'Foto caricata con successo!',
-                    'photos_count': today_photos_count
-                })
-            return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+            elif action == 'discard_workout':
+                session.logs.all().delete()
+                session.status = 'interrupted'
+                session.time_end = timezone.localtime(timezone.now()).time()
+                session.save()
+                if session_key in request.session:
+                    del request.session[session_key]
+                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
+                return redirect('weight:overview')
 
-        elif action == 'finish_workout':
-            session.time_end = timezone.localtime(timezone.now()).time()
-            session.save()
-            if session_key in request.session:
-                del request.session[session_key]
-            return redirect('weight:overview')
+            elif action == 'complete_exercise':
+                if slot:
+                    if exercise_id:
+                        target_entries = slot.entries.filter(exercise_id=exercise_id)
+                    else:
+                        target_entries = slot.entries.all()
 
-        elif action == 'complete_exercise':
-            if slot:
-                if exercise_id:
-                    target_entries = slot.entries.filter(exercise_id=exercise_id)
-                else:
-                    target_entries = slot.entries.all()
+                    target_set_ids = [entry.id for entry in target_entries]
+                    logged_set_ids = list(
+                        session.logs.filter(slot_entry_id__in=target_set_ids).values_list('slot_entry_id', flat=True)
+                    )
+                    all_completed = target_set_ids and all(sid in logged_set_ids for sid in target_set_ids)
 
-                target_set_ids = [entry.id for entry in target_entries]
-                # Get already logged set IDs for these entries in this session
-                logged_set_ids = list(session.logs.filter(slot_entry_id__in=target_set_ids).values_list('slot_entry_id', flat=True))
+                    if all_completed:
+                        session.logs.filter(slot_entry_id__in=target_set_ids).delete()
+                    else:
+                        for slot_entry in target_entries:
+                            if slot_entry.id not in logged_set_ids:
+                                reps = None
+                                weight = None
+                                if hasattr(slot_entry, 'reps_config') and slot_entry.reps_config:
+                                    reps = slot_entry.reps_config.reps
+                                if hasattr(slot_entry, 'weight_config') and slot_entry.weight_config:
+                                    weight = slot_entry.weight_config.weight
+                                if reps is None:
+                                    reps = 10
+                                if weight is None:
+                                    weight = Decimal('0')
+                                else:
+                                    weight = Decimal(str(weight))
+                                WorkoutLog.objects.create(
+                                    user=request.user,
+                                    session=session,
+                                    exercise_id=slot_entry.exercise_id,
+                                    routine_id=routine_pk,
+                                    slot_entry_id=slot_entry.id,
+                                    repetitions=reps,
+                                    weight=weight,
+                                    date=timezone.now(),
+                                )
 
-                # Check if all targeted sets for this slot are already completed
-                all_completed = target_set_ids and all(sid in logged_set_ids for sid in target_set_ids)
+            elif action == 'delete_set':
+                session.logs.filter(slot_entry_id=slot_entry_id).delete()
+                if not slot and slot_entry_id:
+                    slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
+                    if slot_entry:
+                        slot = slot_entry.slot
 
-                if all_completed:
-                    # Uncheck: Delete all logs for these target entries in this session
-                    session.logs.filter(slot_entry_id__in=target_set_ids).delete()
-                else:
-                    # Check: Log all remaining/unlogged target sets using configured default values
-                    for slot_entry in target_entries:
-                        if slot_entry.id not in logged_set_ids:
-                            reps = slot_entry.reps_config.reps
-                            weight = slot_entry.weight_config.weight
-                            if reps is None:
-                                reps = 10
-                            if weight is None:
-                                weight = 0
-                            WorkoutLog.objects.create(
-                                user=request.user,
-                                session=session,
-                                exercise_id=slot_entry.exercise_id,
-                                routine_id=routine_pk,
-                                slot_entry_id=slot_entry.id,
-                                repetitions=reps,
-                                weight=weight,
-                                date=timezone.now()
-                            )
+            elif action == 'add_set':
+                if slot:
+                    from wger.exercises.models import Exercise
+                    if exercise_id:
+                        exercise = get_object_or_404(Exercise, id=exercise_id)
+                    elif slot.obj:
+                        exercise = slot.obj
+                    else:
+                        exercise = None
 
-        elif action == 'delete_set':
-            session.logs.filter(slot_entry_id=slot_entry_id).delete()
-            if not slot and slot_entry_id:
-                slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
-                if slot_entry:
-                    slot = slot_entry.slot
+                    if exercise:
+                        max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
+                        slot_entry = SlotEntry.objects.create(
+                            slot=slot,
+                            exercise=exercise,
+                            order=(max_order or 0) + 1,
+                        )
 
-        elif action == 'add_set':
-            if slot:
+                        req_reps = request.POST.get('repetitions') or request.POST.get('reps')
+                        req_weight = request.POST.get('weight')
+
+                        if req_reps is not None and str(req_reps).isdigit():
+                            reps_val = int(req_reps)
+                        else:
+                            last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
+                            if (
+                                last_entry
+                                and hasattr(last_entry, 'reps_config')
+                                and last_entry.reps_config
+                                and last_entry.reps_config.reps is not None
+                            ):
+                                reps_val = int(last_entry.reps_config.reps)
+                            else:
+                                reps_val = 10
+
+                        if req_weight is not None and str(req_weight).strip() not in ('', '0'):
+                            try:
+                                weight_val = Decimal(str(req_weight))
+                            except (TypeError, ValueError):
+                                weight_val = Decimal('0')
+                        else:
+                            last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
+                            if (
+                                last_entry
+                                and hasattr(last_entry, 'weight_config')
+                                and last_entry.weight_config
+                                and last_entry.weight_config.weight is not None
+                            ):
+                                weight_val = Decimal(str(last_entry.weight_config.weight))
+                            else:
+                                weight_val = Decimal('0')
+
+                        SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                        RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
+                        WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
+
+                        WorkoutLog.objects.create(
+                            user=request.user,
+                            session=session,
+                            exercise_id=exercise.id,
+                            routine_id=routine_pk,
+                            slot_entry_id=slot_entry.id,
+                            repetitions=reps_val,
+                            weight=weight_val,
+                            date=timezone.now(),
+                        )
+                        reset_routine_cache(day.routine)
+
+            elif action == 'add_exercise_on_the_fly':
                 from wger.exercises.models import Exercise
                 exercise = get_object_or_404(Exercise, id=exercise_id)
-                max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
-                slot_entry = SlotEntry.objects.create(
-                    slot=slot,
-                    exercise=exercise,
-                    order=(max_order or 0) + 1
+                max_slot_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+                slot = Slot.objects.create(
+                    day=day,
+                    order=(max_slot_order or 0) + 1,
                 )
-                SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-                RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
-                WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
+                try:
+                    num_sets = int(request.POST.get('sets', 3))
+                except (TypeError, ValueError):
+                    num_sets = 3
+
+                req_reps = request.POST.get('repetitions') or request.POST.get('reps')
+                try:
+                    reps_val = int(req_reps) if req_reps else 10
+                except (TypeError, ValueError):
+                    reps_val = 10
+
+                req_weight = request.POST.get('weight')
+                if req_weight is not None and str(req_weight).strip() not in ('', '0'):
+                    try:
+                        weight_val = Decimal(str(req_weight))
+                    except (TypeError, ValueError):
+                        weight_val = Decimal('0')
+                else:
+                    weight_val = Decimal('0')
+
+                for i in range(num_sets):
+                    slot_entry = SlotEntry.objects.create(
+                        slot=slot,
+                        exercise=exercise,
+                        order=i + 1,
+                    )
+                    SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                    RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
+                    WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
                 reset_routine_cache(day.routine)
 
-        elif action == 'delete_set_config':
-            slot_entry = get_object_or_404(SlotEntry, id=slot_entry_id, slot__day=day)
-            slot = slot_entry.slot
-            
-            if slot.entries.count() <= 1:
-                slot.delete()
-                reset_routine_cache(day.routine)
-                if request.headers.get('HX-Request'):
-                    return HttpResponse("")
-                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+            elif action == 'delete_set_config':
+                slot_entry = get_object_or_404(SlotEntry, id=slot_entry_id, slot__day=day)
+                slot = slot_entry.slot
+
+                if slot.entries.count() <= 1:
+                    slot.delete()
+                    reset_routine_cache(day.routine)
+                    if request.headers.get('HX-Request'):
+                        return HttpResponse("")
+                    return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+                else:
+                    slot_entry.delete()
+                    reset_routine_cache(day.routine)
+
             else:
-                slot_entry.delete()
-                reset_routine_cache(day.routine)
+                # Default set logging
+                repetitions = request.POST.get('repetitions')
+                weight = request.POST.get('weight')
+                rir = request.POST.get('rir') or None
 
-        else:
-            # Default set logging
-            repetitions = request.POST.get('repetitions')
-            weight = request.POST.get('weight')
-            rir = request.POST.get('rir') or None
+                try:
+                    repetitions = int(repetitions)
+                except (TypeError, ValueError):
+                    repetitions = 0
 
-            try:
-                repetitions = int(repetitions)
-            except (TypeError, ValueError):
-                repetitions = 0
+                if weight is None or str(weight).strip() in ('', '0'):
+                    weight = Decimal('0')
+                else:
+                    try:
+                        weight = Decimal(str(weight))
+                    except (TypeError, ValueError):
+                        weight = Decimal('0')
 
-            try:
-                from decimal import Decimal
-                weight = Decimal(weight)
-            except (TypeError, ValueError):
-                from decimal import Decimal
-                weight = Decimal('0')
-
-            # Create WorkoutLog entry
-            log_entry = WorkoutLog.objects.create(
-                user=request.user,
-                session=session,
-                exercise_id=exercise_id,
-                routine_id=routine_pk,
-                slot_entry_id=slot_entry_id,
-                repetitions=repetitions,
-                weight=weight,
-                rir=rir,
-                date=timezone.now()
-            )
-            if not slot and slot_entry_id:
-                slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
-                if slot_entry:
-                    slot = slot_entry.slot
+                # Create WorkoutLog entry
+                log_entry = WorkoutLog.objects.create(
+                    user=request.user,
+                    session=session,
+                    exercise_id=exercise_id,
+                    routine_id=routine_pk,
+                    slot_entry_id=slot_entry_id,
+                    repetitions=repetitions,
+                    weight=weight,
+                    rir=rir,
+                    date=timezone.now(),
+                )
+                if not slot and slot_entry_id:
+                    slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
+                    if slot_entry:
+                        slot = slot_entry.slot
 
         # Common rendering response for HTMX request
         if request.headers.get('HX-Request'):
@@ -311,4 +473,5 @@ def log_tailwind(request, routine_pk, day_pk):
         'session_logs_map': session_logs_map,
         'today_photos_count': today_photos_count,
     })
+
 

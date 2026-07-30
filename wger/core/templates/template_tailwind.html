@@ -53,21 +53,80 @@
       });
 
       function toggleAppFullscreen() {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-          if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(err => {
+        const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (!isFS) {
+          const docEl = document.documentElement;
+          if (docEl.requestFullscreen) {
+            docEl.requestFullscreen().then(() => {
+              sessionStorage.setItem('app_fullscreen', 'true');
+              window.updateFullscreenUI(true);
+            }).catch(err => {
               console.log('Fullscreen error:', err);
             });
-          } else if (document.documentElement.webkitRequestFullscreen) {
-            document.documentElement.webkitRequestFullscreen();
+          } else if (docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen();
+            sessionStorage.setItem('app_fullscreen', 'true');
+            window.updateFullscreenUI(true);
           }
         } else {
           if (document.exitFullscreen) {
-            document.exitFullscreen();
+            document.exitFullscreen().then(() => {
+              sessionStorage.setItem('app_fullscreen', 'false');
+              window.updateFullscreenUI(false);
+            }).catch(err => {
+              console.log('Exit fullscreen error:', err);
+            });
           } else if (document.webkitExitFullscreen) {
             document.webkitExitFullscreen();
+            sessionStorage.setItem('app_fullscreen', 'false');
+            window.updateFullscreenUI(false);
           }
         }
+      }
+
+      window.updateFullscreenUI = function(isFS) {
+        const isCurrentlyFS = isFS !== undefined ? isFS : !!(document.fullscreenElement || document.webkitFullscreenElement);
+        document.querySelectorAll('.fullscreen-toggle-icon, #fullscreen-toggle-icon').forEach(icon => {
+          icon.textContent = isCurrentlyFS ? 'fullscreen_exit' : 'fullscreen';
+        });
+      };
+
+      document.addEventListener('fullscreenchange', () => {
+        const isFS = !!document.fullscreenElement;
+        sessionStorage.setItem('app_fullscreen', isFS ? 'true' : 'false');
+        window.updateFullscreenUI(isFS);
+      });
+
+      document.addEventListener('webkitfullscreenchange', () => {
+        const isFS = !!document.webkitFullscreenElement;
+        sessionStorage.setItem('app_fullscreen', isFS ? 'true' : 'false');
+        window.updateFullscreenUI(isFS);
+      });
+
+      function setupFullscreenRestorer() {
+        window.updateFullscreenUI();
+        if (sessionStorage.getItem('app_fullscreen') === 'true' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+          const tryRestore = () => {
+            if (sessionStorage.getItem('app_fullscreen') === 'true' && !document.fullscreenElement && !document.webkitFullscreenElement) {
+              const docEl = document.documentElement;
+              if (docEl.requestFullscreen) {
+                docEl.requestFullscreen().catch(() => {});
+              } else if (docEl.webkitRequestFullscreen) {
+                docEl.webkitRequestFullscreen();
+              }
+            }
+            document.removeEventListener('click', tryRestore, true);
+            document.removeEventListener('touchstart', tryRestore, true);
+          };
+          document.addEventListener('click', tryRestore, { once: true, capture: true });
+          document.addEventListener('touchstart', tryRestore, { once: true, capture: true });
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupFullscreenRestorer);
+      } else {
+        setupFullscreenRestorer();
       }
 
       tailwind.config = {
@@ -111,7 +170,7 @@
           -webkit-user-select: none;
         }
       }
-      /* Hide number input spinners */
+      /* Hide number input spinners & remove square outlines/borders */
       input[type=number]::-webkit-inner-spin-button, 
       input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none; 
@@ -119,6 +178,17 @@
       }
       input[type=number] {
         -moz-appearance: textfield;
+      }
+      .clean-input,
+      .clean-input:focus,
+      .clean-input:active,
+      input[type=number]:focus,
+      input[type=text]:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        --tw-ring-shadow: 0 0 #0000 !important;
+        --tw-ring-color: transparent !important;
       }
 
       /* Smooth height expansion */
@@ -514,7 +584,7 @@
     <title>{% block title %}Onyx Tracker{% endblock %}</title>
     {% block header %}{% endblock %}
 </head>
-<body class="bg-background text-[#e5e2e1] font-sans antialiased pb-24 min-h-screen">
+<body class="bg-background text-[#e5e2e1] font-sans antialiased pb-24 min-h-screen" hx-boost="true">
     <!-- Page Loader Overlay (Nascosto di default, visibile solo all'avvio allenamento o con data-show-loader) -->
     <div id="page-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#08090A] fade-out">
         <div class="relative w-28 h-28 flex items-center justify-center">
@@ -1185,6 +1255,9 @@
                 const loader = document.getElementById('page-loader');
                 if (loader && !loader.classList.contains('fade-out')) {
                     window.hidePageLoader();
+                }
+                if (window.updateFullscreenUI) {
+                    window.updateFullscreenUI();
                 }
             });
         })();

@@ -252,7 +252,6 @@ class WorkoutSessionViewSet(WgerOwnerObjectModelViewSet):
         'date',
         'routine',
         'notes',
-        'impression',
         'time_start',
         'time_end',
     )

@@ -904,6 +904,17 @@ def dashboard_tailwind(request):
     import datetime
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
     latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date', '-time_start').first()
+
+    active_draft_session = None
+    active_candidates = WorkoutSession.objects.filter(
+        user=request.user,
+        status='active',
+        date=timezone.localdate(),
+        time_end__isnull=True
+    ).select_related('day', 'routine').order_by('-date', '-time_start', '-id')
+    if active_candidates.exists():
+        active_draft_session = active_candidates.first()
+
     activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
     profile = request.user.userprofile
     ten_days_ago = timezone.localdate() - datetime.timedelta(days=10)
@@ -915,6 +926,7 @@ def dashboard_tailwind(request):
     return render(request, 'user/dashboard_tailwind.html', {
         'stats': stats,
         'latest_session': latest_session,
+        'active_draft_session': active_draft_session,
         'activity': activity,
         'profile': profile,
         'completed_sessions': completed_sessions,
@@ -1083,7 +1095,12 @@ def session_details_tailwind(request, session_id):
             duration_str = f"{duration_mins} min"
 
     # Get logs grouped by exercise, preserving chronological order of logs
-    logs = session.logs.select_related('exercise', 'weight_unit', 'repetitions_unit').order_by('date')
+    from django.db.models import Q
+    logs_query = Q(session=session)
+    if session.date and session.routine:
+        logs_query |= Q(user=session.user, routine=session.routine, date__date=session.date)
+
+    logs = WorkoutLog.objects.filter(logs_query).select_related('exercise', 'weight_unit', 'repetitions_unit').distinct().order_by('date', 'id')
     
     grouped_logs = OrderedDict()
     for log in logs:
@@ -1092,19 +1109,10 @@ def session_details_tailwind(request, session_id):
             grouped_logs[exercise] = []
         grouped_logs[exercise].append(log)
 
-    # Human-readable impression
-    impression_mapping = {
-        WorkoutSession.IMPRESSION_BAD: _('Bad') + ' 🔴',
-        WorkoutSession.IMPRESSION_NEUTRAL: _('Neutral') + ' 🟡',
-        WorkoutSession.IMPRESSION_GOOD: _('Good') + ' 🟢',
-    }
-    impression_text = impression_mapping.get(session.impression, _('Neutral') + ' 🟡')
-
     return render(request, 'user/session_details.html', {
         'session': session,
         'duration_str': duration_str,
         'grouped_logs': grouped_logs.items(),
-        'impression_text': impression_text,
         'time_start_local': time_start_local,
         'time_end_local': time_end_local,
     })

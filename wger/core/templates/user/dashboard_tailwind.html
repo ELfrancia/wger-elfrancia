@@ -24,7 +24,25 @@
         </div>
     </div>
 
-    <!-- Daily Activity Section (renders Steps Hero + Activity Concentric Rings cards) -->
+    <!-- Active Session Draft Resume Banner -->
+    {% if active_draft_session and active_draft_session.routine and active_draft_session.day %}
+    <div class="bg-[#caf300]/10 border border-[#caf300]/40 rounded-[28px] p-5 flex items-center justify-between shadow-xl">
+        <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-full bg-[#caf300] text-black flex items-center justify-center font-black shrink-0 shadow-md">
+                <span class="material-symbols-outlined text-2xl">play_arrow</span>
+            </div>
+            <div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-[#caf300] block">{% translate "Allenamento in Corso" %}</span>
+                <h4 class="text-sm font-bold text-white mt-0.5">{{ active_draft_session.routine.name }} - {{ active_draft_session.day.name }}</h4>
+            </div>
+        </div>
+        <a href="{% url 'manager:day:overview' active_draft_session.routine.pk active_draft_session.day.pk %}" class="px-5 py-2.5 rounded-full bg-[#caf300] text-black text-xs font-black hover:scale-105 transition-transform shadow-md">
+            {% translate "Riprendi" %}
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Daily Activity Section (Passi, Calorie, Acqua / Litri) -->
     {% include 'user/daily_activity_fragment.html' %}
 
     <!-- Workouts Card (Dynamic Routines List) -->

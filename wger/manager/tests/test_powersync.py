@@ -81,7 +81,6 @@ class WorkoutSessionPowerSyncTestCase(powersync_base_test.PowerSyncResourceTestC
         'id': 'bbbbbbbb-bbbb-bbbb-bbbb-000000000099',
         'date': '2030-01-15',
         'routine': ROUTINE_OWNED,
-        'impression': '2',
         'notes': 'created via PowerSync',
     }
     update_payload = {

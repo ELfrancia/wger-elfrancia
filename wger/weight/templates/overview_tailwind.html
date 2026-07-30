@@ -8,39 +8,42 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-6 py-2 max-w-5xl mx-auto">
+<div class="flex flex-col gap-6 py-2 max-w-5xl mx-auto px-1 sm:px-4">
     <!-- Header with Toggle Range Switch -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-white/[0.06]">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-white/10">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">
+            <span class="text-[10px] font-black uppercase text-primary font-display tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full inline-block mb-1.5 shadow-sm">
+                {% translate "Statistiche & Report" %}
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight font-display">
                 {% translate "Scheda Allenamenti" %}
             </h1>
-            <p class="text-xs sm:text-sm text-neutral-400 mt-0.5">
+            <p class="text-xs sm:text-sm text-zinc-400 mt-1">
                 {% translate "Panoramica delle sessioni giornaliere, volume di carico e metriche." %}
             </p>
         </div>
         
         <!-- View and Period Selectors -->
-        <div class="flex flex-wrap gap-2.5 items-center">
+        <div class="flex flex-wrap gap-3 items-center">
             <!-- Mode Toggle (Dati / Grafici) -->
-            <div class="flex bg-[#121316] border border-white/10 p-1 rounded-xl shadow-inner">
-                <button id="btn-view-dati" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-[#caf300] text-[#090a0c]">
+            <div class="flex bg-[#14161c] border border-white/10 p-1 rounded-2xl shadow-inner">
+                <button id="btn-view-dati" class="px-4 py-2 rounded-xl text-xs font-black transition-all duration-200 bg-primary text-black shadow-md">
                     {% translate "Dati" %}
                 </button>
-                <button id="btn-view-grafici" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white transition-all duration-200">
+                <button id="btn-view-grafici" class="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all duration-200">
                     {% translate "Grafici" %}
                 </button>
             </div>
 
             <!-- Period Selector (Settimanale / Mensile / Annuale) -->
-            <div class="flex bg-[#121316] border border-white/10 p-1 rounded-xl shadow-inner text-xs font-semibold">
-                <a href="?range=weekly" class="px-3 py-1.5 rounded-lg transition-all duration-200 {% if range == 'weekly' %}bg-white/10 text-white font-bold{% else %}text-neutral-400 hover:text-white{% endif %}">
+            <div class="flex bg-[#14161c] border border-white/10 p-1 rounded-2xl shadow-inner text-xs font-bold">
+                <a href="?range=weekly&selected_date={{ selected_date|date:'Y-m-d' }}" class="px-3.5 py-2 rounded-xl transition-all duration-200 {% if range == 'weekly' %}bg-white/10 text-white font-black border border-white/10{% else %}text-zinc-400 hover:text-white{% endif %}">
                     {% translate "Settimanale" %}
                 </a>
-                <a href="?range=monthly" class="px-3 py-1.5 rounded-lg transition-all duration-200 {% if range == 'monthly' %}bg-white/10 text-white font-bold{% else %}text-neutral-400 hover:text-white{% endif %}">
+                <a href="?range=monthly&selected_date={{ selected_date|date:'Y-m-d' }}" class="px-3.5 py-2 rounded-xl transition-all duration-200 {% if range == 'monthly' %}bg-white/10 text-white font-black border border-white/10{% else %}text-zinc-400 hover:text-white{% endif %}">
                     {% translate "Mensile" %}
                 </a>
-                <a href="?range=yearly" class="px-3 py-1.5 rounded-lg transition-all duration-200 {% if range == 'yearly' %}bg-white/10 text-white font-bold{% else %}text-neutral-400 hover:text-white{% endif %}">
+                <a href="?range=yearly&selected_date={{ selected_date|date:'Y-m-d' }}" class="px-3.5 py-2 rounded-xl transition-all duration-200 {% if range == 'yearly' %}bg-white/10 text-white font-black border border-white/10{% else %}text-zinc-400 hover:text-white{% endif %}">
                     {% translate "Annuale" %}
                 </a>
             </div>
@@ -51,152 +54,170 @@
     <div id="view-section-dati" class="space-y-6 transition-all duration-300">
         {% include 'weight/calendar_fragment.html' %}
 
-    <!-- Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Completed Workouts -->
-        <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 shadow-lg flex flex-col justify-between hover:border-[#caf300]/40 transition-all duration-200 group">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{% translate "Allenamenti Completati" %}</span>
-                <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300]/10 transition-all">
-                    <span class="material-symbols-outlined text-lg">fitness_center</span>
+        <!-- Stat Cards Grid (High contrast, clean legible metrics) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Completed Workouts -->
+            <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-primary/40 transition-all duration-200 group relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-28 h-28 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-extrabold text-zinc-300 uppercase tracking-wider font-display">{% translate "Allenamenti Completati" %}</span>
+                    <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-xl">fitness_center</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-4xl font-black text-white tracking-tight font-display mb-1 flex items-baseline gap-1">
+                        {{ workouts_completed }}
+                        <span class="text-xs font-bold text-zinc-400 font-sans">sess.</span>
+                    </div>
+                    <p class="text-xs font-semibold text-zinc-400">
+                        {% translate "Sessioni nel periodo" %}
+                    </p>
                 </div>
             </div>
-            <div>
-                <h3 class="text-3xl font-extrabold text-white tracking-tight font-display mb-0.5">
-                    {{ workouts_completed }}
-                </h3>
-                <p class="text-[11px] text-neutral-500">
-                    {% translate "Sessioni nel periodo" %}
-                </p>
-            </div>
-        </div>
 
-        <!-- Total Volume -->
-        <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 shadow-lg flex flex-col justify-between hover:border-[#caf300]/40 transition-all duration-200 group">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{% translate "Volume Totale" %}</span>
-                <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300]/10 transition-all">
-                    <span class="material-symbols-outlined text-lg">monitoring</span>
+            <!-- Total Volume -->
+            <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-primary/40 transition-all duration-200 group relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-28 h-28 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-extrabold text-zinc-300 uppercase tracking-wider font-display">{% translate "Volume Totale" %}</span>
+                    <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-xl">monitoring</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-4xl font-black text-white tracking-tight font-display mb-1 flex items-baseline gap-1.5">
+                        {{ total_volume }} <span class="text-base font-bold text-primary font-mono">kg</span>
+                    </div>
+                    <p class="text-xs font-semibold text-zinc-400">
+                        {% translate "Ripetizioni × peso" %}
+                    </p>
                 </div>
             </div>
-            <div>
-                <h3 class="text-3xl font-extrabold text-white tracking-tight font-display mb-0.5">
-                    {{ total_volume }} <span class="text-sm font-normal text-neutral-400 font-sans">kg</span>
-                </h3>
-                <p class="text-[11px] text-neutral-500">
-                    {% translate "Ripetizioni &times; peso" %}
-                </p>
-            </div>
-        </div>
 
-        <!-- Total Repetitions -->
-        <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 shadow-lg flex flex-col justify-between hover:border-[#caf300]/40 transition-all duration-200 group">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{% translate "Ripetizioni Totali" %}</span>
-                <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300] group-hover:bg-[#caf300]/10 transition-all">
-                    <span class="material-symbols-outlined text-lg">replay</span>
+            <!-- Total Repetitions -->
+            <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-primary/40 transition-all duration-200 group relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-28 h-28 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-extrabold text-zinc-300 uppercase tracking-wider font-display">{% translate "Ripetizioni Totali" %}</span>
+                    <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-xl">replay</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-4xl font-black text-white tracking-tight font-display mb-1 flex items-baseline gap-1">
+                        {{ total_repetitions }}
+                        <span class="text-xs font-bold text-zinc-400 font-sans">reps</span>
+                    </div>
+                    <p class="text-xs font-semibold text-zinc-400">
+                        {% translate "Ripetizioni eseguite" %}
+                    </p>
                 </div>
             </div>
-            <div>
-                <h3 class="text-3xl font-extrabold text-white tracking-tight font-display mb-0.5">
-                    {{ total_repetitions }}
-                </h3>
-                <p class="text-[11px] text-neutral-500">
-                    {% translate "Ripetizioni eseguite" %}
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Top Exercises Section -->
-    <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg mt-2">
-        <div class="flex items-center justify-between mb-5 pb-3 border-b border-white/[0.06]">
-            <div>
-                <h3 class="text-lg font-bold text-white tracking-tight font-display">{% translate "Analisi Esercizi Top" %}</h3>
-                <p class="text-xs text-neutral-400 mt-0.5">{% translate "I 10 esercizi con maggior volume di allenamento." %}</p>
-            </div>
-            <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300]">
-                <span class="material-symbols-outlined text-lg">bar_chart</span>
-            </div>
         </div>
 
-        {% if exercise_stats %}
-        <div class="space-y-4">
-            {% for stat in exercise_stats %}
-            <div class="group flex flex-col gap-1.5">
-                <div class="flex justify-between items-start">
-                    <div class="min-w-0 pr-4 flex items-center gap-2.5">
-                        <span class="w-6 h-6 rounded-lg bg-white/[0.04] text-neutral-400 font-mono text-[11px] font-bold flex items-center justify-center flex-shrink-0">
-                            {{ forloop.counter }}
-                        </span>
-                        <div>
-                            <span class="text-sm text-white font-bold block truncate group-hover:text-[#caf300] transition-colors">
-                                {{ stat.name }}
+        <!-- Top Exercises Section -->
+        <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl mt-2">
+            <div class="flex items-center justify-between mb-5 pb-4 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
+                        <span class="material-symbols-outlined text-xl">bar_chart</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Analisi Esercizi Top" %}</h3>
+                        <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "I 10 esercizi con maggior volume di allenamento." %}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if exercise_stats %}
+            <div class="space-y-3.5">
+                {% for stat in exercise_stats %}
+                <div class="group bg-[#1a1d26] border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-200 flex flex-col gap-2.5 shadow-sm">
+                    <div class="flex justify-between items-start gap-3">
+                        <div class="min-w-0 flex items-center gap-3">
+                            <span class="w-7 h-7 rounded-xl bg-primary/10 border border-primary/20 text-primary font-mono text-xs font-black flex items-center justify-center flex-shrink-0">
+                                {{ forloop.counter }}
                             </span>
-                            <span class="text-[11px] text-neutral-400 font-mono">
-                                {{ stat.sets_completed }} serie &bull; {{ stat.total_repetitions }} reps
+                            <div>
+                                <span class="text-sm font-bold text-white block truncate group-hover:text-primary transition-colors">
+                                    {{ stat.name }}
+                                </span>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[11px] font-bold text-zinc-300 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
+                                        {{ stat.sets_completed }} serie &bull; {{ stat.total_repetitions }} reps
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0 font-mono">
+                            <span class="text-white text-xs font-black block">
+                                {{ stat.total_volume }} <span class="text-[10px] font-bold text-primary">kg vol</span>
                             </span>
+                            <span class="text-[10px] font-bold text-zinc-400 block mt-0.5">Max: <strong class="text-zinc-200">{{ stat.max_weight }}</strong> kg</span>
                         </div>
                     </div>
-                    <div class="text-right flex-shrink-0 font-mono">
-                        <span class="text-white text-xs font-bold block">
-                            {{ stat.total_volume }} <span class="text-[10px] text-neutral-400">kg vol</span>
-                        </span>
-                        <span class="text-[10px] text-neutral-400">Max: {{ stat.max_weight }} kg</span>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
+                        <div class="bg-gradient-to-r from-primary to-[#8eb800] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(202,243,0,0.3)]" 
+                             style="width: {{ stat.volume_percentage }}%"></div>
                     </div>
                 </div>
-                
-                <!-- Progress Bar -->
-                <div class="w-full bg-[#181a1f] h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-[#caf300] h-full rounded-full transition-all duration-500" 
-                         style="width: {{ stat.volume_percentage }}%"></div>
-                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-8 text-center gap-2 text-zinc-400">
+                <span class="material-symbols-outlined text-3xl text-zinc-500">fitness_center</span>
+                <p class="text-xs font-semibold">{% translate "Nessun dato esercizi disponibile per il periodo selezionato" %}</p>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
-    </div>
     </div> <!-- Close view-section-dati -->
 
     <!-- Grafici View (Charts View) -->
     <div id="view-section-grafici" class="hidden space-y-6 transition-all duration-300">
         <div class="grid grid-cols-1 gap-6">
             <!-- Training Volume & Activity Chart Card (Primary) -->
-            <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
-                    <div>
-                        <h3 class="text-lg font-bold text-white tracking-tight font-display">{% translate "Volume di Allenamento & Attività" %}</h3>
-                        <p class="text-xs text-neutral-400 mt-0.5">{% translate "Volume giornaliero in kg (barre) e sessioni completate (linea)" %}</p>
-                    </div>
-                    <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300]">
-                        <span class="material-symbols-outlined text-lg">monitoring</span>
+            <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
+                            <span class="material-symbols-outlined text-xl">monitoring</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Volume di Allenamento & Attività" %}</h3>
+                            <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "Volume giornaliero in kg (barre) e sessioni completate (linea)" %}</p>
+                        </div>
                     </div>
                 </div>
                 <div class="relative w-full h-[320px] flex items-center justify-center">
                     <canvas id="activityChart"></canvas>
-                    <div id="activityChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
-                        <span class="material-symbols-outlined text-3xl mb-2 text-white/20">fitness_center</span>
-                        <p class="text-xs">{% translate "Nessun allenamento registrato in questo periodo" %}</p>
+                    <div id="activityChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-zinc-400">
+                        <span class="material-symbols-outlined text-3xl mb-2 text-zinc-500">fitness_center</span>
+                        <p class="text-xs font-semibold">{% translate "Nessun allenamento registrato in questo periodo" %}</p>
                     </div>
                 </div>
             </div>
 
             <!-- Top Exercises Volume Distribution Chart Card -->
-            <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
-                    <div>
-                        <h3 class="text-lg font-bold text-white tracking-tight font-display">{% translate "Distribuzione Volume per Esercizio" %}</h3>
-                        <p class="text-xs text-neutral-400 mt-0.5">{% translate "Confronto tra gli esercizi a maggior carico totale" %}</p>
-                    </div>
-                    <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[#caf300]">
-                        <span class="material-symbols-outlined text-lg">bar_chart</span>
+            <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
+                            <span class="material-symbols-outlined text-xl">bar_chart</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Distribuzione Volume per Esercizio" %}</h3>
+                            <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "Confronto tra gli esercizi a maggior carico totale" %}</p>
+                        </div>
                     </div>
                 </div>
                 <div class="relative w-full h-[320px] flex items-center justify-center">
                     <canvas id="exerciseVolumeChart"></canvas>
-                    <div id="exerciseVolumeChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
-                        <span class="material-symbols-outlined text-3xl mb-2 text-white/20">fitness_center</span>
-                        <p class="text-xs">{% translate "Nessun dato esercizi disponibile" %}</p>
+                    <div id="exerciseVolumeChartEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-zinc-400">
+                        <span class="material-symbols-outlined text-3xl mb-2 text-zinc-500">fitness_center</span>
+                        <p class="text-xs font-semibold">{% translate "Nessun dato esercizi disponibile" %}</p>
                     </div>
                 </div>
             </div>
@@ -240,16 +261,16 @@
             sectionDati.classList.add('hidden');
             sectionGrafici.classList.remove('hidden');
             
-            btnGrafici.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 bg-[#caf300] text-[#131313] font-bold shadow-sm';
-            btnDati.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 text-[#888888] hover:text-white hover:bg-white/[0.04]';
+            btnGrafici.className = 'px-4 py-2 rounded-xl text-xs font-black transition-all duration-200 bg-primary text-black shadow-md';
+            btnDati.className = 'px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all duration-200';
             
             localStorage.setItem('progress_view_mode', 'grafici');
         } else {
             sectionGrafici.classList.add('hidden');
             sectionDati.classList.remove('hidden');
             
-            btnDati.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 bg-[#caf300] text-[#131313] font-bold shadow-sm';
-            btnGrafici.className = 'px-4 py-1.5 rounded-full font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 text-[#888888] hover:text-white hover:bg-white/[0.04]';
+            btnDati.className = 'px-4 py-2 rounded-xl text-xs font-black transition-all duration-200 bg-primary text-black shadow-md';
+            btnGrafici.className = 'px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all duration-200';
             
             localStorage.setItem('progress_view_mode', 'dati');
         }
@@ -293,10 +314,10 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#161616',
+                        backgroundColor: '#14161d',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        borderColor: '#2a2a2a',
+                        borderColor: '#2c2f3a',
                         borderWidth: 1,
                         cornerRadius: 8,
                         padding: 12,
@@ -309,9 +330,9 @@
                 },
                 scales: {
                     x: {
-                        grid: { color: '#2a2a2a' },
+                        grid: { color: '#22242e' },
                         ticks: {
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: { family: 'Inter', size: 10 },
                             callback: function(v) { return v + ' kg'; }
                         }
@@ -363,7 +384,7 @@
                         borderWidth: 2,
                         tension: 0.1,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#131313',
+                        pointBorderColor: '#14161d',
                         pointBorderWidth: 1.5,
                         pointRadius: rangeParam === 'yearly' ? 1 : 3,
                         pointHoverRadius: 5,
@@ -379,7 +400,7 @@
                     legend: {
                         position: 'top',
                         labels: {
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: {
                                 family: 'Inter',
                                 size: 11
@@ -389,10 +410,10 @@
                         }
                     },
                     tooltip: {
-                        backgroundColor: '#161616',
+                        backgroundColor: '#14161d',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        borderColor: '#2a2a2a',
+                        borderColor: '#2c2f3a',
                         borderWidth: 1,
                         cornerRadius: 8,
                         padding: 12,
@@ -403,11 +424,11 @@
                 scales: {
                     x: {
                         grid: {
-                            color: '#2a2a2a',
+                            color: '#22242e',
                             drawBorder: false
                         },
                         ticks: {
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: {
                                 family: 'Inter',
                                 size: 10
@@ -421,11 +442,11 @@
                         display: true,
                         position: 'left',
                         grid: {
-                            color: '#2a2a2a',
+                            color: '#22242e',
                             drawBorder: false
                         },
                         ticks: {
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: {
                                 family: 'Inter',
                                 size: 10
@@ -437,7 +458,7 @@
                         title: {
                             display: true,
                             text: 'Volume',
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: {
                                 family: 'Inter',
                                 size: 10
@@ -452,7 +473,7 @@
                             drawOnChartArea: false,
                         },
                         ticks: {
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: {
                                 family: 'Inter',
                                 size: 10
@@ -463,7 +484,7 @@
                         title: {
                             display: true,
                             text: 'Sessioni',
-                            color: '#888888',
+                            color: '#a1a1aa',
                             font: {
                                 family: 'Inter',
                                 size: 10
@@ -480,3 +501,4 @@
     }
 </script>
 {% endblock %}
+

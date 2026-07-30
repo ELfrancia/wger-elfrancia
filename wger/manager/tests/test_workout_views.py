@@ -135,3 +135,65 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertIsNotNone(gallery_img)
         self.assertIn('Test foto condizione', gallery_img.description)
 
+    def test_server_side_draft_lookup_24h(self):
+        import datetime
+        from django.utils import timezone
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+
+        # 1. Create an active session created within the last 24h
+        session_24h = WorkoutSession.objects.create(
+            user=self.user,
+            routine=self.routine,
+            day=self.day,
+            date=datetime.date.today(),
+            time_start=timezone.localtime(timezone.now()).time(),
+            status='active'
+        )
+
+        # GET request should load this existing active session as context session
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['session'].id, session_24h.id)
+
+        # 2. Test old active session (> 24h ago)
+        session_24h.date = datetime.date.today() - datetime.timedelta(days=2)
+        session_24h.save()
+
+        # Clear active session key in Django session to simulate return after login on another device
+        session_key = f'active_session_{self.day.pk}'
+        if session_key in self.client.session:
+            del self.client.session[session_key]
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # Should create a new active session draft instead of using >24h old session
+        self.assertNotEqual(response.context['session'].id, session_24h.id)
+        self.assertEqual(response.context['session'].status, 'active')
+
+    def test_finish_and_discard_workout_actions(self):
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+
+        # Start/Load session
+        self.client.get(url)
+        session = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day, status='active').first()
+        self.assertIsNotNone(session)
+
+        # Test finish workout action
+        response = self.client.post(url, {'action': 'finish_workout'})
+        self.assertEqual(response.status_code, 302)
+        session.refresh_from_db()
+        self.assertEqual(session.status, 'finished')
+        self.assertIsNotNone(session.time_end)
+
+        # Create new active session and test discard workout action
+        self.client.get(url)
+        session_new = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day, status='active').first()
+        self.assertIsNotNone(session_new)
+
+        response = self.client.post(url, {'action': 'discard_workout'})
+        self.assertEqual(response.status_code, 302)
+        session_new.refresh_from_db()
+        self.assertEqual(session_new.status, 'interrupted')
+        self.assertEqual(session_new.logs.count(), 0)
+
+

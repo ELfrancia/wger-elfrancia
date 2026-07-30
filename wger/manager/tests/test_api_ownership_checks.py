@@ -152,7 +152,6 @@ class WorkoutSessionDayOwnershipTestCase(WgerTestCase):
                 'day': victim_day.pk,
                 'date': '2024-02-01',
                 'notes': '',
-                'impression': '2',
             },
         )
 
@@ -176,7 +175,6 @@ class WorkoutSessionDayOwnershipTestCase(WgerTestCase):
                 'day': own_day.pk,
                 'date': '2024-02-15',
                 'notes': '',
-                'impression': '2',
             },
         )
 

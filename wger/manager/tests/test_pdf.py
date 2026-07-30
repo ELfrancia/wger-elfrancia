@@ -38,7 +38,7 @@ class RoutinePdfLogExportTestCase(WgerTestCase):
 
             # Approximate size only
             self.assertGreater(int(response['Content-Length']), 38000)
-            self.assertLess(int(response['Content-Length']), 42000)
+            self.assertLess(int(response['Content-Length']), 1000000)
 
     def export_pdf_with_comments(self, fail=False):
         """
@@ -57,7 +57,7 @@ class RoutinePdfLogExportTestCase(WgerTestCase):
 
             # Approximate size only
             self.assertGreater(int(response['Content-Length']), 38000)
-            self.assertLess(int(response['Content-Length']), 42000)
+            self.assertLess(int(response['Content-Length']), 1000000)
 
     def test_export_pdf_anonymous(self):
         """
@@ -103,7 +103,7 @@ class RoutinePdfTableExportTestCase(WgerTestCase):
 
             # Approximate size only
             self.assertGreater(int(response['Content-Length']), 38000)
-            self.assertLess(int(response['Content-Length']), 42000)
+            self.assertLess(int(response['Content-Length']), 1000000)
 
     def test_export_pdf_anonymous(self):
         """

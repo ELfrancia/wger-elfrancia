@@ -11,7 +11,8 @@
       "end": "2024-06-01",
       "fit_in_week": false,
       "is_template": false,
-      "is_public": false
+      "is_public": false,
+      "current_week": 1
     }
   },
   {
@@ -26,7 +27,8 @@
       "end": "2024-03-01",
       "fit_in_week": false,
       "is_template": false,
-      "is_public": false
+      "is_public": false,
+      "current_week": 1
     }
   },
   {
@@ -41,7 +43,8 @@
       "end": "2024-03-01",
       "fit_in_week": false,
       "is_template": false,
-      "is_public": false
+      "is_public": false,
+      "current_week": 1
     }
   },
   {
@@ -56,7 +59,8 @@
       "end": "2024-03-01",
       "fit_in_week": false,
       "is_template": true,
-      "is_public": false
+      "is_public": false,
+      "current_week": 1
     }
   },
   {
@@ -71,7 +75,8 @@
       "end": "2024-03-01",
       "fit_in_week": false,
       "is_template": true,
-      "is_public": true
+      "is_public": true,
+      "current_week": 1
     }
   },
   {

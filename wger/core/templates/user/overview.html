@@ -88,7 +88,6 @@
 <thead>
 <tr>
     <th style="width: 25%;">{% translate "Date" %}</th>
-    <th>{% translate "General impression" %}</th>
     <th>{% translate "Notes" %}</th>
     <th>{% translate "Time" %}</th>
 </tr>
@@ -98,9 +97,6 @@
 <tr>
     <td>
         {{log.date}}
-    </td>
-    <td>
-        {{log.get_impression_display}}
     </td>
     <td>
         {{log.notes|default:'-/-'|truncatewords:6}}

@@ -50,14 +50,14 @@
             </button>
             
             <!-- Main Exercise Checkbox -->
-            <button class="exercise-check-btn w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-200 {% if slot.id in completed_slot_ids %}bg-primary border-primary{% else %}border-zinc-700 hover:border-primary{% endif %}"
+            <button class="exercise-check-btn w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all duration-300 {% if slot.id in completed_slot_ids %}bg-primary border-primary{% else %}border-zinc-700 hover:border-primary{% endif %}"
                     hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}"
                     hx-vals='{"slot_id": "{{ slot.id|unlocalize }}", "exercise_id": "{{ exercise.id|unlocalize }}", "action": "complete_exercise"}'
                     hx-target="#sets-list-{{ slot.id|unlocalize }}"
                     hx-select="#sets-list-{{ slot.id|unlocalize }}"
-                    hx-swap="outerHTML"
+                    hx-swap="outerHTML swap:300ms transition:true"
                     onclick="handleExerciseCheck(this, event);">
-                <div class="inner-check w-full h-full rounded-full flex items-center justify-center bg-transparent transition-all duration-200">
+                <div class="inner-check w-full h-full rounded-full flex items-center justify-center bg-transparent transition-all duration-300">
                     <svg class="w-4 h-4 text-on-primary {% if slot.id not in completed_slot_ids %}hidden{% endif %}" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
@@ -79,7 +79,7 @@
                     {% for slot_entry in slot.entries.all %}
                         {% if slot_entry.id in logged_set_ids %}
                             <!-- Completed Set row -->
-                            <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#caf300]/[0.05] border border-[#caf300]/25 rounded-xl transition-all duration-200 w-full" data-set-index="{{ forloop.counter }}" data-completed="true">
+                            <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#caf300]/[0.05] border border-[#caf300]/25 rounded-xl transition-all duration-300 w-full" data-set-index="{{ forloop.counter }}" data-completed="true">
                                 <div class="flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-3">
                                     <!-- Set Number Only (No SET badge) -->
                                     <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-[#caf300] select-none shrink-0">{{ forloop.counter }}</span>
@@ -101,13 +101,13 @@
                                     {% endwith %}
                                     
                                     <!-- Uncheck Button Form -->
-                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="shrink-0" onsubmit="handleSetUncheck(this);">
+                                    <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML swap:300ms transition:true" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="shrink-0" onsubmit="handleSetUncheck(this);">
                                         {% csrf_token %}
                                         <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
                                         <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
                                         <input type="hidden" name="slot_entry_id" value="{{ slot_entry.id|unlocalize }}">
                                         <input type="hidden" name="action" value="delete_set">
-                                        <button type="submit" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-sm active:scale-95 cursor-pointer" title="Annulla set">
+                                        <button type="submit" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-sm active:scale-95 transition-all duration-300 cursor-pointer" title="Annulla set">
                                             <span class="material-symbols-outlined text-sm sm:text-base font-black">check</span>
                                         </button>
                                     </form>
@@ -116,7 +116,7 @@
                         {% else %}
                             <!-- Pending Set row -->
                             <div id="set-row-{{ slot_entry.id|unlocalize }}" class="set-row flex items-center justify-between gap-1.5 p-2 bg-[#121316] border border-outline rounded-xl transition-all duration-300 w-full" data-set-index="{{ forloop.counter }}" data-completed="false">
-                                <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML swap:900ms" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-3 set-log-form" onsubmit="handleSetSubmit(this);">
+                                <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-swap="outerHTML swap:300ms transition:true" hx-target="#set-row-{{ slot_entry.id|unlocalize }}" hx-select="#set-row-{{ slot_entry.id|unlocalize }}" class="flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-3 set-log-form" onsubmit="handleSetSubmit(this);">
                                     {% csrf_token %}
                                     <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
                                     <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
@@ -175,41 +175,42 @@
                         <span class="material-symbols-outlined text-xs">add</span> {% translate "Add set" %}
                     </button>
                     
-                    <!-- Add Set Form (Hidden by default) -->
-                    <form id="add-set-form-{{ slot.id|unlocalize }}" hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-target="#exercise-card-{{ slot.id|unlocalize }}" hx-swap="outerHTML swap:100ms transition:true" class="hidden flex-wrap sm:flex-nowrap items-center gap-2 bg-[#141518] border border-zinc-800 rounded-xl p-2.5 transition-all duration-300">
+                    <!-- Add Set Form (Hidden by default - Ultra-clean draft row design) -->
+                    <form id="add-set-form-{{ slot.id|unlocalize }}" hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-target="#exercise-card-{{ slot.id|unlocalize }}" hx-swap="outerHTML swap:100ms transition:true" class="hidden items-center justify-between gap-2 p-2 bg-[#caf300]/[0.03] hover:bg-[#caf300]/[0.06] border-l-2 border-[#caf300] rounded-xl transition-all duration-300 w-full mt-1.5">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="add_set">
                         <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
                         <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
                         
-                        <!-- Unified Reps x Weight Pill Container (No nested sub-box borders) -->
-                        <div class="flex items-center gap-2 bg-[#1c1d22] border border-zinc-700/60 focus-within:border-[#caf300]/70 rounded-lg px-3 py-1.5 transition-colors shrink-0">
-                            <div class="flex items-center gap-1">
-                                <input type="number" name="reps" placeholder="10" required min="1" max="100" class="w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-600">
-                                <span class="text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
-                            </div>
-                            
-                            <span class="text-zinc-500 text-xs font-black select-none px-0.5">×</span>
-                            
-                            <div class="flex items-center gap-1">
-                                <input type="number" name="weight" placeholder="0" required min="0" step="0.5" class="w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/40">
-                                <span class="text-[9px] text-[#caf300]/90 font-extrabold uppercase select-none">KG</span>
-                            </div>
+                        <!-- Plus Icon Badge -->
+                        <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-[#caf300] select-none shrink-0">+</span>
+
+                        <!-- Borderless Reps x Weight Inputs -->
+                        <div class="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                            <!-- Reps Input -->
+                            <input type="number" name="reps" placeholder="10" required min="1" max="100" class="clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
+                            <span class="text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
+
+                            <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
+
+                            <!-- Weight Input -->
+                            <input type="number" name="weight" placeholder="0" required min="0" step="0.5" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50">
+                            <span class="text-[9px] text-[#caf300]/90 font-extrabold uppercase select-none">KG</span>
+
+                            <div class="h-3.5 w-px bg-zinc-800/80 mx-1 shrink-0 hidden sm:block"></div>
+
+                            <!-- Optional Note Input -->
+                            <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="clean-input hidden sm:block flex-1 min-w-[90px] bg-transparent text-xs text-zinc-300 placeholder-zinc-600 border-0 p-0 outline-none focus:outline-none focus:ring-0">
                         </div>
 
-                        <!-- Optional Note Input -->
-                        <div class="flex-1 min-w-[130px] bg-[#1c1d22] border border-zinc-700/60 focus-within:border-[#caf300]/70 rounded-lg px-3 py-1.5 transition-colors">
-                            <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="w-full bg-transparent text-xs text-white border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
-                        </div>
-                        
                         <!-- Action Buttons -->
-                        <div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
-                            <button type="submit" class="h-8 px-3.5 rounded-lg bg-[#caf300] text-black font-extrabold text-xs flex items-center justify-center gap-1 hover:bg-[#b5da00] active:scale-95 transition-all shadow-sm shadow-[#caf300]/20 cursor-pointer">
-                                <span class="material-symbols-outlined text-sm font-black">add</span>
+                        <div class="flex items-center gap-1 shrink-0 ml-auto">
+                            <button type="submit" class="h-7 px-3 rounded-lg bg-[#caf300] text-black font-extrabold text-xs flex items-center justify-center gap-1 hover:bg-[#b5da00] active:scale-95 transition-all shadow-sm shadow-[#caf300]/20 cursor-pointer">
+                                <span class="material-symbols-outlined text-xs font-black">add</span>
                                 {% translate "Aggiungi" %}
                             </button>
-                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.id|unlocalize }}')" class="w-8 h-8 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer" title="Chiudi">
-                                <span class="material-symbols-outlined text-sm">close</span>
+                            <button type="button" onclick="toggleAddSetForm('add-set-form-{{ slot.id|unlocalize }}')" class="w-7 h-7 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer" title="Chiudi">
+                                <span class="material-symbols-outlined text-xs">close</span>
                             </button>
                         </div>
                     </form>

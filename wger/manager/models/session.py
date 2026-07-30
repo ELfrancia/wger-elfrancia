@@ -33,14 +33,24 @@ class WorkoutSession(models.Model):
     Model for a workout session
     """
 
-    IMPRESSION_BAD = '1'
-    IMPRESSION_NEUTRAL = '2'
-    IMPRESSION_GOOD = '3'
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('finished', 'Finished'),
+        ('interrupted', 'Interrupted'),
+    )
 
-    IMPRESSION = (
-        (IMPRESSION_BAD, _('Bad')),
-        (IMPRESSION_NEUTRAL, _('Neutral')),
-        (IMPRESSION_GOOD, _('Good')),
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+    )
+
+    condition_photo = models.ForeignKey(
+        'gallery.Image',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='workout_sessions',
     )
 
     user = models.ForeignKey(
@@ -92,17 +102,6 @@ class WorkoutSession(models.Model):
     )
     """
     User notes about the workout
-    """
-
-    impression = models.CharField(
-        verbose_name='General impression',
-        max_length=2,
-        choices=IMPRESSION,
-        default=IMPRESSION_NEUTRAL,
-        help_text='Your impression about this workout session. Did you exercise as well as you could?',
-    )
-    """
-    The user's general impression of workout
     """
 
     time_start = models.TimeField(

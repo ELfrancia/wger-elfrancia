@@ -9,13 +9,13 @@ class RoutineForm(forms.ModelForm):
         label=_('Duration (weeks)'),
         min_value=1,
         max_value=16,
-        initial=6,
+        initial=4,
         widget=forms.NumberInput(attrs={'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold'})
     )
 
     class Meta:
         model = Routine
-        fields = ['name', 'description', 'start', 'fit_in_week']
+        fields = ['name', 'description', 'start', 'current_week', 'total_weeks', 'fit_in_week']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed',
@@ -30,6 +30,14 @@ class RoutineForm(forms.ModelForm):
                 'type': 'date',
                 'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed'
             }),
+            'current_week': forms.NumberInput(attrs={
+                'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed',
+                'min': 1
+            }),
+            'total_weeks': forms.NumberInput(attrs={
+                'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed',
+                'min': 1
+            }),
             'fit_in_week': forms.CheckboxInput(attrs={
                 'class': 'rounded bg-[#1c1b1b] border-surface-container-high text-primary-fixed focus:ring-0 focus:ring-offset-0'
             })
@@ -38,12 +46,12 @@ class RoutineForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         start = cleaned_data.get('start')
-        duration_weeks = cleaned_data.get('duration_weeks')
-        if start and duration_weeks:
+        total_weeks = cleaned_data.get('total_weeks') or cleaned_data.get('duration_weeks')
+        if start and total_weeks:
             import datetime
-            end = start + datetime.timedelta(weeks=duration_weeks)
+            end = start + datetime.timedelta(weeks=total_weeks)
             if (end - start).days > Routine.MAX_DURATION_DAYS:
-                self.add_error('duration_weeks', f'A routine cannot span more than {Routine.MAX_DURATION_DAYS} days.')
+                self.add_error('total_weeks', f'A routine cannot span more than {Routine.MAX_DURATION_DAYS} days.')
         return cleaned_data
 
 

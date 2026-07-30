@@ -111,13 +111,6 @@ class Command(BaseCommand):
                                     date=day_data.date,
                                     routine=routine,
                                     defaults={
-                                        'impression': random.choice(
-                                            [
-                                                WorkoutSession.IMPRESSION_GOOD,
-                                                WorkoutSession.IMPRESSION_BAD,
-                                                WorkoutSession.IMPRESSION_NEUTRAL,
-                                            ]
-                                        ),
                                         'time_start': time_start,
                                         'time_end': time_end,
                                     },

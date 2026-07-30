@@ -168,12 +168,13 @@ def add_routine_tailwind(request):
         if form.is_valid():
             routine = form.save(commit=False)
             routine.user = request.user
-            duration_weeks = form.cleaned_data['duration_weeks']
-            routine.end = routine.start + datetime.timedelta(weeks=duration_weeks)
+            total_weeks = form.cleaned_data.get('total_weeks') or form.cleaned_data.get('duration_weeks') or 4
+            routine.total_weeks = total_weeks
+            routine.end = routine.start + datetime.timedelta(weeks=total_weeks)
             routine.save()
             return redirect('manager:routine:view', pk=routine.pk)
     else:
-        form = RoutineForm(initial={'start': datetime.date.today(), 'duration_weeks': 6})
+        form = RoutineForm(initial={'start': datetime.date.today(), 'current_week': 1, 'total_weeks': 4, 'duration_weeks': 4})
     
     return render(request, 'routines/add_tailwind.html', {
         'form': form
@@ -184,18 +185,19 @@ def add_routine_tailwind(request):
 def edit_routine_tailwind(request, pk):
     import datetime
     routine = get_object_or_404(Routine, pk=pk, user=request.user)
-    initial_duration = max(1, round((routine.end - routine.start).days / 7))
+    initial_duration = routine.total_weeks or max(1, round((routine.end - routine.start).days / 7))
     
     if request.method == 'POST':
         form = RoutineForm(request.POST, instance=routine)
         if form.is_valid():
             routine = form.save(commit=False)
-            duration_weeks = form.cleaned_data['duration_weeks']
-            routine.end = routine.start + datetime.timedelta(weeks=duration_weeks)
+            total_weeks = form.cleaned_data.get('total_weeks') or form.cleaned_data.get('duration_weeks') or initial_duration
+            routine.total_weeks = total_weeks
+            routine.end = routine.start + datetime.timedelta(weeks=total_weeks)
             routine.save()
             return redirect('manager:routine:view', pk=routine.pk)
     else:
-        form = RoutineForm(instance=routine, initial={'duration_weeks': initial_duration})
+        form = RoutineForm(instance=routine, initial={'duration_weeks': initial_duration, 'total_weeks': initial_duration, 'current_week': routine.current_week})
         
     return render(request, 'routines/edit_tailwind.html', {
         'form': form,

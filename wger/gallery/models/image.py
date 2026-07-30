@@ -52,7 +52,7 @@ class Image(models.Model):
 
     image = models.ImageField(
         verbose_name='Image',
-        help_text='Only PNG and JPEG formats are supported',
+        help_text='Only PNG, JPEG and WebP formats are supported',
         upload_to=gallery_upload_dir,
         height_field='height',
         width_field='width',

@@ -37,6 +37,7 @@ from formtools.preview import FormPreview
 
 # wger
 from wger.exercises.models import Exercise
+from wger.gallery.models import Image
 from wger.manager.models import WorkoutSession, WorkoutLog
 from wger.weight import helpers
 from wger.weight.models import WeightEntry
@@ -104,17 +105,12 @@ def weight_overview_tailwind(request):
     from datetime import date, datetime
     from django.utils.formats import date_format
 
-    range_param = request.GET.get('range', 'monthly')
-    
+    range_param = request.GET.get('range', 'weekly')
+    if range_param not in ('weekly', 'monthly', 'yearly'):
+        range_param = 'weekly'
+
     now = timezone.now()
-    if range_param == 'weekly':
-        start_date = now - timedelta(days=7)
-    elif range_param == 'yearly':
-        start_date = now - timedelta(days=365)
-    else:
-        range_param = 'monthly'
-        start_date = now - timedelta(days=30)
-        
+
     # Extract selected_date from GET or POST request, defaulting to today.
     selected_date_str = request.GET.get('selected_date') or request.POST.get('selected_date')
     if selected_date_str:
@@ -165,46 +161,137 @@ def weight_overview_tailwind(request):
             except (ValueError, TypeError, decimal.InvalidOperation):
                 pass
 
-    # Calculate Monday of the active week.
-    monday_of_week = selected_date - timedelta(days=selected_date.weekday())
+    if range_param == 'weekly':
+        start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=7), datetime.min.time()))
+        monday_of_week = selected_date - timedelta(days=selected_date.weekday())
+        period_start = monday_of_week
+        period_end = monday_of_week + timedelta(days=6)
 
-    # Gather week_days metadata
-    week_start = monday_of_week
-    week_end = monday_of_week + timedelta(days=6)
-    week_sessions_dates = set(
-        WorkoutSession.objects.filter(
-            user=request.user,
-            date__range=[week_start, week_end]
-        ).values_list('date', flat=True)
-    )
+        prev_period_date = selected_date - timedelta(days=7)
+        next_period_date = selected_date + timedelta(days=7)
+        period_title = date_format(selected_date, 'F Y')
 
-    week_days = []
-    for i in range(7):
-        day_date = monday_of_week + timedelta(days=i)
-        week_days.append({
-            'date': day_date,
-            'day_num': day_date.day,
-            'day_name': date_format(day_date, 'D'),
-            'is_selected': day_date == selected_date,
-            'has_workout': day_date in week_sessions_dates,
-        })
+        sessions_dates = set(
+            WorkoutSession.objects.filter(
+                user=request.user,
+                date__range=[period_start, period_end]
+            ).values_list('date', flat=True)
+        )
 
-    # Get prev_week_date and next_week_date dates.
-    prev_week_date = selected_date - timedelta(days=7)
-    next_week_date = selected_date + timedelta(days=7)
+        calendar_items = []
+        for i in range(7):
+            day_date = monday_of_week + timedelta(days=i)
+            calendar_items.append({
+                'date': day_date,
+                'day_num': day_date.day,
+                'day_name': date_format(day_date, 'D'),
+                'is_selected': day_date == selected_date,
+                'has_workout': day_date in sessions_dates,
+                'is_month': False,
+            })
 
-    # Get current_month_name and selected_date_display.
-    current_month_name = date_format(selected_date, 'F Y')
+    elif range_param == 'monthly':
+        start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=30), datetime.min.time()))
+        import calendar
+        first_day_of_month = selected_date.replace(day=1)
+        num_days = calendar.monthrange(selected_date.year, selected_date.month)[1]
+        last_day_of_month = selected_date.replace(day=num_days)
+
+        period_start = first_day_of_month
+        period_end = last_day_of_month
+
+        if selected_date.month == 1:
+            prev_period_date = selected_date.replace(year=selected_date.year - 1, month=12, day=1)
+        else:
+            prev_period_date = selected_date.replace(month=selected_date.month - 1, day=1)
+
+        if selected_date.month == 12:
+            next_period_date = selected_date.replace(year=selected_date.year + 1, month=1, day=1)
+        else:
+            next_period_date = selected_date.replace(month=selected_date.month + 1, day=1)
+
+        period_title = date_format(selected_date, 'F Y')
+
+        sessions_dates = set(
+            WorkoutSession.objects.filter(
+                user=request.user,
+                date__range=[period_start, period_end]
+            ).values_list('date', flat=True)
+        )
+
+        calendar_items = []
+        for d in range(1, num_days + 1):
+            day_date = selected_date.replace(day=d)
+            calendar_items.append({
+                'date': day_date,
+                'day_num': day_date.day,
+                'day_name': date_format(day_date, 'D'),
+                'is_selected': day_date == selected_date,
+                'has_workout': day_date in sessions_dates,
+                'is_month': False,
+            })
+
+    else: # yearly
+        start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=365), datetime.min.time()))
+        period_start = selected_date.replace(month=1, day=1)
+        period_end = selected_date.replace(month=12, day=31)
+
+        try:
+            prev_period_date = selected_date.replace(year=selected_date.year - 1)
+        except ValueError:
+            prev_period_date = selected_date.replace(year=selected_date.year - 1, day=28)
+
+        try:
+            next_period_date = selected_date.replace(year=selected_date.year + 1)
+        except ValueError:
+            next_period_date = selected_date.replace(year=selected_date.year + 1, day=28)
+
+        period_title = str(selected_date.year)
+
+        sessions_months = set(
+            WorkoutSession.objects.filter(
+                user=request.user,
+                date__range=[period_start, period_end]
+            ).values_list('date__month', flat=True)
+        )
+
+        calendar_items = []
+        for m in range(1, 13):
+            month_date = selected_date.replace(month=m, day=1)
+            calendar_items.append({
+                'date': month_date,
+                'day_num': m,
+                'day_name': date_format(month_date, 'b').upper(),
+                'is_selected': month_date.month == selected_date.month,
+                'has_workout': m in sessions_months,
+                'is_month': True,
+            })
+
     selected_date_display = date_format(selected_date, 'd F Y')
 
     # Retrieve all completed WorkoutSessions and WorkoutLogs for that selected date
-    selected_sessions = WorkoutSession.objects.filter(user=request.user, date=selected_date)
-    logs_for_date = WorkoutLog.objects.filter(user=request.user, session__in=selected_sessions).select_related('exercise')
+    # Retrieve all completed WorkoutSessions and WorkoutLogs for that selected date
+    selected_sessions = WorkoutSession.objects.filter(user=request.user, date=selected_date).select_related('routine', 'day', 'condition_photo')
+    condition_photos = Image.objects.filter(user=request.user, date=selected_date)
+    
+    from django.db.models import Q
+    logs_for_date = WorkoutLog.objects.filter(
+        Q(user=request.user, session__in=selected_sessions) |
+        Q(user=request.user, date__date=selected_date)
+    ).select_related('exercise').distinct()
 
     # Group logs by exercise name under session_exercises
     grouped = {}
     for log in logs_for_date:
-        key = (log.session_id, log.exercise_id)
+        sess_id = log.session_id
+        if not sess_id and selected_sessions.exists():
+            matching_sess = selected_sessions.filter(routine=log.routine).first() or selected_sessions.first()
+            if matching_sess:
+                sess_id = matching_sess.id
+        if not sess_id:
+            continue
+
+        key = (sess_id, log.exercise_id)
         if key not in grouped:
             grouped[key] = []
         grouped[key].append(log)
@@ -414,22 +501,23 @@ def weight_overview_tailwind(request):
         'weight_data_json': weight_data_json,
         'activity_data_json': activity_data_json,
         
-        # New Activity Calendar context
+        # Activity Calendar context
         'selected_date': selected_date,
         'selected_date_display': selected_date_display,
-        'current_month_name': current_month_name,
-        'week_days': week_days,
-        'prev_week_date': prev_week_date,
-        'next_week_date': next_week_date,
+        'period_title': period_title,
+        'calendar_items': calendar_items,
+        'prev_period_date': prev_period_date,
+        'next_period_date': next_period_date,
         'selected_sessions': selected_sessions,
         'session_exercises': session_exercises,
+        'condition_photos': condition_photos,
         'activity': activity,
         'distance_active': float(activity.steps) * 0.00075,
         'hourly_distribution_json': hourly_distribution_json,
         'profile': request.user.userprofile,
     }
     
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and request.headers.get('HX-Target') == 'activity-calendar-container':
         return render(request, 'weight/calendar_fragment.html', context)
     return render(request, 'overview_tailwind.html', context)
 

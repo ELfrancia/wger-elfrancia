@@ -7,38 +7,40 @@
         <div class="flex items-center justify-between mb-4 px-1">
             <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-[#caf300] text-lg">calendar_month</span>
-                <span class="text-white text-xs sm:text-sm font-extrabold uppercase tracking-wider font-display">{{ current_month_name }}</span>
+                <span class="text-white text-xs sm:text-sm font-extrabold uppercase tracking-wider font-display">{{ period_title }}</span>
             </div>
 
             <div class="flex items-center gap-1">
-                <button hx-get="{% url 'weight:overview' %}?selected_date={{ prev_week_date|date:'Y-m-d' }}" 
+                <button hx-get="{% url 'weight:overview' %}?range={{ range }}&selected_date={{ prev_period_date|date:'Y-m-d' }}" 
                         hx-target="#activity-calendar-container" 
                         hx-swap="outerHTML"
-                        class="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/10 hover:text-white text-neutral-400 flex items-center justify-center transition-all" title="Settimana precedente">
+                        class="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/10 hover:text-white text-neutral-400 flex items-center justify-center transition-all" title="Precedente">
                     <span class="material-symbols-outlined text-sm">chevron_left</span>
                 </button>
-                <button hx-get="{% url 'weight:overview' %}?selected_date={{ next_week_date|date:'Y-m-d' }}" 
+                <button hx-get="{% url 'weight:overview' %}?range={{ range }}&selected_date={{ next_period_date|date:'Y-m-d' }}" 
                         hx-target="#activity-calendar-container" 
                         hx-swap="outerHTML"
-                        class="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/10 hover:text-white text-neutral-400 flex items-center justify-center transition-all" title="Settimana successiva">
+                        class="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/10 hover:text-white text-neutral-400 flex items-center justify-center transition-all" title="Successivo">
                     <span class="material-symbols-outlined text-sm">chevron_right</span>
                 </button>
             </div>
         </div>
         
-        <!-- Days Grid -->
-        <div class="grid grid-cols-7 gap-1.5 sm:gap-2 w-full">
-            {% for day in week_days %}
-                <button hx-get="{% url 'weight:overview' %}?selected_date={{ day.date|date:'Y-m-d' }}" 
+        <!-- Days / Months Grid -->
+        <div class="grid {% if range == 'monthly' %}grid-cols-7 sm:grid-cols-10{% elif range == 'yearly' %}grid-cols-4 sm:grid-cols-6{% else %}grid-cols-7{% endif %} gap-1.5 sm:gap-2 w-full">
+            {% for item in calendar_items %}
+                <button hx-get="{% url 'weight:overview' %}?range={{ range }}&selected_date={{ item.date|date:'Y-m-d' }}" 
                         hx-target="#activity-calendar-container" 
                         hx-swap="outerHTML"
-                        class="flex flex-col items-center justify-center py-3 px-1 rounded-2xl transition-all duration-200 relative group {% if day.is_selected %}bg-[#caf300] text-[#090a0c] font-black shadow-md scale-[1.02]{% else %}bg-[#16171b] hover:bg-[#1f2025] text-neutral-400 hover:text-white border border-white/[0.04]{% endif %}">
-                    <span class="text-[10px] font-bold uppercase tracking-wider mb-1 {% if day.is_selected %}text-[#090a0c]/80{% else %}text-neutral-500{% endif %}">{{ day.day_name }}</span>
-                    <span class="text-sm font-extrabold font-display leading-none">{{ day.day_num }}</span>
-                    {% if day.has_workout %}
-                        <div class="w-1.5 h-1.5 rounded-full mt-1.5 {% if day.is_selected %}bg-[#090a0c]{% else %}bg-[#caf300] shadow-[0_0_6px_rgba(202,243,0,0.6)]{% endif %}"></div>
+                        class="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-200 relative group {% if item.is_selected %}bg-[#caf300] text-[#090a0c] font-black shadow-md scale-[1.02]{% else %}bg-[#16171b] hover:bg-[#1f2025] text-neutral-400 hover:text-white border border-white/[0.04]{% endif %}">
+                    <span class="text-[9px] font-bold uppercase tracking-wider mb-0.5 {% if item.is_selected %}text-[#090a0c]/80{% else %}text-neutral-500{% endif %}">{{ item.day_name }}</span>
+                    {% if not item.is_month %}
+                        <span class="text-xs font-extrabold font-display leading-none">{{ item.day_num }}</span>
+                    {% endif %}
+                    {% if item.has_workout %}
+                        <div class="w-1.5 h-1.5 rounded-full mt-1 {% if item.is_selected %}bg-[#090a0c]{% else %}bg-[#caf300] shadow-[0_0_6px_rgba(202,243,0,0.6)]{% endif %}"></div>
                     {% else %}
-                        <div class="w-1.5 h-1.5 mt-1.5"></div>
+                        <div class="w-1.5 h-1.5 mt-1"></div>
                     {% endif %}
                 </button>
             {% endfor %}
@@ -216,7 +218,7 @@
                         <div class="snap-center shrink-0 w-full bg-[#16171b] border border-white/[0.05] rounded-2xl p-5 shadow-md flex flex-col justify-between transition-all duration-200" id="session-card-{{ forloop.counter0 }}">
                             
                             <!-- Card Header -->
-                            <div class="flex justify-between items-start pb-3 border-b border-white/[0.04] gap-2.5">
+                            <div class="flex justify-between items-center pb-3 border-b border-white/[0.04] gap-2.5">
                                 <div class="flex items-center gap-3">
                                     <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/20 text-[#caf300] flex items-center justify-center">
                                         <span class="material-symbols-outlined text-base">fitness_center</span>
@@ -246,23 +248,36 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                {% if session.impression %}
-                                    {% if session.impression == '3' %}
-                                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm bg-[#caf300]/10 border border-[#caf300]/20 text-[#caf300]">
-                                            {% translate "Good" %}
-                                        </span>
-                                    {% elif session.impression == '2' %}
-                                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm bg-zinc-850 border border-zinc-750 text-zinc-300">
-                                            {% translate "Neutral" %}
-                                        </span>
-                                    {% else %}
-                                        <span class="px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm bg-red-500/10 border border-red-500/20 text-red-400">
-                                            {% translate "Bad" %}
-                                        </span>
-                                    {% endif %}
-                                {% endif %}
+                                <a href="{% url 'core:session-details' session.id %}" class="px-3 py-1.5 rounded-full bg-[#caf300] text-[#08090A] hover:bg-[#b5dc00] text-[11px] font-black uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 shrink-0 shadow-md active:scale-95">
+                                    <span>{% translate "Espandi" %}</span>
+                                    <span class="material-symbols-outlined text-sm">open_in_full</span>
+                                </a>
                             </div>
+
+                            {% if session.condition_photo %}
+                                <div class="mt-3 p-2.5 bg-black/30 border border-[#caf300]/20 rounded-xl flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <a href="{{ session.condition_photo.image.url }}" target="_blank" class="relative group shrink-0 block">
+                                            <img src="{{ session.condition_photo.image.url }}" alt="Foto Condizione" class="w-12 h-12 object-cover rounded-lg border border-[#caf300]/40 group-hover:scale-105 transition-transform duration-200">
+                                            <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent rounded-lg transition-colors flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">zoom_in</span>
+                                            </div>
+                                        </a>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] font-extrabold text-[#caf300] uppercase tracking-wider flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[13px]">photo_camera</span>
+                                                {% translate "Foto Condizione" %}
+                                            </span>
+                                            <span class="text-[11px] text-zinc-300 truncate block mt-0.5" title="{{ session.condition_photo.description }}">
+                                                {{ session.condition_photo.description|default:"Fine allenamento" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <a href="{{ session.condition_photo.image.url }}" target="_blank" class="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-[#caf300] hover:text-black border border-white/[0.1] text-zinc-300 text-[10px] font-bold uppercase transition-all shrink-0">
+                                        {% translate "Apri" %}
+                                    </a>
+                                </div>
+                            {% endif %}
 
                             <!-- Exercises Logged in this Session -->
                             <div class="flex-grow pt-4">
@@ -333,14 +348,20 @@
                                 </div>
                             {% endif %}
 
-                            <!-- Card Footer (Session Stats) -->
-                            <div class="pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-semibold text-zinc-500 mt-3">
-                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">analytics</span> Statistiche:</span>
-                                <div class="flex gap-2.5 font-mono">
-                                    <span class="text-zinc-300">Reps: <strong class="text-[#caf300] font-bold" id="stats-reps-{{ session.id }}">--</strong></span>
-                                    <span class="text-zinc-800">•</span>
-                                    <span class="text-zinc-300">Volume: <strong class="text-[#caf300] font-bold" id="stats-vol-{{ session.id }}">--</strong></span>
+                            <!-- Card Footer (Session Stats & Expand CTA) -->
+                            <div class="pt-3 border-t border-white/[0.04] flex flex-col gap-3 mt-3">
+                                <div class="flex justify-between items-center text-[10px] font-semibold text-zinc-500">
+                                    <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">analytics</span> Statistiche:</span>
+                                    <div class="flex gap-2.5 font-mono">
+                                        <span class="text-zinc-300">Reps: <strong class="text-[#caf300] font-bold" id="stats-reps-{{ session.id }}">--</strong></span>
+                                        <span class="text-zinc-800">•</span>
+                                        <span class="text-zinc-300">Volume: <strong class="text-[#caf300] font-bold" id="stats-vol-{{ session.id }}">--</strong></span>
+                                    </div>
                                 </div>
+                                <a href="{% url 'core:session-details' session.id %}" class="w-full bg-[#1c1c1f] hover:bg-[#caf300] border border-white/10 hover:border-[#caf300] text-white hover:text-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md group">
+                                    <span class="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">open_in_full</span>
+                                    {% translate "Espandi Dettaglio Allenamento" %}
+                                </a>
                             </div>
                         </div>
                     {% endfor %}
@@ -411,19 +432,32 @@
                         }
 
                         let totalReps = 0;
-                        let totalVolume = 0;
+                        let weightedVolume = 0;
+                        let hasBodyweight = false;
                         
                         card.querySelectorAll('[data-reps]').forEach(item => {
                             const reps = parseFloat(item.getAttribute('data-reps')) || 0;
                             const weight = parseFloat(item.getAttribute('data-weight')) || 0;
                             totalReps += reps;
-                            totalVolume += reps * weight;
+                            if (weight > 0) {
+                                weightedVolume += reps * weight;
+                            } else {
+                                hasBodyweight = true;
+                            }
                         });
                         
                         const repsEl = card.querySelector('[id^="stats-reps-"]');
                         const volEl = card.querySelector('[id^="stats-vol-"]');
                         if (repsEl) repsEl.textContent = totalReps;
-                        if (volEl) volEl.textContent = totalVolume.toLocaleString() + ' kg';
+                        if (volEl) {
+                            if (weightedVolume > 0 && hasBodyweight) {
+                                volEl.textContent = weightedVolume.toLocaleString() + ' kg (+ Corpo libero)';
+                            } else if (weightedVolume > 0) {
+                                volEl.textContent = weightedVolume.toLocaleString() + ' kg';
+                            } else {
+                                volEl.textContent = 'Corpo libero';
+                            }
+                        }
                     });
                 })();
             </script>
@@ -440,6 +474,30 @@
             </div>
         {% endif %}
     </div>
+
+    <!-- 4. Daily Condition Photos Gallery Card -->
+    {% if condition_photos %}
+    <div class="bg-[#111215] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-lg flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#caf300] text-lg">photo_camera</span>
+                <h3 class="text-white font-bold text-sm tracking-tight font-display">{% translate "Foto Condizione del Giorno" %}</h3>
+            </div>
+            <span class="text-[11px] font-mono text-[#caf300] font-bold bg-[#caf300]/10 px-2.5 py-1 rounded-lg border border-[#caf300]/20">{{ condition_photos|length }} {% translate "foto" %}</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {% for photo in condition_photos %}
+                <a href="{{ photo.image.url }}" target="_blank" class="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#caf300]/60 bg-[#16171b] shadow-md transition-all duration-200">
+                    <img src="{{ photo.image.url }}" alt="{{ photo.description }}" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                    <div class="absolute bottom-2 left-2.5 right-2.5">
+                        <span class="text-[10px] font-bold text-white block truncate leading-tight">{{ photo.description|default:"Foto Condizione" }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}</div>
 
     <!-- JS script to initialize rings and Chart.js -->
     <script>

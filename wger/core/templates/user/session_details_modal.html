@@ -71,17 +71,6 @@
                     </div>
                 </div>
             {% endif %}
-
-            <!-- Sensazione Badge -->
-            <div class="bg-surface border border-outline rounded-2xl p-3 flex items-center gap-3 {% if not time_start_local or not time_end_local %}col-span-2{% endif %}">
-                <div class="w-8 h-8 rounded-xl bg-surface-card border border-outline flex items-center justify-center text-primary">
-                    <span class="material-symbols-outlined text-base">mood</span>
-                </div>
-                <div>
-                    <span class="text-[9px] text-secondary font-extrabold uppercase tracking-wider block">SENSAZIONE</span>
-                    <span class="text-xs font-black text-white">{{ impression_text }}</span>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -128,9 +117,6 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <span class="px-3.5 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wide bg-primary text-black font-sans select-none shadow-sm">
-                                {{ impression_text|default:"Good" }}
-                            </span>
                         </div>
 
                         <!-- Exercise Content & Grid Table -->
@@ -200,19 +186,32 @@
         // 1. Calculate stats
         document.querySelectorAll('.exercise-card-container').forEach(card => {
             let totalReps = 0;
-            let totalVolume = 0;
+            let weightedVolume = 0;
+            let hasBodyweight = false;
             
             card.querySelectorAll('.set-row-container').forEach(row => {
                 const reps = parseFloat(row.getAttribute('data-reps')) || 0;
                 const weight = parseFloat(row.getAttribute('data-weight')) || 0;
                 totalReps += reps;
-                totalVolume += reps * weight;
+                if (weight > 0) {
+                    weightedVolume += reps * weight;
+                } else {
+                    hasBodyweight = true;
+                }
             });
             
             const repsEl = card.querySelector('.reps-placeholder');
             const volEl = card.querySelector('.volume-placeholder');
             if (repsEl) repsEl.textContent = totalReps;
-            if (volEl) volEl.textContent = totalVolume.toLocaleString() + ' kg';
+            if (volEl) {
+                if (weightedVolume > 0 && hasBodyweight) {
+                    volEl.textContent = weightedVolume.toLocaleString() + ' kg (+ Corpo libero)';
+                } else if (weightedVolume > 0) {
+                    volEl.textContent = weightedVolume.toLocaleString() + ' kg';
+                } else {
+                    volEl.textContent = 'Corpo libero';
+                }
+            }
         });
 
         // 2. Sync slider dots

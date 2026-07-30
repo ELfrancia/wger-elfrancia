@@ -145,7 +145,7 @@
                         
                         <div class="flex items-center gap-3.5 min-w-0 flex-1">
                             <!-- Preview Thumbnail -->
-                            <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors">
+                            <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors pointer-events-none">
                                 {% if ex.preview_url %}
                                     {% if '.mp4' in ex.preview_url.lower or '.webm' in ex.preview_url.lower or '.mov' in ex.preview_url.lower %}
                                         <video src="{{ ex.preview_url }}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
@@ -755,32 +755,150 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function removeExercise(id) {
-        selectedExercises = selectedExercises.filter(ex => ex.id !== id);
-        syncUI();
-    }
-
     function selectItem(item) {
-        const id = parseInt(item.dataset.id);
-        const name = item.dataset.name;
+        if (!item || !item.dataset || !item.dataset.id) return;
+        const id = String(item.dataset.id);
+        const name = item.dataset.name || '';
 
-        if (selectedExercises.some(ex => ex.id === id)) {
+        if (selectedExercises.some(ex => String(ex.id) === id)) {
             return;
         }
 
-        if (activeSelection && activeSelection.id === id) {
+        if (activeSelection && String(activeSelection.id) === id) {
             activeSelection = null;
         } else {
-            activeSelection = { id, name };
+            activeSelection = { id: id, name: name };
         }
         syncUI();
     }
 
-    document.querySelectorAll('.exercise-item').forEach(item => {
-        item.addEventListener('click', function() {
-            selectItem(item);
+    function removeExercise(id) {
+        const idStr = String(id);
+        selectedExercises = selectedExercises.filter(ex => String(ex.id) !== idStr);
+        syncUI();
+    }
+
+    function syncUI() {
+        const supersetContainer = document.getElementById('superset-container');
+        const supersetList = document.getElementById('superset-list');
+        const hiddenInputs = document.getElementById('hidden-exercises-inputs');
+        const mainSubmitBtn = document.getElementById('submit-btn');
+        const submitBtnText = document.getElementById('submit-btn-text');
+        const addToSupersetBtn = document.getElementById('add-to-superset-btn');
+
+        if (!hiddenInputs || !supersetList || !mainSubmitBtn || !addToSupersetBtn) return;
+
+        hiddenInputs.innerHTML = '';
+        supersetList.innerHTML = '';
+
+        selectedExercises.forEach((ex, idx) => {
+            const letter = String.fromCharCode(65 + idx);
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'exercise';
+            input.value = ex.id;
+            hiddenInputs.appendChild(input);
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-2.5 bg-[#18181a] border border-[#caf300]/30 rounded-lg';
+            row.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${letter}</span>
+                    <span class="text-sm font-bold text-white">${ex.name}</span>
+                </div>
+                <button type="button" class="remove-btn text-zinc-400 hover:text-red-400 flex items-center p-1" data-id="${ex.id}">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            `;
+            
+            row.querySelector('.remove-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                removeExercise(ex.id);
+            });
+            
+            supersetList.appendChild(row);
         });
-    });
+
+        if (activeSelection) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'exercise';
+            input.value = activeSelection.id;
+            hiddenInputs.appendChild(input);
+        }
+
+        if (selectedExercises.length > 0) {
+            supersetContainer.classList.remove('hidden');
+            supersetContainer.classList.add('flex');
+        } else {
+            supersetContainer.classList.remove('flex');
+            supersetContainer.classList.add('hidden');
+        }
+
+        const totalSelected = selectedExercises.length + (activeSelection ? 1 : 0);
+        if (totalSelected === 0) {
+            mainSubmitBtn.disabled = true;
+            mainSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
+        } else {
+            mainSubmitBtn.disabled = false;
+            mainSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (selectedExercises.length > 0 || totalSelected > 1) {
+                submitBtnText.textContent = `{% translate 'ADD SUPERSET' %} (${totalSelected})`;
+            } else {
+                submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
+            }
+        }
+
+        if (activeSelection) {
+            addToSupersetBtn.disabled = false;
+            addToSupersetBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            addToSupersetBtn.disabled = true;
+            addToSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        document.querySelectorAll('.exercise-item').forEach(item => {
+            const id = String(item.dataset.id);
+            const indicator = item.querySelector('.selected-indicator');
+            const inSupersetIdx = selectedExercises.findIndex(ex => String(ex.id) === id);
+            const isActive = activeSelection && String(activeSelection.id) === id;
+
+            if (isActive) {
+                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
+                item.classList.add('border-[#caf300]', 'bg-[#caf300]/10');
+                if (indicator) {
+                    const nextLetter = String.fromCharCode(65 + selectedExercises.length);
+                    indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${nextLetter}</span>`;
+                }
+            } else if (inSupersetIdx !== -1) {
+                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
+                item.classList.add('border-[#caf300]/40', 'bg-[#caf300]/5');
+                if (indicator) {
+                    const letter = String.fromCharCode(65 + inSupersetIdx);
+                    indicator.innerHTML = `<span class="bg-zinc-800 text-[#caf300] text-xs font-bold w-5 h-5 rounded border border-[#caf300]/30 flex items-center justify-center">${letter}</span>`;
+                }
+            } else {
+                item.classList.remove('border-[#caf300]', 'border-[#caf300]/40', 'bg-[#caf300]/10', 'bg-[#caf300]/5');
+                item.classList.add('border-white/[0.04]', 'bg-[#18181a]');
+                if (indicator) {
+                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl text-zinc-600 group-hover:text-[#caf300]">radio_button_unchecked</span>`;
+                }
+            }
+        });
+    }
+
+    // Event delegation on container for instant click capture on any item
+    const listContainer = document.getElementById('exercise-list-container');
+    if (listContainer) {
+        listContainer.addEventListener('click', function(e) {
+            const item = e.target.closest('.exercise-item');
+            if (item) {
+                selectItem(item);
+            }
+        });
+    }
 
     document.getElementById('add-to-superset-btn').addEventListener('click', function(e) {
         e.preventDefault();
