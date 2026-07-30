@@ -4,24 +4,36 @@
 {% block title %}{% translate "Import weight logs" %}{% endblock %}
 
 {% block content %}
-<form action="{{request.get_full_path}}" method="post">
-    {% crispy form %}
-    <input type="submit" name="submit" value="{% translate 'Submit' %}" class="btn btn-primary btn-success btn-block" id="submit-id-submit">
-</form>
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4 text-white">
+    <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+        <span class="material-symbols-outlined text-primary text-2xl">upload_file</span>
+        <h3 class="text-xl font-bold tracking-tight">{% translate "Import weight logs" %}</h3>
+    </div>
+
+    <form action="{{request.get_full_path}}" method="post" class="wger-legacy-form">
+        {% crispy form %}
+        <div class="pt-4 border-t border-[#222429]">
+            <input type="submit" name="submit" value="{% translate 'Submit' %}" class="px-6 py-3 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer shadow-lg uppercase tracking-wider" id="submit-id-submit">
+        </div>
+    </form>
+</div>
 {% endblock %}
 
-
 {% block sidebar %}
-<p>{% blocktranslate %}Use this import field to import your weight logs into Workout
-Manager.{% endblocktranslate %}</p>
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl space-y-4 text-neutral-300 text-xs leading-relaxed">
+    <h4 class="text-base font-bold text-white flex items-center gap-2 pb-2 border-b border-[#222429]">
+        <span class="material-symbols-outlined text-primary">info</span>
+        {% translate "Instructions" %}
+    </h4>
 
-<p>{% blocktranslate %}You can copy and paste from your spreadsheet into the text input,
+    <p>{% blocktranslate %}Use this import field to import your weight logs into Workout Manager.{% endblocktranslate %}</p>
+
+    <p>{% blocktranslate %}You can copy and paste from your spreadsheet into the text input,
 the system will try to guess the format to import. The only things to consider is
-that the first column is the <strong>date</strong>, the second the <strong>weight</strong>.
+that the first column is the <strong class="text-white font-bold">date</strong>, the second the <strong class="text-white font-bold">weight</strong>.
 All further columns are ignored. There is a 1000 row limit.
 {% endblocktranslate %}</p>
 
-<p>{% blocktranslate %}If there are errors, you can correct or discard them in a
-second step.{% endblocktranslate %}</p>
-
+    <p class="text-neutral-400">{% blocktranslate %}If there are errors, you can correct or discard them in a second step.{% endblocktranslate %}</p>
+</div>
 {% endblock %}

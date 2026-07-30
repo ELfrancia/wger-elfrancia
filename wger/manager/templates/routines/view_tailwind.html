@@ -19,10 +19,36 @@
     </a>
     
     <!-- Badges & Title Overlay -->
-    <div class="absolute bottom-5 left-5 right-5 flex flex-col gap-1.5">
-        <div class="flex gap-2 items-center flex-wrap">
-            <span class="bg-[#caf300] text-[#000000] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md tracking-wider">SETTIMANA {{ routine.current_week }} / {{ routine.total_weeks }}</span>
-            <span class="bg-[#16171A] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md tracking-wider">{% translate "CALISTHENICS" %}</span>
+    <div class="absolute bottom-5 left-5 right-5 flex flex-col gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Interactive Week Stepper Badge -->
+            <div class="flex items-center bg-[#caf300] text-black rounded-xl p-0.5 shadow-lg tracking-wider font-extrabold text-[11px] uppercase">
+                <!-- Previous Week Button -->
+                <form action="{% url 'manager:routine:update-week' routine.pk %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="current_week" value="{% if routine.current_week > 1 %}{{ routine.current_week|add:'-1' }}{% else %}1{% endif %}">
+                    <button type="submit" class="w-6 h-6 rounded-lg hover:bg-black/15 flex items-center justify-center transition-colors text-black active:scale-90 cursor-pointer disabled:opacity-40" title="{% translate 'Settimana precedente' %}" {% if routine.current_week <= 1 %}disabled{% endif %}>
+                        <span class="material-symbols-outlined text-xs font-black">chevron_left</span>
+                    </button>
+                </form>
+
+                <!-- Current Week Title Button (Opens Modal) -->
+                <button type="button" onclick="openWeekSelectorModal()" class="px-2 py-0.5 flex items-center gap-1 hover:bg-black/10 rounded-lg transition-colors cursor-pointer" title="{% translate 'Seleziona settimana' %}">
+                    <span>SETTIMANA {{ routine.current_week }} / {{ routine.total_weeks }}</span>
+                    <span class="material-symbols-outlined text-[13px] font-black">edit_calendar</span>
+                </button>
+
+                <!-- Next Week Button -->
+                <form action="{% url 'manager:routine:update-week' routine.pk %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="current_week" value="{% if routine.current_week < routine.total_weeks %}{{ routine.current_week|add:'1' }}{% else %}{{ routine.total_weeks }}{% endif %}">
+                    <button type="submit" class="w-6 h-6 rounded-lg hover:bg-black/15 flex items-center justify-center transition-colors text-black active:scale-90 cursor-pointer disabled:opacity-40" title="{% translate 'Settimana successiva' %}" {% if routine.current_week >= routine.total_weeks %}disabled{% endif %}>
+                        <span class="material-symbols-outlined text-xs font-black">chevron_right</span>
+                    </button>
+                </form>
+            </div>
+
+            <span class="bg-[#16171A] text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-xl border border-white/10 tracking-wider">{% translate "CALISTHENICS" %}</span>
         </div>
         <h2 class="text-3xl font-display font-black text-white tracking-tight uppercase">{{ routine.name }}</h2>
     </div>
@@ -418,11 +444,76 @@
         </div>
     {% endfor %}
 </div>
+<!-- Week Selector Modal -->
+<div id="week-selector-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div id="week-selector-card" class="bg-[#14161d] border border-white/10 rounded-3xl w-full max-w-sm p-6 flex flex-col gap-5 shadow-2xl relative transform translate-y-6 transition-all duration-300">
+        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">edit_calendar</span>
+                <h3 class="text-white font-black text-base tracking-tight font-display">
+                    {% translate "Seleziona Settimana" %}
+                </h3>
+            </div>
+            <button type="button" onclick="closeWeekSelectorModal()" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <p class="text-xs text-zinc-400">
+            Scegli in quale settimana del ciclo ti trovi attualmente:
+        </p>
+
+        <!-- Weeks Selection Grid -->
+        <form action="{% url 'manager:routine:update-week' routine.pk %}" method="post" id="week-select-form">
+            {% csrf_token %}
+            <input type="hidden" name="current_week" id="selected-week-input" value="{{ routine.current_week }}">
+            
+            <div class="grid grid-cols-4 gap-2.5 my-2">
+                {% for i in "x"|rjust:routine.total_weeks %}
+                <button type="button" onclick="submitWeekSelection({{ forloop.counter }})" 
+                        class="p-3 rounded-2xl border text-center flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer {% if forloop.counter == routine.current_week %}bg-[#caf300] text-black border-[#caf300] font-black shadow-lg shadow-[#caf300]/20 scale-105{% else %}bg-white/5 border-white/10 text-white font-bold hover:bg-white/10 hover:border-primary/40{% endif %}">
+                    <span class="text-[9px] uppercase font-mono tracking-wider opacity-80">Sett.</span>
+                    <span class="text-lg font-black font-display leading-none">{{ forloop.counter }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </form>
+
+        <div class="flex justify-end pt-2 border-t border-white/10">
+            <button type="button" onclick="closeWeekSelectorModal()" class="px-4 py-2 rounded-full border border-white/10 text-xs font-bold text-zinc-300 hover:text-white transition-colors">
+                {% translate "Annulla" %}
+            </button>
+        </div>
+    </div>
+</div>
 </main>
 {% endblock %}
 
 {% block extra_body %}
 <script>
+function openWeekSelectorModal() {
+    const modal = document.getElementById('week-selector-modal');
+    const card = document.getElementById('week-selector-card');
+    modal.classList.remove('pointer-events-none', 'opacity-0');
+    modal.classList.add('opacity-100');
+    card.classList.remove('translate-y-6');
+    card.classList.add('translate-y-0');
+}
+
+function closeWeekSelectorModal() {
+    const modal = document.getElementById('week-selector-modal');
+    const card = document.getElementById('week-selector-card');
+    modal.classList.add('pointer-events-none', 'opacity-0');
+    modal.classList.remove('opacity-100');
+    card.classList.add('translate-y-6');
+    card.classList.remove('translate-y-0');
+}
+
+function submitWeekSelection(weekNum) {
+    document.getElementById('selected-week-input').value = weekNum;
+    document.getElementById('week-select-form').submit();
+}
+
 function toggleCollapse(exerciseId) {
     const container = document.getElementById(`sets-container-${exerciseId}`);
     if (!container) return;

@@ -1,136 +1,142 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% load static %}
-{% load wger_extras %}
-{% load cache %}
+{% load i18n static wger_extras cache %}
 
 {% block header %}
 {% endblock %}
 
 {% block title %}{% translate "Ingredient overview" %}{% endblock %}
 
-
 {% block content %}
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-6">
+    <div class="flex items-center justify-between pb-4 border-b border-[#222429]">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">restaurant</span>
+            {% translate "Ingredient overview" %}
+        </h3>
+        {% if perms.nutrition.add_ingredient %}
+            {% translate 'Add' as text %}
+            {% modal_link url='nutrition:ingredient:add' text=text css_class='px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-lg' %}
+        {% endif %}
+    </div>
+
     {% if ingredients_list %}
-        <div class="list-group">
+        <div class="flex flex-col divide-y divide-[#222429]">
             {% for ingredient in ingredients_list %}
-                <a class="list-group-item list-group-item-action d-inline-flex align-items-center justify-content-start"
+                <a class="py-3 px-2 flex items-center justify-between group hover:bg-[#1D1E22]/60 rounded-xl transition-all"
                    href="{{ ingredient.get_absolute_url }}">
-                <span class="text-white rounded-circle m-1 me-2"
-                      style="background-color: lightgray; width: 40px; height: 40px;">
-                    {% if ingredient.image %}
-                        <img src="{{ ingredient.image.image.url }}"
-                             class="img-fluid"
-                             alt="{{ ingredient.name }}"
-                             style="height: 40px; width: 40px; border-radius: 50%; object-fit: cover;">
-                    {% else %}
-                        <i class="fas fa-camera fa-sx" style="text-align:center; width: 40px;"></i>
-                    {% endif %}
-                  </span>
-                    {{ ingredient.name }}
-                    {% if ingredient.is_vegan %}
-                        <span class="badge bg-success ms-2">{% translate "Vegan" %}</span>
-                    {% elif ingredient.is_vegetarian %}
-                        <span class="badge bg-info ms-2">{% translate "Vegetarian" %}</span>
-                    {% endif %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-surface-container border border-surface-container-high overflow-hidden flex items-center justify-center shrink-0">
+                            {% if ingredient.image %}
+                                <img src="{{ ingredient.image.image.url }}"
+                                     class="w-full h-full object-cover"
+                                     alt="{{ ingredient.name }}">
+                            {% else %}
+                                <span class="material-symbols-outlined text-neutral-400 text-sm">nutrition</span>
+                            {% endif %}
+                        </div>
+                        <span class="font-bold text-white group-hover:text-primary transition-colors text-sm">{{ ingredient.name }}</span>
+                        
+                        {% if ingredient.is_vegan %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{% translate "Vegan" %}</span>
+                        {% elif ingredient.is_vegetarian %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-400 border border-teal-500/30">{% translate "Vegetarian" %}</span>
+                        {% endif %}
+                    </div>
+                    <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
                 </a>
             {% endfor %}
         </div>
     {% else %}
-        <p>
+        <div class="p-8 text-center flex flex-col items-center justify-center gap-3">
+            <span class="material-symbols-outlined text-4xl text-neutral-500">search_off</span>
+            <p class="text-neutral-400 text-sm font-medium">{% translate "No ingredients." %}</p>
             {% if perms.nutrition.add_ingredient %}
                 <a href="{% url 'nutrition:ingredient:add' %}"
-                   class="btn btn-light btn-block">
-                    {% translate "No ingredients." %} {% translate "Add one now." %}
+                   class="px-5 py-2.5 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all shadow-lg">
+                    {% translate "Add one now." %}
                 </a>
-            {% else %}
-                {% translate "No ingredients." %}
             {% endif %}
-        </p>
+        </div>
     {% endif %}
 
-
-    <div style="padding-top:3em;"></div>
-    <nav aria-label="{% translate 'Ingredient pagination' %}">
-        <ul class="pagination justify-content-center">
-            {% if is_paginated %}
-                <li class="page-item">
-                    <a href="{{ first_url }}" class="page-link">
+    <!-- Pagination -->
+    <nav aria-label="{% translate 'Ingredient pagination' %}" class="pt-4 border-t border-[#222429]">
+        <div class="flex items-center justify-between">
+            <div>
+                {% if is_paginated %}
+                    <a href="{{ first_url }}" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container border border-surface-container-high text-neutral-300 hover:text-white transition-all">
                         « {% translate "First page" %}
                     </a>
-                </li>
-            {% endif %}
-            {% if has_prev %}
-                <li class="page-item">
-                    <a href="{{ prev_url }}" class="page-link">
-                        ‹ {% translate "previous" %}
+                {% endif %}
+            </div>
+
+            <div class="flex items-center gap-2">
+                {% if has_prev %}
+                    <a href="{{ prev_url }}" class="px-4 py-2 rounded-full text-xs font-bold bg-surface-container border border-surface-container-high text-neutral-300 hover:text-white transition-all flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">chevron_left</span> {% translate "previous" %}
                     </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a href="#" class="page-link">‹ {% translate "previous" %}</a>
-                </li>
-            {% endif %}
-            {% if has_next %}
-                <li class="page-item">
-                    <a href="{{ next_url }}" class="page-link">
-                        {% translate "next" %} ›
+                {% endif %}
+                {% if has_next %}
+                    <a href="{{ next_url }}" class="px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all flex items-center gap-1 shadow-lg">
+                        {% translate "next" %} <span class="material-symbols-outlined text-sm">chevron_right</span>
                     </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a href="#" class="page-link">{% translate "next" %} ›</a>
-                </li>
-            {% endif %}
-        </ul>
+                {% endif %}
+            </div>
+        </div>
     </nav>
+</div>
 {% endblock %}
 
 {% block sidebar %}
-    <h4>{% translate "Search" %}</h4>
-    <div id="react-ingredient-search"></div>
+<div class="flex flex-col gap-6">
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl">
+        <h4 class="text-base font-bold text-white pb-3 border-b border-[#222429] mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">search</span>
+            {% translate "Search" %}
+        </h4>
+        <div id="react-ingredient-search"></div>
+    </div>
 
-    <h4 class="mt-4">{% translate "Filter" %}</h4>
-    <form method="GET" action="">
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input"
-                       type="checkbox"
-                       name="is_vegan"
-                       id="filter-vegan"
-                       value="1"
-                       {% if request.GET.is_vegan %}checked{% endif %}>
-                <label class="form-check-label" for="filter-vegan">
-                    {% translate "Vegan" %}
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl">
+        <h4 class="text-base font-bold text-white pb-3 border-b border-[#222429] mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">filter_alt</span>
+            {% translate "Filter" %}
+        </h4>
+        <form method="GET" action="" class="space-y-4">
+            <div class="space-y-3">
+                <label class="flex items-center gap-3 cursor-pointer text-sm font-medium text-neutral-300 hover:text-white">
+                    <input class="w-4 h-4 rounded bg-[#16171A] border-[#222429] text-primary focus:ring-primary"
+                           type="checkbox"
+                           name="is_vegan"
+                           id="filter-vegan"
+                           value="1"
+                           {% if request.GET.is_vegan %}checked{% endif %}>
+                    <span>{% translate "Vegan" %}</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer text-sm font-medium text-neutral-300 hover:text-white">
+                    <input class="w-4 h-4 rounded bg-[#16171A] border-[#222429] text-primary focus:ring-primary"
+                           type="checkbox"
+                           name="is_vegetarian"
+                           id="filter-vegetarian"
+                           value="1"
+                           {% if request.GET.is_vegetarian %}checked{% endif %}>
+                    <span>{% translate "Vegetarian" %}</span>
                 </label>
             </div>
-            <div class="form-check">
-                <input class="form-check-input"
-                       type="checkbox"
-                       name="is_vegetarian"
-                       id="filter-vegetarian"
-                       value="1"
-                       {% if request.GET.is_vegetarian %}checked{% endif %}>
-                <label class="form-check-label" for="filter-vegetarian">
-                    {% translate "Vegetarian" %}
-                </label>
+            <div class="flex items-center gap-2 pt-2 border-t border-[#222429]">
+                <button type="submit" class="px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer shadow-lg">
+                    {% translate "Apply" %}
+                </button>
+                {% if request.GET.is_vegan or request.GET.is_vegetarian %}
+                    <a href="{% url 'nutrition:ingredient:list' %}" class="px-4 py-2 rounded-full text-xs font-bold bg-surface-container border border-surface-container-high text-neutral-300 hover:text-white transition-all">
+                        {% translate "Reset" %}
+                    </a>
+                {% endif %}
             </div>
-        </div>
-        <button type="submit" class="btn btn-light btn-sm">{% translate "Apply" %}</button>
-        {% if request.GET.is_vegan or request.GET.is_vegetarian %}
-            <a href="{% url 'nutrition:ingredient:list' %}" class="btn btn-outline-secondary btn-sm">{% translate "Reset" %}</a>
-        {% endif %}
-    </form>
-
+        </form>
+    </div>
+</div>
 {% endblock %}
 
-
-{#         #}
-{# Options #}
-{#         #}
 {% block options %}
-    {% if perms.nutrition.add_ingredient %}
-        {% translate 'Add' as text %}
-        {% modal_link url='nutrition:ingredient:add' text=text %}
-    {% endif %}
 {% endblock %}

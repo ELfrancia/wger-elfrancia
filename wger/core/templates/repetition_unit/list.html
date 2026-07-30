@@ -3,56 +3,60 @@
 
 {% block title %}{% translate "Repetition units" %}{% endblock %}
 
-
 {% block content %}
-    <ul class="list-group">
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4 text-white">
+    <div class="flex items-center justify-between pb-3 border-b border-[#222429]">
+        <h3 class="text-xl font-bold tracking-tight flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">repeat</span>
+            {% translate "Repetition units" %}
+        </h3>
+        {% if perms.core.add_license %}
+            {% translate 'Add' as text %}
+            {% modal_link url='core:repetition-unit:add' text=text css_class='px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-lg' %}
+        {% endif %}
+    </div>
+
+    <div class="flex flex-col divide-y divide-[#222429]">
         {% for unit in object_list %}
-            <li class="list-group-item list-group-item-action">
+            <div class="py-3 px-2 flex items-center justify-between group hover:bg-[#1D1E22]/50 rounded-xl transition-all">
+                <span class="font-bold text-neutral-200 group-hover:text-primary transition-colors text-sm">{{ unit }}</span>
                 {% if unit.id > max_id %}
-                    <div class="btn-group float-end">
-                        <button type="button" class="btn btn-dark dropdown-toggle btn-sm"
-                                data-bs-toggle="dropdown">
-                            <span class="{% fa_class 'cog' %}"></span>
+                    <div class="dropdown relative">
+                        <button type="button" class="p-1.5 rounded-full hover:bg-surface-container border border-transparent hover:border-surface-container-high text-neutral-400 hover:text-white transition-all dropdown-toggle" data-bs-toggle="dropdown">
+                            <span class="material-symbols-outlined text-sm">more_vert</span>
                         </button>
-                        <ul class="dropdown-menu" role="menu">
+                        <div class="dropdown-menu dropdown-menu-end bg-[#16171A] border border-[#222429] shadow-2xl rounded-xl p-1 min-w-[140px]" role="menu">
                             {% translate 'Edit' as text %}
                             {% url 'core:repetition-unit:edit' unit.id as url %}
-                            {% modal_link url=url text=text css_class='dropdown-item' %}
+                            {% modal_link url=url text=text css_class='dropdown-item text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#1D1E22] rounded-lg px-3 py-2 block' %}
 
                             {% translate 'Delete' as text %}
                             {% url 'core:repetition-unit:delete' unit.id as url %}
-                            {% modal_link url=url text=text css_class='dropdown-item' %}
-                        </ul>
+                            {% modal_link url=url text=text css_class='dropdown-item text-xs font-semibold text-red-400 hover:bg-red-500/20 rounded-lg px-3 py-2 block' %}
+                        </div>
                     </div>
                 {% endif %}
-                {{ unit }}
-            </li>
-            {% empty %}
-            <li class="list-group-item">
+            </div>
+        {% empty %}
+            <div class="p-8 text-center text-neutral-400 text-sm italic">
                 {% translate "Nothing found" %}
-            </li>
+            </div>
         {% endfor %}
-    </ul>
+    </div>
+</div>
 {% endblock %}
 
-
-{#         #}
-{# Options #}
-{#         #}
-{% block options %}
-    {% if perms.core.add_license %}
-        {% translate 'Add' as text %}
-        {% modal_link url='core:repetition-unit:add' text=text %}
-    {% endif %}
-{% endblock %}
-
-
-{#         #}
-{# Sidebar #}
-{#         #}
 {% block sidebar %}
-    <p>
-        Note that it is not possible to delete the system repetition units as some
-        of the IDs are had coded in a handful of places.
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl space-y-2 text-white">
+    <h4 class="text-base font-bold flex items-center gap-2 pb-2 border-b border-[#222429]">
+        <span class="material-symbols-outlined text-primary">info</span>
+        {% translate "Note" %}
+    </h4>
+    <p class="text-xs text-neutral-400 leading-relaxed">
+        Note that it is not possible to delete system repetition units.
     </p>
+</div>
 {% endblock sidebar %}
+
+{% block options %}
+{% endblock %}

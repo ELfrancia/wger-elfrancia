@@ -1,4 +1,10 @@
-{% load crispy_forms_tags %}
+{% load i18n crispy_forms_tags %}
 
-<h4>{{ title }}</h4>
-{% crispy form %}
+<div class="space-y-4">
+    {% if title %}
+        <h3 class="text-xl font-bold text-white tracking-tight">{{ title }}</h3>
+    {% endif %}
+    <div class="wger-legacy-form">
+        {% crispy form %}
+    </div>
+</div>

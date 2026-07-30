@@ -1,175 +1,137 @@
 {% extends "base.html" %}
 {% load static i18n wger_extras %}
 
-
 {% block title %}{% translate "Support & Get Involved" %}{% endblock %}
 
 {% block content %}
-    <p>
-        {% blocktranslate trimmed %}
-            wger helps you track your workouts, manage your nutrition, and reach
-            your fitness goals. We offer it as free, open-source software you can
-            host yourself, and also provide a convenient, free, and hosted version
-            for easy access.
-        {% endblocktranslate %}
-    </p>
+<div class="flex flex-col gap-6 text-white">
 
-
-    <h3>{% translate "Open Source & free to use ❤️" %}</h3>
-    <p>
-        {% blocktranslate trimmed %}
-            wger is built on the principles of open source. Its code is publicly
-            available, developed by our community, ensuring transparency and giving
-            you control over your data (especially if self-hosting). The free
-            hosted service runs entirely on this open-source foundation. We believe
-            powerful fitness tools should be accessible to everyone.
-        {% endblocktranslate %}
-    </p>
-
-
-    <h3>{% translate "How you can help" %}</h3>
-    <p>
-        All types of contributions are encouraged. And if you like the project
-        but just don’t have time to contribute, that’s fine. There are other easy
-        ways to support the project and show your appreciation. Whether you're a
-        developer, a translator, or just passionate about fitness, every bit of
-        support is appreciated!
-    </p>
-
-    <h5 class="mt-4">
-        {% translate "Join the Community" %}
-    </h5>
-
-    <ul class="fa-ul">
-        <li>
-            <span class="fa-li"><i class="fa-brands fa-discord"></i></span>
-            <a href="https://discord.gg/rPWFv6W">{% translate "Join the Discord server" %}</a>:
-            {% blocktranslate trimmed %}
-                Hop on the Discord server to chat with the developers and other
-                users, ask questions, or discuss new features.
-            {% endblocktranslate %}
-        </li>
-        <li>
-            <span class="fa-li"><i class="fa-brands fa-mastodon"></i></span>
-            <a href="https://fosstodon.org/@wger">Follow @wger@fosstodon.org</a>:
-            {% blocktranslate trimmed %}
-                Get news, updates, and announcements about the project on Mastodon.
-            {% endblocktranslate %}
-        </li>
-        <li>
-            <span class="fa-li"><i class="fa-solid fa-comments"></i></span>
-            {% blocktranslate trimmed %}
-                Spread the word: Tell your friends, gym buddies, or share on social
-                media! Your enthusiasm helps us grow and reach more people.
-            {% endblocktranslate %}
-        </li>
-    </ul>
-
-
-
-    <h5 class="mt-4">
-        {% translate "Contribute your skills" %}
-    </h5>
-    <ul>
-        <li>
-            <a href="https://github.com/wger-project/wger/issues/new/choose">
-                {% translate "Report bugs or suggest features" %}:
-            </a>
-            {% translate "Have a problem or idea? Let us know!" %}
-        </li>
-        <li>
-            <a href="{% url 'exercise:exercise:overview' %}">{% translate "Improve the exercises" %}</a>:
-            {% translate "Contribute new exercises, and edit or translate the existing ones." %}
-        </li>
-        <li>
-            <a href="https://hosted.weblate.org/engage/wger/">{% translate "Translate the application" %}</a>:
-            {% translate "Help make the app accessible in more languages for users around the world." %}
-        </li>
-        <li>
-            <a href="https://github.com/wger-project">{% translate "Contribute code or documentation" %}</a>:
-            {% translate "Check out the source code and help us build the next version." %}
-        </li>
-    </ul>
-
-
-    <h5 class="mt-4">
-        {% translate "Make a donation" %}
-    </h5>
-
-    <p>
-        {% blocktranslate trimmed %}
-            While the project is free and will always remain it, running the server
-            isn’t! Providing the hosted version of wger involves real, ongoing costs
-            for server hosting, bandwidth, backups, etc. Development also takes
-            significant time and effort from volunteers.
-            Your contribution directly supports these essential costs, helping to
-            keep the service reliable, improving, and free for everyone.
-        {% endblocktranslate %}
-    </p>
-
-    <div class="row justify-content-center align-items-center"
-         style="display: flex;">
-        <div class="col-4 d-flex flex-column align-items-center">
-            <a href="https://buymeacoffee.com/wger">
-                <img src="{% static 'images/logos/buymeacoffee/bmc-full-logo-no-background.png' %}"
-                     width="160"
-                     alt="Donate"
-                     class="img-fluid">
-            </a>
+    <!-- Intro Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-primary text-2xl">favorite</span>
+            <h3 class="text-xl font-bold tracking-tight">{% translate "Open Source & free to use" %}</h3>
         </div>
-        <div class="col-4 d-flex flex-column align-items-center" style="text-align: center;">
-            <a href="https://liberapay.com/wger">
-                <img src="{% static 'images/logos/liberapay/liberapay_logo_black-on-yellow.svg' %}"
-                     width="60"
-                     alt="Donate" class="img-fluid">
-                <br>
-                Liberapay
-            </a>
+        <p class="text-sm text-neutral-300 leading-relaxed">
+            {% blocktranslate trimmed %}
+                wger helps you track your workouts, manage your nutrition, and reach
+                your fitness goals. We offer it as free, open-source software you can
+                host yourself, and also provide a convenient, free, and hosted version
+                for easy access.
+            {% endblocktranslate %}
+        </p>
+        <p class="text-xs text-neutral-400 leading-relaxed">
+            {% blocktranslate trimmed %}
+                wger is built on the principles of open source. Its code is publicly
+                available, developed by our community, ensuring transparency and giving
+                you control over your data (especially if self-hosting). The free
+                hosted service runs entirely on this open-source foundation. We believe
+                powerful fitness tools should be accessible to everyone.
+            {% endblocktranslate %}
+        </p>
+    </div>
+
+    <!-- Community & Help Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-5">
+        <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-primary">groups</span>
+            <h4 class="text-lg font-bold">{% translate "How you can help" %}</h4>
         </div>
-        <div class="col-4 d-flex flex-column align-items-center" style="text-align: center;">
-            <a href="https://github.com/sponsors/wger-project">
-                <img src="{% static 'images/logos/github/GitHub_Logo.png' %}"
-                     width="100"
-                     alt="Donate" class="img-fluid">
-                <br>
-                {% translate "Sponsor on GitHub" %}
+        <p class="text-xs text-neutral-300 leading-relaxed">
+            {% translate "All types of contributions are encouraged. Whether you're a developer, a translator, or just passionate about fitness, every bit of support is appreciated!" %}
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <a href="https://discord.gg/rPWFv6W" target="_blank" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-start gap-3 group">
+                <span class="material-symbols-outlined text-primary text-xl group-hover:scale-110 transition-transform">forum</span>
+                <div class="space-y-1">
+                    <h5 class="text-sm font-bold text-white group-hover:text-primary transition-colors">{% translate "Join Discord" %}</h5>
+                    <p class="text-xs text-neutral-400">{% translate "Chat with developers and users, ask questions or suggest features." %}</p>
+                </div>
+            </a>
+
+            <a href="https://github.com/wger-project" target="_blank" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-start gap-3 group">
+                <span class="material-symbols-outlined text-primary text-xl group-hover:scale-110 transition-transform">code</span>
+                <div class="space-y-1">
+                    <h5 class="text-sm font-bold text-white group-hover:text-primary transition-colors">{% translate "Code & Docs" %}</h5>
+                    <p class="text-xs text-neutral-400">{% translate "Check out source code and help build the next version." %}</p>
+                </div>
+            </a>
+
+            <a href="{% url 'exercise:exercise:overview' %}" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-start gap-3 group">
+                <span class="material-symbols-outlined text-primary text-xl group-hover:scale-110 transition-transform">fitness_center</span>
+                <div class="space-y-1">
+                    <h5 class="text-sm font-bold text-white group-hover:text-primary transition-colors">{% translate "Improve exercises" %}</h5>
+                    <p class="text-xs text-neutral-400">{% translate "Contribute new exercises, edit or translate existing ones." %}</p>
+                </div>
+            </a>
+
+            <a href="https://hosted.weblate.org/engage/wger/" target="_blank" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-start gap-3 group">
+                <span class="material-symbols-outlined text-primary text-xl group-hover:scale-110 transition-transform">translate</span>
+                <div class="space-y-1">
+                    <h5 class="text-sm font-bold text-white group-hover:text-primary transition-colors">{% translate "Translate app" %}</h5>
+                    <p class="text-xs text-neutral-400">{% translate "Help make the app accessible in more languages." %}</p>
+                </div>
             </a>
         </div>
     </div>
 
+    <!-- Donation Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-primary">volunteer_activism</span>
+            <h4 class="text-lg font-bold">{% translate "Make a donation" %}</h4>
+        </div>
+        <p class="text-xs text-neutral-300 leading-relaxed">
+            {% blocktranslate trimmed %}
+                Providing the hosted version of wger involves real, ongoing costs
+                for server hosting, bandwidth, backups, etc.
+                Your contribution directly supports these essential costs, keeping the service reliable.
+            {% endblocktranslate %}
+        </p>
 
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <a href="https://buymeacoffee.com/wger" target="_blank" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-amber-400/50 transition-all flex flex-col items-center justify-center gap-2 text-center group">
+                <img src="{% static 'images/logos/buymeacoffee/bmc-full-logo-no-background.png' %}" width="140" alt="Buy Me A Coffee" class="h-8 object-contain">
+                <span class="text-xs font-bold text-neutral-300 group-hover:text-amber-400">Buy Me A Coffee</span>
+            </a>
 
-    <h4 class="mt-4">{% translate "Thank You!" %}</h4>
-    <p>
-        {% blocktranslate trimmed %}
-            Thank you for being part of the community! We appreciate your usage,
-            feedback, and any support you can offer.
-        {% endblocktranslate %}
-    </p>
+            <a href="https://liberapay.com/wger" target="_blank" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-amber-400/50 transition-all flex flex-col items-center justify-center gap-2 text-center group">
+                <img src="{% static 'images/logos/liberapay/liberapay_logo_black-on-yellow.svg' %}" width="40" alt="Liberapay" class="h-8 object-contain">
+                <span class="text-xs font-bold text-neutral-300 group-hover:text-amber-400">Liberapay</span>
+            </a>
+
+            <a href="https://github.com/sponsors/wger-project" target="_blank" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-pink-400/50 transition-all flex flex-col items-center justify-center gap-2 text-center group">
+                <img src="{% static 'images/logos/github/GitHub_Logo.png' %}" width="80" alt="GitHub Sponsors" class="h-6 object-contain invert">
+                <span class="text-xs font-bold text-neutral-300 group-hover:text-pink-400">{% translate "Sponsor on GitHub" %}</span>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
-
 {% block sidebar %}
-    <div class="card text-white bg-success mb-3">
-        <div class="card-header">
+<div class="flex flex-col gap-6">
+    <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-[24px] p-6 shadow-xl space-y-3">
+        <h4 class="text-base font-bold text-emerald-400 flex items-center gap-2 pb-2 border-b border-emerald-500/20">
+            <span class="material-symbols-outlined">flag</span>
             {% translate "Our goal" %}
-        </div>
-        <div class="card-body">
+        </h4>
+        <p class="text-xs text-emerald-200/80 leading-relaxed">
             {% blocktranslate trimmed %}
                 The goal is to build an awesome and flexible fitness manager, along
                 with a comprehensive and complete list of exercises and ingredients,
                 all released under a free license.
             {% endblocktranslate %}
-        </div>
+        </p>
     </div>
 
-    <div class="alert alert-dark mt-5" role="alert">
-        {% translate "Current version" %} <strong>{{ version }}</strong>
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl space-y-2">
+        <h5 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">{% translate "App Version" %}</h5>
+        <div class="text-lg font-black text-primary font-mono">{{ version }}</div>
         {% if date %}
-            <br>
-            {% translate 'Date' %} <strong>{{ date }}</strong>
+            <div class="text-xs text-neutral-400">{% translate 'Date' %}: {{ date }}</div>
         {% endif %}
     </div>
+</div>
 {% endblock %}
-
-

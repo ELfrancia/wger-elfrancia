@@ -1,7 +1,15 @@
 {% load i18n crispy_forms_tags %}
 
-<h4>{{ title }}</h4>
-{% if confirm_message %}
-    <p>{{ confirm_message }}</p>
-{% endif %}
-{% crispy form %}
+<div class="space-y-4 text-white">
+    {% if title %}
+        <h3 class="text-xl font-bold text-white tracking-tight">{{ title }}</h3>
+    {% endif %}
+    
+    {% if confirm_message %}
+        <p class="text-neutral-300 text-sm bg-surface-container border border-surface-container-high p-4 rounded-xl">{{ confirm_message }}</p>
+    {% endif %}
+
+    <div class="wger-legacy-form">
+        {% crispy form %}
+    </div>
+</div>

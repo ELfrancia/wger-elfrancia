@@ -1,11 +1,17 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% load static %}
-{% load wger_extras %}
-
+{% load i18n static wger_extras %}
 
 {% block title %}{% translate "Terms of service" %}{% endblock %}
 
 {% block content %}
-    Add your terms of service here
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4 text-white">
+    <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+        <span class="material-symbols-outlined text-primary text-2xl">gavel</span>
+        <h3 class="text-xl font-bold tracking-tight">{% translate "Terms of service" %}</h3>
+    </div>
+
+    <p class="text-sm text-neutral-300 leading-relaxed">
+        {% translate "Add your terms of service here." %}
+    </p>
+</div>
 {% endblock %}

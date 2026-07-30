@@ -6,89 +6,110 @@
 {% block header %}
 {% endblock %}
 
-
 {% block content %}
-    {% crispy form %}
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl">
+    <div class="mb-4 pb-3 border-b border-[#222429] flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">tune</span>
+        <h3 class="text-xl font-bold text-white tracking-tight">{% translate "Preferences" %}</h3>
+    </div>
+    <div class="wger-legacy-form">
+        {% crispy form %}
+    </div>
+</div>
 {% endblock %}
-
 
 {% block sidebar %}
-    <div class="card mb-3">
-        <div class="card-header">
-            <span class="{% fa_class 'shield-halved' %} me-1"></span>
+<div class="flex flex-col gap-6">
+    <!-- Account & Security Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl">
+        <div class="flex items-center gap-2 pb-4 border-b border-[#222429] mb-4 text-white font-bold text-base tracking-tight">
+            <span class="material-symbols-outlined text-primary">shield</span>
             {% translate "Account & security" %}
         </div>
-        <div class="list-group list-group-flush">
-            <a href="{% url 'account_email' %}" class="list-group-item list-group-item-action">
-                <span class="{% fa_class 'chevron-right' %} float-end text-muted"></span>
-                <span class="{% fa_class 'envelope' %} me-2 text-muted"></span>
-                {% translate "Email address" %}
-                {% if email_verified %}
-                    <small class="d-block ms-4 text-success">{% translate "Verified email" %}</small>
-                {% else %}
-                    <small class="d-block ms-4 text-muted">{% translate "Unverified email" %}</small>
-                {% endif %}
+        <div class="flex flex-col divide-y divide-[#222429]/60">
+            <a href="{% url 'account_email' %}" class="py-3 flex items-center justify-between group hover:text-primary transition-colors text-sm font-medium text-neutral-300">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary transition-colors">mail</span>
+                    <div>
+                        <div>{% translate "Email address" %}</div>
+                        {% if email_verified %}
+                            <span class="text-[11px] font-bold text-emerald-400">{% translate "Verified email" %}</span>
+                        {% else %}
+                            <span class="text-[11px] font-bold text-amber-400">{% translate "Unverified email" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
             </a>
+
             {% if has_usable_password %}
-                <a href="{% url 'core:user:change-password' %}" class="list-group-item list-group-item-action">
-                    <span class="{% fa_class 'chevron-right' %} float-end text-muted"></span>
-                    <span class="{% fa_class 'key' %} me-2 text-muted"></span>
-                    {% translate "Change password" %}
+                <a href="{% url 'core:user:change-password' %}" class="py-3 flex items-center justify-between group hover:text-primary transition-colors text-sm font-medium text-neutral-300">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary transition-colors">key</span>
+                        <span>{% translate "Change password" %}</span>
+                    </div>
+                    <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
                 </a>
             {% else %}
-                <a href="{% url 'account_set_password' %}" class="list-group-item list-group-item-action">
-                    <span class="{% fa_class 'chevron-right' %} float-end text-muted"></span>
-                    <span class="{% fa_class 'key' %} me-2 text-muted"></span>
-                    {% translate "Set password" %}
+                <a href="{% url 'account_set_password' %}" class="py-3 flex items-center justify-between group hover:text-primary transition-colors text-sm font-medium text-neutral-300">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary transition-colors">key</span>
+                        <span>{% translate "Set password" %}</span>
+                    </div>
+                    <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
                 </a>
             {% endif %}
-            <a href="{% url 'mfa_index' %}" class="list-group-item list-group-item-action">
-                <span class="{% fa_class 'chevron-right' %} float-end text-muted"></span>
-                <span class="{% fa_class 'shield-halved' %} me-2 text-muted"></span>
-                {% translate "Two-factor authentication" %}
-                {% if mfa_enabled %}
-                    <span class="badge text-bg-success ms-1">{% translate "On" %}</span>
-                {% else %}
-                    <span class="badge text-bg-secondary ms-1">{% translate "Off" %}</span>
-                {% endif %}
+
+            <a href="{% url 'mfa_index' %}" class="py-3 flex items-center justify-between group hover:text-primary transition-colors text-sm font-medium text-neutral-300">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary transition-colors">security</span>
+                    <div class="flex items-center gap-2">
+                        <span>{% translate "Two-factor authentication" %}</span>
+                        {% if mfa_enabled %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{% translate "On" %}</span>
+                        {% else %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-neutral-800 text-neutral-400 border border-neutral-700">{% translate "Off" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
             </a>
+
             {% get_providers as socialaccount_providers %}
             {% if socialaccount_providers %}
-                <a href="{% url 'socialaccount_connections' %}" class="list-group-item list-group-item-action">
-                    <span class="{% fa_class 'chevron-right' %} float-end text-muted"></span>
-                    <span class="{% fa_class 'link' %} me-2 text-muted"></span>
-                    {% translate "Connected accounts" %}
+                <a href="{% url 'socialaccount_connections' %}" class="py-3 flex items-center justify-between group hover:text-primary transition-colors text-sm font-medium text-neutral-300">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary transition-colors">link</span>
+                        <span>{% translate "Connected accounts" %}</span>
+                    </div>
+                    <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
                 </a>
             {% endif %}
-            <a href="{% url 'core:user:api-key' %}" class="list-group-item list-group-item-action">
-                <span class="{% fa_class 'chevron-right' %} float-end text-muted"></span>
-                <span class="{% fa_class 'globe' %} me-2 text-muted"></span>
-                {% translate "API key" %}
+
+            <a href="{% url 'core:user:api-key' %}" class="py-3 flex items-center justify-between group hover:text-primary transition-colors text-sm font-medium text-neutral-300">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-neutral-400 group-hover:text-primary transition-colors">api</span>
+                    <span>{% translate "API key" %}</span>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
             </a>
         </div>
     </div>
 
-    <div class="card border-danger mb-3">
-        <div class="card-header text-danger">
-            <span class="{% fa_class 'trash' %} me-1"></span>
+    <!-- Danger Zone Card -->
+    <div class="bg-red-950/20 border border-red-500/30 rounded-[24px] p-6 shadow-xl">
+        <div class="flex items-center gap-2 pb-3 border-b border-red-500/20 mb-3 text-red-400 font-bold text-base tracking-tight">
+            <span class="material-symbols-outlined">delete_forever</span>
             {% translate "Danger zone" %}
         </div>
-        <div class="card-body">
-            <p class="card-text">
-                <small class="text-muted">
-                    {% translate "Your account and all training data will be permanently deleted." %}
-                </small>
-            </p>
-            {% translate 'Delete account' as text %}
-            {% modal_link url='core:user:delete' text=text css_class='btn btn-outline-danger btn-sm' %}
-        </div>
+        <p class="text-xs text-neutral-400 leading-relaxed mb-4">
+            {% translate "Your account and all training data will be permanently deleted." %}
+        </p>
+        {% translate 'Delete account' as text %}
+        {% modal_link url='core:user:delete' text=text css_class='px-4 py-2 rounded-full text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30 transition-all cursor-pointer inline-flex items-center gap-1.5' %}
     </div>
+</div>
 {% endblock %}
 
-
-
-{#         #}
-{# Options #}
-{#         #}
 {% block options %}
 {% endblock %}

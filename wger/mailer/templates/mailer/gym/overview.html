@@ -5,7 +5,6 @@
 
 {% block breadcrumbs %}
     {{ block.super }}
-
     {% if perms.gym.manage_gyms %}
         {% breadcrumb "Gyms" "gym:gym:list" %}
     {% endif %}
@@ -13,33 +12,38 @@
     {% breadcrumb "Emails" "email:email:overview" gym.pk %}
 {% endblock %}
 
-
 {% block content %}
-    <ul class="list-group">
-        {% for email in email_list %}
-            <li class="list-group-item">
-                <h4 class="list-group-item-heading">
-                    {{ email.subject }}
-                    <small>{{ email.date }}</small>
-                </h4>
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4 text-white">
+    <div class="flex items-center justify-between pb-3 border-b border-[#222429]">
+        <h3 class="text-xl font-bold tracking-tight flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">mail</span>
+            {% translate "Emails" %}
+        </h3>
+        <a href="{% url 'email:email:add-gym' gym.pk %}" class="px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-lg">
+            <span class="material-symbols-outlined text-sm">add</span>
+            {% translate "Add" %}
+        </a>
+    </div>
 
-                <p class="list-group-item-text" style="white-space: pre-line;">{{ email.body }}</p>
-            </li>
-            {% empty %}
-            <li class="list-group-item">
+    <div class="flex flex-col divide-y divide-[#222429]">
+        {% for email in email_list %}
+            <div class="py-4 px-2 flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-white text-base">
+                        {{ email.subject }}
+                    </h4>
+                    <span class="text-xs font-medium text-neutral-400">{{ email.date }}</span>
+                </div>
+                <p class="text-xs text-neutral-300 whitespace-pre-line leading-relaxed pt-1">{{ email.body }}</p>
+            </div>
+        {% empty %}
+            <div class="p-8 text-center text-neutral-400 text-sm italic">
                 {% translate "Nothing found" %}
-            </li>
+            </div>
         {% endfor %}
-    </ul>
+    </div>
+</div>
 {% endblock %}
 
-
-
-{#         #}
-{# Options #}
-{#         #}
 {% block options %}
-    <a href="{% url 'email:email:add-gym' gym.pk %}" class="btn btn-sm btn-success">
-        {% translate "Add" %}
-    </a>
 {% endblock %}

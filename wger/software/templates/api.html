@@ -1,39 +1,75 @@
 {% extends "base.html" %}
-{% load static %}
-{% load wger_extras %}
-
+{% load static i18n wger_extras %}
 
 {% block title %}REST API{% endblock %}
 
 {% block content %}
-
-    <h3>Documentation</h3>
-    <p>The API is documented with openAPI:</p>
-
-    <ul>
-        <li><a href="{% url 'api-root' %}">Browsable API</a></li>
-        <li><a href="{% url 'api-redoc' %}">Redoc</a></li>
-        <li><a href="{% url 'api-swagger-ui' %}">Swagger UI</a></li>
-        <li><a href="{% url 'schema' %}">Download openAPI 3 schema file</a></li>
-    </ul>
-
-    <p>
-        For information on how to authenticate, filter, etc., please consult the online
-        docs at <a href="https://wger.readthedocs.io/en/latest/">https://wger.readthedocs.io/en/latest/</a>
-    </p>
-
-{% endblock %}
-
-
-
-{% block sidebar %}
-    <div class="alert alert-info" style="margin-top:1em;">
-        Note that the open api documentation is very new and things are bound
-        to change somewhat. If you plan to use it to generate a client or
-        similar drop us a line first!
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-6 text-white">
+    <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+        <span class="material-symbols-outlined text-primary text-2xl">api</span>
+        <h3 class="text-xl font-bold tracking-tight">{% translate "REST API Documentation" %}</h3>
     </div>
 
-    <a href="{% url 'core:user:api-key' %}" class="btn btn-block btn-light">
-        Generate permanent API KEY
+    <p class="text-sm text-neutral-300 leading-relaxed">
+        {% translate "The API is fully documented with OpenAPI standard specifications:" %}
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <a href="{% url 'api-root' %}" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">terminal</span>
+                <span class="text-sm font-bold text-white group-hover:text-primary transition-colors">{% translate "Browsable API" %}</span>
+            </div>
+            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
+        </a>
+
+        <a href="{% url 'api-redoc' %}" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">description</span>
+                <span class="text-sm font-bold text-white group-hover:text-primary transition-colors">Redoc</span>
+            </div>
+            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
+        </a>
+
+        <a href="{% url 'api-swagger-ui' %}" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">integration_instructions</span>
+                <span class="text-sm font-bold text-white group-hover:text-primary transition-colors">Swagger UI</span>
+            </div>
+            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
+        </a>
+
+        <a href="{% url 'schema' %}" class="p-4 rounded-xl bg-surface-container border border-surface-container-high hover:border-primary/50 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">download</span>
+                <span class="text-sm font-bold text-white group-hover:text-primary transition-colors">{% translate "OpenAPI 3 Schema" %}</span>
+            </div>
+            <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
+        </a>
+    </div>
+
+    <p class="text-xs text-neutral-400 leading-relaxed pt-2 border-t border-[#222429]">
+        {% translate "For information on how to authenticate, filter, etc., please consult the online docs at" %}
+        <a href="https://wger.readthedocs.io/en/latest/" target="_blank" class="text-primary hover:underline font-mono">https://wger.readthedocs.io/en/latest/</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div class="flex flex-col gap-6">
+    <div class="bg-amber-950/20 border border-amber-500/30 rounded-[24px] p-6 shadow-xl space-y-3">
+        <h4 class="text-base font-bold text-amber-400 flex items-center gap-2 pb-2 border-b border-amber-500/20">
+            <span class="material-symbols-outlined">info</span>
+            {% translate "Notice" %}
+        </h4>
+        <p class="text-xs text-amber-200/80 leading-relaxed">
+            {% translate "Note that the open api documentation is very new and things are bound to change somewhat. If you plan to use it to generate a client or similar drop us a line first!" %}
+        </p>
+    </div>
+
+    <a href="{% url 'core:user:api-key' %}" class="w-full py-3.5 px-6 rounded-full bg-primary text-black font-bold text-sm text-center shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-lg">vpn_key</span>
+        {% translate "Generate permanent API KEY" %}
     </a>
+</div>
 {% endblock %}

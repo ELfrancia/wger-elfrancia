@@ -55,7 +55,7 @@
             {% endif %}
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="flex flex-col gap-2">
                 <label for="{{ form.start.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
                     {% translate "Start Date" %}
@@ -67,8 +67,18 @@
             </div>
 
             <div class="flex flex-col gap-2">
+                <label for="{{ form.current_week.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                    {% translate "Current Week" %}
+                </label>
+                {{ form.current_week }}
+                {% if form.current_week.errors %}
+                    <span class="text-xs text-error font-medium">{{ form.current_week.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col gap-2">
                 <label for="{{ form.duration_weeks.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                    {% translate "Duration" %}
+                    {% translate "Total Duration (Weeks)" %}
                 </label>
                 {{ form.duration_weeks }}
                 {% if form.duration_weeks.errors %}

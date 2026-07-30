@@ -4,4 +4,11 @@
 {% block title %}{% translate "Imprint" %}{% endblock %}
 
 {% block content %}
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4 text-white">
+    <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+        <span class="material-symbols-outlined text-primary text-2xl">info</span>
+        <h3 class="text-xl font-bold tracking-tight">{% translate "Imprint" %}</h3>
+    </div>
+    <p class="text-sm text-neutral-300">{% translate "Imprint and legal information." %}</p>
+</div>
 {% endblock %}

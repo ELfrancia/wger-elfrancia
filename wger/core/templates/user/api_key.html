@@ -3,213 +3,239 @@
 
 {% block title %}{% translate "API access" %}{% endblock %}
 
-
 {% block content %}
-    <p>
-        {% blocktranslate trimmed %}
-            Theare are two ways to authenticate against the API: JWT is the preferred
-            mechanism for client applications, the static API key is intended for personal
-            scripts or one-off integrations.
-        {% endblocktranslate %}
-    </p>
+<div class="flex flex-col gap-6">
 
-    <h4 class="mt-4">{% translate "Long-lived refresh tokens" %}</h4>
-
-    <p>
-        {% blocktranslate trimmed %}
-            Refresh tokens let scripts and CLI tools talk to the wger API using
-            the JWT flow without logging in interactively each time.
-        {% endblocktranslate %}
-    </p>
-
-    <p>
-        <button
-            type="button"
-            class="btn btn-block btn-light"
-            hx-post="{% url 'core:user:api-key' %}"
-            hx-vals='{"new_refresh_token": "true"}'
-            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-            hx-target="body"
-            hx-push-url="true"
-        >
-            {% translate "Generate a new refresh token" %}
-        </button>
-    </p>
-
-    {% if new_refresh_token %}
-        <div class="alert alert-warning">
-            <strong>{% translate "Copy this token now." %}</strong>
+    <!-- Overview Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl">
+        <div class="flex items-center gap-2 pb-3 border-b border-[#222429] mb-4 text-white font-bold text-lg">
+            <span class="material-symbols-outlined text-primary">vpn_key</span>
+            {% translate "API access" %}
+        </div>
+        <p class="text-sm text-neutral-300 leading-relaxed">
             {% blocktranslate trimmed %}
-                It is shown only once. If you lose it, generate a new one and
-                revoke the old session below.
-            {% endblocktranslate %}
-        </div>
-        <div class="card mb-4 text-white bg-success">
-            <div class="card-body">
-                <code class="text-white" style="word-break: break-all;">{{ new_refresh_token }}</code>
-            </div>
-        </div>
-    {% endif %}
-
-    {% if long_lived_sessions %}
-        <p>
-            {% blocktranslate trimmed with days=refresh_token_lifetime_days %}
-                Refresh tokens expire {{ days }} days after they were
-                generated, unless you revoke them sooner.
+                There are two ways to authenticate against the API: JWT is the preferred
+                mechanism for client applications, the static API key is intended for personal
+                scripts or one-off integrations.
             {% endblocktranslate %}
         </p>
+    </div>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>{% translate "Created" %}</th>
-                    <th>{% translate "Expires" %}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for session in long_lived_sessions %}
-                    {% with data=session.get_decoded %}
-                        <tr>
-                            <td>{{ data.wger_long_lived_refresh_created_at|default:"—" }}</td>
-                            <td>{{ session.expire_date|date:"Y-m-d H:i" }}</td>
-                            <td>
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-danger"
-                                    hx-post="{% url 'core:user:api-key' %}"
-                                    hx-vals='{"revoke_refresh_token": "{{ session.session_key }}"}'
-                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    hx-target="body"
-                                    hx-push-url="true"
-                                >
-                                    {% translate "Revoke" %}
-                                </button>
-                            </td>
-                        </tr>
-                    {% endwith %}
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <p>
+    <!-- Refresh Tokens Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#222429]">
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">autorenew</span>
+                {% translate "Long-lived refresh tokens" %}
+            </h4>
             <button
                 type="button"
-                class="btn btn-block btn-light"
+                class="px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-lg"
                 hx-post="{% url 'core:user:api-key' %}"
-                hx-vals='{"revoke_all_refresh_tokens": "true"}'
+                hx-vals='{"new_refresh_token": "true"}'
                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                 hx-target="body"
                 hx-push-url="true"
             >
-                {% translate "Revoke all refresh tokens" %}
+                <span class="material-symbols-outlined text-sm">add</span>
+                {% translate "Generate a new refresh token" %}
             </button>
+        </div>
+
+        <p class="text-sm text-neutral-400">
+            {% blocktranslate trimmed %}
+                Refresh tokens let scripts and CLI tools talk to the wger API using
+                the JWT flow without logging in interactively each time.
+            {% endblocktranslate %}
         </p>
-    {% endif %}
 
-    <h4 class="mt-4">{% translate "JWT sessions" %}</h4>
+        {% if new_refresh_token %}
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm flex flex-col gap-2">
+                <div class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-400">warning</span>
+                    {% translate "Copy this token now." %}
+                </div>
+                <p class="text-xs text-amber-300/80">
+                    {% blocktranslate trimmed %}
+                        It is shown only once. If you lose it, generate a new one and
+                        revoke the old session below.
+                    {% endblocktranslate %}
+                </p>
+                <div class="bg-neutral-950 p-3 rounded-lg border border-amber-500/20 font-mono text-xs text-primary break-all">
+                    {{ new_refresh_token }}
+                </div>
+            </div>
+        {% endif %}
 
-    <p>
-        <button
-            type="button"
-            class="btn btn-block btn-light"
-            {% if not active_jwt_sessions %}disabled{% endif %}
-            hx-post="{% url 'core:user:api-key' %}"
-            hx-vals='{"revoke_jwt_sessions": "true"}'
-            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-            hx-target="body"
-            hx-push-url="true"
-        >
-            {% translate 'Revoke all JWT sessions' %}
-        </button>
-    </p>
+        {% if long_lived_sessions %}
+            <p class="text-xs text-neutral-400">
+                {% blocktranslate trimmed with days=refresh_token_lifetime_days %}
+                    Refresh tokens expire {{ days }} days after they were
+                    generated, unless you revoke them sooner.
+                {% endblocktranslate %}
+            </p>
 
-    <div class="card mb-4 {% if active_jwt_sessions %}text-white bg-success{% else %}bg-light{% endif %}">
-        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-[#222429] text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                            <th class="py-3 px-4">{% translate "Created" %}</th>
+                            <th class="py-3 px-4">{% translate "Expires" %}</th>
+                            <th class="py-3 px-4 text-right">{% translate "Action" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#222429]">
+                        {% for session in long_lived_sessions %}
+                            {% with data=session.get_decoded %}
+                                <tr class="hover:bg-[#1D1E22]/50 transition-colors">
+                                    <td class="py-3 px-4 text-neutral-300 font-medium">{{ data.wger_long_lived_refresh_created_at|default:"—" }}</td>
+                                    <td class="py-3 px-4 text-neutral-400">{{ session.expire_date|date:"Y-m-d H:i" }}</td>
+                                    <td class="py-3 px-4 text-right">
+                                        <button
+                                            type="button"
+                                            class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all cursor-pointer"
+                                            hx-post="{% url 'core:user:api-key' %}"
+                                            hx-vals='{"revoke_refresh_token": "{{ session.session_key }}"}'
+                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                            hx-target="body"
+                                            hx-push-url="true"
+                                        >
+                                            {% translate "Revoke" %}
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button
+                    type="button"
+                    class="px-4 py-2 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                    hx-post="{% url 'core:user:api-key' %}"
+                    hx-vals='{"revoke_all_refresh_tokens": "true"}'
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-target="body"
+                    hx-push-url="true"
+                >
+                    <span class="material-symbols-outlined text-sm">block</span>
+                    {% translate "Revoke all refresh tokens" %}
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- JWT Sessions Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#222429]">
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">devices</span>
+                {% translate "JWT sessions" %}
+            </h4>
+            <button
+                type="button"
+                class="px-4 py-2 rounded-full text-xs font-bold bg-surface-container border border-surface-container-high text-neutral-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer inline-flex items-center gap-1.5"
+                {% if not active_jwt_sessions %}disabled{% endif %}
+                hx-post="{% url 'core:user:api-key' %}"
+                hx-vals='{"revoke_jwt_sessions": "true"}'
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-target="body"
+                hx-push-url="true"
+            >
+                {% translate 'Revoke all JWT sessions' %}
+            </button>
+        </div>
+
+        <div class="p-4 rounded-xl {% if active_jwt_sessions %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-200{% else %}bg-surface-container border border-surface-container-high text-neutral-400{% endif %} text-sm font-semibold">
             {% blocktranslate count counter=active_jwt_sessions %}
                 There is currently <strong>{{ counter }}</strong> active JWT session
             {% plural %}
                 There are currently <strong>{{ counter }}</strong> active JWT sessions
             {% endblocktranslate %}
         </div>
+
+        <p class="text-xs text-neutral-400">
+            {% blocktranslate trimmed %}
+                Revoking JWT sessions logs out every device that obtained a refresh token via the JWT login endpoint.
+            {% endblocktranslate %}
+        </p>
     </div>
 
-    <p>
-    {% blocktranslate trimmed %}
-        Revoking JWT sessions logs out every device that obtained a refresh token via the JWT login endpoint.
-    {%  endblocktranslate %}
-    </p>
+    <!-- Static API Key Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#222429]">
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">key</span>
+                {% translate "API key" %}
+            </h4>
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    class="px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-lg"
+                    hx-post="{% url 'core:user:api-key' %}"
+                    hx-vals='{"new_key": "true"}'
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-target="body"
+                    hx-push-url="true"
+                >
+                    {% if token %}
+                        {% translate 'Delete current API key and generate new one' %}
+                    {% else %}
+                        {% translate 'Generate new API key' %}
+                    {% endif %}
+                </button>
+                {% if token %}
+                    <button
+                        type="button"
+                        class="px-4 py-2 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all cursor-pointer"
+                        hx-post="{% url 'core:user:api-key' %}"
+                        hx-vals='{"delete_key": "true"}'
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-target="body"
+                        hx-push-url="true"
+                    >
+                        {% translate 'Delete API key' %}
+                    </button>
+                {% endif %}
+            </div>
+        </div>
 
-    <h4 class="mt-4">{% translate "API key" %}</h4>
-
-        <p>
-        <button
-            type="button"
-            class="btn btn-block btn-light"
-            hx-post="{% url 'core:user:api-key' %}"
-            hx-vals='{"new_key": "true"}'
-            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-            hx-target="body"
-            hx-push-url="true"
-        >
-            {% if token %}
-                {% translate 'Delete current API key and generate new one' %}
-            {% else %}
-                {% translate 'Generate new API key' %}
-            {% endif %}
-        </button>
-    </p>
-
-    {% if token %}
-        <p>
-            <button
-                type="button"
-                class="btn btn-block btn-light"
-                hx-post="{% url 'core:user:api-key' %}"
-                hx-vals='{"delete_key": "true"}'
-                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                hx-target="body"
-                hx-push-url="true"
-            >
-                {% translate 'Delete API key' %}
-            </button>
-        </p>
-    {% endif %}
-
-    <div class="card mb-4 {% if token %}text-white bg-success{% else %}bg-light{% endif %}">
-        <div class="card-body">
+        <div class="p-4 rounded-xl {% if token %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono text-sm break-all{% else %}bg-surface-container border border-surface-container-high text-neutral-400 text-sm italic{% endif %}">
             {% if token %}
                 <strong>{{ token.key }}</strong>
             {% else %}
-                <em>{% translate "You have no API key yet" %}</em>
+                {% translate "You have no API key yet" %}
             {% endif %}
+        </div>
+
+        <p class="text-xs text-neutral-400">
+            {% blocktranslate with key=token.key|default:"1234567890abcde..." %}
+                Pass <code class="bg-neutral-950 px-2 py-0.5 rounded border border-[#222429] text-primary">Token {{ key }}</code> in the
+                <code class="bg-neutral-950 px-2 py-0.5 rounded border border-[#222429] text-primary">Authorization</code> header to use it.
+            {% endblocktranslate %}
+        </p>
+
+        <div class="flex flex-col gap-2">
+            <span class="text-xs font-bold text-neutral-300">{% translate "Example with curl:" %}</span>
+            <pre class="bg-neutral-950 p-4 rounded-xl border border-[#222429] font-mono text-xs text-emerald-400 overflow-x-auto">curl -X GET https://wger.de/api/v2/routine/ \
+     -H 'Authorization: Token {% if token %}{{ token.key }}{% else %}1234567890abcde...{% endif %}'</pre>
         </div>
     </div>
 
-    <p>
-        {% blocktranslate with key=token.key|default:"1234567890abcde..." %}
-            Pass <code>Token {{ key }}</code> in the
-            <code>Authorization</code> header to use it.
-        {% endblocktranslate %}
-    </p>
-
-    <p>{% translate "Example with curl:" %}</p>
-    <pre>
-curl -X GET https://wger.de/api/v2/routine/ \
-     -H 'Authorization: Token {% if token %}{{ token.key }}{% else %}1234567890abcde...{% endif %}'
-</pre>
-
+</div>
 {% endblock %}
 
-
-{#         #}
-{# Sidebar #}
-{#         #}
 {% block sidebar %}
-
-    <h5 class="mt-4">{% translate "Documentation" %}</h5>
-
-    <p>
-        <a href="{% url 'software:api' %}">{% translate 'API documentation' %}</a>
-    </p>
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl">
+    <h5 class="text-base font-bold text-white flex items-center gap-2 pb-3 border-b border-[#222429] mb-3">
+        <span class="material-symbols-outlined text-primary">menu_book</span>
+        {% translate "Documentation" %}
+    </h5>
+    <a href="{% url 'software:api' %}" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+        <span class="material-symbols-outlined text-sm">description</span>
+        {% translate 'API documentation' %}
+    </a>
+</div>
 {% endblock %}

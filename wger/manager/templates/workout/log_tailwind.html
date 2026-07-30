@@ -50,7 +50,7 @@
     }
 </style>
 <!-- Full-Screen Rest Timer Overlay -->
-<div id="rest-timer-overlay" class="fixed inset-0 z-50 bg-[#08090A] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
+<div id="rest-timer-overlay" class="fixed inset-0 z-[100] bg-[#08090A] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
     <!-- Top header label -->
     <div class="text-center">
         <span id="overlay-header-label" class="text-[10px] text-gray-500 uppercase tracking-widest font-black transition-colors">{% translate "Tempo di recupero" %}</span>
@@ -79,11 +79,15 @@
         </div>
 
         <!-- Presets -->
-        <div class="flex flex-wrap justify-center gap-2">
+        <div class="flex flex-wrap justify-center items-center gap-2">
             <button type="button" onclick="setTimerPreset(30)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">30s</button>
             <button type="button" onclick="setTimerPreset(60)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">1:00</button>
             <button type="button" onclick="setTimerPreset(90)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">1:30</button>
             <button type="button" onclick="setTimerPreset(120)" class="px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">2:00</button>
+            <button type="button" onclick="openCustomTimerModal()" class="px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.08] hover:border-[#caf300]/40 hover:bg-[#caf300]/10 text-neutral-300 hover:text-[#caf300] text-xs font-semibold flex items-center gap-1.5 transition-all">
+                <span class="material-symbols-outlined text-xs">edit_calendar</span>
+                <span>{% translate "Personalizzato" %}</span>
+            </button>
         </div>
     </div>
 
@@ -124,7 +128,7 @@
     <!-- Timer / Rep Counter Core -->
     <div class="flex flex-col items-center justify-center flex-grow w-full px-2 sm:px-6 py-4">
         <!-- Interactive Rest Timer -->
-        <div class="flex flex-col items-center gap-4 mb-6">
+        <div class="flex flex-col items-center gap-3.5 mb-6 w-full max-w-md mx-auto">
             <!-- Main Timer Row -->
             <div class="flex items-center justify-center gap-4">
                 <!-- Adjust Minus -->
@@ -143,34 +147,41 @@
                 </button>
             </div>
 
-            <!-- Quick Presets and Controls -->
-            <div class="flex flex-wrap justify-center items-center gap-2">
+            <!-- Centered Start and Stop Action Buttons Row -->
+            <div class="flex items-center justify-center gap-3">
                 <!-- Play / Pause -->
-                <button id="btn-timer-play" type="button" onclick="toggleTimer()" class="px-4 py-1.5 rounded-full bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-all">
-                    <span class="material-symbols-outlined text-sm" id="icon-timer-play">play_arrow</span>
+                <button id="btn-timer-play" type="button" onclick="toggleTimer()" class="px-5 py-2 rounded-full bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-base" id="icon-timer-play">play_arrow</span>
                     <span id="text-timer-play">{% translate "Start" %}</span>
                 </button>
                 
                 <!-- Termina Timer -->
-                <button type="button" onclick="stopTimer()" class="px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-all" title="{% translate 'Termina e Resetta Timer' %}">
-                    <span class="material-symbols-outlined text-sm">stop</span>
+                <button type="button" onclick="stopTimer()" class="px-5 py-2 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm" title="{% translate 'Termina e Resetta Timer' %}">
+                    <span class="material-symbols-outlined text-base">stop</span>
                     {% translate "Termina Timer" %}
                 </button>
+            </div>
 
-                <!-- Presets divider -->
-                <div class="h-4 w-px bg-white/[0.08] mx-1"></div>
+            <!-- Selectable Presets Row (Underneath Start & Stop Buttons) -->
+            <div class="flex flex-wrap justify-center items-center gap-2 pt-1">
+                <button type="button" onclick="setTimerPreset(30)" class="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">30s</button>
+                <button type="button" onclick="setTimerPreset(60)" class="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">1:00</button>
+                <button type="button" onclick="setTimerPreset(90)" class="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">1:30</button>
+                <button type="button" onclick="setTimerPreset(120)" class="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.1] text-neutral-300 hover:text-white text-xs font-semibold transition-all">2:00</button>
+            </div>
 
-                <!-- Presets -->
-                <button type="button" onclick="setTimerPreset(30)" class="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] text-neutral-400 hover:text-white text-xs font-semibold">30s</button>
-                <button type="button" onclick="setTimerPreset(60)" class="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] text-neutral-400 hover:text-white text-xs font-semibold">1:00</button>
-                <button type="button" onclick="setTimerPreset(90)" class="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] text-neutral-400 hover:text-white text-xs font-semibold">1:30</button>
-                <button type="button" onclick="setTimerPreset(120)" class="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] text-neutral-400 hover:text-white text-xs font-semibold">2:00</button>
+            <!-- Custom Duration Button (Underneath Presets) -->
+            <div class="flex items-center justify-center pt-0.5">
+                <button type="button" onclick="openCustomTimerModal()" class="px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.08] hover:border-[#caf300]/40 hover:bg-[#caf300]/10 text-neutral-300 hover:text-[#caf300] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-sm">edit_calendar</span>
+                    <span>{% translate "Minutaggio personalizzato" %}</span>
+                </button>
             </div>
         </div>
 
         <!-- Exercise & Set Logging Grid -->
-        <div class="w-full flex flex-col gap-5">
-            <h2 class="font-headline-lg-mobile text-lg text-white tracking-widest uppercase text-center font-bold">{% translate "Active Exercises" %}</h2>
+        <div id="active-exercises-section" class="w-full flex flex-col gap-5 pt-2">
+            <h2 id="active-exercises-heading" class="font-headline-lg-mobile text-lg text-white tracking-widest uppercase text-center font-bold scroll-mt-20">{% translate "Active Exercises" %}</h2>
             
             <div class="flex flex-col gap-4">
                 {% for slot in day.slots.all %}
@@ -184,36 +195,95 @@
 
     <!-- Finish Session & Action Buttons -->
     <div class="w-full flex flex-col items-center pb-16 pt-8 gap-3 px-2.5 sm:px-6 mt-auto">
-        <!-- Secondary Actions Row (Foto Condizione & Restart) -->
-        <div class="w-full flex gap-3">
-            {% if progress_percentage > 0 %}
-            <button type="button" onclick="openExitModal()" class="w-full flex-1 bg-[#1A1B1E] text-red-500 border border-red-500/20 hover:border-red-500 hover:bg-red-500/5 min-h-[48px] py-3 rounded-full flex items-center justify-center gap-2 font-bold text-xs tracking-widest uppercase hover:scale-[1.01] transition-all duration-300">
-                <span class="material-symbols-outlined text-base">restart_alt</span>
-                {% translate "RESTART" %}
-            </button>
-            {% endif %}
+        <!-- Carica Foto Condizione Button (Full Width) -->
+        <button type="button" onclick="openConditionPhotoModal()" class="w-full bg-[#16171A] text-[#caf300] border border-[#caf300]/40 hover:border-[#caf300] hover:bg-[#caf300]/10 min-h-[50px] py-3.5 px-4 rounded-full flex items-center justify-center gap-2 font-bold text-xs sm:text-sm tracking-widest uppercase hover:scale-[1.01] transition-all duration-300 shadow-sm">
+            <span class="material-symbols-outlined text-lg">add_a_photo</span>
+            <span>{% translate "FOTO CONDIZIONE" %}</span>
+            <span id="condition-photo-badge" class="ml-1 px-2 py-0.5 rounded-full bg-[#caf300] text-black text-[10px] font-black {% if today_photos_count == 0 %}hidden{% endif %}">
+                {% if today_photos_count > 0 %}{{ today_photos_count }}{% else %}0{% endif %}
+            </span>
+        </button>
 
-            <!-- Carica Foto Condizione Button -->
-            <button type="button" onclick="openConditionPhotoModal()" class="w-full flex-1 bg-[#16171A] text-[#caf300] border border-[#caf300]/40 hover:border-[#caf300] hover:bg-[#caf300]/10 min-h-[48px] py-3 px-4 rounded-full flex items-center justify-center gap-2 font-bold text-xs tracking-widest uppercase hover:scale-[1.01] transition-all duration-300 shadow-sm">
-                <span class="material-symbols-outlined text-base">add_a_photo</span>
-                <span>{% translate "FOTO CONDIZIONE" %}</span>
-                <span id="condition-photo-badge" class="ml-1 px-2 py-0.5 rounded-full bg-[#caf300] text-black text-[10px] font-black {% if today_photos_count == 0 %}hidden{% endif %}">
-                    {% if today_photos_count > 0 %}{{ today_photos_count }}{% else %}0{% endif %}
-                </span>
+        <!-- Main Prominent FINISH WORKOUT Button -->
+        <button type="button" onclick="openFinishWorkoutReviewModal()" class="w-full bg-[#caf300] text-[#131313] min-h-[58px] py-4 rounded-full flex items-center justify-center gap-2.5 font-black text-sm sm:text-base tracking-widest uppercase hover:scale-[1.02] shadow-lg hover:shadow-xl transition-all duration-300 glow-btn">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">done_all</span>
+            {% translate "FINISH WORKOUT" %}
+        </button>
+
+        <!-- Ferma Workout Button (Full Width, Below Finish Workout) -->
+        <button type="button" onclick="openExitModal()" class="w-full bg-[#1A1B1E] text-red-500 border border-red-500/20 hover:border-red-500 hover:bg-red-500/5 min-h-[50px] py-3.5 px-4 rounded-full flex items-center justify-center gap-2 font-bold text-xs sm:text-sm tracking-widest uppercase hover:scale-[1.01] transition-all duration-300">
+            <span class="material-symbols-outlined text-lg">stop_circle</span>
+            {% translate "FERMA WORKOUT" %}
+        </button>
+    </div>
+</main>
+
+<!-- Finish Workout Details Review & Editing Modal -->
+<div id="finish-workout-review-modal" onclick="closeFinishWorkoutReviewModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
+    <div id="finish-workout-review-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                    <span class="material-symbols-outlined text-xl">done_all</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Concludi Allenamento" %}</h3>
+                    <p class="text-[10px] text-zinc-400 font-medium">{% translate "Verifica e personalizza data e durata sessione" %}</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeFinishWorkoutReviewModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
             </button>
         </div>
 
-        <!-- Main Prominent FINISH WORKOUT Button -->
-        <form id="finish-workout-form" method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full">
+        <!-- Form Body -->
+        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" onsubmit="onFinishWorkoutSubmitted()">
             {% csrf_token %}
             <input type="hidden" name="action" value="finish_workout">
-            <button type="submit" class="w-full bg-[#caf300] text-[#131313] min-h-[58px] py-4 rounded-full flex items-center justify-center gap-2.5 font-black text-sm sm:text-base tracking-widest uppercase hover:scale-[1.02] shadow-lg hover:shadow-xl transition-all duration-300 glow-btn">
-                <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">done_all</span>
-                {% translate "FINISH WORKOUT" %}
-            </button>
+
+            <div class="p-6 flex flex-col gap-4">
+                <!-- Date Picker -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-[#caf300]">calendar_today</span>
+                        {% translate "Data dell'allenamento" %}
+                    </label>
+                    <input type="date" id="finish-modal-date" name="custom_date" value="{% now 'Y-m-d' %}" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none transition-colors">
+                </div>
+
+                <!-- Duration Input -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-[#caf300]">timer</span>
+                        {% translate "Durata Totale (minuti o hh:mm:ss)" %}
+                    </label>
+                    <input type="text" id="finish-modal-duration" name="custom_duration" placeholder="Es. 45m oppure 00:45:00" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none transition-colors font-mono">
+                </div>
+
+                <!-- Session Notes -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-zinc-400">notes</span>
+                        {% translate "Note Sessione (Opzionale)" %}
+                    </label>
+                    <textarea name="notes" placeholder="Es. Sensazioni ottime, carichi incrementati..." rows="2" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:outline-none transition-colors resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex gap-2 justify-end">
+                <button type="button" onclick="closeFinishWorkoutReviewModal()" class="px-4 py-2.5 rounded-full border border-white/20 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all">
+                    {% translate "Annulla" %}
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-full bg-[#caf300] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-md cursor-pointer">
+                    <span class="material-symbols-outlined text-base font-black">done_all</span>
+                    {% translate "CONFERMA E CONCLUDI" %}
+                </button>
+            </div>
         </form>
     </div>
-</main>
+</div>
 
 <!-- Condition Photo Modal -->
 <div id="condition-photo-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0">
@@ -322,20 +392,16 @@
             </button>
 
             <!-- 2. Salva e Chiudi (Finish session & exit) -->
-            <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="finish_workout">
-                <button type="submit" class="w-full py-3 px-4 rounded-full bg-white/10 border border-white/20 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <span class="material-symbols-outlined text-base">save</span>
-                    {% translate "Salva e Chiudi" %}
-                </button>
-            </form>
+            <button type="button" onclick="openFinishWorkoutReviewModal()" class="w-full py-3 px-4 rounded-full bg-white/10 border border-white/20 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <span class="material-symbols-outlined text-base">save</span>
+                {% translate "Salva e Chiudi" %}
+            </button>
 
             <!-- 3. Interrompi e Scarta (Discard session & exit) -->
-            <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full">
+            <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full" onsubmit="onFinishWorkoutSubmitted()">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="discard_workout">
-                <button type="submit" class="w-full py-3 px-4 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <button type="submit" onclick="onFinishWorkoutSubmitted()" class="w-full py-3 px-4 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-base">delete_forever</span>
                     {% translate "Interrompi e Scarta" %}
                 </button>
@@ -344,12 +410,70 @@
     </div>
 </div>
 
+<!-- Custom Timer Input Modal -->
+<div id="custom-timer-modal" onclick="closeCustomTimerModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true" aria-labelledby="custom-timer-modal-title">
+    <div id="custom-timer-modal-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                    <span class="material-symbols-outlined text-xl">timer_10</span>
+                </div>
+                <div>
+                    <h3 id="custom-timer-modal-title" class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Minutaggio Personalizzato" %}</h3>
+                    <p class="text-[10px] text-zinc-400 font-medium">{% translate "Imposta la durata del timer di recupero" %}</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCustomTimerModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors" aria-label="{% translate 'Chiudi' %}">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Body: Minutes & Seconds Input -->
+        <div class="p-6 flex flex-col gap-4 bg-[#121316]">
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Minutes -->
+                <div class="flex flex-col gap-1.5">
+                    <label for="custom-timer-minutes" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{% translate "Minuti" %}</label>
+                    <input type="number" id="custom-timer-minutes" min="0" max="60" value="1" placeholder="0" class="w-full bg-[#1A1B1E] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-center text-xl font-bold font-mono text-white focus:outline-none focus:ring-1 focus:ring-[#caf300] transition-all">
+                </div>
+
+                <!-- Seconds -->
+                <div class="flex flex-col gap-1.5">
+                    <label for="custom-timer-seconds" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{% translate "Secondi" %}</label>
+                    <input type="number" id="custom-timer-seconds" min="0" max="59" step="5" value="30" placeholder="0" class="w-full bg-[#1A1B1E] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-center text-xl font-bold font-mono text-white focus:outline-none focus:ring-1 focus:ring-[#caf300] transition-all">
+                </div>
+            </div>
+
+            <!-- Quick duration preset chips -->
+            <div class="flex items-center justify-center gap-2 pt-1">
+                <button type="button" onclick="setCustomTimerValues(0, 45)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">45s</button>
+                <button type="button" onclick="setCustomTimerValues(1, 30)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">1m 30s</button>
+                <button type="button" onclick="setCustomTimerValues(2, 30)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">2m 30s</button>
+                <button type="button" onclick="setCustomTimerValues(3, 0)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">3m 00s</button>
+            </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex gap-3">
+            <button type="button" onclick="closeCustomTimerModal()" class="flex-1 py-3 rounded-full border border-white/10 hover:bg-white/5 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
+                {% translate "Annulla" %}
+            </button>
+            <button type="button" onclick="applyCustomTimer()" class="flex-1 py-3 rounded-full bg-[#caf300] hover:bg-[#b8dc00] text-black font-black text-xs uppercase tracking-wider shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                <span class="material-symbols-outlined text-base">check</span>
+                {% translate "Avvia Timer" %}
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Floating Mini Timer Overlay -->
 <div id="mini-timer-overlay" class="fixed bottom-6 right-4 sm:right-6 z-40 bg-[#121316]/95 border border-[#caf300]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md rounded-full px-4 py-2.5 flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
     <!-- Clickable timer display section -->
-    <button type="button" onclick="openOverlay()" class="flex items-center gap-2 group cursor-pointer" title="{% translate 'Apri Timer Schermo Intero' %}">
+    <button type="button" onclick="openGlobalTimerOptionsModal()" class="flex items-center gap-2 group cursor-pointer" title="{% translate 'Opzioni Timer' %}">
         <span id="mini-timer-icon" class="material-symbols-outlined text-[#caf300] text-lg group-hover:scale-110 transition-transform">timer</span>
         <span id="mini-timer-display" class="font-display text-base font-black text-[#caf300] tracking-tight tabular-nums">00:45</span>
+        <span class="material-symbols-outlined text-xs text-zinc-400">unfold_more</span>
     </button>
 
     <div class="h-4 w-px bg-white/10"></div>
@@ -442,8 +566,17 @@
         if (overlay) {
             overlay.classList.add('hidden');
         }
+        if (window.location.search.includes('open_timer=true') || window.location.hash === '#rest-timer') {
+            const cleanQuery = window.location.search.replace(/[\?&]open_timer=true/, '').replace(/^&/, '?');
+            const cleanHash = window.location.hash === '#rest-timer' ? '' : window.location.hash;
+            const cleanLocation = window.location.pathname + cleanQuery + cleanHash;
+            window.history.replaceState({}, '', cleanLocation);
+        }
         updateMiniTimerVisibility();
     }
+
+    window.openOverlay = openOverlay;
+    window.closeOverlay = closeOverlay;
 
     function clearExpiringStyles() {
         if (overlay) {
@@ -542,7 +675,73 @@
         updateMiniTimerVisibility();
     }
 
+    function getCleanWorkoutUrl() {
+        return (window.location.pathname + window.location.search)
+            .replace(/[\?&]open_timer=true/, '')
+            .replace(/^&/, '?')
+            .split('#')[0];
+    }
+
+    function saveTimerStateToStorage(expiredAtVal = null) {
+        try {
+            const currentMs = getRemainingTimeMs();
+            const state = {
+                durationSeconds: durationSeconds,
+                remainingMs: currentMs,
+                startedAt: isRunning ? Date.now() : null,
+                isRunning: isRunning,
+                hasNotifiedZero: hasNotifiedZero,
+                expiredAt: expiredAtVal || window._timerExpiredAt || (hasNotifiedZero ? Date.now() : null),
+                workoutUrl: getCleanWorkoutUrl(),
+                workoutName: "{{ day.routine.name|escapejs }} - {{ day.name|escapejs }}",
+                updatedAt: Date.now()
+            };
+            localStorage.setItem('onyx_active_rest_timer', JSON.stringify(state));
+        } catch (e) {
+            console.error('Error saving timer state to localStorage:', e);
+        }
+    }
+
+    function restoreTimerFromStorage() {
+        try {
+            const raw = localStorage.getItem('onyx_active_rest_timer');
+            if (!raw) return;
+            const state = JSON.parse(raw);
+            if (!state) return;
+
+            if (state.durationSeconds) {
+                defaultDuration = state.durationSeconds;
+                durationSeconds = state.durationSeconds;
+            }
+
+            if (state.isRunning && state.startedAt) {
+                const elapsed = Date.now() - state.startedAt;
+                remainingMs = Math.max(0, state.remainingMs - elapsed);
+                hasNotifiedZero = state.hasNotifiedZero || false;
+
+                if (remainingMs > 0) {
+                    startCountdown(true, true);
+                } else {
+                    remainingMs = 0;
+                    isRunning = false;
+                    hasNotifiedZero = true;
+                    updateDisplay();
+                    saveTimerStateToStorage();
+                }
+            } else if (state.remainingMs !== undefined && state.remainingMs > 0) {
+                remainingMs = state.remainingMs;
+                startedAt = null;
+                isRunning = false;
+                hasNotifiedZero = state.hasNotifiedZero || false;
+                updateDisplay();
+            }
+        } catch (e) {
+            console.error('Error restoring timer from localStorage:', e);
+        }
+    }
+
     function updateMiniTimerVisibility() {
+        window.isInlineTimerVisible = isInlineTimerVisible;
         const isOverlayOpen = overlay && !overlay.classList.contains('hidden');
         const isTimerActive = isRunning || (remainingMs < durationSeconds * 1000) || hasNotifiedZero;
         const shouldShowMiniTimer = !isInlineTimerVisible && !isOverlayOpen && isTimerActive;
@@ -556,21 +755,28 @@
                 miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             }
         }
+        if (typeof updateGlobalMiniTimer === 'function') {
+            updateGlobalMiniTimer();
+        }
     }
 
-    function startCountdown(skipOverlay = false) {
+    function startCountdown(skipOverlay = false, isResume = false) {
         unlockAudioContext();
         if (timerInterval) clearInterval(timerInterval);
 
-        if (remainingMs <= 0) {
-            remainingMs = durationSeconds * 1000;
+        if (!isResume || remainingMs <= 0) {
+            if (remainingMs <= 0) {
+                remainingMs = durationSeconds * 1000;
+            }
         }
 
         startedAt = Date.now();
         isRunning = true;
         hasNotifiedZero = false;
+        window._timerExpiredAt = null;
 
         clearExpiringStyles();
+        saveTimerStateToStorage();
 
         if (!skipOverlay) {
             openOverlay();
@@ -593,14 +799,17 @@
                 timerInterval = null;
                 isRunning = false;
                 remainingMs = 0;
+                window._timerExpiredAt = Date.now();
                 if (!hasNotifiedZero) {
                     hasNotifiedZero = true;
                     playBeepAndVibrate();
                 }
                 resetTimerControls();
                 updateDisplay();
+                saveTimerStateToStorage(window._timerExpiredAt);
             } else {
                 updateDisplay();
+                saveTimerStateToStorage();
             }
         }, 250);
     }
@@ -618,6 +827,7 @@
         }
         resetTimerControls();
         updateDisplay();
+        saveTimerStateToStorage();
     }
 
     function resetTimerControls() {
@@ -651,10 +861,21 @@
         clearExpiringStyles();
         resetTimerControls();
         updateDisplay();
+        try {
+            const cleanPath = typeof getCleanWorkoutUrl === 'function' ? getCleanWorkoutUrl() : window.location.pathname;
+            if (cleanPath && cleanPath !== '/' && !cleanPath.includes('/dashboard')) {
+                localStorage.setItem('onyx_active_workout_url', cleanPath);
+                sessionStorage.setItem('onyx_active_workout_url', cleanPath);
+            }
+            localStorage.removeItem('onyx_active_rest_timer');
+        } catch (e) {}
 
         if (miniTimerOverlay) {
             miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
             miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        }
+        if (typeof updateGlobalMiniTimer === 'function') {
+            updateGlobalMiniTimer();
         }
     }
 
@@ -677,6 +898,7 @@
             clearExpiringStyles();
         }
         updateDisplay();
+        saveTimerStateToStorage();
     }
 
     function setTimerPreset(seconds) {
@@ -688,8 +910,66 @@
         isRunning = true;
         hasNotifiedZero = false;
         clearExpiringStyles();
+        saveTimerStateToStorage();
         startCountdown();
     }
+
+    function openCustomTimerModal() {
+        const modal = document.getElementById('custom-timer-modal');
+        const card = document.getElementById('custom-timer-modal-card');
+        if (!modal || !card) return;
+        
+        const currentMins = Math.floor(durationSeconds / 60);
+        const currentSecs = durationSeconds % 60;
+        const minsInput = document.getElementById('custom-timer-minutes');
+        const secsInput = document.getElementById('custom-timer-seconds');
+        if (minsInput) minsInput.value = currentMins;
+        if (secsInput) secsInput.value = currentSecs;
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeCustomTimerModal() {
+        const modal = document.getElementById('custom-timer-modal');
+        const card = document.getElementById('custom-timer-modal-card');
+        if (!modal || !card) return;
+        
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
+    function setCustomTimerValues(mins, secs) {
+        const minsInput = document.getElementById('custom-timer-minutes');
+        const secsInput = document.getElementById('custom-timer-seconds');
+        if (minsInput) minsInput.value = mins;
+        if (secsInput) secsInput.value = secs;
+    }
+
+    function applyCustomTimer() {
+        const minsInput = document.getElementById('custom-timer-minutes');
+        const secsInput = document.getElementById('custom-timer-seconds');
+        let mins = parseInt(minsInput ? minsInput.value : 0, 10) || 0;
+        let secs = parseInt(secsInput ? secsInput.value : 0, 10) || 0;
+        let totalSeconds = (mins * 60) + secs;
+        if (totalSeconds <= 0) totalSeconds = 45;
+        
+        setTimerPreset(totalSeconds);
+        closeCustomTimerModal();
+    }
+
+    window.openCustomTimerModal = openCustomTimerModal;
+    window.closeCustomTimerModal = closeCustomTimerModal;
+    window.setCustomTimerValues = setCustomTimerValues;
+    window.applyCustomTimer = applyCustomTimer;
 
     function playBeepAndVibrate() {
         // Web Audio API synthesized tone
@@ -1067,11 +1347,76 @@
         }
     }
 
+    function openFinishWorkoutReviewModal() {
+        closeExitModal();
+        const modal = document.getElementById('finish-workout-review-modal');
+        const card = document.getElementById('finish-workout-review-card');
+        const durationInput = document.getElementById('finish-modal-duration');
+        const totalTimerDisplay = document.getElementById('total-workout-timer');
+
+        if (durationInput && totalTimerDisplay) {
+            durationInput.value = totalTimerDisplay.innerText || '00:45:00';
+        }
+
+        if (modal && card) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+    }
+
+    function closeFinishWorkoutReviewModal() {
+        const modal = document.getElementById('finish-workout-review-modal');
+        const card = document.getElementById('finish-workout-review-card');
+        if (modal && card) {
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 250);
+        }
+    }
+
+    function onFinishWorkoutSubmitted() {
+        try {
+            localStorage.removeItem('onyx_active_rest_timer');
+            localStorage.removeItem('onyx_active_rest_timer_paused');
+            localStorage.removeItem('onyx_active_workout_url');
+            sessionStorage.removeItem('onyx_active_workout_url');
+            if (typeof sessionId !== 'undefined' && sessionId) {
+                localStorage.removeItem(`onyx_workout_start_${sessionId}`);
+            }
+            try {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('onyx_workout_start_') || key.startsWith('onyx_rest_timer') || key.includes('active_workout')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                Object.keys(sessionStorage).forEach(key => {
+                    if (key.includes('active_workout')) {
+                        sessionStorage.removeItem(key);
+                    }
+                });
+            } catch(e) {}
+        } catch(e) {}
+        if (typeof updateGlobalMiniTimer === 'function') {
+            updateGlobalMiniTimer();
+        }
+    }
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            const modal = document.getElementById('custom-exit-modal');
-            if (modal && !modal.classList.contains('hidden')) {
+            const exitModal = document.getElementById('custom-exit-modal');
+            if (exitModal && !exitModal.classList.contains('hidden')) {
                 closeExitModal();
+            }
+            const finishModal = document.getElementById('finish-workout-review-modal');
+            if (finishModal && !finishModal.classList.contains('hidden')) {
+                closeFinishWorkoutReviewModal();
             }
         }
     });
@@ -1111,8 +1456,23 @@
         }
     });
 
-    // Total Workout Timer Stopwatch (Dynamically synced via Date.now)
-    const workoutStartTime = Date.now() - ({{ elapsed_seconds|default:0 }} * 1000);
+    // Total Workout Timer Stopwatch (Dynamically synced via Date.now & localStorage)
+    const sessionId = "{{ session.id }}";
+    const localStartKey = `onyx_workout_start_${sessionId}`;
+    let workoutStartTime = null;
+
+    const storedStart = localStorage.getItem(localStartKey);
+    const backendElapsedSec = parseInt("{{ elapsed_seconds|default:0|unlocalize }}", 10) || 0;
+
+    if (storedStart && !isNaN(parseInt(storedStart, 10))) {
+        workoutStartTime = parseInt(storedStart, 10);
+    } else {
+        workoutStartTime = Date.now() - (backendElapsedSec * 1000);
+        try {
+            localStorage.setItem(localStartKey, workoutStartTime.toString());
+        } catch(e) {}
+    }
+
     const totalTimerDisplay = document.getElementById('total-workout-timer');
 
     function formatTotalTime(totalSec) {
@@ -1130,6 +1490,9 @@
     }
 
     setInterval(updateTotalTimer, 500);
+
+    window.addEventListener('pagehide', () => saveTimerStateToStorage());
+    window.addEventListener('beforeunload', () => saveTimerStateToStorage());
 
     // Synchronize rest timer and total workout timer on visibility, pageshow, and focus
     function syncTimersOnResume() {
@@ -1401,9 +1764,29 @@
         }
     }
 
-    // Initial render
+    // Initial render & active URL cache
+    const currentCleanPath = getCleanWorkoutUrl();
+    try {
+        localStorage.setItem('onyx_active_workout_url', currentCleanPath);
+        sessionStorage.setItem('onyx_active_workout_url', currentCleanPath);
+    } catch(e) {}
+
+    restoreTimerFromStorage();
+    saveTimerStateToStorage();
     updateDisplay();
     updateProgressBar();
     updateTotalTimer();
+
+    if (sessionStorage.getItem('open_timer_overlay') === 'true' || window.location.hash === '#rest-timer' || window.location.search.includes('open_timer=true')) {
+        sessionStorage.removeItem('open_timer_overlay');
+        openOverlay();
+    } else if (window.location.hash === '#active-exercises-heading') {
+        setTimeout(() => {
+            const target = document.getElementById('active-exercises-heading');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 120);
+    }
 </script>
 {% endblock %}

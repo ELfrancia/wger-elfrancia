@@ -24,6 +24,49 @@ from wger.gallery.models.image import Image
 from wger.gallery.forms import ImageForm
 
 
+from django.contrib import messages
+import re
+
+def parse_duration_minutes(val_str):
+    if not val_str:
+        return None
+    val = str(val_str).strip().lower()
+    if ':' in val:
+        parts = val.split(':')
+        try:
+            if len(parts) == 3:
+                return int(parts[0]) * 60 + int(parts[1]) + (1 if int(parts[2]) >= 30 else 0)
+            elif len(parts) == 2:
+                return int(parts[0]) * 60 + int(parts[1])
+        except ValueError:
+            pass
+
+    total_mins = 0
+    h_match = re.search(r'(\d+)\s*h', val)
+    m_match = re.search(r'(\d+)\s*m', val)
+    if h_match:
+        total_mins += int(h_match.group(1)) * 60
+    if m_match:
+        total_mins += int(m_match.group(1))
+    if not h_match and not m_match:
+        clean_num = re.sub(r'[^\d]', '', val)
+        if clean_num:
+            total_mins = int(clean_num)
+            
+    return total_mins if total_mins > 0 else None
+
+
+def make_overview_redirect(request):
+    redirect_url = reverse('weight:overview')
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = redirect_url
+        return response
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'redirect': redirect_url})
+    return redirect('weight:overview')
+
+
 @login_required
 def log_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk)
@@ -34,6 +77,23 @@ def log_tailwind(request, routine_pk, day_pk):
     session_key = f'active_session_{day_pk}'
     session = None
     cutoff_24h = timezone.now() - datetime.timedelta(hours=24)
+
+    # 0. Single Active Workout Restriction: Check if user has an active session for another day/routine
+    other_active = WorkoutSession.objects.filter(
+        user=request.user,
+        status='active',
+    ).exclude(day=day).order_by('-date', '-time_start', '-id').first()
+
+    if other_active:
+        o_dt = datetime.datetime.combine(other_active.date, other_active.time_start or datetime.time.min)
+        if timezone.is_naive(o_dt):
+            o_dt = timezone.make_aware(o_dt)
+        if o_dt >= cutoff_24h:
+            messages.warning(
+                request,
+                _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
+            )
+            return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
 
     # If ?start=true is passed, we explicitly want to start a brand new session
     if request.GET.get('start') == 'true':
@@ -161,9 +221,7 @@ def log_tailwind(request, routine_pk, day_pk):
                     session.save()
                     if session_key in request.session:
                         del request.session[session_key]
-                    if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
-                    return redirect('weight:overview')
+                    return make_overview_redirect(request)
 
                 today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
                 if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -175,12 +233,34 @@ def log_tailwind(request, routine_pk, day_pk):
                 return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
             elif action == 'finish_workout':
+                custom_date_str = request.POST.get('custom_date')
+                custom_duration_str = request.POST.get('custom_duration')
+                notes_str = request.POST.get('notes')
+
+                if custom_date_str:
+                    try:
+                        session.date = datetime.datetime.strptime(custom_date_str.strip(), '%Y-%m-%d').date()
+                    except ValueError:
+                        pass
+
+                if custom_duration_str:
+                    duration_mins = parse_duration_minutes(custom_duration_str)
+                    if duration_mins and duration_mins > 0:
+                        now_dt = timezone.localtime(timezone.now())
+                        session.time_end = now_dt.time()
+                        start_dt = now_dt - datetime.timedelta(minutes=duration_mins)
+                        session.time_start = start_dt.time()
+
+                if notes_str:
+                    session.notes = notes_str.strip()
+
                 session.status = 'finished'
-                session.time_end = timezone.localtime(timezone.now()).time()
+                if not session.time_end:
+                    session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
                 if session_key in request.session:
                     del request.session[session_key]
-                return redirect('weight:overview')
+                return make_overview_redirect(request)
 
             elif action == 'interrupt_workout':
                 session.status = 'interrupted'
@@ -188,9 +268,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 session.save()
                 if session_key in request.session:
                     del request.session[session_key]
-                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
-                return redirect('weight:overview')
+                return make_overview_redirect(request)
 
             elif action == 'discard_workout':
                 session.logs.all().delete()
@@ -199,9 +277,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 session.save()
                 if session_key in request.session:
                     del request.session[session_key]
-                if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'status': 'ok', 'redirect': reverse('weight:overview')})
-                return redirect('weight:overview')
+                return make_overview_redirect(request)
 
             elif action == 'complete_exercise':
                 if slot:

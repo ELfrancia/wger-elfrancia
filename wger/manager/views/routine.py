@@ -193,8 +193,12 @@ def edit_routine_tailwind(request, pk):
             routine = form.save(commit=False)
             total_weeks = form.cleaned_data.get('total_weeks') or form.cleaned_data.get('duration_weeks') or initial_duration
             routine.total_weeks = total_weeks
+            if form.cleaned_data.get('current_week'):
+                routine.current_week = form.cleaned_data.get('current_week')
             routine.end = routine.start + datetime.timedelta(weeks=total_weeks)
             routine.save()
+            from wger.manager.helpers import reset_routine_cache
+            reset_routine_cache(routine)
             return redirect('manager:routine:view', pk=routine.pk)
     else:
         form = RoutineForm(instance=routine, initial={'duration_weeks': initial_duration, 'total_weeks': initial_duration, 'current_week': routine.current_week})
@@ -203,6 +207,26 @@ def edit_routine_tailwind(request, pk):
         'form': form,
         'routine': routine
     })
+
+
+@login_required
+def update_current_week_tailwind(request, pk):
+    routine = get_object_or_404(Routine, pk=pk, user=request.user)
+    if request.method == 'POST':
+        week = request.POST.get('current_week')
+        if week and str(week).isdigit():
+            week_num = int(week)
+            if 1 <= week_num <= (routine.total_weeks or 52):
+                routine.current_week = week_num
+                routine.save()
+                from wger.manager.helpers import reset_routine_cache
+                reset_routine_cache(routine)
+    
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = routine.get_absolute_url()
+        return response
+    return redirect('manager:routine:view', pk=routine.pk)
 
 
 @login_required

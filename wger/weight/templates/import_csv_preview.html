@@ -3,86 +3,119 @@
 
 {% block title %}{% translate "Preview imported CSV entries" %}{% endblock %}
 
-
-
 {% block content %}
-<h4>{% translate "Successfully converted values" %}</h4>
-<div class="alert alert-success">{% translate "The following values could be converted." %}</div>
-<table class="table">
-<tr>
-    <th>{% translate "Date" %}</th>
-    <th>{% translate "Weight" %}</th>
-</tr>
-{% for entry in weight_list %}
-    <tr>
-        <td>{{ entry.date|date:"SHORT_DATE_FORMAT" }}</td>
-        <td>{{ entry.weight }}</td>
-    </tr>
-{% endfor %}
-</table>
+<div class="flex flex-col gap-6 text-white">
 
+    <!-- Converted Values Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-emerald-400 text-2xl">check_circle</span>
+            <h3 class="text-xl font-bold tracking-tight">{% translate "Successfully converted values" %}</h3>
+        </div>
 
+        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-semibold">
+            {% translate "The following values could be converted." %}
+        </div>
 
-<h4>{% translate "Errors" %}</h4>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-[#222429] text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        <th class="py-3 px-4">{% translate "Date" %}</th>
+                        <th class="py-3 px-4">{% translate "Weight" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#222429]">
+                    {% for entry in weight_list %}
+                        <tr class="hover:bg-[#1D1E22]/50 transition-colors">
+                            <td class="py-3 px-4 text-neutral-200 font-medium">{{ entry.date|date:"SHORT_DATE_FORMAT" }}</td>
+                            <td class="py-3 px-4 text-primary font-bold">{{ entry.weight }} kg</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-{% if error_list %}
-    <div class="alert alert-danger">{% translate "The following values could not be converted." %}</div>
+    <!-- Errors Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-amber-400 text-2xl">error</span>
+            <h3 class="text-xl font-bold tracking-tight">{% translate "Errors" %}</h3>
+        </div>
 
-    <p>{% blocktranslate %}These values could not be converted to a weight log entry.
-    The reasons for this could be anything from an unrecognised date or number
-    format, a problem with the encoding or something else. Please check that
-    there are no obvious errors in the list (and correct them if there are!)
-    and try to import the list again.{% endblocktranslate %}</p>
+        {% if error_list %}
+            <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm font-semibold">
+                {% translate "The following values could not be converted." %}
+            </div>
 
-    <p>{% blocktranslate %}Remember that the expected structure is <strong>date</strong>
-    on the first columns and <strong>weight</strong> on the second.{% endblocktranslate %}</p>
+            <p class="text-xs text-neutral-300 leading-relaxed">
+                {% blocktranslate %}These values could not be converted to a weight log entry.
+                The reasons for this could be anything from an unrecognised date or number
+                format, a problem with the encoding or something else.{% endblocktranslate %}
+            </p>
 
-    <table class="table">
-    <tr>
-        <th>{% translate "Date" %}</th>
-        <th>{% translate "Weight" %}</th>
-    </tr>
-    {% for entry in error_list %}
-        <tr>
-            <td>{{ entry.0 }}</td>
-            <td>{{ entry.1 }}</td>
-        </tr>
-    {% endfor %}
-</table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-[#222429] text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                            <th class="py-3 px-4">{% translate "Date" %}</th>
+                            <th class="py-3 px-4">{% translate "Weight" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#222429]">
+                        {% for entry in error_list %}
+                            <tr class="hover:bg-[#1D1E22]/50 transition-colors">
+                                <td class="py-3 px-4 text-red-400 font-mono">{{ entry.0 }}</td>
+                                <td class="py-3 px-4 text-red-400 font-mono">{{ entry.1 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-sm text-emerald-400 font-semibold">{% blocktranslate %}There were no errors, all entries could be converted!{% endblocktranslate %}</p>
+        {% endif %}
+    </div>
 
-{% else %}
-    <p>{% blocktranslate %}There were no errors, all entries could be converted!{% endblocktranslate %}</p>
-{% endif %}
+    <!-- Confirm Import Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <h3 class="text-lg font-bold flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-primary">download_done</span>
+            {% translate "Import all successfully converted entries" %}
+        </h3>
+        <p class="text-xs text-neutral-300 leading-relaxed">
+            {% blocktranslate %}Continue here if you want to import into your weight log all entries that were successfully converted. All entries that produced an error will simply be ignored.{% endblocktranslate %}
+        </p>
 
+        <form action="{{request.get_full_path}}" method="post" class="wger-legacy-form">
+            <input type="hidden" name="{{ stage_field }}" value="2" />
+            <input type="hidden" name="{{ hash_field }}" value="{{ hash_value }}" />
+            {% crispy form %}
+            <div class="pt-4 border-t border-[#222429]">
+                <input type="submit" name="submit" value="{% translate 'Import' %}" class="px-6 py-3 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer shadow-lg uppercase tracking-wider" id="submit-id-submit">
+            </div>
+        </form>
+    </div>
 
-<h2>{% translate "Import all successfully converted entries" %}</h2>
-<p>{% blocktranslate %}Continue here if you want to import into your weight log all
-entries that were successfully converted. All entries that produced an error
-will simply be ignored. It's up to you to decide whether they are useful
-(unrecognised entries) or not (e.g. headers, comments, etc.).{% endblocktranslate %}</p>
+    <!-- Re-Submit Card -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4">
+        <h3 class="text-lg font-bold flex items-center gap-2 pb-3 border-b border-[#222429]">
+            <span class="material-symbols-outlined text-neutral-400">refresh</span>
+            {% translate "Or try it again" %}
+        </h3>
+        <p class="text-xs text-neutral-300 leading-relaxed">
+            {% blocktranslate %}You can correct the list here and re-submit it as often as you want.{% endblocktranslate %}
+        </p>
 
-<form action="{{request.get_full_path}}" method="post">
+        <form action="{{request.get_full_path}}" method="post" class="wger-legacy-form">
+            <input type="hidden" name="{{ stage_field }}" value="1" />
+            {% crispy form %}
+            <div class="pt-4 border-t border-[#222429]">
+                <input type="submit" name="submit" value="{% translate 'Re-Submit' %}" class="px-6 py-3 rounded-full text-xs font-bold bg-surface-container border border-surface-container-high text-white hover:border-primary transition-all cursor-pointer uppercase tracking-wider" id="submit-id-submit">
+            </div>
+        </form>
+    </div>
 
-    <input type="hidden" name="{{ stage_field }}" value="2" />
-    <input type="hidden" name="{{ hash_field }}" value="{{ hash_value }}" />
-    {% crispy form %}
-    <input type="submit" name="submit" value="{% translate 'Import' %}" class="btn btn-primary btn-success btn-block" id="submit-id-submit">
-</form>
-
-
-
-<h2>{% translate "Or try it again" %}</h2>
-
-<p>{% blocktranslate %}You can correct the list here and re-submit it as often as
-you want.{% endblocktranslate %}</p>
-
-<form action="{{request.get_full_path}}"
-      method="post"
-      class="form">
-
-    <input type="hidden" name="{{ stage_field }}" value="1" />
-    {% crispy form %}
-    <input type="submit" name="submit" value="{% translate 'Re-Submit' %}" class="btn btn-primary btn-success btn-block" id="submit-id-submit">
-</form>
-
+</div>
 {% endblock %}

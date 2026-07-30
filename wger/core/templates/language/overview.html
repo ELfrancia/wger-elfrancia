@@ -3,34 +3,41 @@
 
 {% block title %}{% translate "Languages" %}{% endblock %}
 
-
 {% block content %}
-    <div class="list-group">
+<div class="bg-surface-card border border-surface-container-high/80 rounded-[24px] p-6 shadow-xl flex flex-col gap-4 text-white">
+    <div class="flex items-center justify-between pb-3 border-b border-[#222429]">
+        <h3 class="text-xl font-bold tracking-tight flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">language</span>
+            {% translate "Languages" %}
+        </h3>
+        {% translate 'Add' as text %}
+        {% modal_link url="core:language:add" text=text css_class='px-4 py-2 rounded-full text-xs font-bold bg-primary text-black hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-lg' %}
+    </div>
+
+    <div class="flex flex-col divide-y divide-[#222429]">
         {% for language in language_list %}
-            <a href="{% url 'core:language:view' language.id %}"
-               class="list-group-item list-group-item-action">
-                <span class="glyphicon glyphicon-chevron-right float-end"></span>
-                <img src="{% static language.static_path %}"
-                     width="18"
-                     alt="{% translate language.full_name %}"
-                     title="{% translate language.full_name %}">
-                {{ language.full_name }}
-                <small>({{ language.full_name_en }})</small>
+            <a href="{% url 'core:language:view' language.id %}" class="py-3 px-2 flex items-center justify-between group hover:bg-[#1D1E22]/50 rounded-xl transition-all">
+                <div class="flex items-center gap-3">
+                    <img src="{% static language.static_path %}"
+                         width="20"
+                         alt="{% translate language.full_name %}"
+                         title="{% translate language.full_name %}"
+                         class="rounded shadow-sm">
+                    <span class="font-bold text-white group-hover:text-primary transition-colors text-sm">
+                        {{ language.full_name }}
+                        <span class="text-xs font-normal text-neutral-400">({{ language.full_name_en }})</span>
+                    </span>
+                </div>
+                <span class="material-symbols-outlined text-neutral-500 group-hover:text-primary group-hover:translate-x-1 transition-all">chevron_right</span>
             </a>
-            {% empty %}
-            <a href="{% url 'core:language:add' %}" class="list-group-item">
+        {% empty %}
+            <a href="{% url 'core:language:add' %}" class="p-8 text-center text-neutral-400 text-sm italic hover:text-primary transition-colors">
                 {% translate "Nothing found." %}<br>{% translate "Add one now." %}
             </a>
         {% endfor %}
     </div>
+</div>
 {% endblock %}
 
-
-
-{#         #}
-{# Options #}
-{#         #}
 {% block options %}
-    {% translate 'Add' as text %}
-    {% modal_link url="core:language:add" text=text %}
 {% endblock %}
