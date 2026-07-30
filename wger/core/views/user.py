@@ -869,7 +869,7 @@ class WgerLoginView(AllauthLoginView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            if request.user.userprofile.is_temporary:
+            if hasattr(request.user, 'userprofile') and request.user.userprofile.is_temporary:
                 # Skip RedirectAuthenticatedUserMixin's "already logged in"
                 # redirect so temp users can sign in as a real account.
                 return super(RedirectAuthenticatedUserMixin, self).dispatch(

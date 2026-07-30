@@ -173,6 +173,9 @@ def add_routine_tailwind(request):
             routine.end = routine.start + datetime.timedelta(weeks=total_weeks)
             routine.save()
             return redirect('manager:routine:view', pk=routine.pk)
+        else:
+            logger.error(f"Routine form validation failed: {form.errors}")
+            print(f"ROUTINE FORM ERRORS: {form.errors}")
     else:
         form = RoutineForm(initial={'start': datetime.date.today(), 'current_week': 1, 'total_weeks': 4, 'duration_weeks': 4})
     

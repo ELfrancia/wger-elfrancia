@@ -19,10 +19,12 @@
     <form method="post" class="wger-legacy-form flex flex-col gap-6">
         {% csrf_token %}
         
-        {% if form.non_field_errors %}
-            <div class="bg-red-950/40 border border-red-500/30 text-red-200 p-4 rounded-2xl text-sm font-semibold">
-                {% for error in form.non_field_errors %}
-                    <p>{{ error }}</p>
+        {% if form.errors %}
+            <div class="bg-red-950/40 border border-red-500/30 text-red-200 p-4 rounded-2xl text-sm font-semibold flex flex-col gap-1">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <p><strong class="capitalize">{{ field }}:</strong> {{ error }}</p>
+                    {% endfor %}
                 {% endfor %}
             </div>
         {% endif %}

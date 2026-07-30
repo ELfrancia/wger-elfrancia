@@ -26,7 +26,7 @@ class RoutineForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': _('Describe your training program...')
             }),
-            'start': forms.DateInput(attrs={
+            'start': forms.DateInput(format='%Y-%m-%d', attrs={
                 'type': 'date',
                 'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed'
             }),
@@ -43,15 +43,24 @@ class RoutineForm(forms.ModelForm):
             })
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['current_week'].required = False
+        self.fields['total_weeks'].required = False
+
     def clean(self):
         cleaned_data = super().clean()
+        duration_weeks = cleaned_data.get('duration_weeks')
+        cleaned_data['total_weeks'] = duration_weeks or 4
+        cleaned_data['current_week'] = cleaned_data.get('current_week') or 1
+
         start = cleaned_data.get('start')
-        total_weeks = cleaned_data.get('total_weeks') or cleaned_data.get('duration_weeks')
+        total_weeks = cleaned_data.get('total_weeks')
         if start and total_weeks:
             import datetime
             end = start + datetime.timedelta(weeks=total_weeks)
             if (end - start).days > Routine.MAX_DURATION_DAYS:
-                self.add_error('total_weeks', f'A routine cannot span more than {Routine.MAX_DURATION_DAYS} days.')
+                self.add_error('duration_weeks', f'A routine cannot span more than {Routine.MAX_DURATION_DAYS} days.')
         return cleaned_data
 
 
