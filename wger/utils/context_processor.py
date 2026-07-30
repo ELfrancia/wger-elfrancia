@@ -105,8 +105,8 @@ def get_custom_header(request):
     except Exception:
         current_gym = None
     if not current_gym:
-        global_gymconfig = GymConfig.objects.get(pk=1)
-        if global_gymconfig.default_gym:
+        global_gymconfig = GymConfig.objects.filter(pk=1).first()
+        if global_gymconfig and global_gymconfig.default_gym:
             current_gym = global_gymconfig.default_gym
 
     # Put the custom header together
