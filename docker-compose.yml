@@ -13,6 +13,7 @@ services:
       - DJANGO_SETTINGS_MODULE=settings.local_dev
       - PYTHONUNBUFFERED=1
       - DJANGO_DB_DATABASE=/var/lib/wger/database.sqlite
+      - CSRF_TRUSTED_ORIGINS=https://onyx.francescoadreani.dev,http://onyx.francescoadreani.dev
     command: python manage.py runserver 0.0.0.0:8000
 
 volumes:

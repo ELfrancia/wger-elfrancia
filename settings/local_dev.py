@@ -46,7 +46,23 @@ DEFAULT_FROM_EMAIL = WGER_SETTINGS['EMAIL_FROM']
 # CELERY_BROKER_URL = "redis://localhost:6379/2"
 # CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+_csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://onyx.francescoadreani.dev',
+    'http://onyx.francescoadreani.dev',
+]
+if _csrf_origins_env:
+    for origin in _csrf_origins_env.split(','):
+        origin = origin.strip()
+        if origin and origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
+
 
 EXPOSE_PROMETHEUS_METRICS = True
 
