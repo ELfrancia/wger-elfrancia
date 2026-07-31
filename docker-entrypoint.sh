@@ -27,5 +27,9 @@ with connection.cursor() as cursor:
         cursor.execute(\"ALTER TABLE manager_routine ADD COLUMN total_weeks INTEGER DEFAULT 4\")
 " || true
 
-echo "🚀 Avvio server Django..."
-exec python manage.py runserver 0.0.0.0:8000
+echo "🚀 Avvio server di produzione (Gunicorn)..."
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+else
+    exec gunicorn wger.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2
+fi

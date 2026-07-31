@@ -53,16 +53,41 @@ cd wger-elfrancia
 
 ## 📂 3. Copia dei Dati Esistenti (Database e Media)
 
-Copia i tuoi dati salvati sul **NAS** o nel PC locale dentro la cartella `wger-elfrancia/` del server Proxmox:
+Copia i tuoi dati (`database.sqlite` e la cartella `media/`) dentro la cartella `wger-elfrancia/` del tuo container su Proxmox usando uno di questi metodi:
 
-* 📄 **`database.sqlite`** ➔ posizionalo in `wger-elfrancia/database.sqlite`
-* 📁 **`media/`** ➔ posizionala in `wger-elfrancia/media/`
+### Metodo 1: Con WinSCP o FileZilla (Interfaccia Grafica - Consigliato da Windows)
+1. Scarica ed apri **WinSCP** o **FileZilla** sul tuo PC.
+2. Crea una connessione **SFTP**:
+   * **Host:** L'indirizzo IP del container LXC o VM su Proxmox
+   * **Porta:** 22
+   * **Utente:** `root`
+   * **Password:** La password SSH del tuo container LXC / VM
+3. Nel pannello di destra naviga fino a `/root/wger-elfrancia/`.
+4. Trascina dal PC locale (pannello di sinistra) il file **`database.sqlite`** e l'intera cartella **`media/`** direttamente in `/root/wger-elfrancia/`.
 
-> **Esempio di trasferimento da PC a Proxmox tramite SCP:**
-> ```bash
-> scp database.sqlite root@<IP_PROXMOX_CONTAINER>:/root/wger-elfrancia/
-> scp -r media root@<IP_PROXMOX_CONTAINER>:/root/wger-elfrancia/
-> ```
+---
+
+### Metodo 2: Da PowerShell / Terminale Windows (Con SCP)
+Apri il PowerShell sul tuo PC nella cartella del progetto ed esegui:
+
+```powershell
+# Trasferisci il file del database
+scp database.sqlite root@<IP_CONTAINER_PROXMOX>:/root/wger-elfrancia/
+
+# Trasferisci l'intera cartella media
+scp -r media root@<IP_CONTAINER_PROXMOX>:/root/wger-elfrancia/
+```
+
+---
+
+### Metodo 3: Dal Nodo Proxmox se la cartella media è sul NAS
+Se il tuo NAS è montato come Storage su Proxmox, puoi trasferire i file nel container LXC usando il comando nativo `pct push`:
+
+```bash
+# Esegui nella shell del nodo Proxmox VE (sostituisci 100 con l'ID del tuo LXC):
+pct push 100 /percorso/sul/nas/database.sqlite /root/wger-elfrancia/database.sqlite
+pct push 100 /percorso/sul/nas/media /root/wger-elfrancia/media -r
+```
 
 ---
 

@@ -85,7 +85,7 @@ CACHE_LOCMEM = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'wger-cache',
-        'TIMEOUT': 100,
+        'TIMEOUT': 86400,
     }
 }
 

@@ -14,7 +14,6 @@ services:
       - DJANGO_SETTINGS_MODULE=settings.local_dev
       - PYTHONUNBUFFERED=1
       - DJANGO_DB_DATABASE=/app/database.sqlite
-      - CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000,https://onyx.francescoadreani.dev,http://onyx.francescoadreani.dev
     entrypoint: ["sh", "/app/docker-entrypoint.sh"]
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn wger.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2
 
