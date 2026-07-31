@@ -47,15 +47,37 @@ class RoutineForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['current_week'].required = False
         self.fields['total_weeks'].required = False
+        self.fields['start'].input_formats = ['%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y', '%Y/%m/%d']
 
     def clean(self):
         cleaned_data = super().clean()
         duration_weeks = cleaned_data.get('duration_weeks')
         cleaned_data['total_weeks'] = duration_weeks or 4
-        cleaned_data['current_week'] = cleaned_data.get('current_week') or 1
 
         start = cleaned_data.get('start')
         total_weeks = cleaned_data.get('total_weeks')
+        current_week = cleaned_data.get('current_week')
+
+        if start:
+            import datetime
+            today = datetime.date.today()
+            if start <= today:
+                calc_week = ((today - start).days // 7) + 1
+            else:
+                calc_week = 1
+            if total_weeks and calc_week > total_weeks:
+                calc_week = total_weeks
+            if calc_week < 1:
+                calc_week = 1
+            
+            if not current_week:
+                cleaned_data['current_week'] = calc_week
+            elif total_weeks and current_week > total_weeks:
+                cleaned_data['current_week'] = total_weeks
+        else:
+            if not current_week:
+                cleaned_data['current_week'] = 1
+
         if start and total_weeks:
             import datetime
             end = start + datetime.timedelta(weeks=total_weeks)

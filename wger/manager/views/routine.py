@@ -170,6 +170,8 @@ def add_routine_tailwind(request):
             routine.user = request.user
             total_weeks = form.cleaned_data.get('total_weeks') or form.cleaned_data.get('duration_weeks') or 4
             routine.total_weeks = total_weeks
+            if form.cleaned_data.get('current_week'):
+                routine.current_week = form.cleaned_data.get('current_week')
             routine.end = routine.start + datetime.timedelta(weeks=total_weeks)
             routine.save()
             return redirect('manager:routine:view', pk=routine.pk)

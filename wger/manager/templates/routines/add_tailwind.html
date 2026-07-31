@@ -49,7 +49,7 @@
             {% endif %}
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="flex flex-col gap-2">
                 <label for="{{ form.start.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
                     {% translate "Start Date" %}
@@ -57,6 +57,16 @@
                 {{ form.start }}
                 {% if form.start.errors %}
                     <span class="text-xs text-error font-medium">{{ form.start.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="{{ form.current_week.id_for_label }}" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                    {% translate "Current Week" %}
+                </label>
+                {{ form.current_week }}
+                {% if form.current_week.errors %}
+                    <span class="text-xs text-error font-medium">{{ form.current_week.errors.0 }}</span>
                 {% endif %}
             </div>
 
@@ -89,4 +99,84 @@
         </div>
     </form>
 </section>
+
+<script>
+(function() {
+    function parseDate(str, inputElem) {
+        if (inputElem && inputElem.valueAsDate && !isNaN(inputElem.valueAsDate.getTime())) {
+            const d = inputElem.valueAsDate;
+            return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+        }
+        if (!str) return null;
+        str = str.trim();
+        const parts = str.split(/[-/.]/);
+        if (parts.length === 3) {
+            let year, month, day;
+            if (parts[0].length === 4) {
+                year = parseInt(parts[0], 10);
+                month = parseInt(parts[1], 10) - 1;
+                day = parseInt(parts[2], 10);
+            } else if (parts[2].length === 4) {
+                year = parseInt(parts[2], 10);
+                month = parseInt(parts[1], 10) - 1;
+                day = parseInt(parts[0], 10);
+            } else {
+                year = parseInt(parts[2], 10);
+                if (year < 100) year += 2000;
+                month = parseInt(parts[1], 10) - 1;
+                day = parseInt(parts[0], 10);
+            }
+            if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                return new Date(year, month, day);
+            }
+        }
+        const fallback = new Date(str);
+        if (!isNaN(fallback.getTime())) return fallback;
+        return null;
+    }
+
+    function initWeekCalculator() {
+        const startInput = document.getElementById('{{ form.start.id_for_label }}') || document.querySelector('input[name="start"]');
+        const currentWeekInput = document.getElementById('{{ form.current_week.id_for_label }}') || document.querySelector('input[name="current_week"]');
+        const durationInput = document.getElementById('{{ form.duration_weeks.id_for_label }}') || document.querySelector('input[name="duration_weeks"]');
+
+        if (!startInput || !currentWeekInput) return;
+
+        function updateCurrentWeek() {
+            if (!startInput.value) return;
+            const startDate = parseDate(startInput.value, startInput);
+            if (!startDate) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
+
+            let weekNum = 1;
+            if (startDate <= today) {
+                const diffDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+                weekNum = Math.floor(diffDays / 7) + 1;
+            }
+
+            const maxDuration = durationInput ? parseInt(durationInput.value, 10) || 16 : 16;
+            if (weekNum > maxDuration) weekNum = maxDuration;
+            if (weekNum < 1) weekNum = 1;
+
+            currentWeekInput.value = weekNum;
+        }
+
+        ['change', 'input', 'blur', 'keyup'].forEach(evt => {
+            startInput.addEventListener(evt, updateCurrentWeek);
+            if (durationInput) durationInput.addEventListener(evt, updateCurrentWeek);
+        });
+
+        updateCurrentWeek();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWeekCalculator);
+    } else {
+        initWeekCalculator();
+    }
+})();
+</script>
 {% endblock %}
