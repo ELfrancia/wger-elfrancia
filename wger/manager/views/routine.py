@@ -28,6 +28,7 @@ import requests
 
 # Django
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
@@ -389,123 +390,134 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
     else:
         form = AddExerciseForm()
         
-    # Build exercises list with prefetching to avoid N+1 queries
-    exercise_qs = form.fields['exercise'].queryset.prefetch_related('muscles', 'translations', 'equipment', 'category')
+    lang = getattr(request, 'LANGUAGE_CODE', 'it')
+    catalog_version = cache.get('add_exercise_catalog_version', 1)
+    cache_key = f"add_exercise_tailwind_catalog_{lang}_v{catalog_version}"
     
-    from wger.exercises.models import CalisthenicsExercise
-    calisthenics_map = {
-        str(cal.id): cal for cal in CalisthenicsExercise.objects.all()
-    }
-    
-    exercises_list = []
-    muscles_set = set()
-    skills_set = set()
-    equipment_set = set()
-    categories_set = set()
-    
-    DUMMY_NAMES = {
-        'needed for demo user',
-        'pending exercise',
-        'an exercise',
-        'very cool exercise',
-        'boring exercise',
-        'test pushup',
-        'i will be deleted'
-    }
-    
-    for ex in exercise_qs:
-        translation = ex.get_translation()
-        cal = calisthenics_map.get(str(ex.uuid))
-        is_calisthenics = bool(cal and cal.discipline == 'calisthenics')
+    cached_catalog = cache.get(cache_key)
+    if cached_catalog:
+        exercises_list, muscles_list, skills_list, equipment_list, categories_list, exercise_counts = cached_catalog
+    else:
+        # Build exercises list with prefetching to avoid N+1 queries
+        exercise_qs = form.fields['exercise'].queryset.prefetch_related('muscles', 'translations', 'equipment', 'category')
         
-        if translation and translation.name:
-            name = translation.name
-        elif cal and cal.name:
-            name = cal.name
-        else:
-            name = f"Exercise #{ex.id}"
-            
-        # Skip dummy placeholder exercises from default wger fixtures
-        if name.strip().lower() in DUMMY_NAMES or 'needed for demo user' in name.lower():
-            continue
-            
-        # Clean capitalization if name is all lowercase
-        if name and name.islower():
-            name = name.title()
-            
-        preview_url = None
-        skill_family = 'Other'
-        if cal:
-            preview_url = cal.demo_media_url
-            if cal.skill_family:
-                skill_family = cal.skill_family.replace('_', ' ').title()
-                
-        if not preview_url:
-            preview_url = ex.demo_media_url
-                
-        muscles = [m.name for m in ex.muscles.all()]
-        if not muscles and cal and cal.target_muscle:
-            muscles = [cal.target_muscle.title()]
-
-        search_terms = set()
-        for word in name.lower().split():
-            search_terms.add(word)
-
-        for m in muscles:
-            muscles_set.add(m)
-            m_lower = m.lower()
-            search_terms.add(m_lower)
-            for kw in MUSCLE_KEYWORDS.get(m_lower, []):
-                search_terms.add(kw)
-
-        if skill_family:
-            skills_set.add(skill_family)
-            sk_lower = skill_family.lower()
-            search_terms.add(sk_lower)
-            for kw in SKILL_KEYWORDS.get(sk_lower, []):
-                search_terms.add(kw)
-            
-        equipment = [eq.name for eq in ex.equipment.all()]
-        if not equipment and cal:
-            equipment = [cal.equipment or 'Body weight']
-        for eq in equipment:
-            equipment_set.add(eq)
-            
-        cat_name = ex.category.name if ex.category else ('Calisthenics' if is_calisthenics else 'General')
-        if cat_name and cat_name not in ['Another category', 'Yet another category', 'I will be deleted', 'Category']:
-            categories_set.add(cat_name)
-        else:
-            cat_name = 'Gym' if not is_calisthenics else 'Calisthenics'
-            categories_set.add(cat_name)
-
-        search_blob = f"{name} {skill_family} {' '.join(search_terms)} {' '.join(equipment)} {cat_name}".lower()
-
-        exercises_list.append({
-            'id': ex.id,
-            'name': name,
-            'preview_url': preview_url or '',
-            'muscles': ','.join(search_terms),
-            'muscles_display': ' • '.join(muscles),
-            'skill_family': skill_family,
-            'equipment': ','.join(equipment),
-            'equipment_display': ' • '.join(equipment) if equipment else '',
-            'category': cat_name,
-            'is_calisthenics': is_calisthenics,
-            'search_blob': search_blob,
-        })
+        from wger.exercises.models import CalisthenicsExercise
+        calisthenics_map = {
+            str(cal.id): cal for cal in CalisthenicsExercise.objects.all()
+        }
         
-    exercises_list = sorted(exercises_list, key=lambda x: x['name'].lower())
-    exercise_counts = {
-        'all': len(exercises_list),
-        'gym': sum(not exercise['is_calisthenics'] for exercise in exercises_list),
-        'calisthenics': sum(exercise['is_calisthenics'] for exercise in exercises_list),
-    }
-    muscles_list = sorted(list(muscles_set))
-    skills_list = [s for s in sorted(list(skills_set)) if s != 'Other']
-    if 'Other' in skills_set:
-        skills_list.append('Other')
-    equipment_list = sorted(list(equipment_set))
-    categories_list = sorted(list(categories_set))
+        exercises_list = []
+        muscles_set = set()
+        skills_set = set()
+        equipment_set = set()
+        categories_set = set()
+        
+        DUMMY_NAMES = {
+            'needed for demo user',
+            'pending exercise',
+            'an exercise',
+            'very cool exercise',
+            'boring exercise',
+            'test pushup',
+            'i will be deleted'
+        }
+        
+        for ex in exercise_qs:
+            translation = ex.get_translation()
+            cal = calisthenics_map.get(str(ex.uuid))
+            is_calisthenics = bool(cal and cal.discipline == 'calisthenics')
+            
+            if translation and translation.name:
+                name = translation.name
+            elif cal and cal.name:
+                name = cal.name
+            else:
+                name = f"Exercise #{ex.id}"
+                
+            # Skip dummy placeholder exercises from default wger fixtures
+            if name.strip().lower() in DUMMY_NAMES or 'needed for demo user' in name.lower():
+                continue
+                
+            # Clean capitalization if name is all lowercase
+            if name and name.islower():
+                name = name.title()
+                
+            preview_url = None
+            skill_family = 'Other'
+            if cal:
+                preview_url = cal.demo_media_url
+                if cal.skill_family:
+                    skill_family = cal.skill_family.replace('_', ' ').title()
+                    
+            if not preview_url:
+                preview_url = ex.demo_media_url
+                    
+            muscles = [m.name for m in ex.muscles.all()]
+            if not muscles and cal and cal.target_muscle:
+                muscles = [cal.target_muscle.title()]
+
+            search_terms = set()
+            for word in name.lower().split():
+                search_terms.add(word)
+
+            for m in muscles:
+                muscles_set.add(m)
+                m_lower = m.lower()
+                search_terms.add(m_lower)
+                for kw in MUSCLE_KEYWORDS.get(m_lower, []):
+                    search_terms.add(kw)
+
+            if skill_family:
+                skills_set.add(skill_family)
+                sk_lower = skill_family.lower()
+                search_terms.add(sk_lower)
+                for kw in SKILL_KEYWORDS.get(sk_lower, []):
+                    search_terms.add(kw)
+                
+            equipment = [eq.name for eq in ex.equipment.all()]
+            if not equipment and cal:
+                equipment = [cal.equipment or 'Body weight']
+            for eq in equipment:
+                equipment_set.add(eq)
+                
+            cat_name = ex.category.name if ex.category else ('Calisthenics' if is_calisthenics else 'General')
+            if cat_name and cat_name not in ['Another category', 'Yet another category', 'I will be deleted', 'Category']:
+                categories_set.add(cat_name)
+            else:
+                cat_name = 'Gym' if not is_calisthenics else 'Calisthenics'
+                categories_set.add(cat_name)
+
+            search_blob = f"{name} {skill_family} {' '.join(search_terms)} {' '.join(equipment)} {cat_name}".lower()
+
+            exercises_list.append({
+                'id': ex.id,
+                'name': name,
+                'preview_url': preview_url or '',
+                'muscles': ','.join(search_terms),
+                'muscles_display': ' • '.join(muscles),
+                'skill_family': skill_family,
+                'equipment': ','.join(equipment),
+                'equipment_display': ' • '.join(equipment) if equipment else '',
+                'category': cat_name,
+                'is_calisthenics': is_calisthenics,
+                'search_blob': search_blob,
+            })
+            
+        exercises_list = sorted(exercises_list, key=lambda x: x['name'].lower())
+        exercise_counts = {
+            'all': len(exercises_list),
+            'gym': sum(not exercise['is_calisthenics'] for exercise in exercises_list),
+            'calisthenics': sum(exercise['is_calisthenics'] for exercise in exercises_list),
+        }
+        muscles_list = sorted(list(muscles_set))
+        skills_list = [s for s in sorted(list(skills_set)) if s != 'Other']
+        if 'Other' in skills_set:
+            skills_list.append('Other')
+        equipment_list = sorted(list(equipment_set))
+        categories_list = sorted(list(categories_set))
+
+        cached_catalog = (exercises_list, muscles_list, skills_list, equipment_list, categories_list, exercise_counts)
+        cache.set(cache_key, cached_catalog, 86400)
         
     return render(request, 'routines/add_exercise_tailwind.html', {
         'form': form,
@@ -790,6 +802,10 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
             args=(name, instructions, skill_family, target_muscle_name, equipment_name),
             daemon=True
         ).start()
+
+        # Invalidate catalog cache so newly added exercise appears on refresh
+        current_version = cache.get('add_exercise_catalog_version', 1)
+        cache.set('add_exercise_catalog_version', current_version + 1)
 
         # Return response with full attributes needed for frontend list item
         return JsonResponse({
