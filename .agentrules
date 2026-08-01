@@ -1,0 +1,11 @@
+# Mandatory Agent Rule: Use Graphify for Codebase Exploration in All Sessions
+
+1. **Always Use Graphify First**:
+   - For ANY question or task regarding code exploration, navigation, understanding dependencies, or inspecting symbols/views/models, you MUST use the `graphify` MCP tools (`query_graph`, `get_node`, `get_neighbors`, `get_community`, `god_nodes`, `shortest_path`, etc.).
+   - Prioritize querying `graphify-out/graph.json` via the `graphify` MCP server.
+
+2. **Graph Reference**:
+   - Reference `graphify-out/` or `GRAPH_REPORT.md` to map dependencies across models, views, templates, and utilities before modifying any files.
+
+3. **Keep Graph Updated**:
+   - Whenever code changes are made, run `graphify update` (or update graph dataset) to ensure future queries have accurate, up-to-date codebase context.

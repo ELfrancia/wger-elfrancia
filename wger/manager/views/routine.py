@@ -336,27 +336,47 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
     if request.method == 'POST':
         exercise_ids = request.POST.getlist('exercise')
+        is_superset = request.POST.get('is_superset') == 'true'
         
         if exercise_ids:
-            max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
-            slot = Slot.objects.create(
-                day=day,
-                order=(max_order or 0) + 1
-            )
-            
-            for idx, ex_id in enumerate(exercise_ids):
-                from wger.exercises.models import Exercise
-                exercise = get_object_or_404(Exercise, id=ex_id)
-                
-                slot_entry = SlotEntry.objects.create(
-                    slot=slot,
-                    exercise=exercise,
-                    order=idx + 1
+            from wger.exercises.models import Exercise
+            if is_superset and len(exercise_ids) > 1:
+                max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+                slot = Slot.objects.create(
+                    day=day,
+                    order=(max_order or 0) + 1
                 )
                 
-                SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-                RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
-                WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
+                for idx, ex_id in enumerate(exercise_ids):
+                    exercise = get_object_or_404(Exercise, id=ex_id)
+                    
+                    slot_entry = SlotEntry.objects.create(
+                        slot=slot,
+                        exercise=exercise,
+                        order=idx + 1
+                    )
+                    
+                    SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                    RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+                    WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
+            else:
+                for ex_id in exercise_ids:
+                    max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+                    slot = Slot.objects.create(
+                        day=day,
+                        order=(max_order or 0) + 1
+                    )
+                    exercise = get_object_or_404(Exercise, id=ex_id)
+                    
+                    slot_entry = SlotEntry.objects.create(
+                        slot=slot,
+                        exercise=exercise,
+                        order=1
+                    )
+                    
+                    SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                    RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+                    WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
                 
             from wger.manager.helpers import reset_routine_cache
             reset_routine_cache(day.routine)
@@ -691,80 +711,98 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
     if not name:
         return JsonResponse({'status': 'error', 'message': 'Name is required'}, status=400)
 
-    # 1. Create CalisthenicsExercise locally
-    source_id = f"custom-{uuid.uuid4().hex[:8]}"
-    slug = f"{slugify(name)}-{source_id}"
-    equipment_name = 'weighted body weight' if weighted else 'body weight'
-    
-    instructions_list = [line.strip() for line in instructions.split('\n') if line.strip()]
+    try:
+        # 1. Create CalisthenicsExercise locally
+        source_id = f"custom-{uuid.uuid4().hex[:8]}"
+        slug = f"{slugify(name)}-{source_id}"
+        equipment_name = 'weighted body weight' if weighted else 'body weight'
+        
+        instructions_list = [line.strip() for line in instructions.split('\n') if line.strip()]
 
-    cal_exercise = CalisthenicsExercise.objects.create(
-        source='custom',
-        source_exercise_id=source_id,
-        slug=slug,
-        name=name,
-        instructions=instructions_list,
-        target_muscle=target_muscle_name,
-        equipment=equipment_name,
-        skill_family=skill_family,
-        discipline='calisthenics',
-        is_published=True
-    )
-
-    # 2. Create native Exercise
-    category, _ = ExerciseCategory.objects.get_or_create(name='Calisthenics')
-    default_license = License.objects.first()
-    
-    base_exercise = Exercise.objects.create(
-        uuid=cal_exercise.id,
-        category=category,
-        license=default_license
-    )
-
-    # 3. Associate equipment
-    eq_name = 'Dumbbells' if weighted else 'Body weight'
-    equipment, _ = Equipment.objects.get_or_create(name=eq_name)
-    base_exercise.equipment.add(equipment)
-
-    # 4. Associate target muscle
-    if target_muscle_name:
-        muscle, _ = Muscle.objects.get_or_create(
-            name=target_muscle_name.capitalize(),
-            defaults={'name_en': target_muscle_name, 'is_front': True}
+        cal_exercise = CalisthenicsExercise.objects.create(
+            source='custom',
+            source_exercise_id=source_id,
+            slug=slug,
+            name=name,
+            instructions=instructions_list,
+            target_muscle=target_muscle_name,
+            equipment=equipment_name,
+            skill_family=skill_family,
+            discipline='calisthenics',
+            is_published=True
         )
-        base_exercise.muscles.add(muscle)
 
-    # 5. Create English Translation
-    english_lang = Language.objects.get(short_name='en')
-    Translation.objects.create(
-        exercise=base_exercise,
-        language=english_lang,
-        name=name,
-        description="\n".join(instructions_list),
-        license=default_license
-    )
+        # 2. Create native Exercise
+        category, _ = ExerciseCategory.objects.get_or_create(name='Calisthenics')
+        default_license = License.objects.first()
+        if not default_license:
+            default_license = License.objects.create(
+                short_name='CC-BY-SA 4.0',
+                full_name='Creative Commons Attribution Share Alike 4.0'
+            )
+        
+        base_exercise = Exercise.objects.create(
+            uuid=cal_exercise.id,
+            category=category,
+            license=default_license
+        )
 
-    # 6. Create initial tags
-    tags = ['bodyweight', 'calisthenics', 'custom']
-    if weighted:
-        tags.append('weighted')
-    if skill_family != 'other':
-        tags.append(skill_family.replace('_', '-'))
-    for t in tags:
-        ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
+        # 3. Associate equipment
+        eq_name = 'Dumbbells' if weighted else 'Body weight'
+        equipment, _ = Equipment.objects.get_or_create(name=eq_name)
+        base_exercise.equipment.add(equipment)
 
-    # 7. Start background thread to push to Baserow
-    threading.Thread(
-        target=_async_push_to_baserow,
-        args=(name, instructions, skill_family, target_muscle_name, equipment_name),
-        daemon=True
-    ).start()
+        # 4. Associate target muscle
+        if target_muscle_name:
+            muscle, _ = Muscle.objects.get_or_create(
+                name=target_muscle_name.capitalize(),
+                defaults={'name_en': target_muscle_name, 'is_front': True}
+            )
+            base_exercise.muscles.add(muscle)
 
-    # Return response
-    return JsonResponse({
-        'status': 'success',
-        'id': base_exercise.id,
-        'name': name,
-        'muscles': target_muscle_name,
-        'skill_family': skill_family.replace('_', ' ').title()
-    })
+        # 5. Create English Translation
+        english_lang = Language.objects.filter(short_name='en').first()
+        if not english_lang:
+            english_lang = Language.objects.first()
+        if not english_lang:
+            english_lang = Language.objects.create(short_name='en', full_name='English')
+
+        Translation.objects.create(
+            exercise=base_exercise,
+            language=english_lang,
+            name=name,
+            description="\n".join(instructions_list),
+            license=default_license
+        )
+
+        # 6. Create initial tags
+        tags = ['bodyweight', 'calisthenics', 'custom']
+        if weighted:
+            tags.append('weighted')
+        if skill_family != 'other':
+            tags.append(skill_family.replace('_', '-'))
+        for t in tags:
+            ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
+
+        # 7. Start background thread to push to Baserow
+        threading.Thread(
+            target=_async_push_to_baserow,
+            args=(name, instructions, skill_family, target_muscle_name, equipment_name),
+            daemon=True
+        ).start()
+
+        # Return response with full attributes needed for frontend list item
+        return JsonResponse({
+            'status': 'success',
+            'id': base_exercise.id,
+            'name': name,
+            'muscles': target_muscle_name,
+            'equipment': eq_name,
+            'category': 'Calisthenics',
+            'is_calisthenics': True,
+            'skill_family': skill_family
+        })
+    except Exception as e:
+        logger.error(f"Error creating custom exercise: {e}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+

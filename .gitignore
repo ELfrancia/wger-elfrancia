@@ -94,6 +94,8 @@ venv-wger
 /extras/scripts/*.json
 /extras/open-food-facts/dump/
 /.claude/
+/graphify-out/
+.graphify/
 
 # macOS
 .DS_Store

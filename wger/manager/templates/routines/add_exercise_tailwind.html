@@ -28,7 +28,7 @@
 
     <!-- Main Card Container -->
     <div class="bg-[#161618] border border-white/[0.08] rounded-2xl p-4 sm:p-6 flex flex-col gap-5 shadow-lg">
-        <form method="post" class="flex flex-col gap-5" hx-boost="true">
+        <form method="post" action="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-5">
             {% csrf_token %}
             
             <!-- Controls Section -->
@@ -158,34 +158,10 @@
                                 {% endif %}
                             </div>
 
-                            <div class="flex flex-col min-w-0 flex-1 py-0.5 justify-center">
+                            <div class="flex min-w-0 flex-1 items-center">
                                 <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">
                                     {{ ex.name }}
                                 </span>
-                                
-                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
-                                    {% if ex.muscles_display %}
-                                        <span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/20 truncate">
-                                            {{ ex.muscles_display }}
-                                        </span>
-                                    {% else %}
-                                        <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-white/[0.04]">
-                                            {% translate "General" %}
-                                        </span>
-                                    {% endif %}
-
-                                    {% if ex.equipment_display %}
-                                        <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-white/[0.06] truncate">
-                                            {{ ex.equipment_display }}
-                                        </span>
-                                    {% endif %}
-
-                                    {% if ex.skill_family and ex.skill_family != 'Other' %}
-                                        <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-white/[0.06]">
-                                            {{ ex.skill_family }}
-                                        </span>
-                                    {% endif %}
-                                </div>
                             </div>
                         </div>
 
@@ -236,20 +212,21 @@
                 </div>
                 
                 <div id="hidden-exercises-inputs"></div>
+                <input type="hidden" name="is_superset" id="is-superset-input" value="false">
 
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-2.5 mt-2 pt-3 border-t border-white/[0.06]">
-                    <button type="button" id="add-to-superset-btn" disabled class="flex-1 bg-[#18181a] border border-[#caf300]/30 text-[#caf300] hover:bg-[#caf300]/10 hover:text-white h-11 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider opacity-50 cursor-not-allowed transition-all">
-                        <span class="material-symbols-outlined text-base">link</span>
-                        {% translate "ADD TO SUPERSET" %}
+                <!-- Action Buttons (Multi-Select & Superset Controls) -->
+                <div class="flex flex-col sm:flex-row gap-3.5 mt-4 pt-4 border-t border-white/10 sticky bottom-0 z-20 bg-[#161618]/95 backdrop-blur-md p-3 sm:p-0 sm:bg-transparent sm:static rounded-b-2xl">
+                    <button type="submit" id="submit-btn" disabled class="flex-1 bg-[#caf300] text-[#131313] hover:bg-[#d4ff00] h-15 sm:h-16 px-8 rounded-2xl flex items-center justify-center gap-3 font-black text-base sm:text-lg uppercase tracking-wider opacity-50 cursor-not-allowed transition-all duration-200 shadow-[0_4px_20px_rgba(202,243,0,0.3)]">
+                        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                        <span id="submit-btn-text">{% translate "SELECT EXERCISES" %}</span>
                     </button>
 
-                    <button type="submit" id="submit-btn" disabled class="flex-1 bg-[#caf300] text-[#131313] hover:bg-[#d4ff00] h-11 px-4 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider opacity-50 cursor-not-allowed transition-all">
-                        <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">add_circle</span>
-                        <span id="submit-btn-text">{% translate "ADD EXERCISE" %}</span>
+                    <button type="button" id="create-superset-btn" disabled class="flex-1 bg-[#18181a] border-2 border-[#caf300]/50 text-[#caf300] hover:bg-[#caf300]/20 hover:text-white h-15 sm:h-16 px-6 rounded-2xl flex items-center justify-center gap-3 font-black text-sm sm:text-base uppercase tracking-wider opacity-50 cursor-not-allowed transition-all duration-200 shadow-md">
+                        <span class="material-symbols-outlined text-2xl">link</span>
+                        <span id="superset-btn-text">{% translate "CREA SUPERSET" %}</span>
                     </button>
                     
-                    <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 sm:flex-initial border border-white/[0.08] text-zinc-400 hover:text-white h-11 px-5 rounded-xl flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider hover:bg-[#18181a] transition-all">
+                    <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
                         {% translate "CANCEL" %}
                     </a>
                 </div>
@@ -456,20 +433,22 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeSelection = null;  // { id: int, name: string }
 
     function filterExercises() {
-        const query = searchInput.value.toLowerCase().trim();
-        const muscleDropdown = muscleSelect.value.toLowerCase();
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const muscleDropdown = muscleSelect ? muscleSelect.value.toLowerCase() : '';
         const equipmentDropdown = equipmentSelect ? equipmentSelect.value.toLowerCase() : '';
-        const skill = skillSelect.value ? skillSelect.value.toLowerCase() : '';
+        const skill = skillSelect ? skillSelect.value.toLowerCase() : '';
         
-        if (query) {
-            clearSearchBtn.classList.remove('hidden');
-        } else {
-            clearSearchBtn.classList.add('hidden');
+        if (clearSearchBtn) {
+            if (query) {
+                clearSearchBtn.classList.remove('hidden');
+            } else {
+                clearSearchBtn.classList.add('hidden');
+            }
         }
 
         let visibleCount = 0;
         document.querySelectorAll('.exercise-item').forEach(item => {
-            const name = item.dataset.name.toLowerCase();
+            const name = (item.dataset.name || '').toLowerCase();
             const musclesRaw = (item.dataset.muscles || '').toLowerCase();
             const equipmentRaw = (item.dataset.equipment || '').toLowerCase();
             const categoryRaw = (item.dataset.category || '').toLowerCase();
@@ -513,7 +492,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let matchesMuscle = true;
             if (activeChipValue) {
-                matchesMuscle = musclesRaw.includes(activeChipValue);
+                if (activeChipValue === 'biceps') {
+                    matchesMuscle = musclesList.some(m => m === 'biceps' || m === 'biceps brachii' || m === 'bicipiti' || m === 'brachialis') || (musclesRaw.includes('biceps') && !musclesList.some(m => m === 'biceps femoris'));
+                } else if (activeChipValue === 'lats') {
+                    matchesMuscle = musclesRaw.includes('lats') || musclesRaw.includes('latissimus') || musclesRaw.includes('back') || musclesRaw.includes('dorsali') || musclesRaw.includes('schiena');
+                } else if (activeChipValue === 'quadriceps') {
+                    matchesMuscle = musclesRaw.includes('quadriceps') || musclesRaw.includes('quads') || musclesRaw.includes('legs') || musclesRaw.includes('gambe') || musclesRaw.includes('biceps femoris') || musclesRaw.includes('glute');
+                } else if (activeChipValue === 'chest') {
+                    matchesMuscle = musclesRaw.includes('chest') || musclesRaw.includes('pectoral') || musclesRaw.includes('petto') || musclesRaw.includes('pettorali');
+                } else if (activeChipValue === 'deltoids') {
+                    matchesMuscle = musclesRaw.includes('deltoid') || musclesRaw.includes('shoulder') || musclesRaw.includes('spalle') || musclesRaw.includes('deltoidi');
+                } else if (activeChipValue === 'triceps') {
+                    matchesMuscle = musclesRaw.includes('triceps') || musclesRaw.includes('tricipiti');
+                } else if (activeChipValue === 'abs') {
+                    matchesMuscle = musclesRaw.includes('abs') || musclesRaw.includes('core') || musclesRaw.includes('abdominis') || musclesRaw.includes('addom');
+                } else {
+                    matchesMuscle = musclesRaw.includes(activeChipValue);
+                }
             } else if (muscleDropdown) {
                 matchesMuscle = musclesList.includes(muscleDropdown) || musclesRaw.includes(muscleDropdown);
             }
@@ -549,37 +544,83 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    disciplineTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            disciplineTabs.forEach(t => {
-                t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
-                t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+    if (disciplineTabs && disciplineTabs.length > 0) {
+        disciplineTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                disciplineTabs.forEach(t => {
+                    t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                    t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                });
+                this.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                this.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                activeDiscipline = this.dataset.discipline || '';
+                filterExercises();
             });
-            this.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
-            this.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
-            activeDiscipline = this.dataset.discipline;
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterExercises);
+    }
+
+    if (muscleSelect) {
+        muscleSelect.addEventListener('change', function() {
+            if (muscleSelect.value) {
+                activeChipValue = '';
+                if (muscleChips) muscleChips.forEach(c => setChipInactive(c));
+                const firstChip = document.querySelector('.muscle-chip[data-chip=""]');
+                if (firstChip) setChipActive(firstChip);
+            }
             filterExercises();
         });
-    });
+    }
 
-    searchInput.addEventListener('input', filterExercises);
-    muscleSelect.addEventListener('change', function() {
-        if (muscleSelect.value) {
-            activeChipValue = '';
-            muscleChips.forEach(c => setChipInactive(c));
-            const firstChip = document.querySelector('.muscle-chip[data-chip=""]');
-            if (firstChip) setChipActive(firstChip);
-        }
-        filterExercises();
-    });
     if (equipmentSelect) {
         equipmentSelect.addEventListener('change', filterExercises);
     }
-    skillSelect.addEventListener('change', function() {
-        if (skillSelect.value && skillSelect.value.toLowerCase() !== 'other') {
-            // When selecting a skill, auto-switch active discipline tab to "Tutti" if Gym was active
-            if (activeDiscipline === 'gym') {
-                activeDiscipline = '';
+
+    if (skillSelect) {
+        skillSelect.addEventListener('change', function() {
+            if (skillSelect.value && skillSelect.value.toLowerCase() !== 'other') {
+                if (activeDiscipline === 'gym') {
+                    activeDiscipline = '';
+                    if (disciplineTabs) {
+                        disciplineTabs.forEach((t, idx) => {
+                            if (idx === 0) {
+                                t.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                                t.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                            } else {
+                                t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
+                                t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
+                            }
+                        });
+                    }
+                }
+            }
+            filterExercises();
+        });
+    }
+
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+            }
+            filterExercises();
+        });
+    }
+
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            if (searchInput) searchInput.value = '';
+            if (muscleSelect) muscleSelect.value = '';
+            if (equipmentSelect) equipmentSelect.value = '';
+            if (skillSelect) skillSelect.value = '';
+            activeChipValue = '';
+            activeDiscipline = '';
+
+            if (disciplineTabs) {
                 disciplineTabs.forEach((t, idx) => {
                     if (idx === 0) {
                         t.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
@@ -590,61 +631,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             }
-        }
-        filterExercises();
-    });
 
-    clearSearchBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        filterExercises();
-        searchInput.focus();
-    });
-
-    if (resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', function() {
-            searchInput.value = '';
-            muscleSelect.value = '';
-            if (equipmentSelect) equipmentSelect.value = '';
-            skillSelect.value = '';
-            activeChipValue = '';
-            activeDiscipline = '';
-
-            disciplineTabs.forEach((t, idx) => {
-                if (idx === 0) {
-                    t.classList.add('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
-                    t.classList.remove('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
-                } else {
-                    t.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]', 'shadow-sm');
-                    t.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
-                }
-            });
-
-            muscleChips.forEach(c => setChipInactive(c));
-            const firstChip = document.querySelector('.muscle-chip[data-chip=""]');
-            if (firstChip) setChipActive(firstChip);
+            if (muscleChips) {
+                muscleChips.forEach(c => setChipInactive(c));
+                const firstChip = document.querySelector('.muscle-chip[data-chip=""]');
+                if (firstChip) setChipActive(firstChip);
+            }
             filterExercises();
         });
     }
 
     function setChipActive(chip) {
+        if (!chip) return;
         chip.classList.add('active', 'bg-[#caf300]', 'text-[#131313]');
         chip.classList.remove('bg-[#111113]', 'text-zinc-400', 'border-white/[0.08]');
     }
 
     function setChipInactive(chip) {
+        if (!chip) return;
         chip.classList.remove('active', 'bg-[#caf300]', 'text-[#131313]');
         chip.classList.add('bg-[#111113]', 'text-zinc-400', 'border', 'border-white/[0.08]');
     }
 
-    muscleChips.forEach(chip => {
-        chip.addEventListener('click', function() {
-            muscleChips.forEach(c => setChipInactive(c));
-            setChipActive(this);
-            activeChipValue = this.dataset.chip.toLowerCase();
-            muscleSelect.value = '';
-            filterExercises();
+    if (muscleChips && muscleChips.length > 0) {
+        muscleChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                muscleChips.forEach(c => setChipInactive(c));
+                setChipActive(this);
+                activeChipValue = (this.dataset.chip || '').toLowerCase();
+                if (muscleSelect) muscleSelect.value = '';
+                filterExercises();
+            });
         });
-    });
+    }
 
     function syncUI() {
         const supersetContainer = document.getElementById('superset-container');
@@ -652,10 +671,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const hiddenInputs = document.getElementById('hidden-exercises-inputs');
         const mainSubmitBtn = document.getElementById('submit-btn');
         const submitBtnText = document.getElementById('submit-btn-text');
-        const addToSupersetBtn = document.getElementById('add-to-superset-btn');
+        const createSupersetBtn = document.getElementById('create-superset-btn');
+        const supersetBtnText = document.getElementById('superset-btn-text');
+        const isSupersetInput = document.getElementById('is-superset-input');
+
+        if (!hiddenInputs || !mainSubmitBtn) return;
 
         hiddenInputs.innerHTML = '';
-        supersetList.innerHTML = '';
+        if (supersetList) supersetList.innerHTML = '';
 
         selectedExercises.forEach((ex, idx) => {
             const letter = String.fromCharCode(65 + idx);
@@ -666,90 +689,91 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = ex.id;
             hiddenInputs.appendChild(input);
 
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2.5 bg-[#18181a] border border-[#caf300]/30 rounded-lg';
-            row.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${letter}</span>
-                    <span class="text-sm font-bold text-white">${ex.name}</span>
-                </div>
-                <button type="button" class="remove-btn text-zinc-400 hover:text-red-400 flex items-center p-1" data-id="${ex.id}">
-                    <span class="material-symbols-outlined text-base">close</span>
-                </button>
-            `;
-            
-            row.querySelector('.remove-btn').addEventListener('click', function(e) {
-                e.stopPropagation();
-                removeExercise(ex.id);
-            });
-            
-            supersetList.appendChild(row);
+            if (supersetList) {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between p-3 bg-[#18181a] border border-[#caf300]/30 rounded-xl';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="bg-[#caf300] text-[#131313] text-xs font-black w-6 h-6 rounded-lg flex items-center justify-center">${idx + 1}</span>
+                        <span class="text-sm font-bold text-white">${ex.name}</span>
+                    </div>
+                    <button type="button" class="remove-btn text-zinc-400 hover:text-red-400 p-1 transition-colors flex items-center justify-center" data-id="${ex.id}">
+                        <span class="material-symbols-outlined text-lg">close</span>
+                    </button>
+                `;
+                
+                row.querySelector('.remove-btn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    removeExercise(ex.id);
+                });
+                
+                supersetList.appendChild(row);
+            }
         });
 
-        if (activeSelection) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'exercise';
-            input.value = activeSelection.id;
-            hiddenInputs.appendChild(input);
-        }
-
-        if (selectedExercises.length > 0) {
-            supersetContainer.classList.remove('hidden');
-            supersetContainer.classList.add('flex');
-        } else {
-            supersetContainer.classList.remove('flex');
-            supersetContainer.classList.add('hidden');
-        }
-
-        const totalSelected = selectedExercises.length + (activeSelection ? 1 : 0);
-        if (totalSelected === 0) {
-            mainSubmitBtn.disabled = true;
-            mainSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
-        } else {
-            mainSubmitBtn.disabled = false;
-            mainSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            if (selectedExercises.length > 0 || totalSelected > 1) {
-                submitBtnText.textContent = `{% translate 'ADD SUPERSET' %} (${totalSelected})`;
+        if (supersetContainer) {
+            if (selectedExercises.length > 1) {
+                supersetContainer.classList.remove('hidden');
+                supersetContainer.classList.add('flex');
             } else {
-                submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
+                supersetContainer.classList.remove('flex');
+                supersetContainer.classList.add('hidden');
             }
         }
 
-        if (activeSelection) {
-            addToSupersetBtn.disabled = false;
-            addToSupersetBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        const totalSelected = selectedExercises.length;
+        if (totalSelected === 0) {
+            mainSubmitBtn.disabled = true;
+            mainSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            if (submitBtnText) submitBtnText.textContent = "{% translate 'SELECT EXERCISES' %}";
+            
+            if (createSupersetBtn) {
+                createSupersetBtn.disabled = true;
+                createSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                if (supersetBtnText) supersetBtnText.textContent = "{% translate 'CREA SUPERSET' %}";
+            }
+        } else if (totalSelected === 1) {
+            mainSubmitBtn.disabled = false;
+            mainSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (submitBtnText) submitBtnText.textContent = "{% translate 'AGGIUNGI ESERCIZIO' %} (1)";
+
+            if (createSupersetBtn) {
+                createSupersetBtn.disabled = true;
+                createSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                if (supersetBtnText) supersetBtnText.textContent = "{% translate 'CREA SUPERSET' %}";
+            }
         } else {
-            addToSupersetBtn.disabled = true;
-            addToSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            mainSubmitBtn.disabled = false;
+            mainSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (submitBtnText) submitBtnText.textContent = `{% translate 'AGGIUNGI ESERCIZI' %} (${totalSelected})`;
+
+            if (createSupersetBtn) {
+                createSupersetBtn.disabled = false;
+                createSupersetBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (supersetBtnText) supersetBtnText.textContent = `{% translate 'CREA SUPERSET' %} (${totalSelected})`;
+            }
         }
 
         document.querySelectorAll('.exercise-item').forEach(item => {
-            const id = parseInt(item.dataset.id);
+            const id = String(item.dataset.id);
             const indicator = item.querySelector('.selected-indicator');
-            const inSupersetIdx = selectedExercises.findIndex(ex => ex.id === id);
-            const isActive = activeSelection && activeSelection.id === id;
+            const selectedIdx = selectedExercises.findIndex(ex => String(ex.id) === id);
 
-            if (isActive) {
+            if (selectedIdx !== -1) {
                 item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
-                item.classList.add('border-[#caf300]', 'bg-[#caf300]/10');
+                item.classList.add('border-[#caf300]', 'bg-[#caf300]/10', 'shadow-sm', 'shadow-[#caf300]/10');
                 if (indicator) {
-                    const nextLetter = String.fromCharCode(65 + selectedExercises.length);
-                    indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${nextLetter}</span>`;
-                }
-            } else if (inSupersetIdx !== -1) {
-                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
-                item.classList.add('border-[#caf300]/40', 'bg-[#caf300]/5');
-                if (indicator) {
-                    const letter = String.fromCharCode(65 + inSupersetIdx);
-                    indicator.innerHTML = `<span class="bg-zinc-800 text-[#caf300] text-xs font-bold w-5 h-5 rounded border border-[#caf300]/30 flex items-center justify-center">${letter}</span>`;
+                    if (selectedExercises.length > 1) {
+                        indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-xs font-black w-6 h-6 rounded-lg flex items-center justify-center">${selectedIdx + 1}</span>`;
+                    } else {
+                        indicator.innerHTML = `<span class="material-symbols-outlined text-2xl text-[#caf300]" style="font-variation-settings: 'FILL' 1;">check_circle</span>`;
+                    }
                 }
             } else {
-                item.classList.remove('border-[#caf300]', 'border-[#caf300]/40', 'bg-[#caf300]/10', 'bg-[#caf300]/5');
+                item.classList.remove('border-[#caf300]', 'border-[#caf300]/40', 'bg-[#caf300]/10', 'bg-[#caf300]/5', 'shadow-sm', 'shadow-[#caf300]/10');
                 item.classList.add('border-white/[0.04]', 'bg-[#18181a]');
                 if (indicator) {
-                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl text-zinc-600 group-hover:text-[#caf300]">radio_button_unchecked</span>`;
+                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl text-zinc-600 group-hover:text-[#caf300] transition-colors">radio_button_unchecked</span>`;
                 }
             }
         });
@@ -760,14 +784,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = String(item.dataset.id);
         const name = item.dataset.name || '';
 
-        if (selectedExercises.some(ex => String(ex.id) === id)) {
-            return;
-        }
-
-        if (activeSelection && String(activeSelection.id) === id) {
-            activeSelection = null;
+        const existingIndex = selectedExercises.findIndex(ex => String(ex.id) === id);
+        if (existingIndex !== -1) {
+            // Toggle selection OFF
+            selectedExercises.splice(existingIndex, 1);
         } else {
-            activeSelection = { id: id, name: name };
+            // Toggle selection ON
+            selectedExercises.push({ id: id, name: name });
         }
         syncUI();
     }
@@ -776,117 +799,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const idStr = String(id);
         selectedExercises = selectedExercises.filter(ex => String(ex.id) !== idStr);
         syncUI();
-    }
-
-    function syncUI() {
-        const supersetContainer = document.getElementById('superset-container');
-        const supersetList = document.getElementById('superset-list');
-        const hiddenInputs = document.getElementById('hidden-exercises-inputs');
-        const mainSubmitBtn = document.getElementById('submit-btn');
-        const submitBtnText = document.getElementById('submit-btn-text');
-        const addToSupersetBtn = document.getElementById('add-to-superset-btn');
-
-        if (!hiddenInputs || !supersetList || !mainSubmitBtn || !addToSupersetBtn) return;
-
-        hiddenInputs.innerHTML = '';
-        supersetList.innerHTML = '';
-
-        selectedExercises.forEach((ex, idx) => {
-            const letter = String.fromCharCode(65 + idx);
-
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'exercise';
-            input.value = ex.id;
-            hiddenInputs.appendChild(input);
-
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2.5 bg-[#18181a] border border-[#caf300]/30 rounded-lg';
-            row.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${letter}</span>
-                    <span class="text-sm font-bold text-white">${ex.name}</span>
-                </div>
-                <button type="button" class="remove-btn text-zinc-400 hover:text-red-400 flex items-center p-1" data-id="${ex.id}">
-                    <span class="material-symbols-outlined text-base">close</span>
-                </button>
-            `;
-            
-            row.querySelector('.remove-btn').addEventListener('click', function(e) {
-                e.stopPropagation();
-                removeExercise(ex.id);
-            });
-            
-            supersetList.appendChild(row);
-        });
-
-        if (activeSelection) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'exercise';
-            input.value = activeSelection.id;
-            hiddenInputs.appendChild(input);
-        }
-
-        if (selectedExercises.length > 0) {
-            supersetContainer.classList.remove('hidden');
-            supersetContainer.classList.add('flex');
-        } else {
-            supersetContainer.classList.remove('flex');
-            supersetContainer.classList.add('hidden');
-        }
-
-        const totalSelected = selectedExercises.length + (activeSelection ? 1 : 0);
-        if (totalSelected === 0) {
-            mainSubmitBtn.disabled = true;
-            mainSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
-        } else {
-            mainSubmitBtn.disabled = false;
-            mainSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            if (selectedExercises.length > 0 || totalSelected > 1) {
-                submitBtnText.textContent = `{% translate 'ADD SUPERSET' %} (${totalSelected})`;
-            } else {
-                submitBtnText.textContent = "{% translate 'ADD EXERCISE' %}";
-            }
-        }
-
-        if (activeSelection) {
-            addToSupersetBtn.disabled = false;
-            addToSupersetBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        } else {
-            addToSupersetBtn.disabled = true;
-            addToSupersetBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-
-        document.querySelectorAll('.exercise-item').forEach(item => {
-            const id = String(item.dataset.id);
-            const indicator = item.querySelector('.selected-indicator');
-            const inSupersetIdx = selectedExercises.findIndex(ex => String(ex.id) === id);
-            const isActive = activeSelection && String(activeSelection.id) === id;
-
-            if (isActive) {
-                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
-                item.classList.add('border-[#caf300]', 'bg-[#caf300]/10');
-                if (indicator) {
-                    const nextLetter = String.fromCharCode(65 + selectedExercises.length);
-                    indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-xs font-bold w-5 h-5 rounded flex items-center justify-center">${nextLetter}</span>`;
-                }
-            } else if (inSupersetIdx !== -1) {
-                item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
-                item.classList.add('border-[#caf300]/40', 'bg-[#caf300]/5');
-                if (indicator) {
-                    const letter = String.fromCharCode(65 + inSupersetIdx);
-                    indicator.innerHTML = `<span class="bg-zinc-800 text-[#caf300] text-xs font-bold w-5 h-5 rounded border border-[#caf300]/30 flex items-center justify-center">${letter}</span>`;
-                }
-            } else {
-                item.classList.remove('border-[#caf300]', 'border-[#caf300]/40', 'bg-[#caf300]/10', 'bg-[#caf300]/5');
-                item.classList.add('border-white/[0.04]', 'bg-[#18181a]');
-                if (indicator) {
-                    indicator.innerHTML = `<span class="material-symbols-outlined text-xl text-zinc-600 group-hover:text-[#caf300]">radio_button_unchecked</span>`;
-                }
-            }
-        });
     }
 
     // Event delegation on container for instant click capture on any item
@@ -900,14 +812,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.getElementById('add-to-superset-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        if (activeSelection) {
-            selectedExercises.push(activeSelection);
-            activeSelection = null;
-            syncUI();
-        }
-    });
+    const mainForm = document.querySelector('form');
+    const isSupersetInput = document.getElementById('is-superset-input');
+    const createSupersetBtn = document.getElementById('create-superset-btn');
+
+    if (createSupersetBtn) {
+        createSupersetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (selectedExercises.length > 1 && isSupersetInput && mainForm) {
+                isSupersetInput.value = 'true';
+                mainForm.submit();
+            }
+        });
+    }
 
     const modal = document.getElementById('custom-exercise-modal');
     const openBtn = document.getElementById('open-custom-modal-btn');
@@ -1082,12 +999,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken') || ''
                 }
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response failed');
+                    return response.json().then(errData => {
+                        throw new Error(errData.message || 'Server error');
+                    }).catch(() => {
+                        throw new Error('Network response failed');
+                    });
                 }
                 return response.json();
             })
@@ -1098,21 +1020,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     newItem.setAttribute('data-id', data.id);
                     newItem.setAttribute('data-name', data.name);
                     newItem.setAttribute('data-muscles', data.muscles || '');
+                    newItem.setAttribute('data-equipment', data.equipment || '');
+                    newItem.setAttribute('data-category', data.category || 'Calisthenics');
+                    newItem.setAttribute('data-calisthenics', data.is_calisthenics ? 'true' : 'false');
                     newItem.setAttribute('data-skill', data.skill_family || '');
+                    const searchBlob = `${data.name} ${data.skill_family || ''} ${data.muscles || ''} ${data.equipment || ''} ${data.category || ''}`.toLowerCase();
+                    newItem.setAttribute('data-search-blob', searchBlob);
                     
                     newItem.innerHTML = `
                         <div class="flex items-center gap-3.5 min-w-0 flex-1">
                             <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] flex items-center justify-center">
                                 <span class="material-symbols-outlined text-zinc-500 text-lg">fitness_center</span>
                             </div>
-                            <div class="flex flex-col min-w-0 flex-1 py-0.5 justify-center">
+                            <div class="flex min-w-0 flex-1 items-center">
                                 <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">${data.name}</span>
-                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
-                                    <span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/20 truncate">
-                                        ${data.muscles || "{% translate 'Custom' %}"}
-                                    </span>
-                                    ${data.skill_family && data.skill_family !== 'Other' ? `<span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-white/[0.04]">${data.skill_family}</span>` : ''}
-                                </div>
                             </div>
                         </div>
                         <div class="selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3">
@@ -1124,16 +1045,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         exerciseListContainer.insertBefore(newItem, exerciseListContainer.firstChild);
                     }
 
-                    newItem.addEventListener('click', function() {
-                        selectItem(newItem);
-                    });
-
                     selectItem(newItem);
                     closeModal();
                 }
             })
             .catch(error => {
                 console.error('Error saving custom exercise:', error);
+                alert('Errore durante il salvataggio dell\'esercizio: ' + error.message);
             });
         });
     }
