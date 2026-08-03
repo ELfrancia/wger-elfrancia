@@ -55,46 +55,44 @@
     </div>
 </div>
 
-<!-- BottomNavBar (Mobile & Desktop Unified) -->
-<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#101114] border-t border-[#222429] shadow-[0_-8px_30px_rgba(0,0,0,0.6)] pb-[env(safe-area-inset-bottom)]">
-    <div class="w-full max-w-5xl mx-auto grid grid-cols-5 items-center h-[84px] px-2 sm:px-4">
+<!-- BottomNavBar (Mobile & Desktop Unified Floating Dock - Instagram Style) -->
+<nav class="fixed bottom-[17px] sm:bottom-[25px] left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md mb-[env(safe-area-inset-bottom)]">
+    <div class="bg-[#121316]/95 backdrop-blur-xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.85)] rounded-full px-2 sm:px-3 py-1.5 grid grid-cols-5 items-center h-[68px]">
         <!-- Home (Col 1) -->
-        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" {% if request.resolver_match.view_name == 'core:dashboard' %}style="font-variation-settings: 'FILL' 1;"{% endif %}>home</span>
-            <span class="text-[10px] font-semibold tracking-wide">{% translate "Home" %}</span>
+        <a class="flex flex-col items-center justify-center py-1 px-2 rounded-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}bg-white/10 text-[#caf300] font-bold shadow-inner scale-[1.02]{% else %}text-[#8e8e93] hover:text-white hover:bg-white/5{% endif %}" href="{% url 'core:dashboard' %}">
+            <span class="material-symbols-outlined text-xl mb-0.5" {% if request.resolver_match.view_name == 'core:dashboard' %}style="font-variation-settings: 'FILL' 1;"{% endif %}>home</span>
+            <span class="text-[9px] font-bold tracking-tight leading-none">{% translate "Home" %}</span>
         </a>
 
         <!-- Routines (Col 2) -->
-        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if 'manager:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'manager:routine:overview' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" {% if 'manager:' in request.resolver_match.view_name %}style="font-variation-settings: 'FILL' 1;"{% endif %}>fitness_center</span>
-            <span class="text-[10px] font-semibold tracking-wide">{% translate "Programmi" %}</span>
+        <a class="flex flex-col items-center justify-center py-1 px-2 rounded-full transition-all duration-200 {% if 'manager:' in request.resolver_match.view_name %}bg-white/10 text-[#caf300] font-bold shadow-inner scale-[1.02]{% else %}text-[#8e8e93] hover:text-white hover:bg-white/5{% endif %}" href="{% url 'manager:routine:overview' %}">
+            <span class="material-symbols-outlined text-xl mb-0.5" {% if 'manager:' in request.resolver_match.view_name %}style="font-variation-settings: 'FILL' 1;"{% endif %}>fitness_center</span>
+            <span class="text-[9px] font-bold tracking-tight leading-none">{% translate "Programmi" %}</span>
         </a>
 
-        <!-- Add Button (Col 3: Integrated Dock FAB Button) -->
-        <div class="flex items-center justify-center h-full relative">
-            <div class="w-[60px] h-[60px] -mt-6 rounded-full bg-[#101114] border border-[#222429] p-1 flex items-center justify-center relative z-10">
-                <button onclick="toggleQuickActionMenu()" id="onyx-fab-button" class="w-full h-full rounded-full bg-[#caf300] text-[#08090A] flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200" title="{% translate 'Azioni Rapide' %}">
-                    <span id="onyx-fab-icon" class="material-symbols-outlined text-2xl font-black transition-transform duration-300 select-none" style="font-variation-settings: 'wght' 700;">add</span>
-                </button>
-            </div>
+        <!-- Add Button (Col 3: Integrated FAB Button) -->
+        <div class="flex items-center justify-center h-full">
+            <button onclick="toggleQuickActionMenu()" id="onyx-fab-button" class="w-11 h-11 rounded-full bg-[#caf300] text-[#08090A] flex items-center justify-center shadow-[0_0_15px_rgba(202,243,0,0.35)] hover:scale-105 active:scale-95 transition-all duration-200" title="{% translate 'Azioni Rapide' %}">
+                <span id="onyx-fab-icon" class="material-symbols-outlined text-2xl font-black transition-transform duration-300 select-none" style="font-variation-settings: 'wght' 700;">add</span>
+            </button>
         </div>
 
         <!-- Daily Workouts (Col 4) -->
-        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if 'weight:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'weight:overview' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" {% if 'weight:' in request.resolver_match.view_name %}style="font-variation-settings: 'FILL' 1;"{% endif %}>analytics</span>
-            <span class="text-[10px] font-semibold tracking-wide">{% translate "Allenamenti" %}</span>
+        <a class="flex flex-col items-center justify-center py-1 px-2 rounded-full transition-all duration-200 {% if 'weight:' in request.resolver_match.view_name %}bg-white/10 text-[#caf300] font-bold shadow-inner scale-[1.02]{% else %}text-[#8e8e93] hover:text-white hover:bg-white/5{% endif %}" href="{% url 'weight:overview' %}">
+            <span class="material-symbols-outlined text-xl mb-0.5" {% if 'weight:' in request.resolver_match.view_name %}style="font-variation-settings: 'FILL' 1;"{% endif %}>analytics</span>
+            <span class="text-[9px] font-bold tracking-tight leading-none">{% translate "Allenamenti" %}</span>
         </a>
 
         <!-- Profile (Col 5) -->
-        <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:profile_tailwind' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:profile_tailwind' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" {% if request.resolver_match.view_name == 'core:profile_tailwind' %}style="font-variation-settings: 'FILL' 1;"{% endif %}>person</span>
-            <span class="text-[10px] font-semibold tracking-wide">{% translate "Profile" %}</span>
+        <a class="flex flex-col items-center justify-center py-1 px-2 rounded-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:profile_tailwind' %}bg-white/10 text-[#caf300] font-bold shadow-inner scale-[1.02]{% else %}text-[#8e8e93] hover:text-white hover:bg-white/5{% endif %}" href="{% url 'core:profile_tailwind' %}">
+            <span class="material-symbols-outlined text-xl mb-0.5" {% if request.resolver_match.view_name == 'core:profile_tailwind' %}style="font-variation-settings: 'FILL' 1;"{% endif %}>person</span>
+            <span class="text-[9px] font-bold tracking-tight leading-none">{% translate "Profile" %}</span>
         </a>
     </div>
 </nav>
 
-<!-- Global Floating Mini Timer Bubble (Above Bottom Navigation Bar) -->
-<div id="global-mini-timer-bubble" onclick="openGlobalTimerOptionsModal()" class="fixed bottom-[96px] left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-40 bg-[#121316]/95 border-2 border-[#caf300]/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none select-none min-h-[52px]" title="{% translate 'Opzioni Timer / Workout' %}">
+<!-- Global Floating Mini Timer Bubble (Above Floating Navigation Dock) -->
+<div id="global-mini-timer-bubble" onclick="openGlobalTimerOptionsModal()" class="fixed bottom-[99px] left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-40 bg-[#121316]/95 border-2 border-[#caf300]/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none select-none min-h-[52px]" title="{% translate 'Opzioni Timer / Workout' %}">
     <div id="global-mini-timer-dot" class="w-3 h-3 rounded-full bg-[#caf300] animate-pulse shadow-[0_0_10px_#caf300]"></div>
     <span id="global-mini-timer-icon" class="material-symbols-outlined text-[#caf300] text-xl">timer</span>
     <span id="global-mini-timer-display" class="font-display text-base font-black text-white tracking-tight tabular-nums">00:45</span>
@@ -160,6 +158,10 @@
     </div>
 </div>
 
+{% if active_draft_session and active_draft_session.routine and active_draft_session.day %}
+    {% url 'manager:day:overview' active_draft_session.routine.pk active_draft_session.day.pk as active_session_url %}
+{% endif %}
+
 <script>
     function toggleQuickActionMenu() {
         const overlay = document.getElementById('onyx-quick-action-overlay');
@@ -216,10 +218,6 @@
             }, 250);
         }
     }
-
-{% if active_draft_session and active_draft_session.routine and active_draft_session.day %}
-    {% url 'manager:day:overview' active_draft_session.routine.pk active_draft_session.day.pk as active_session_url %}
-{% endif %}
 
     function getActiveWorkoutUrl() {
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
@@ -383,7 +381,7 @@
                         const elapsed = Date.now() - state.startedAt;
                         msLeft = Math.max(0, state.remainingMs - elapsed);
                     }
-                    if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
+                    if (state.isRunning || (state.hasNotifiedZero && msLeft <= 0)) {
                         hasActiveRestTimer = true;
                     }
                 }
@@ -393,7 +391,10 @@
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
         const hasActiveWorkout = Boolean(serverActiveUrl);
 
-        if (!hasActiveRestTimer && !hasActiveWorkout) {
+        const localMiniTimer = document.getElementById('mini-timer-overlay');
+        const isLocalTimerVisible = localMiniTimer && !localMiniTimer.classList.contains('hidden') && !localMiniTimer.classList.contains('opacity-0');
+
+        if (isLocalTimerVisible || (!hasActiveRestTimer && !hasActiveWorkout)) {
             bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
             bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             return;

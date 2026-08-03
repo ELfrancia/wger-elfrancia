@@ -467,8 +467,8 @@
     </div>
 </div>
 
-<!-- Floating Mini Timer Overlay -->
-<div id="mini-timer-overlay" class="fixed bottom-6 right-4 sm:right-6 z-40 bg-[#121316]/95 border border-[#caf300]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md rounded-full px-4 py-2.5 flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+<!-- Floating Mini Timer Overlay (Positioned above floating navigation dock) -->
+<div id="mini-timer-overlay" class="fixed bottom-[99px] left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-40 bg-[#121316]/95 border border-[#caf300]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md rounded-full px-4 py-2.5 flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
     <!-- Clickable timer display section -->
     <button type="button" onclick="openGlobalTimerOptionsModal()" class="flex items-center gap-2 group cursor-pointer" title="{% translate 'Opzioni Timer' %}">
         <span id="mini-timer-icon" class="material-symbols-outlined text-[#caf300] text-lg group-hover:scale-110 transition-transform">timer</span>
