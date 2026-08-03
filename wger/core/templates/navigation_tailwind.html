@@ -60,16 +60,16 @@
     <div class="w-full max-w-5xl mx-auto grid grid-cols-5 items-center h-[84px] px-2 sm:px-4">
         <!-- Home (Col 1) -->
         <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:dashboard' %}1{% else %}0{% endif %};">home</span>
+            <span class="material-symbols-outlined text-2xl mb-0.5" {% if request.resolver_match.view_name == 'core:dashboard' %}style="font-variation-settings: 'FILL' 1;"{% endif %}>home</span>
             <span class="text-[10px] font-semibold tracking-wide">{% translate "Home" %}</span>
         </a>
-        
+
         <!-- Routines (Col 2) -->
         <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if 'manager:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'manager:routine:overview' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'manager:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">fitness_center</span>
+            <span class="material-symbols-outlined text-2xl mb-0.5" {% if 'manager:' in request.resolver_match.view_name %}style="font-variation-settings: 'FILL' 1;"{% endif %}>fitness_center</span>
             <span class="text-[10px] font-semibold tracking-wide">{% translate "Programmi" %}</span>
         </a>
-        
+
         <!-- Add Button (Col 3: Integrated Dock FAB Button) -->
         <div class="flex items-center justify-center h-full relative">
             <div class="w-[60px] h-[60px] -mt-6 rounded-full bg-[#101114] border border-[#222429] p-1 flex items-center justify-center relative z-10">
@@ -78,16 +78,16 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Daily Workouts (Col 4) -->
         <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if 'weight:' in request.resolver_match.view_name %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'weight:overview' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if 'weight:' in request.resolver_match.view_name %}1{% else %}0{% endif %};">analytics</span>
+            <span class="material-symbols-outlined text-2xl mb-0.5" {% if 'weight:' in request.resolver_match.view_name %}style="font-variation-settings: 'FILL' 1;"{% endif %}>analytics</span>
             <span class="text-[10px] font-semibold tracking-wide">{% translate "Allenamenti" %}</span>
         </a>
-        
+
         <!-- Profile (Col 5) -->
         <a class="flex flex-col items-center justify-center h-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:profile_tailwind' %}text-[#caf300]{% else %}text-[#8e8e93] hover:text-white{% endif %}" href="{% url 'core:profile_tailwind' %}">
-            <span class="material-symbols-outlined text-2xl mb-0.5" style="font-variation-settings: 'FILL' {% if request.resolver_match.view_name == 'core:profile_tailwind' %}1{% else %}0{% endif %};">person</span>
+            <span class="material-symbols-outlined text-2xl mb-0.5" {% if request.resolver_match.view_name == 'core:profile_tailwind' %}style="font-variation-settings: 'FILL' 1;"{% endif %}>person</span>
             <span class="text-[10px] font-semibold tracking-wide">{% translate "Profile" %}</span>
         </a>
     </div>
@@ -108,7 +108,7 @@
 </div>
 
 <!-- Global Timer Navigation Options Modal -->
-<div id="global-timer-options-modal" onclick="closeGlobalTimerOptionsModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
+<div id="global-timer-options-modal" onclick="closeGlobalTimerOptionsModal()" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
     <div id="global-timer-options-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
         <!-- Header -->
         <div class="flex justify-between items-center px-5 py-4 border-b border-white/10 bg-[#16171A]">
@@ -129,31 +129,30 @@
         <!-- Body Options -->
         <div class="p-5 flex flex-col gap-3 bg-[#121316]">
             <p class="text-xs text-zinc-400 font-medium">{% translate "Seleziona dove vuoi andare:" %}</p>
-            
             <!-- Option 1: Torna alla schermata del timer -->
-            <button type="button" onclick="navigateToTimerScreen()" class="w-full p-4 rounded-2xl bg-[#caf300]/10 border border-[#caf300]/40 hover:bg-[#caf300] hover:text-[#08090A] text-white transition-all duration-200 group text-left flex items-center gap-3.5 shadow-sm cursor-pointer">
-                <div class="w-10 h-10 rounded-xl bg-[#caf300] text-[#08090A] flex items-center justify-center group-hover:bg-[#08090A] group-hover:text-[#caf300] transition-colors flex-shrink-0 pointer-events-none">
+            <button type="button" onclick="navigateToTimerScreen(); event.stopPropagation();" class="w-full p-4 rounded-2xl bg-[#caf300]/10 border border-[#caf300]/40 hover:bg-[#caf300] hover:text-[#08090A] text-white transition-all duration-200 group text-left flex items-center gap-3.5 shadow-sm cursor-pointer active:scale-[0.98]">
+                <div class="w-10 h-10 rounded-xl bg-[#caf300] text-[#08090A] flex items-center justify-center group-hover:bg-[#08090A] group-hover:text-[#caf300] transition-colors flex-shrink-0">
                     <span class="material-symbols-outlined text-xl">fullscreen</span>
                 </div>
-                <div class="flex flex-col pointer-events-none">
+                <div class="flex flex-col">
                     <span class="text-xs font-black uppercase tracking-wider group-hover:text-[#08090A] transition-colors">{% translate "Torna alla schermata del timer" %}</span>
                     <span class="text-[10px] text-zinc-400 group-hover:text-zinc-800 transition-colors">{% translate "Apri il timer di recupero a schermo intero" %}</span>
                 </div>
             </button>
 
             <!-- Option 2: Torna alla schermata del workout in corso -->
-            <button type="button" onclick="navigateToWorkoutScreen()" class="w-full p-4 rounded-2xl bg-[#16171A] border border-white/10 hover:border-[#caf300]/50 hover:bg-white/5 text-white transition-all duration-200 group text-left flex items-center gap-3.5 cursor-pointer">
-                <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-[#caf300] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors flex-shrink-0 pointer-events-none">
+            <button type="button" onclick="navigateToWorkoutScreen(); event.stopPropagation();" class="w-full p-4 rounded-2xl bg-[#16171A] border border-white/10 hover:border-[#caf300]/50 hover:bg-white/5 text-white transition-all duration-200 group text-left flex items-center gap-3.5 cursor-pointer active:scale-[0.98]">
+                <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-[#caf300] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors flex-shrink-0">
                     <span class="material-symbols-outlined text-xl">fitness_center</span>
                 </div>
-                <div class="flex flex-col pointer-events-none">
+                <div class="flex flex-col">
                     <span class="text-xs font-black uppercase tracking-wider group-hover:text-[#caf300] transition-colors">{% translate "Torna alla schermata del workout in corso" %}</span>
                     <span class="text-[10px] text-zinc-400 transition-colors">{% translate "Torna alla lista esercizi della scheda" %}</span>
                 </div>
             </button>
 
             <!-- Option 3: Termina / Chiudi Timer -->
-            <button id="global-timer-modal-option3" type="button" onclick="handleGlobalTimerModalOption3()" class="w-full p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-200 text-center flex items-center justify-center gap-2 cursor-pointer font-extrabold text-xs uppercase tracking-wider">
+            <button id="global-timer-modal-option3" type="button" onclick="handleGlobalTimerModalOption3(); event.stopPropagation();" class="w-full p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-200 text-center flex items-center justify-center gap-2 cursor-pointer font-extrabold text-xs uppercase tracking-wider">
                 <span id="global-timer-modal-option3-icon" class="material-symbols-outlined text-base">stop</span>
                 <span id="global-timer-modal-option3-text">{% translate "Termina Recupero" %}</span>
             </button>
@@ -166,9 +165,9 @@
         const overlay = document.getElementById('onyx-quick-action-overlay');
         const sheet = document.getElementById('onyx-quick-action-sheet');
         const icon = document.getElementById('onyx-fab-icon');
-        
+
         if (!overlay || !sheet || !icon) return;
-        
+
         const isOpen = !overlay.classList.contains('opacity-0');
         
         if (isOpen) {
@@ -218,87 +217,99 @@
         }
     }
 
+{% if active_draft_session and active_draft_session.routine and active_draft_session.day %}
+    {% url 'manager:day:overview' active_draft_session.routine.pk active_draft_session.day.pk as active_session_url %}
+{% endif %}
+
     function getActiveWorkoutUrl() {
-        let url = null;
-        try {
-            const raw = localStorage.getItem('onyx_active_rest_timer');
-            if (raw) {
-                const data = JSON.parse(raw);
-                if (data && data.workoutUrl && data.workoutUrl !== '/' && !data.workoutUrl.includes('/dashboard')) {
-                    url = data.workoutUrl;
-                }
-            }
-        } catch(e) {}
-        
-        if (!url) {
-            const stored = localStorage.getItem('onyx_active_workout_url') || sessionStorage.getItem('onyx_active_workout_url');
-            if (stored && stored !== '/' && !stored.includes('/dashboard')) {
-                url = stored;
-            }
-        }
-        
-        if (!url) {
-            const activeLink = document.querySelector('a[href*="/add-logs"], a[href*="/manager/workout/"], a[href*="/session/"], a[href*="/log/"], a[href*="/day/"]');
-            if (activeLink) url = activeLink.getAttribute('href');
+        const serverActiveUrl = "{{ active_session_url|default:'' }}";
+        if (serverActiveUrl) {
+            return serverActiveUrl;
         }
 
-        if (!url && window.location.pathname.includes('/add-logs')) {
-            url = window.location.pathname;
-        }
+        return "{% url 'manager:routine:overview' %}";
+    }
 
-        if (!url || url.includes('/dashboard')) {
-            url = "{% url 'manager:routine:overview' %}";
-        }
+    function isCurrentActiveWorkoutPage() {
+        const serverActiveUrl = "{{ active_session_url|default:'' }}";
+        if (!serverActiveUrl) return false;
 
-        return url.replace(/[\?&]open_timer=true/, '').replace(/^&/, '?');
+        return window.location.pathname === new URL(serverActiveUrl, window.location.origin).pathname;
     }
 
     function navigateToTimerScreen() {
         closeGlobalTimerOptionsModal(true);
-        const workoutUrl = getActiveWorkoutUrl();
-        const isOnWorkoutPage = typeof window.openOverlay === 'function' || !!document.getElementById('rest-timer-overlay');
 
-        if (isOnWorkoutPage) {
-            if (typeof window.openOverlay === 'function') {
+        const workoutUrl = getActiveWorkoutUrl();
+        const cleanUrl = workoutUrl.split('#')[0];
+        const overlay = document.getElementById('rest-timer-overlay');
+        const hasOverlay = !!overlay;
+        const hasOpenOverlayFn = typeof window.openOverlay === 'function';
+        const isCurrentActiveWorkout = isCurrentActiveWorkoutPage();
+
+        if (isCurrentActiveWorkout && (hasOverlay || hasOpenOverlayFn)) {
+            if (hasOpenOverlayFn) {
                 window.openOverlay();
-            } else if (document.getElementById('rest-timer-overlay')) {
-                document.getElementById('rest-timer-overlay').classList.remove('hidden');
+            } else if (overlay) {
+                overlay.classList.remove('hidden');
             }
-        } else {
-            sessionStorage.setItem('open_timer_overlay', 'true');
-            const cleanUrl = workoutUrl.split('#')[0];
-            const separator = cleanUrl.includes('?') ? '&' : '?';
-            const targetUrl = cleanUrl + separator + 'open_timer=true#rest-timer';
-            window.location.assign(targetUrl);
+            if (!window.location.hash.includes('rest-timer')) {
+                window.history.replaceState({}, '', window.location.pathname + window.location.search + '#rest-timer');
+            }
+            return;
         }
+
+        sessionStorage.setItem('open_timer_overlay', 'true');
+        const separator = cleanUrl.includes('?') ? '&' : '?';
+        const targetUrl = cleanUrl + separator + 'open_timer=true#rest-timer';
+
+        window.location.href = targetUrl;
     }
 
     function navigateToWorkoutScreen() {
         closeGlobalTimerOptionsModal(true);
-        const workoutUrl = getActiveWorkoutUrl();
-        const isOnWorkoutPage = typeof window.closeOverlay === 'function' || !!document.getElementById('rest-timer-overlay');
 
-        if (isOnWorkoutPage) {
-            if (typeof window.closeOverlay === 'function') {
+        const workoutUrl = getActiveWorkoutUrl();
+        const cleanUrl = workoutUrl.split('#')[0];
+        const overlay = document.getElementById('rest-timer-overlay');
+        const hasOverlay = !!overlay;
+        const hasCloseOverlayFn = typeof window.closeOverlay === 'function';
+        const isCurrentActiveWorkout = isCurrentActiveWorkoutPage();
+
+        if (isCurrentActiveWorkout && (hasOverlay || hasCloseOverlayFn)) {
+            if (hasCloseOverlayFn) {
                 window.closeOverlay();
-            } else if (document.getElementById('rest-timer-overlay')) {
-                document.getElementById('rest-timer-overlay').classList.add('hidden');
+            } else if (overlay) {
+                overlay.classList.add('hidden');
             }
-            if (window.location.search.includes('open_timer=true')) {
+            sessionStorage.removeItem('open_timer_overlay');
+            if (window.location.search.includes('open_timer=true') || window.location.hash.includes('rest-timer')) {
                 const cleanQuery = window.location.search.replace(/[\?&]open_timer=true/, '').replace(/^&/, '?');
-                const cleanLocation = window.location.pathname + cleanQuery + window.location.hash;
+                const cleanLocation = window.location.pathname + cleanQuery;
                 window.history.replaceState({}, '', cleanLocation);
             }
             setTimeout(() => {
-                const target = document.getElementById('active-exercises-heading') || document.querySelector('.exercise-group') || document.querySelector('main');
+                const target = document.querySelector('.exercise-group') || document.querySelector('main');
                 if (target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }, 50);
+            return;
+        }
+
+        sessionStorage.removeItem('open_timer_overlay');
+
+        if (window.location.pathname === cleanUrl.split('?')[0]) {
+            if (window.location.search.includes('open_timer=true') || window.location.hash.includes('rest-timer')) {
+                const cleanQuery = window.location.search.replace(/[\?&]open_timer=true/, '').replace(/^&/, '?');
+                window.history.replaceState({}, '', window.location.pathname + cleanQuery);
+            }
+            const target = document.querySelector('.exercise-group') || document.querySelector('main');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         } else {
-            sessionStorage.removeItem('open_timer_overlay');
-            const cleanUrl = workoutUrl.split('#')[0];
-            window.location.assign(cleanUrl + '#active-exercises-heading');
+            window.location.href = cleanUrl;
         }
     }
 
@@ -313,18 +324,12 @@
         }
 
         try {
-            const raw = localStorage.getItem('onyx_active_rest_timer');
-            if (raw) {
-                const data = JSON.parse(raw);
-                if (data && data.workoutUrl && data.workoutUrl !== '/' && !data.workoutUrl.includes('/dashboard')) {
-                    localStorage.setItem('onyx_active_workout_url', data.workoutUrl);
-                    sessionStorage.setItem('onyx_active_workout_url', data.workoutUrl);
-                }
-            }
             localStorage.removeItem('onyx_active_rest_timer');
         } catch(e) {}
 
-        if (typeof stopTimer === 'function') {
+        if (typeof window.stopTimer === 'function') {
+            window.stopTimer();
+        } else if (typeof stopTimer === 'function') {
             stopTimer();
         }
 
@@ -336,10 +341,6 @@
         if (raw) {
             dismissGlobalRestTimer();
         } else {
-            try {
-                localStorage.removeItem('onyx_active_workout_url');
-                sessionStorage.removeItem('onyx_active_workout_url');
-            } catch(e) {}
             closeGlobalTimerOptionsModal();
             updateGlobalMiniTimer();
         }
@@ -385,28 +386,12 @@
                     if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
                         hasActiveRestTimer = true;
                     }
-                    if (state.workoutUrl && state.workoutUrl !== '/' && !state.workoutUrl.includes('/dashboard')) {
-                        try {
-                            localStorage.setItem('onyx_active_workout_url', state.workoutUrl);
-                            sessionStorage.setItem('onyx_active_workout_url', state.workoutUrl);
-                        } catch(e) {}
-                    }
                 }
             } catch(e) {}
         }
 
-        const storedWorkoutUrl = localStorage.getItem('onyx_active_workout_url') || sessionStorage.getItem('onyx_active_workout_url');
-        let hasActiveWorkout = false;
-        let workoutUrl = null;
-
-        if (state && state.workoutUrl && state.workoutUrl !== '/' && !state.workoutUrl.includes('/dashboard')) {
-            workoutUrl = state.workoutUrl;
-            hasActiveWorkout = true;
-        }
-        if (!hasActiveWorkout && storedWorkoutUrl && storedWorkoutUrl !== '/' && !storedWorkoutUrl.includes('/dashboard')) {
-            workoutUrl = storedWorkoutUrl;
-            hasActiveWorkout = true;
-        }
+        const serverActiveUrl = "{{ active_session_url|default:'' }}";
+        const hasActiveWorkout = Boolean(serverActiveUrl);
 
         if (!hasActiveRestTimer && !hasActiveWorkout) {
             bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
@@ -414,16 +399,8 @@
             return;
         }
 
-        const isWorkoutLogPage = typeof openOverlay === 'function';
-        const isOverlayOpen = document.getElementById('rest-timer-overlay') && !document.getElementById('rest-timer-overlay').classList.contains('hidden');
-
-        if (isWorkoutLogPage && (window.isInlineTimerVisible || isOverlayOpen)) {
-            bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
-            bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
-        } else {
-            bubble.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
-            bubble.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
-        }
+        bubble.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+        bubble.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
 
         if (hasActiveRestTimer) {
             const secLeft = Math.ceil(msLeft / 1000);
@@ -509,34 +486,3 @@
     setInterval(updateGlobalMiniTimer, 500);
     document.addEventListener('DOMContentLoaded', updateGlobalMiniTimer);
 </script>
-
-{% if active_draft_session and active_draft_session.routine and active_draft_session.day %}
-<script>
-    try {
-        const activeUrl = "{% url 'manager:day:overview' active_draft_session.routine.pk active_draft_session.day.pk %}";
-        localStorage.setItem('onyx_active_workout_url', activeUrl);
-        sessionStorage.setItem('onyx_active_workout_url', activeUrl);
-    } catch(e) {}
-</script>
-{% elif not day %}
-<script>
-    try {
-        localStorage.removeItem('onyx_active_workout_url');
-        sessionStorage.removeItem('onyx_active_workout_url');
-        localStorage.removeItem('onyx_active_rest_timer');
-        localStorage.removeItem('onyx_active_rest_timer_paused');
-    } catch(e) {}
-</script>
-{% endif %}
-
-{% if day and day.routine and day.pk %}
-<script>
-    try {
-        const currentWorkoutUrl = "{% url 'manager:day:overview' day.routine.pk day.pk %}";
-        localStorage.setItem('onyx_active_workout_url', currentWorkoutUrl);
-        sessionStorage.setItem('onyx_active_workout_url', currentWorkoutUrl);
-    } catch(e) {}
-</script>
-{% endif %}
-
-

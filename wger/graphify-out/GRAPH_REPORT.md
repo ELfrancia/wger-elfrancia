@@ -1,1997 +1,2072 @@
-# Graph Report - wger  (2026-07-15)
+# Graph Report - wger  (2026-08-03)
 
 ## Corpus Check
-- 728 files · ~577,969 words
+- 775 files · ~1,602,853 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6485 nodes · 10418 edges · 818 communities (462 shown, 356 thin omitted)
-- Extraction: 69% EXTRACTED · 31% INFERRED · 0% AMBIGUOUS · INFERRED: 3247 edges (avg confidence: 0.55)
+- 7424 nodes · 12514 edges · 723 communities (505 shown, 218 thin omitted)
+- Extraction: 72% EXTRACTED · 28% INFERRED · 0% AMBIGUOUS · INFERRED: 3471 edges (avg confidence: 0.57)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3c6ce4b7`
+- Built from commit: `877dfc43`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Community 0|Community 0]]
-- [[_COMMUNITY_Community 1|Community 1]]
-- [[_COMMUNITY_Community 2|Community 2]]
-- [[_COMMUNITY_Community 3|Community 3]]
-- [[_COMMUNITY_Community 4|Community 4]]
-- [[_COMMUNITY_Community 5|Community 5]]
-- [[_COMMUNITY_Community 6|Community 6]]
-- [[_COMMUNITY_Community 7|Community 7]]
-- [[_COMMUNITY_Community 8|Community 8]]
-- [[_COMMUNITY_Community 9|Community 9]]
-- [[_COMMUNITY_Community 10|Community 10]]
-- [[_COMMUNITY_Community 11|Community 11]]
-- [[_COMMUNITY_Community 12|Community 12]]
-- [[_COMMUNITY_Community 13|Community 13]]
-- [[_COMMUNITY_Community 14|Community 14]]
-- [[_COMMUNITY_Community 15|Community 15]]
-- [[_COMMUNITY_Community 16|Community 16]]
-- [[_COMMUNITY_Community 17|Community 17]]
-- [[_COMMUNITY_Community 18|Community 18]]
-- [[_COMMUNITY_Community 19|Community 19]]
-- [[_COMMUNITY_Community 20|Community 20]]
-- [[_COMMUNITY_Community 21|Community 21]]
-- [[_COMMUNITY_Community 22|Community 22]]
-- [[_COMMUNITY_Community 23|Community 23]]
-- [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 25|Community 25]]
-- [[_COMMUNITY_Community 26|Community 26]]
-- [[_COMMUNITY_Community 27|Community 27]]
-- [[_COMMUNITY_Community 28|Community 28]]
-- [[_COMMUNITY_Community 29|Community 29]]
-- [[_COMMUNITY_Community 30|Community 30]]
-- [[_COMMUNITY_Community 31|Community 31]]
-- [[_COMMUNITY_Community 32|Community 32]]
-- [[_COMMUNITY_Community 33|Community 33]]
-- [[_COMMUNITY_Community 34|Community 34]]
-- [[_COMMUNITY_Community 35|Community 35]]
-- [[_COMMUNITY_Community 36|Community 36]]
-- [[_COMMUNITY_Community 37|Community 37]]
-- [[_COMMUNITY_Community 38|Community 38]]
-- [[_COMMUNITY_Community 39|Community 39]]
-- [[_COMMUNITY_Community 40|Community 40]]
-- [[_COMMUNITY_Community 41|Community 41]]
-- [[_COMMUNITY_Community 42|Community 42]]
-- [[_COMMUNITY_Community 43|Community 43]]
-- [[_COMMUNITY_Community 44|Community 44]]
-- [[_COMMUNITY_Community 45|Community 45]]
-- [[_COMMUNITY_Community 46|Community 46]]
-- [[_COMMUNITY_Community 47|Community 47]]
-- [[_COMMUNITY_Community 48|Community 48]]
-- [[_COMMUNITY_Community 49|Community 49]]
-- [[_COMMUNITY_Community 50|Community 50]]
-- [[_COMMUNITY_Community 51|Community 51]]
-- [[_COMMUNITY_Community 52|Community 52]]
-- [[_COMMUNITY_Community 53|Community 53]]
-- [[_COMMUNITY_Community 54|Community 54]]
-- [[_COMMUNITY_Community 55|Community 55]]
-- [[_COMMUNITY_Community 56|Community 56]]
-- [[_COMMUNITY_Community 57|Community 57]]
-- [[_COMMUNITY_Community 58|Community 58]]
-- [[_COMMUNITY_Community 59|Community 59]]
-- [[_COMMUNITY_Community 60|Community 60]]
-- [[_COMMUNITY_Community 61|Community 61]]
-- [[_COMMUNITY_Community 62|Community 62]]
-- [[_COMMUNITY_Community 63|Community 63]]
-- [[_COMMUNITY_Community 64|Community 64]]
-- [[_COMMUNITY_Community 65|Community 65]]
-- [[_COMMUNITY_Community 66|Community 66]]
-- [[_COMMUNITY_Community 67|Community 67]]
-- [[_COMMUNITY_Community 68|Community 68]]
-- [[_COMMUNITY_Community 69|Community 69]]
-- [[_COMMUNITY_Community 70|Community 70]]
-- [[_COMMUNITY_Community 71|Community 71]]
-- [[_COMMUNITY_Community 72|Community 72]]
-- [[_COMMUNITY_Community 73|Community 73]]
-- [[_COMMUNITY_Community 74|Community 74]]
-- [[_COMMUNITY_Community 75|Community 75]]
-- [[_COMMUNITY_Community 76|Community 76]]
-- [[_COMMUNITY_Community 77|Community 77]]
-- [[_COMMUNITY_Community 78|Community 78]]
-- [[_COMMUNITY_Community 79|Community 79]]
-- [[_COMMUNITY_Community 80|Community 80]]
-- [[_COMMUNITY_Community 81|Community 81]]
-- [[_COMMUNITY_Community 82|Community 82]]
-- [[_COMMUNITY_Community 83|Community 83]]
-- [[_COMMUNITY_Community 84|Community 84]]
-- [[_COMMUNITY_Community 85|Community 85]]
-- [[_COMMUNITY_Community 86|Community 86]]
-- [[_COMMUNITY_Community 87|Community 87]]
-- [[_COMMUNITY_Community 88|Community 88]]
-- [[_COMMUNITY_Community 89|Community 89]]
-- [[_COMMUNITY_Community 90|Community 90]]
-- [[_COMMUNITY_Community 91|Community 91]]
-- [[_COMMUNITY_Community 92|Community 92]]
-- [[_COMMUNITY_Community 93|Community 93]]
-- [[_COMMUNITY_Community 94|Community 94]]
-- [[_COMMUNITY_Community 95|Community 95]]
-- [[_COMMUNITY_Community 96|Community 96]]
-- [[_COMMUNITY_Community 97|Community 97]]
-- [[_COMMUNITY_Community 98|Community 98]]
-- [[_COMMUNITY_Community 99|Community 99]]
-- [[_COMMUNITY_Community 100|Community 100]]
-- [[_COMMUNITY_Community 101|Community 101]]
-- [[_COMMUNITY_Community 102|Community 102]]
-- [[_COMMUNITY_Community 103|Community 103]]
-- [[_COMMUNITY_Community 104|Community 104]]
-- [[_COMMUNITY_Community 105|Community 105]]
-- [[_COMMUNITY_Community 106|Community 106]]
-- [[_COMMUNITY_Community 107|Community 107]]
-- [[_COMMUNITY_Community 108|Community 108]]
-- [[_COMMUNITY_Community 109|Community 109]]
-- [[_COMMUNITY_Community 110|Community 110]]
-- [[_COMMUNITY_Community 111|Community 111]]
-- [[_COMMUNITY_Community 112|Community 112]]
-- [[_COMMUNITY_Community 113|Community 113]]
-- [[_COMMUNITY_Community 114|Community 114]]
-- [[_COMMUNITY_Community 115|Community 115]]
-- [[_COMMUNITY_Community 116|Community 116]]
-- [[_COMMUNITY_Community 117|Community 117]]
-- [[_COMMUNITY_Community 118|Community 118]]
-- [[_COMMUNITY_Community 119|Community 119]]
-- [[_COMMUNITY_Community 120|Community 120]]
-- [[_COMMUNITY_Community 121|Community 121]]
-- [[_COMMUNITY_Community 122|Community 122]]
-- [[_COMMUNITY_Community 123|Community 123]]
-- [[_COMMUNITY_Community 124|Community 124]]
-- [[_COMMUNITY_Community 125|Community 125]]
-- [[_COMMUNITY_Community 126|Community 126]]
-- [[_COMMUNITY_Community 127|Community 127]]
-- [[_COMMUNITY_Community 128|Community 128]]
-- [[_COMMUNITY_Community 129|Community 129]]
-- [[_COMMUNITY_Community 130|Community 130]]
-- [[_COMMUNITY_Community 131|Community 131]]
-- [[_COMMUNITY_Community 132|Community 132]]
-- [[_COMMUNITY_Community 133|Community 133]]
-- [[_COMMUNITY_Community 134|Community 134]]
-- [[_COMMUNITY_Community 135|Community 135]]
-- [[_COMMUNITY_Community 136|Community 136]]
-- [[_COMMUNITY_Community 137|Community 137]]
-- [[_COMMUNITY_Community 138|Community 138]]
-- [[_COMMUNITY_Community 139|Community 139]]
-- [[_COMMUNITY_Community 140|Community 140]]
-- [[_COMMUNITY_Community 141|Community 141]]
-- [[_COMMUNITY_Community 142|Community 142]]
-- [[_COMMUNITY_Community 143|Community 143]]
-- [[_COMMUNITY_Community 144|Community 144]]
-- [[_COMMUNITY_Community 145|Community 145]]
-- [[_COMMUNITY_Community 146|Community 146]]
-- [[_COMMUNITY_Community 147|Community 147]]
-- [[_COMMUNITY_Community 148|Community 148]]
-- [[_COMMUNITY_Community 149|Community 149]]
-- [[_COMMUNITY_Community 150|Community 150]]
-- [[_COMMUNITY_Community 151|Community 151]]
-- [[_COMMUNITY_Community 152|Community 152]]
-- [[_COMMUNITY_Community 153|Community 153]]
-- [[_COMMUNITY_Community 154|Community 154]]
-- [[_COMMUNITY_Community 155|Community 155]]
-- [[_COMMUNITY_Community 156|Community 156]]
-- [[_COMMUNITY_Community 157|Community 157]]
-- [[_COMMUNITY_Community 158|Community 158]]
-- [[_COMMUNITY_Community 159|Community 159]]
-- [[_COMMUNITY_Community 160|Community 160]]
-- [[_COMMUNITY_Community 161|Community 161]]
-- [[_COMMUNITY_Community 162|Community 162]]
-- [[_COMMUNITY_Community 163|Community 163]]
-- [[_COMMUNITY_Community 164|Community 164]]
-- [[_COMMUNITY_Community 165|Community 165]]
-- [[_COMMUNITY_Community 166|Community 166]]
-- [[_COMMUNITY_Community 167|Community 167]]
-- [[_COMMUNITY_Community 168|Community 168]]
-- [[_COMMUNITY_Community 169|Community 169]]
-- [[_COMMUNITY_Community 170|Community 170]]
-- [[_COMMUNITY_Community 171|Community 171]]
-- [[_COMMUNITY_Community 172|Community 172]]
-- [[_COMMUNITY_Community 173|Community 173]]
-- [[_COMMUNITY_Community 174|Community 174]]
-- [[_COMMUNITY_Community 175|Community 175]]
-- [[_COMMUNITY_Community 176|Community 176]]
-- [[_COMMUNITY_Community 177|Community 177]]
-- [[_COMMUNITY_Community 178|Community 178]]
-- [[_COMMUNITY_Community 179|Community 179]]
-- [[_COMMUNITY_Community 180|Community 180]]
-- [[_COMMUNITY_Community 181|Community 181]]
-- [[_COMMUNITY_Community 182|Community 182]]
-- [[_COMMUNITY_Community 183|Community 183]]
-- [[_COMMUNITY_Community 184|Community 184]]
-- [[_COMMUNITY_Community 185|Community 185]]
-- [[_COMMUNITY_Community 186|Community 186]]
-- [[_COMMUNITY_Community 187|Community 187]]
-- [[_COMMUNITY_Community 188|Community 188]]
-- [[_COMMUNITY_Community 189|Community 189]]
-- [[_COMMUNITY_Community 190|Community 190]]
-- [[_COMMUNITY_Community 191|Community 191]]
-- [[_COMMUNITY_Community 192|Community 192]]
-- [[_COMMUNITY_Community 193|Community 193]]
-- [[_COMMUNITY_Community 194|Community 194]]
-- [[_COMMUNITY_Community 195|Community 195]]
-- [[_COMMUNITY_Community 196|Community 196]]
-- [[_COMMUNITY_Community 197|Community 197]]
-- [[_COMMUNITY_Community 198|Community 198]]
-- [[_COMMUNITY_Community 199|Community 199]]
-- [[_COMMUNITY_Community 200|Community 200]]
-- [[_COMMUNITY_Community 201|Community 201]]
-- [[_COMMUNITY_Community 202|Community 202]]
-- [[_COMMUNITY_Community 203|Community 203]]
-- [[_COMMUNITY_Community 204|Community 204]]
-- [[_COMMUNITY_Community 205|Community 205]]
-- [[_COMMUNITY_Community 206|Community 206]]
-- [[_COMMUNITY_Community 207|Community 207]]
-- [[_COMMUNITY_Community 208|Community 208]]
-- [[_COMMUNITY_Community 209|Community 209]]
-- [[_COMMUNITY_Community 210|Community 210]]
-- [[_COMMUNITY_Community 211|Community 211]]
-- [[_COMMUNITY_Community 212|Community 212]]
-- [[_COMMUNITY_Community 213|Community 213]]
-- [[_COMMUNITY_Community 214|Community 214]]
-- [[_COMMUNITY_Community 215|Community 215]]
-- [[_COMMUNITY_Community 216|Community 216]]
-- [[_COMMUNITY_Community 217|Community 217]]
-- [[_COMMUNITY_Community 218|Community 218]]
-- [[_COMMUNITY_Community 219|Community 219]]
-- [[_COMMUNITY_Community 220|Community 220]]
-- [[_COMMUNITY_Community 221|Community 221]]
-- [[_COMMUNITY_Community 222|Community 222]]
-- [[_COMMUNITY_Community 223|Community 223]]
-- [[_COMMUNITY_Community 224|Community 224]]
-- [[_COMMUNITY_Community 225|Community 225]]
-- [[_COMMUNITY_Community 226|Community 226]]
-- [[_COMMUNITY_Community 227|Community 227]]
-- [[_COMMUNITY_Community 228|Community 228]]
-- [[_COMMUNITY_Community 229|Community 229]]
-- [[_COMMUNITY_Community 230|Community 230]]
-- [[_COMMUNITY_Community 231|Community 231]]
-- [[_COMMUNITY_Community 232|Community 232]]
-- [[_COMMUNITY_Community 233|Community 233]]
-- [[_COMMUNITY_Community 234|Community 234]]
-- [[_COMMUNITY_Community 235|Community 235]]
-- [[_COMMUNITY_Community 236|Community 236]]
-- [[_COMMUNITY_Community 237|Community 237]]
-- [[_COMMUNITY_Community 238|Community 238]]
-- [[_COMMUNITY_Community 239|Community 239]]
-- [[_COMMUNITY_Community 240|Community 240]]
-- [[_COMMUNITY_Community 241|Community 241]]
-- [[_COMMUNITY_Community 242|Community 242]]
-- [[_COMMUNITY_Community 243|Community 243]]
-- [[_COMMUNITY_Community 244|Community 244]]
-- [[_COMMUNITY_Community 245|Community 245]]
-- [[_COMMUNITY_Community 246|Community 246]]
-- [[_COMMUNITY_Community 247|Community 247]]
-- [[_COMMUNITY_Community 248|Community 248]]
-- [[_COMMUNITY_Community 249|Community 249]]
-- [[_COMMUNITY_Community 250|Community 250]]
-- [[_COMMUNITY_Community 251|Community 251]]
-- [[_COMMUNITY_Community 252|Community 252]]
-- [[_COMMUNITY_Community 253|Community 253]]
-- [[_COMMUNITY_Community 254|Community 254]]
-- [[_COMMUNITY_Community 255|Community 255]]
-- [[_COMMUNITY_Community 256|Community 256]]
-- [[_COMMUNITY_Community 257|Community 257]]
-- [[_COMMUNITY_Community 258|Community 258]]
-- [[_COMMUNITY_Community 259|Community 259]]
-- [[_COMMUNITY_Community 260|Community 260]]
-- [[_COMMUNITY_Community 261|Community 261]]
-- [[_COMMUNITY_Community 262|Community 262]]
-- [[_COMMUNITY_Community 263|Community 263]]
-- [[_COMMUNITY_Community 264|Community 264]]
-- [[_COMMUNITY_Community 265|Community 265]]
-- [[_COMMUNITY_Community 266|Community 266]]
-- [[_COMMUNITY_Community 267|Community 267]]
-- [[_COMMUNITY_Community 268|Community 268]]
-- [[_COMMUNITY_Community 269|Community 269]]
-- [[_COMMUNITY_Community 270|Community 270]]
-- [[_COMMUNITY_Community 271|Community 271]]
-- [[_COMMUNITY_Community 272|Community 272]]
-- [[_COMMUNITY_Community 273|Community 273]]
-- [[_COMMUNITY_Community 274|Community 274]]
-- [[_COMMUNITY_Community 275|Community 275]]
-- [[_COMMUNITY_Community 276|Community 276]]
-- [[_COMMUNITY_Community 277|Community 277]]
-- [[_COMMUNITY_Community 278|Community 278]]
-- [[_COMMUNITY_Community 279|Community 279]]
-- [[_COMMUNITY_Community 280|Community 280]]
-- [[_COMMUNITY_Community 281|Community 281]]
-- [[_COMMUNITY_Community 282|Community 282]]
-- [[_COMMUNITY_Community 283|Community 283]]
-- [[_COMMUNITY_Community 284|Community 284]]
-- [[_COMMUNITY_Community 285|Community 285]]
-- [[_COMMUNITY_Community 286|Community 286]]
-- [[_COMMUNITY_Community 287|Community 287]]
-- [[_COMMUNITY_Community 288|Community 288]]
-- [[_COMMUNITY_Community 289|Community 289]]
-- [[_COMMUNITY_Community 290|Community 290]]
-- [[_COMMUNITY_Community 291|Community 291]]
-- [[_COMMUNITY_Community 292|Community 292]]
-- [[_COMMUNITY_Community 293|Community 293]]
-- [[_COMMUNITY_Community 294|Community 294]]
-- [[_COMMUNITY_Community 295|Community 295]]
-- [[_COMMUNITY_Community 296|Community 296]]
-- [[_COMMUNITY_Community 297|Community 297]]
-- [[_COMMUNITY_Community 298|Community 298]]
-- [[_COMMUNITY_Community 299|Community 299]]
-- [[_COMMUNITY_Community 300|Community 300]]
-- [[_COMMUNITY_Community 301|Community 301]]
-- [[_COMMUNITY_Community 302|Community 302]]
-- [[_COMMUNITY_Community 303|Community 303]]
-- [[_COMMUNITY_Community 304|Community 304]]
-- [[_COMMUNITY_Community 305|Community 305]]
-- [[_COMMUNITY_Community 306|Community 306]]
-- [[_COMMUNITY_Community 307|Community 307]]
-- [[_COMMUNITY_Community 308|Community 308]]
-- [[_COMMUNITY_Community 309|Community 309]]
-- [[_COMMUNITY_Community 310|Community 310]]
-- [[_COMMUNITY_Community 311|Community 311]]
-- [[_COMMUNITY_Community 312|Community 312]]
-- [[_COMMUNITY_Community 313|Community 313]]
-- [[_COMMUNITY_Community 314|Community 314]]
-- [[_COMMUNITY_Community 315|Community 315]]
-- [[_COMMUNITY_Community 316|Community 316]]
-- [[_COMMUNITY_Community 317|Community 317]]
-- [[_COMMUNITY_Community 318|Community 318]]
-- [[_COMMUNITY_Community 319|Community 319]]
-- [[_COMMUNITY_Community 320|Community 320]]
-- [[_COMMUNITY_Community 321|Community 321]]
-- [[_COMMUNITY_Community 322|Community 322]]
-- [[_COMMUNITY_Community 323|Community 323]]
-- [[_COMMUNITY_Community 324|Community 324]]
-- [[_COMMUNITY_Community 325|Community 325]]
-- [[_COMMUNITY_Community 326|Community 326]]
-- [[_COMMUNITY_Community 327|Community 327]]
-- [[_COMMUNITY_Community 328|Community 328]]
-- [[_COMMUNITY_Community 329|Community 329]]
-- [[_COMMUNITY_Community 330|Community 330]]
-- [[_COMMUNITY_Community 331|Community 331]]
-- [[_COMMUNITY_Community 332|Community 332]]
-- [[_COMMUNITY_Community 333|Community 333]]
-- [[_COMMUNITY_Community 334|Community 334]]
-- [[_COMMUNITY_Community 335|Community 335]]
-- [[_COMMUNITY_Community 336|Community 336]]
-- [[_COMMUNITY_Community 337|Community 337]]
-- [[_COMMUNITY_Community 338|Community 338]]
-- [[_COMMUNITY_Community 339|Community 339]]
-- [[_COMMUNITY_Community 340|Community 340]]
-- [[_COMMUNITY_Community 341|Community 341]]
-- [[_COMMUNITY_Community 342|Community 342]]
-- [[_COMMUNITY_Community 343|Community 343]]
-- [[_COMMUNITY_Community 344|Community 344]]
-- [[_COMMUNITY_Community 345|Community 345]]
-- [[_COMMUNITY_Community 346|Community 346]]
-- [[_COMMUNITY_Community 347|Community 347]]
-- [[_COMMUNITY_Community 348|Community 348]]
-- [[_COMMUNITY_Community 349|Community 349]]
-- [[_COMMUNITY_Community 350|Community 350]]
-- [[_COMMUNITY_Community 351|Community 351]]
-- [[_COMMUNITY_Community 352|Community 352]]
-- [[_COMMUNITY_Community 353|Community 353]]
-- [[_COMMUNITY_Community 354|Community 354]]
-- [[_COMMUNITY_Community 355|Community 355]]
-- [[_COMMUNITY_Community 356|Community 356]]
-- [[_COMMUNITY_Community 357|Community 357]]
-- [[_COMMUNITY_Community 358|Community 358]]
-- [[_COMMUNITY_Community 359|Community 359]]
-- [[_COMMUNITY_Community 360|Community 360]]
-- [[_COMMUNITY_Community 361|Community 361]]
-- [[_COMMUNITY_Community 362|Community 362]]
-- [[_COMMUNITY_Community 363|Community 363]]
-- [[_COMMUNITY_Community 364|Community 364]]
-- [[_COMMUNITY_Community 365|Community 365]]
-- [[_COMMUNITY_Community 366|Community 366]]
-- [[_COMMUNITY_Community 367|Community 367]]
-- [[_COMMUNITY_Community 368|Community 368]]
-- [[_COMMUNITY_Community 369|Community 369]]
-- [[_COMMUNITY_Community 370|Community 370]]
-- [[_COMMUNITY_Community 372|Community 372]]
-- [[_COMMUNITY_Community 373|Community 373]]
-- [[_COMMUNITY_Community 374|Community 374]]
-- [[_COMMUNITY_Community 375|Community 375]]
-- [[_COMMUNITY_Community 376|Community 376]]
-- [[_COMMUNITY_Community 377|Community 377]]
-- [[_COMMUNITY_Community 378|Community 378]]
-- [[_COMMUNITY_Community 379|Community 379]]
-- [[_COMMUNITY_Community 380|Community 380]]
-- [[_COMMUNITY_Community 381|Community 381]]
-- [[_COMMUNITY_Community 382|Community 382]]
-- [[_COMMUNITY_Community 383|Community 383]]
-- [[_COMMUNITY_Community 384|Community 384]]
-- [[_COMMUNITY_Community 385|Community 385]]
-- [[_COMMUNITY_Community 386|Community 386]]
-- [[_COMMUNITY_Community 387|Community 387]]
-- [[_COMMUNITY_Community 388|Community 388]]
-- [[_COMMUNITY_Community 389|Community 389]]
-- [[_COMMUNITY_Community 390|Community 390]]
-- [[_COMMUNITY_Community 391|Community 391]]
-- [[_COMMUNITY_Community 392|Community 392]]
-- [[_COMMUNITY_Community 393|Community 393]]
-- [[_COMMUNITY_Community 394|Community 394]]
-- [[_COMMUNITY_Community 395|Community 395]]
-- [[_COMMUNITY_Community 396|Community 396]]
-- [[_COMMUNITY_Community 397|Community 397]]
-- [[_COMMUNITY_Community 398|Community 398]]
-- [[_COMMUNITY_Community 399|Community 399]]
-- [[_COMMUNITY_Community 400|Community 400]]
-- [[_COMMUNITY_Community 401|Community 401]]
-- [[_COMMUNITY_Community 402|Community 402]]
-- [[_COMMUNITY_Community 403|Community 403]]
-- [[_COMMUNITY_Community 404|Community 404]]
-- [[_COMMUNITY_Community 405|Community 405]]
-- [[_COMMUNITY_Community 406|Community 406]]
-- [[_COMMUNITY_Community 407|Community 407]]
-- [[_COMMUNITY_Community 408|Community 408]]
-- [[_COMMUNITY_Community 409|Community 409]]
-- [[_COMMUNITY_Community 410|Community 410]]
-- [[_COMMUNITY_Community 411|Community 411]]
-- [[_COMMUNITY_Community 412|Community 412]]
-- [[_COMMUNITY_Community 413|Community 413]]
-- [[_COMMUNITY_Community 414|Community 414]]
-- [[_COMMUNITY_Community 415|Community 415]]
-- [[_COMMUNITY_Community 416|Community 416]]
-- [[_COMMUNITY_Community 417|Community 417]]
-- [[_COMMUNITY_Community 418|Community 418]]
-- [[_COMMUNITY_Community 419|Community 419]]
-- [[_COMMUNITY_Community 420|Community 420]]
-- [[_COMMUNITY_Community 421|Community 421]]
-- [[_COMMUNITY_Community 422|Community 422]]
-- [[_COMMUNITY_Community 423|Community 423]]
-- [[_COMMUNITY_Community 424|Community 424]]
-- [[_COMMUNITY_Community 425|Community 425]]
-- [[_COMMUNITY_Community 426|Community 426]]
-- [[_COMMUNITY_Community 427|Community 427]]
-- [[_COMMUNITY_Community 428|Community 428]]
-- [[_COMMUNITY_Community 429|Community 429]]
-- [[_COMMUNITY_Community 430|Community 430]]
-- [[_COMMUNITY_Community 431|Community 431]]
-- [[_COMMUNITY_Community 432|Community 432]]
-- [[_COMMUNITY_Community 433|Community 433]]
-- [[_COMMUNITY_Community 434|Community 434]]
-- [[_COMMUNITY_Community 435|Community 435]]
-- [[_COMMUNITY_Community 436|Community 436]]
-- [[_COMMUNITY_Community 437|Community 437]]
-- [[_COMMUNITY_Community 438|Community 438]]
-- [[_COMMUNITY_Community 439|Community 439]]
-- [[_COMMUNITY_Community 440|Community 440]]
-- [[_COMMUNITY_Community 441|Community 441]]
-- [[_COMMUNITY_Community 442|Community 442]]
-- [[_COMMUNITY_Community 443|Community 443]]
-- [[_COMMUNITY_Community 444|Community 444]]
-- [[_COMMUNITY_Community 445|Community 445]]
-- [[_COMMUNITY_Community 446|Community 446]]
-- [[_COMMUNITY_Community 447|Community 447]]
-- [[_COMMUNITY_Community 448|Community 448]]
-- [[_COMMUNITY_Community 449|Community 449]]
-- [[_COMMUNITY_Community 450|Community 450]]
-- [[_COMMUNITY_Community 451|Community 451]]
-- [[_COMMUNITY_Community 452|Community 452]]
-- [[_COMMUNITY_Community 453|Community 453]]
-- [[_COMMUNITY_Community 454|Community 454]]
-- [[_COMMUNITY_Community 455|Community 455]]
-- [[_COMMUNITY_Community 456|Community 456]]
-- [[_COMMUNITY_Community 457|Community 457]]
-- [[_COMMUNITY_Community 458|Community 458]]
-- [[_COMMUNITY_Community 459|Community 459]]
-- [[_COMMUNITY_Community 460|Community 460]]
-- [[_COMMUNITY_Community 461|Community 461]]
-- [[_COMMUNITY_Community 462|Community 462]]
-- [[_COMMUNITY_Community 463|Community 463]]
-- [[_COMMUNITY_Community 464|Community 464]]
-- [[_COMMUNITY_Community 465|Community 465]]
-- [[_COMMUNITY_Community 466|Community 466]]
-- [[_COMMUNITY_Community 467|Community 467]]
-- [[_COMMUNITY_Community 468|Community 468]]
-- [[_COMMUNITY_Community 469|Community 469]]
-- [[_COMMUNITY_Community 470|Community 470]]
-- [[_COMMUNITY_Community 471|Community 471]]
-- [[_COMMUNITY_Community 472|Community 472]]
-- [[_COMMUNITY_Community 473|Community 473]]
-- [[_COMMUNITY_Community 474|Community 474]]
-- [[_COMMUNITY_Community 475|Community 475]]
-- [[_COMMUNITY_Community 476|Community 476]]
-- [[_COMMUNITY_Community 477|Community 477]]
-- [[_COMMUNITY_Community 478|Community 478]]
-- [[_COMMUNITY_Community 479|Community 479]]
-- [[_COMMUNITY_Community 480|Community 480]]
-- [[_COMMUNITY_Community 481|Community 481]]
-- [[_COMMUNITY_Community 482|Community 482]]
-- [[_COMMUNITY_Community 483|Community 483]]
-- [[_COMMUNITY_Community 484|Community 484]]
-- [[_COMMUNITY_Community 485|Community 485]]
-- [[_COMMUNITY_Community 486|Community 486]]
-- [[_COMMUNITY_Community 487|Community 487]]
-- [[_COMMUNITY_Community 488|Community 488]]
-- [[_COMMUNITY_Community 489|Community 489]]
-- [[_COMMUNITY_Community 490|Community 490]]
-- [[_COMMUNITY_Community 491|Community 491]]
-- [[_COMMUNITY_Community 492|Community 492]]
-- [[_COMMUNITY_Community 493|Community 493]]
-- [[_COMMUNITY_Community 494|Community 494]]
-- [[_COMMUNITY_Community 495|Community 495]]
-- [[_COMMUNITY_Community 496|Community 496]]
-- [[_COMMUNITY_Community 497|Community 497]]
-- [[_COMMUNITY_Community 498|Community 498]]
-- [[_COMMUNITY_Community 499|Community 499]]
-- [[_COMMUNITY_Community 500|Community 500]]
-- [[_COMMUNITY_Community 501|Community 501]]
-- [[_COMMUNITY_Community 502|Community 502]]
-- [[_COMMUNITY_Community 503|Community 503]]
-- [[_COMMUNITY_Community 505|Community 505]]
-- [[_COMMUNITY_Community 506|Community 506]]
-- [[_COMMUNITY_Community 507|Community 507]]
-- [[_COMMUNITY_Community 508|Community 508]]
-- [[_COMMUNITY_Community 509|Community 509]]
-- [[_COMMUNITY_Community 510|Community 510]]
-- [[_COMMUNITY_Community 511|Community 511]]
-- [[_COMMUNITY_Community 527|Community 527]]
-- [[_COMMUNITY_Community 528|Community 528]]
-- [[_COMMUNITY_Community 541|Community 541]]
-- [[_COMMUNITY_Community 542|Community 542]]
-- [[_COMMUNITY_Community 543|Community 543]]
-- [[_COMMUNITY_Community 544|Community 544]]
-- [[_COMMUNITY_Community 545|Community 545]]
-- [[_COMMUNITY_Community 546|Community 546]]
-- [[_COMMUNITY_Community 547|Community 547]]
-- [[_COMMUNITY_Community 549|Community 549]]
-- [[_COMMUNITY_Community 550|Community 550]]
-- [[_COMMUNITY_Community 551|Community 551]]
-- [[_COMMUNITY_Community 552|Community 552]]
-- [[_COMMUNITY_Community 553|Community 553]]
-- [[_COMMUNITY_Community 554|Community 554]]
-- [[_COMMUNITY_Community 555|Community 555]]
-- [[_COMMUNITY_Community 556|Community 556]]
-- [[_COMMUNITY_Community 557|Community 557]]
-- [[_COMMUNITY_Community 558|Community 558]]
-- [[_COMMUNITY_Community 559|Community 559]]
-- [[_COMMUNITY_Community 560|Community 560]]
-- [[_COMMUNITY_Community 561|Community 561]]
-- [[_COMMUNITY_Community 562|Community 562]]
-- [[_COMMUNITY_Community 563|Community 563]]
-- [[_COMMUNITY_Community 564|Community 564]]
-- [[_COMMUNITY_Community 565|Community 565]]
-- [[_COMMUNITY_Community 572|Community 572]]
-- [[_COMMUNITY_Community 587|Community 587]]
-- [[_COMMUNITY_Community 588|Community 588]]
-- [[_COMMUNITY_Community 589|Community 589]]
-- [[_COMMUNITY_Community 590|Community 590]]
-- [[_COMMUNITY_Community 591|Community 591]]
-- [[_COMMUNITY_Community 592|Community 592]]
-- [[_COMMUNITY_Community 593|Community 593]]
-- [[_COMMUNITY_Community 594|Community 594]]
-- [[_COMMUNITY_Community 595|Community 595]]
-- [[_COMMUNITY_Community 596|Community 596]]
-- [[_COMMUNITY_Community 597|Community 597]]
-- [[_COMMUNITY_Community 598|Community 598]]
-- [[_COMMUNITY_Community 599|Community 599]]
-- [[_COMMUNITY_Community 637|Community 637]]
-- [[_COMMUNITY_Community 638|Community 638]]
-- [[_COMMUNITY_Community 639|Community 639]]
-- [[_COMMUNITY_Community 643|Community 643]]
-- [[_COMMUNITY_Community 644|Community 644]]
-- [[_COMMUNITY_Community 645|Community 645]]
-- [[_COMMUNITY_Community 646|Community 646]]
-- [[_COMMUNITY_Community 647|Community 647]]
-- [[_COMMUNITY_Community 648|Community 648]]
-- [[_COMMUNITY_Community 649|Community 649]]
-- [[_COMMUNITY_Community 650|Community 650]]
-- [[_COMMUNITY_Community 651|Community 651]]
-- [[_COMMUNITY_Community 652|Community 652]]
-- [[_COMMUNITY_Community 653|Community 653]]
-- [[_COMMUNITY_Community 661|Community 661]]
-- [[_COMMUNITY_Community 664|Community 664]]
-- [[_COMMUNITY_Community 665|Community 665]]
-- [[_COMMUNITY_Community 666|Community 666]]
-- [[_COMMUNITY_Community 667|Community 667]]
-- [[_COMMUNITY_Community 668|Community 668]]
-- [[_COMMUNITY_Community 669|Community 669]]
-- [[_COMMUNITY_Community 670|Community 670]]
-- [[_COMMUNITY_Community 676|Community 676]]
-- [[_COMMUNITY_Community 677|Community 677]]
-- [[_COMMUNITY_Community 689|Community 689]]
-- [[_COMMUNITY_Community 690|Community 690]]
-- [[_COMMUNITY_Community 691|Community 691]]
-- [[_COMMUNITY_Community 692|Community 692]]
-- [[_COMMUNITY_Community 693|Community 693]]
-- [[_COMMUNITY_Community 694|Community 694]]
-- [[_COMMUNITY_Community 695|Community 695]]
-- [[_COMMUNITY_Community 696|Community 696]]
-- [[_COMMUNITY_Community 705|Community 705]]
-- [[_COMMUNITY_Community 706|Community 706]]
-- [[_COMMUNITY_Community 707|Community 707]]
-- [[_COMMUNITY_Community 708|Community 708]]
-- [[_COMMUNITY_Community 709|Community 709]]
-- [[_COMMUNITY_Community 710|Community 710]]
-- [[_COMMUNITY_Community 711|Community 711]]
-- [[_COMMUNITY_Community 712|Community 712]]
-- [[_COMMUNITY_Community 713|Community 713]]
-- [[_COMMUNITY_Community 714|Community 714]]
-- [[_COMMUNITY_Community 715|Community 715]]
-- [[_COMMUNITY_Community 716|Community 716]]
-- [[_COMMUNITY_Community 717|Community 717]]
-- [[_COMMUNITY_Community 718|Community 718]]
-- [[_COMMUNITY_Community 719|Community 719]]
-- [[_COMMUNITY_Community 720|Community 720]]
-- [[_COMMUNITY_Community 721|Community 721]]
-- [[_COMMUNITY_Community 722|Community 722]]
-- [[_COMMUNITY_Community 723|Community 723]]
-- [[_COMMUNITY_Community 724|Community 724]]
-- [[_COMMUNITY_Community 725|Community 725]]
-- [[_COMMUNITY_Community 726|Community 726]]
-- [[_COMMUNITY_Community 727|Community 727]]
-- [[_COMMUNITY_Community 728|Community 728]]
-- [[_COMMUNITY_Community 729|Community 729]]
-- [[_COMMUNITY_Community 730|Community 730]]
-- [[_COMMUNITY_Community 731|Community 731]]
-- [[_COMMUNITY_Community 732|Community 732]]
-- [[_COMMUNITY_Community 733|Community 733]]
-- [[_COMMUNITY_Community 734|Community 734]]
-- [[_COMMUNITY_Community 735|Community 735]]
-- [[_COMMUNITY_Community 736|Community 736]]
-- [[_COMMUNITY_Community 737|Community 737]]
-- [[_COMMUNITY_Community 738|Community 738]]
-- [[_COMMUNITY_Community 739|Community 739]]
-- [[_COMMUNITY_Community 740|Community 740]]
-- [[_COMMUNITY_Community 741|Community 741]]
-- [[_COMMUNITY_Community 742|Community 742]]
-- [[_COMMUNITY_Community 743|Community 743]]
-- [[_COMMUNITY_Community 744|Community 744]]
-- [[_COMMUNITY_Community 745|Community 745]]
-- [[_COMMUNITY_Community 746|Community 746]]
-- [[_COMMUNITY_Community 747|Community 747]]
-- [[_COMMUNITY_Community 748|Community 748]]
-- [[_COMMUNITY_Community 754|Community 754]]
-- [[_COMMUNITY_Community 756|Community 756]]
-- [[_COMMUNITY_Community 757|Community 757]]
-- [[_COMMUNITY_Community 758|Community 758]]
-- [[_COMMUNITY_Community 759|Community 759]]
-- [[_COMMUNITY_Community 760|Community 760]]
-- [[_COMMUNITY_Community 761|Community 761]]
-- [[_COMMUNITY_Community 762|Community 762]]
-- [[_COMMUNITY_Community 763|Community 763]]
-- [[_COMMUNITY_Community 764|Community 764]]
-- [[_COMMUNITY_Community 765|Community 765]]
-- [[_COMMUNITY_Community 770|Community 770]]
-- [[_COMMUNITY_Community 771|Community 771]]
-- [[_COMMUNITY_Community 772|Community 772]]
-- [[_COMMUNITY_Community 773|Community 773]]
-- [[_COMMUNITY_Community 774|Community 774]]
-- [[_COMMUNITY_Community 775|Community 775]]
-- [[_COMMUNITY_Community 776|Community 776]]
-- [[_COMMUNITY_Community 777|Community 777]]
-- [[_COMMUNITY_Community 778|Community 778]]
-- [[_COMMUNITY_Community 779|Community 779]]
-- [[_COMMUNITY_Community 780|Community 780]]
-- [[_COMMUNITY_Community 781|Community 781]]
-- [[_COMMUNITY_Community 782|Community 782]]
-- [[_COMMUNITY_Community 783|Community 783]]
-- [[_COMMUNITY_Community 784|Community 784]]
-- [[_COMMUNITY_Community 785|Community 785]]
-- [[_COMMUNITY_Community 786|Community 786]]
-- [[_COMMUNITY_Community 787|Community 787]]
-- [[_COMMUNITY_Community 788|Community 788]]
-- [[_COMMUNITY_Community 789|Community 789]]
-- [[_COMMUNITY_Community 790|Community 790]]
-- [[_COMMUNITY_Community 792|Community 792]]
-- [[_COMMUNITY_Community 794|Community 794]]
-- [[_COMMUNITY_Community 795|Community 795]]
-- [[_COMMUNITY_Community 797|Community 797]]
-- [[_COMMUNITY_Community 798|Community 798]]
-- [[_COMMUNITY_Community 799|Community 799]]
-- [[_COMMUNITY_Community 800|Community 800]]
-- [[_COMMUNITY_Community 801|Community 801]]
-- [[_COMMUNITY_Community 802|Community 802]]
-- [[_COMMUNITY_Community 803|Community 803]]
-- [[_COMMUNITY_Community 804|Community 804]]
-- [[_COMMUNITY_Community 806|Community 806]]
-- [[_COMMUNITY_Community 814|Community 814]]
+- WgerAddTestCase
+- BaseTestCase
+- IngredientViewSet
+- wger_headers
+- Path
+- StreamVerbs
+- LoginRequiredMixin
+- manager/models/__init__.py
+- is_same_gym
+- base_testcase.py
+- core/api/views.py
+- extract_info_from_off
+- WorkoutLog
+- ExerciseCategory
+- UserTrophyAPITestCase
+- Exercise
+- UUID
+- ExerciseTranslationCustomApiTestCase
+- AbstractChangeConfig
+- WgerEditTestCase
+- DeletionLogTestCase
+- SearchIngredientApiTestCase
+- TrophyViewSet
+- WgerCommand
+- Translation
+- InactivityReturnCheckerTestCase
+- Ingredient
+- BaseTrophyChecker
+- WorkoutCountBasedChecker
+- NutritionPlan
+- Routine
+- SetConfigDataTestCase
+- StreakChecker
+- VolumeChecker
+- AddView
+- AddView
+- ImportProductCommand
+- control
+- WeekendWarriorChecker
+- TimeBasedChecker
+- sync_ingredients
+- .dict
+- ExerciseHistoryControlExtras
+- AppConfig
+- ExtractInfoFromUSDATestCase
+- SlotData
+- WgerAccountAdapter
+- UpdateView
+- GymAddUserView
+- models/ingredient.py
+- render_markdown
+- DecimalOrIntegerField
+- DeleteUserByAdminTestCase
+- Html5NumberInput
+- ExerciseDeleteApiTestCase
+- BaseCommand
+- gym/models/__init__.py
+- MeasurementViewSet
+- exercises/tests/test_sync.py
+- GymScopeGuardsTestCase
+- DateBasedChecker
+- AddView
+- ExerciseApiCacheTestCase
+- SlotEntry
+- ExerciseVideo
+- AbstractWeight
+- download_ingredient_dump
+- test_auth_social.py
+- WgerFormMixin
+- reset_routine_cache
+- AddView
+- .get_queryset
+- core/models/__init__.py
+- workout_log
+- RoutinePdfLogExportTestCase
+- TrainerLoginTestCase
+- PreferencesTestCase
+- SearchSubmissionApiTestCase
+- PowerSyncHandler
+- make_absolute_url
+- RoutineLogsAndStatsScopeTestCase
+- GymAddUserTestCase
+- GymUserConfig
+- MaxRiRConfigViewSet
+- DeleteUserWithoutPasswordTestCase
+- ExerciseCrudApiTestCase
+- ApiKeyTestCase
+- ExerciseFilterSet
+- LogModelTestCase
+- RegistrationTestCase
+- WorkoutDayData
+- ExerciseInfoFilterApiTestCase
+- tasks.py
+- AbstractConfigViewSet
+- WorkoutLogViewSet
+- .save_image
+- list_long_lived_sessions
+- cache_exercise
+- TrophyModelTestCase
+- UserTrophyModelTestCase
+- .__init__
+- PermissionRequiredMixin
+- widgets.py
+- sync_all_ingredients_chunked_task
+- test_exercise_translation.py
+- IngredientOverviewTestCase
+- TestHealthCheckManagementCommands
+- GymUserPermissionForm
+- User
+- ReactView
+- SyncMode
+- CreateView
+- DemoUserTestCase
+- Slot
+- EmailReminderTestCase
+- CopyRoutineTestCase
+- NutritionalValues
+- .make_request
+- AddView
+- SearchExerciseApiTestCase
+- RoutineViewSet
+- reset_exercise_api_cache
+- fetch_ingredient_image
+- UserStatisticsModelTestCase
+- generate_username_suggestions
+- Trophy
+- Command
+- UserProfilePowerSyncTestCase
+- Log
+- ActstreamApiMixin
+- IngredientDataclassTestCase
+- ExerciseTestCase
+- .push
+- nutrition/helpers.py
+- RoutineApiTrainerTestCase
+- Command
+- ExerciseImage
+- gallery/models/image.py
+- RepetitionUnit
+- AbstractHeight
+- WorkoutLogSlotEntryOwnershipTestCase
+- validate_language_matches
+- manager/dataclasses.py
+- WeightUnitIngredientCreateView
+- remove_language_code
+- .get_queryset
+- SetConfigData
+- Muscle
+- ChangePasswordTestCase
+- MealItemFormTestCase
+- ApiPutTestCase
+- LongLivedRefreshTokenTestCase
+- ExerciseModelTestCase
+- NutritionalValuesCalculationsTestCase
+- UserStatisticsServiceTestCase
+- uuid7
+- IngredientDeleteView
+- utils/middleware.py
+- Command
+- utils/helpers.py
+- WorkoutSession
+- ImageHandler
+- UserProfile
+- gym/helpers.py
+- WorkoutLogSerializer
+- exercises/models/__init__.py
+- WeightExportCsvTestCase
+- UnitDeleteView
+- WeightEntry
+- create_temporary_user
+- Command
+- WorkoutViewsTestCase
+- ChangeExerciseAuthorTestCase
+- AbstractLicenseModel
+- Language
+- ImageForm
+- EmailListFormPreviewTestCase
+- ApiGetTestCase
+- .perform_create
+- .perform_update
+- CreateScopedRateThrottle
+- GymMembersCsvExportTestCase
+- NutritionalPlanCacheTestCase
+- TrophyServiceTestCase
+- WebLoginViewTestCase
+- WgerPermission
+- UserBodyweightTestCase
+- PreferencesCalculationsTestCase
+- Command
+- Command
+- is_any_gym_admin
+- RoutineDayViewSet
+- backfill_uuid_column
+- Label
+- 0037_replace_variation_with_uuid_field.py
+- WeightConversionTestCase
+- CaloriesCalculatorTestCase
+- TestExportIngredientDump
+- ExerciseCategoryUpdateView
+- CopyPlanTestCase
+- WorkoutICalExportTestCase
+- check_min_server_version
+- RobotsExclusionMiddlewareTestCase
+- NutritionalPlanPdfExportTestCase
+- trainer_login
+- TokenHelperTestCase
+- requests.py
+- HeadlessSmokeTestCase
+- .check
+- HeadlessJWTAuthentication
+- WgerOwnerObjectModelViewSet
+- password_generator
+- migrate_routines
+- WeightEntrySerializer
+- manifest.json
+- RoutineStatisticsTestCase
+- RoutineTemplatesTestCase
+- .evaluate_all_trophies
+- AuthProxyUserBackend
+- core/signals.py
+- ExercisesSitemap
+- user_document.py
+- ChangeConfigTestCase
+- wger_extras.py
+- RoutineForm
+- License
+- IssueRefreshTokenApiTestCase
+- SimpleTestCase
+- ExerciseCommentApiTestCase
+- AppAuthHandoffTestCase
+- GymConfigTestCase
+- PhysicalActivitiesForm
+- NutritionPlanInfoQueryCountTestCase
+- nutrition/tests/test_powersync.py
+- IngredientCategory
+- EmailListForm
+- Adding New Trophies
+- Trophy System
+- Command
+- GymConfig
+- 0035_add_uuids.py
+- RiRApiTestCase
+- SlotTestCase
+- load_initial_trophies
+- export
+- exercises/tasks.py
+- api_base_test.py
+- ApiPostTestCase
+- IngredientDetailTestCase
+- flush_expired_long_lived_sessions_task
+- GymNameHeaderTestCase
+- EmailWeightReminderTestCase
+- .activate
+- GymConfig
+- .get_queryset
+- .get_queryset
+- WeightConfigViewSet
+- DailyActivityTestCase
+- IngredientValuesTestCase
+- UseBrowserLanguageRedirectTestCase
+- WeightCsvExportTestCase
+- WeightCsvImportTestCase
+- WgerTestCase
+- manager/tests/test_powersync.py
+- api/powersync.py
+- Management Commands
+- Signals and Auto-Evaluation
+- API Endpoints
+- create_demo_entries
+- Command
+- Command
+- Command
+- postgres_only
+- LenientManifestStaticFilesStorage
+- 0003_auto_20160921_2000.py
+- 0018_delete_pending_exercises.py
+- AdminUserNote
+- .get_queryset
+- .get_queryset
+- .get_queryset
+- ActivityDetailsTestCase
+- ExerciseTranslationSubmissionSerializer
+- 0002_auto_20170101_1538.py
+- 0006_auto_20151025_2237.py
+- 0007_auto_20160311_2258.py
+- 0007_auto_20201203_1042.py
+- AuthProxyHeaderMiddleware
+- auto_delete_file_on_delete
+- mint_long_lived_refresh_token
+- TrainerCannotDeactivatePrivilegedUsersTestCase
+- Command
+- sync_exercisedb_gym_media.py
+- Command
+- Command
+- Command
+- Command
+- Command
+- Command
+- RiRConfigViewSet
+- 0004_add_uuids.py
+- 0025_change_pk_to_uuid.py
+- IngredientFilterSet
+- NullMinValueValidator
+- migrate_context_data_uuids
+- set_unit_types
+- ExerciseVideosApiTestCase
+- CanContributeExercises
+- EmailInactiveUserTestCase
+- measurements/tests/test_powersync.py
+- WeightEntryPowerSyncTestCase
+- manager/helpers.py
+- Command
+- gym/tests/test_user.py
+- Services API
+- Command
+- Command
+- Command
+- Command
+- Command
+- Command
+- Command
+- 0011_auto_20201214_0033.py
+- 0011_remove_set_exercises.py
+- gen_uuids
+- TrophiesOverview
+- BaseImageMixin
+- Command
+- register_handler
+- UnitApiTestCase
+- 0006_auto_20160214_1013.py
+- 0016_move_to_exercise_base.py
+- 0017_alter_workoutlog_exercise_base.py
+- 0022_add_remote_id_increase_author_field_length.py
+- 0027_prefill_end_date.py
+- 0031_start_weight_unit_merge.py
+- ImageMixinTestCase
+- IngredientData
+- WgerLimitOffsetPagination
+- .get_exercise_api_key
+- fa_class
+- core/validators.py
+- Database Models
+- API Components
+- Troubleshooting
+- Configuration
+- validate_requirements
+- 0017_language_full_name_en.py
+- 0009_auto_20201211_0139.py
+- 0022_alter_rir_type.py
+- Migration
+- HttpResponse
+- Migration
+- RoutineDateValidationTestCase
+- MeasurementsApiTestCase
+- 0017_muscle_name_en.py
+- 0026_add_start_and_end_fields.py
+- 0034_add_exercise_image_dimensions.py
+- extract_serving_size_data
+- Bebas Neue by Dharma Type
+- Command
+- AdminUserCreationTestCase
+- test_rest_timer_restore.js
+- Command
+- .get_nutritional_values
+- Command
+- GalleryImagePowerSyncTestCase
+- WorkoutLogApiTestCase
+- WorkoutSessionLifecycleTestCase
+- language_select
+- .dispatch
+- settings_check
+- ImportExerciseDBTestCase
+- 0003_auto_20150217_1554.py
+- 0007_repetitionunit.py
+- 0011_auto_20201201_0653.py
+- 0012_auto_20210210_1228.py
+- 0013_auto_20210726_1729.py
+- 0013_userprofile_email_verified.py
+- 0016_alter_language_short_name.py
+- 0019_delete_daysofweek.py
+- 0020_add_trophies_enabled_to_userprofile.py
+- 0026_alter_userprofile_birthdate_alter_userprofile_height.py
+- log_tailwind
+- 0006_auto_20201203_0203.py
+- 0010_auto_20201211_0205.py
+- 0016_exercisealias.py
+- 0024_license_information.py
+- 0025_rename_update_date_exercise_last_update_and_more.py
+- 0027_alter_deletionlog_replaced_by_and_more.py
+- 0035_add_is_ai_generated.py
+- 0038_sync_model_changes.py
+- UnitChooserForm
+- Command
+- 0004_auto_20151003_2357.py
+- 0005_auto_20151023_1522.py
+- 0007_auto_20170123_0920.py
+- Command
+- WeightCsvImportForm
+- .__str__
+- Command
+- Command
+- 0003_auto_20201201_0653.py
+- OwnerScopedSessionField
+- 0004_auto_20150609_1603.py
+- 0006_auto_20160303_2138.py
+- .get_owner_object
+- 0012_auto_20210430_1449.py
+- 0013_set_comment.py
+- 0014_auto_20210717_1858.py
+- 0018_flexible_routines.py
+- 0021_flexible_routines_cleanup.py
+- 0023_change_validators.py
+- 0027_cleanup_fields.py
+- nutrition.js
+- 0003_alter_measurement_unique_together_and_more.py
+- 0002_auto_20141225_1512.py
+- 0002_auto_20150202_2040.py
+- 0002_auto_20151003_1944.py
+- 0002_auto_20210722_1042.py
+- 0003_auto_20151003_2008.py
+- 0003_auto_20160416_1030.py
+- 0003_delete_languageconfig.py
+- 0004_auto_20150217_1914.py
+- 0004_multiple_weight_entries_per_day.py
+- 0005_auto_20151025_2236.py
+- 0005_auto_20160303_2008.py
+- 0005_auto_20190618_1617.py
+- 0005_logitem.py
+- 0006_auto_20201201_0653.py
+- 0007_auto_20201214_0013.py
+- 0008_weightunit.py
+- 0009_auto_20201202_1559.py
+- 0010_auto_20170403_0144.py
+- 0010_auto_20210102_1446.py
+- 0010_logitem_meal.py
+- 0013_auto_20210503_1232.py
+- 0014_exerciseimage_style.py
+- 0014_license_information.py
+- 0014_merge_20210818_1735.py
+- 0015_alter_ingredient_creation_date_and_more.py
+- 0015_alter_language_short_name.py
+- 0015_auto_20211028_1113.py
+- 0016_alter_logitem_options_and_more.py
+- 0018_nutritionplan_goal_carbs_nutritionplan_goal_energy_and_more.py
+- 0018_rounding.py
+- 0019_alter_image_license_author_and_more.py
+- 0022_alter_exercise_license_author_and_more.py
+- 0025_add_last_image_check.py
+- 0025_remove_unused_fields_in_userprofile.py
+- 0026_deletionlog_replaced_by.py
+- 0029_full_text_search.py
+- 0029_ingredient_nutriscore.py
+- 0030_add_indices.py
+- 0030_increase_author_field_length.py
+- 0032_rename_exercise.py
+- 0033_uniqueness_constraint_translations.py
+- 0034_ingredient_trigram_gin_index.py
+- 0039_translation_alias_trigram_gin_index.py
+- 0040_alter_exercise_license_author_and_more.py
+- .thumbnails
+- 0003_auto_20170118_2308.py
+- 0004_auto_20200819_2310.py
+- 0008_auto_20210102_1446.py
+- 0009_meal_name.py
+- 0011_alter_logitem_datetime.py
+- 0012_alter_ingredient_license_author.py
+- 0017_remove_nutritionplan_language_alter_logitem_meal.py
+- 0020_full_text_search.py
+- 0021_add_fibers_field.py
+- 0023_fiber_spelling.py
+- 0024_remove_ingredient_status.py
+- 0028_ingredient_dietary_properties.py
+- 0033_finalize_weight_unit_merge.py
+- 0036_alter_image_license_author_and_more.py
+- .test_admin_notes_update_blocked_when_both_gyms_none
+- .test_delete_blocked_when_both_gyms_none
+- .test_delete_post_does_not_remove_victim_when_both_gyms_none
+- GroupedLogDataSerializer
+- LogDataSerializer
+- LicenseRepresentationTestCase
+- MuscleApiTestCase
+- UnitTypeTestCase
+- .get_queryset
+- .get_throttles
+- .get_queryset
+- .get_queryset
+- .get_queryset
+- .get_queryset
+- Promt for generating trophy icons
+- .test_cascade_delete_user
+- config/migrations/0001_initial.py
+- config/migrations/0002_auto_20190618_1617.py
+- core/migrations/0001_initial.py
+- 0027_userprofile_calories_goal_userprofile_steps_goal_and_more.py
+- 0028_userprofile_avatar_url.py
+- 0029_userprofile_needs_password_change.py
+- app-store/README.md
+- buymeacoffee/README.md
+- .get_all_trophy_progress
+- convert-to-png.sh
+- fdroid/README.md
+- flathub/README.md
+- github/README.md
+- .test_reset_password_post_mutates
+- liberapay/README.md
+- .test_reset_password_get_does_not_mutate
+- play-store/README.md
+- 0002_auto_20150604_2139.py
+- wsgi.py
+- sw.js
+- .test_set_password_link_for_passwordless_user
+- exercises/migrations/0001_initial.py
+- gallery/migrations/0001_initial.py
+- 0002_alter_image_date_alter_image_image.py
+- 0003_alter_image_image.py
+- gym/migrations/0001_initial.py
+- gym/migrations/0008_auto_20190618_1617.py
+- .get_owner_object
+- .get_owner_object
+- mailer/migrations/0001_initial.py
+- mailer/migrations/0002_auto_20190618_1617.py
+- .get_queryset
+- .get_owner_objects
+- .get_owner_objects
+- manager/migrations/0001_initial.py
+- manager/migrations/0008_auto_20190618_1617.py
+- 0028_alter_workoutlog_date.py
+- 0029_alter_workoutsession_unique_together.py
+- Flag indicating whether the user "is trustworthy" and can submit or edit exercis
+- Returns the last weight entry, done here to make the behaviour         more cons
+- 0030_alter_workoutsession_unique_together.py
+- Simple helper that checks whether the user uses metric units or not         :ret
+- 0031_workoutsession_condition_photo_workoutsession_status.py
+- 0032_remove_workoutsession_impression_and_more.py
+- measurements/migrations/0001_initial.py
+- .dispatch
+- .get_queryset
+- .get_queryset
+- .test_refresh_fails_under_pure_cache_engine
+- .get_owner_objects
+- AuthProxyMiddlewareTests
+- .get_queryset
+- .get_owner_objects
+- .get_queryset
+- nutrition/migrations/0001_initial.py
+- .test_search_all_languages
+- .test_filter_nutriscore_exact
+- .test_filter_nutriscore_in
+- .test_filter_nutriscore_lte
+- .test_filter_nutriscore_gte
+- .test_basic_search_logged_out
+- .test_basic_search_logged_in
+- Without passkey or social providers the page renders just the         credential
+- .test_search_language_code_en_no_results
+- .test_search_only_unknown_language_codes
+- .test_is_notified_default
+- weight/migrations/0001_initial.py
+- 0006_alter_weightentry_unique_together.py
+- Returns the logs for the routine
+- Return objects to check for ownership permission
+- Return objects to check for ownership permission
+- Return objects to check for ownership permission
+- Return objects to check for ownership permission
+- Return objects to check for ownership permission
+- Return objects to check for ownership permission
+- Return a list with specific dates and routine days          If a day needs logs
+- Calculates the result of a list of configs.          ``max_value`` clamps the ru
+- .get_values
+- Return objects to check for ownership permission
+- .get_owner_objects
+- Return objects to check for ownership permission
+- IngredientModelTestCase
+- .test_search_name_with_valid_barcode
+- patch
+- .get_progress_display
 
 ## God Nodes (most connected - your core abstractions)
-1. `WgerTestCase` - 265 edges
+1. `WgerTestCase` - 276 edges
 2. `WgerEditTestCase` - 113 edges
 3. `WgerAddTestCase` - 106 edges
 4. `WgerDeleteTestCase` - 102 edges
 5. `WgerFormMixin` - 88 edges
 6. `WgerAccessTestCase` - 84 edges
-7. `WgerDeleteMixin` - 67 edges
-8. `UUID` - 63 edges
-9. `BaseTrophyChecker` - 61 edges
-10. `StreamVerbs` - 51 edges
+7. `BaseTrophyChecker` - 73 edges
+8. `WgerDeleteMixin` - 67 edges
+9. `StreamVerbs` - 51 edges
+10. `BaseTestCase` - 46 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `TestSyncMethods` --uses--> `WgerTestCase`  [INFERRED]
-  exercises/tests/test_sync.py → core/tests/base_testcase.py
 - `MagicMock` --uses--> `WgerTestCase`  [INFERRED]
   exercises/tests/test_management_commands.py → core/tests/base_testcase.py
 - `MockOffImageResponse` --uses--> `WgerTestCase`  [INFERRED]
   nutrition/tests/test_tasks.py → core/tests/base_testcase.py
 - `MagicMock` --uses--> `WgerTestCase`  [INFERRED]
   utils/tests/test_middleware.py → core/tests/base_testcase.py
-- `test_refresh_works_under_cache_backed_engine()` --calls--> `mint_long_lived_refresh_token()`  [INFERRED]
-  core/tests/test_apikey.py → utils/headless_long_lived.py
+- `main()` --calls--> `make_program()`  [INFERRED]
+  __main__.py → tasks.py
+- `GymNameHeaderTestCase` --uses--> `WgerTestCase`  [INFERRED]
+  config/tests/test_custom_header.py → core/tests/base_testcase.py
 
-## Communities (818 total, 356 thin omitted)
+## Import Cycles
+- None detected.
 
-### Community 0 - "Community 0"
+## Communities (723 total, 218 thin omitted)
+
+### Community 0 - "WgerAddTestCase"
+Cohesion: 0.04
+Nodes (72): Tests deleting an object an authorized user, a different one and a logged out, Tests deleting the object as an anonymous user, Tests adding an object as an authorized user, a different one and a logged out, Tests adding the object as an anonymous user, WgerAddTestCase, WgerDeleteTestCase, AddExerciseCategoryTestCase, CategoryOverviewTestCase (+64 more)
+
+### Community 1 - "BaseTestCase"
 Cohesion: 0.03
-Nodes (155): Testcase to use with the regular website, Tests deleting an object an authorized user, a different one and a logged out, Tests editing an object as an authorized user, a different one and a logged out, Tests adding an object as an authorized user, a different one and a logged out, Tests accessing a URL per GET as an authorized user, an unauthorized one and, WgerAccessTestCase, WgerAddTestCase, WgerDeleteTestCase (+147 more)
+Nodes (84): ApiBaseTestCase, APITestCase, Return the detail URL to use for testing, Returns the name of the resource. The default is the name of the model         c, Return the URL to use for testing, url(), LanguageCheckApiTestCase, Test that the language is correctly detected - using language code (+76 more)
 
-### Community 1 - "Community 1"
-Cohesion: 0.02
-Nodes (86): LanguageCheckApiTestCase, Test that the language is correctly detected - using language code, Test that the language is correctly detected - using language id, Test that the wrong language results in an error, Test that an unknown language returns an error, Test that either a language ID or a language code must be provided, CheckPermissionApiTestCase, Test that logged-out users get a error message when they don't pass any paramete (+78 more)
+### Community 2 - "IngredientViewSet"
+Cohesion: 0.11
+Nodes (48): CursorPagination, LogItemFilterSet, IngredientImageSerializer, IngredientInfoSerializer, IngredientSerializer, IngredientWeightUnitSerializer, LogItemSerializer, MealInfoSerializer (+40 more)
 
-### Community 2 - "Community 2"
+### Community 3 - "wger_headers"
 Cohesion: 0.06
-Nodes (64): IngredientFilterSet, LogItemFilterSet, Filter based on language codes, not IDs          Also accepts a comma-separated, 'exact' search for the barcode.          It this is not known locally, try fetch, Try a barcode lookup first, then perform a fulltext search when Postgres is avai, IngredientImageSerializer, IngredientInfoSerializer, IngredientSerializer (+56 more)
+Nodes (46): Command, Synchronizes exercise data from a wger instance to the local database, validate_video(), download_exercise_videos(), handle_deleted_entries(), Synchronize the languages from the remote server, Synchronize the licenses from the remote server, Synchronize the categories from the remote server (+38 more)
 
-### Community 3 - "Community 3"
-Cohesion: 0.04
-Nodes (55): Command, Synchronizes exercise data from a wger instance to the local database, download_exercise_images(), download_exercise_videos(), handle_deleted_entries(), Synchronize the languages from the remote server, Synchronize the licenses from the remote server, Synchronize the categories from the remote server (+47 more)
+### Community 4 - "Path"
+Cohesion: 0.10
+Nodes (19): _open_jsonl(), Open a JSONL file, transparently handling both gzip and plain text., SimpleTestCase, Helper to write a JSONL dump file., Test the _open_jsonl helper that handles both gzip and plain files., Test importing ingredients from a JSONL dump file., Create a temporary dump file and return its path., Test that UPDATE mode updates existing ingredients by UUID. (+11 more)
 
-### Community 4 - "Community 4"
-Cohesion: 0.06
-Nodes (47): extract_info_from_wger_api(), extract_weight_unit_info_from_wger_api(), Extract weight unit data from a wger API ingredient response.      Returns a lis, Language, Language of an item (exercise, workout, etc.), Return a more human-readable representation, Returns the canonical URL to view a language, Muscle has no owner information (+39 more)
+### Community 5 - "StreamVerbs"
+Cohesion: 0.14
+Nodes (58): CreateAPIView, DeletionLogSerializer, EquipmentSerializer, ExerciseAliasSerializer, ExerciseCategorySerializer, ExerciseCommentSerializer, ExerciseImageSerializer, ExerciseInfoAliasSerializer (+50 more)
 
-### Community 5 - "Community 5"
-Cohesion: 0.12
-Nodes (51): CanContributeExercises, DeletionLogSerializer, EquipmentSerializer, ExerciseAliasSerializer, ExerciseCategorySerializer, ExerciseCommentSerializer, ExerciseImageSerializer, ExerciseSerializer (+43 more)
-
-### Community 6 - "Community 6"
-Cohesion: 0.06
-Nodes (43): ListView, LoginRequiredMixin, PermissionRequiredMixin, All available trophies (even hidden ones).      This is mainly to check that the, Return only the weight entries for the current user, TrophiesOverview, ExerciseCategoryAddView, ExerciseCategoryDeleteView (+35 more)
-
-### Community 7 - "Community 7"
-Cohesion: 0.07
-Nodes (35): AbstractChangeConfig, MaxRepetitionsConfig, Configuration model for the number of reps for a workout set, Configuration model for the upper limit of the reps for a workout set, RepetitionsConfig, MaxRestConfig, Configuration model for the rest time for a workout set, Configuration model for the upper limit of the rest time for a workout set (+27 more)
-
-### Community 8 - "Community 8"
+### Community 6 - "LoginRequiredMixin"
 Cohesion: 0.08
-Nodes (39): AllauthSignupView, Meta, PasswordConfirmationForm, PasswordResetFormCaptcha, Also persist the first/last name onto the related User., E-mail must be unique system-wide.          Uniqueness is checked case-insensiti, A simple password confirmation form.      This can be used to make sure the user, Check that the password supplied matches the one for the user (+31 more)
+Nodes (32): LicenseAddView, LicenseDeleteView, LicenseListView, LicenseUpdateView, CreateView, DeleteView, ListView, LoginRequiredMixin (+24 more)
 
-### Community 9 - "Community 9"
-Cohesion: 0.05
-Nodes (31): str, modal_link(), delete_testcase_add_methods(), get_reverse(), get_user_list(), Login the user, by default as 'admin', Visit the logout page, # TODO: use FOURPLACES when routine branch is merged (+23 more)
-
-### Community 10 - "Community 10"
-Cohesion: 0.09
-Nodes (37): LanguageCheckSerializer, LanguageSerializer, LicenseSerializer, Repetition unit serializer, Weight unit serializer, Check that the detected language of the description corresponds with the, Workout session serializer, RepetitionUnitSerializer (+29 more)
-
-### Community 11 - "Community 11"
-Cohesion: 0.06
-Nodes (27): extract_info_from_off(), extract_serving_size_data(), _mass_match_to_gram(), Match, float, IngredientData, int, str (+19 more)
-
-### Community 12 - "Community 12"
+### Community 7 - "manager/models/__init__.py"
 Cohesion: 0.07
-Nodes (21): PersonalRecordChecker, Get progress as percentage., Checker for Personal Record (PR) repeatable trophy.      Used to detect when PRs, Estimates the user's one-rep max (1RM) using Brzycki's formula:         1RM = we, Check if user has beaten Personal Record., Meta, Trophies don't have an owner - they are global, Model representing a trophy/achievement that users can earn (+13 more)
+Nodes (34): AbstractChangeConfig, MaxRepetitionsConfig, Configuration model for the number of reps for a workout set, Configuration model for the upper limit of the reps for a workout set, RepetitionsConfig, MaxRestConfig, Configuration model for the rest time for a workout set, Configuration model for the upper limit of the rest time for a workout set (+26 more)
 
-### Community 13 - "Community 13"
-Cohesion: 0.04
-Nodes (25): LoadDataSignalGuardTestCase, Test that completing first workout earns Beginner trophy, Only awards the Personal Record trophy if the log is a PR, Creating a new WorkoutLog which is a PR awards the Personal Record trophy, No Personal Record is awarded on log creation if the user disabled trophies, Test that lifting 5000kg total earns Lifter trophy, Test that 30-day workout streak earns Unstoppable trophy, Test user can earn multiple trophies at once (+17 more)
+### Community 8 - "is_same_gym"
+Cohesion: 0.05
+Nodes (61): AllauthLoginView, AllauthSignupView, Meta, PasswordConfirmationForm, PasswordResetFormCaptcha, Form, Also persist the first/last name onto the related User., E-mail must be unique system-wide. Uniqueness is checked case-insensitively… (+53 more)
 
-### Community 14 - "Community 14"
+### Community 9 - "base_testcase.py"
+Cohesion: 0.06
+Nodes (27): delete_testcase_add_methods(), get_reverse(), get_user_list(), Login the user, by default as 'admin', Visit the logout page, # TODO: use FOURPLACES when routine branch is merged, Hook to add some more specific tests after the basic add or delete         opera, Helper function to test deleting an object (+19 more)
+
+### Community 10 - "core/api/views.py"
+Cohesion: 0.06
+Nodes (49): api_view, LanguageCheckSerializer, LanguageSerializer, LicenseSerializer, Meta, Repetition unit serializer, Weight unit serializer, Serializer for language check (+41 more)
+
+### Community 11 - "extract_info_from_off"
+Cohesion: 0.07
+Nodes (19): extract_info_from_off(), IngredientData, ExtractInfoFromOffTestCase, SimpleTestCase, If 'product_name' is missing, fall back to 'product_name_en', If 'product_name' is missing, prefer the localized name matching 'lang', If neither 'product_name' nor 'product_name_en' is set, fall back to         any, If no product name is present, raise KeyError (+11 more)
+
+### Community 12 - "WorkoutLog"
+Cohesion: 0.10
+Nodes (14): Meta, Return a more human-readable representation, Returns the object that has owner information, # TODO: duplicate sessions can exist for the same (user, date, routine), A log entry for an exercise, WorkoutLog, PersonalRecordChecker, float (+6 more)
+
+### Community 13 - "ExerciseCategory"
+Cohesion: 0.09
+Nodes (15): ExerciseCategory, Meta, Model for an exercise category, Return a more human-readable representation, Category has no owner information, LoadDataSignalGuardTestCase, Only awards the Personal Record trophy if the log is a PR, Creating a new WorkoutLog which is a PR awards the Personal Record trophy (+7 more)
+
+### Community 14 - "UserTrophyAPITestCase"
 Cohesion: 0.05
 Nodes (23): Test getting trophy detail, Test trophy serialization includes all required fields, Test trophies are ordered correctly, Test trophies endpoint is read-only, Test the UserTrophy API endpoints, Test listing user's earned trophies, Test listing user trophies requires authentication, Test users only see their own earned trophies (+15 more)
 
-### Community 15 - "Community 15"
+### Community 15 - "Exercise"
 Cohesion: 0.09
-Nodes (31): ExerciseManagerAll, ExerciseManagerNoTranslations, ExerciseManagerTranslations, Returns all exercises that have at least one translation, Returns all exercises that have no translations, Returns all exercises, bool, int (+23 more)
+Nodes (25): ExerciseManagerAll, ExerciseManagerNoTranslations, ExerciseManagerTranslations, Returns all exercises that have at least one translation, Returns all exercises that have no translations, Returns all exercises, Exercise, bool (+17 more)
 
-### Community 16 - "Community 16"
-Cohesion: 0.05
-Nodes (25): Manually delete the exercise and set the replacement, if any, Exercise, generate_uuids(), Migration, Generate new UUIDs for each exercise     :param apps:     :param schema_editor:, Migration, Migration, generate_uuids() (+17 more)
+### Community 16 - "UUID"
+Cohesion: 0.04
+Nodes (30): Manually delete the exercise and set the replacement, if any, generate_uuids(), Migration, Generate new UUIDs for each exercise     :param apps:     :param schema_editor:, Migration, Migration, generate_uuids(), Migration (+22 more)
 
-### Community 17 - "Community 17"
+### Community 17 - "ExerciseTranslationCustomApiTestCase"
 Cohesion: 0.05
 Nodes (21): ExerciseTranslationCustomApiTestCase, Test that it is not possible to change the exercise id of an existing         tr, Test that it is not possible to change the language id of an existing         ex, Test that it is not possible to change the license of an existing         exerci, Test that it is not possible to set the license for a newly created         exer, POSTing only with ``description_source`` must succeed., Creating a translation without a description is rejected, the model         requ, ``description`` is read-only, passing it on POST must be silently         droppe (+13 more)
 
-### Community 18 - "Community 18"
-Cohesion: 0.09
-Nodes (28): ConfigRequirements, ConfigRequirements, SetConfigData, bool, bool, SetConfigData, str, AbstractChangeConfig (+20 more)
-
-### Community 19 - "Community 19"
-Cohesion: 0.06
-Nodes (22): Tests deactivating a user as an administrator, Test accessing the user detail page, Tests activating a user as another logged in user, Overwrite some of Django's settings here, Helper function to test deactivating users, Tests deactivating a user as another logged in user, Tests deactivating a user a logged out user, Regression test: GET must only render a confirmation form, since         Django' (+14 more)
-
-### Community 20 - "Community 20"
-Cohesion: 0.05
-Nodes (20): DeletionLogTestCase, Test that routine slot entries referencing the deleted exercise are         upda, Test that replacing a deleted exercise invalidates the cache of every         ro, Test that a failure during the delete rolls back the deletion log and         th, Test that images and videos of the deleted exercise are reassigned to         th, Test that images and videos are cascade-deleted with the exercise when         t, When media is transferred, the underlying file is physically moved so its, Test that translations of the deleted exercise whose language is not         yet (+12 more)
-
-### Community 21 - "Community 21"
-Cohesion: 0.05
-Nodes (16): Disable all language filters, Exact match on nutriscore returns only ingredients with that grade, `in` lookup accepts a comma-separated list of grades, `lt` lookup returns ingredients with a better grade (e.g. better than C → A, B), `lte` lookup is inclusive (e.g. C or better → A, B, C), `gt` lookup returns ingredients with a worse grade (e.g. worse than C → D, E), `gte` lookup is inclusive (e.g. C or worse → C, D, E), A barcode already in the database is returned without calling OFF (+8 more)
-
-### Community 22 - "Community 22"
-Cohesion: 0.08
-Nodes (28): Filter set for Trophy model., Filter set for UserTrophy model., TrophyFilterSet, UserTrophyFilterSet, Serializer for UserStatistics model.      Shows user's trophy-related statistics, Serializer for Trophy model.      Shows trophy information for listing active tr, Translate the trophy name, Translate the trophy description (+20 more)
-
-### Community 23 - "Community 23"
-Cohesion: 0.07
-Nodes (21): check_min_server_version(), Command, Download exercise images from wger.de and updates the local database      Both t, Command, Download exercise videos from wger.de and updates the local database      Both t, Command, Command, Synchronizes ingredient data from a wger instance to the local database (+13 more)
-
-### Community 24 - "Community 24"
-Cohesion: 0.07
-Nodes (16): ExerciseComment, Model for an exercise comment, Return a more human-readable representation, Comment has no owner information, DeletionLog, Model to log deleted exercises      This is needed to keep the local instances i, Alias, Meta (+8 more)
-
-### Community 25 - "Community 25"
-Cohesion: 0.07
-Nodes (19): BaseTrophyChecker, InactivityReturnChecker, Get human-readable progress string., Checker for inactivity return trophies (Phoenix trophy).      Used for trophies, Validate that inactive_days parameter is present and valid., Check if user has returned to training after being inactive.          The user e, Get progress towards the trophy.          This is a special trophy - progress sh, Get the required number of inactive days. (+11 more)
-
-### Community 26 - "Community 26"
-Cohesion: 0.08
-Nodes (18): Ingredient, Returns the canonical URL to view this object.          Since some names consist, Return a more human-readable representation, Compare ingredients based on their values, not like django on their PKs, Define a hash function          This is rather unnecessary, but it seems that ne, Ingredient has no owner information, An ingredient, with some approximate nutrition values      IMPORTANT: when chang, IngredientWeightUnit (+10 more)
-
-### Community 27 - "Community 27"
-Cohesion: 0.11
-Nodes (18): BaseTrophyChecker, check(), format_number(), get_current_value(), get_progress(), get_target_value(), Get a human-readable string describing the progress.          Returns:, Validate that the required parameters are present.          Override this method (+10 more)
-
-### Community 28 - "Community 28"
-Cohesion: 0.09
-Nodes (21): Checker for workout count-based trophies.      Used for trophies that require co, Validate that count parameter is present and valid., Check if user has completed required number of workouts., Get progress as percentage of workouts completed., Get the target number of workouts., Get the user's current workout count., Get human-readable progress string., WorkoutCountBasedChecker (+13 more)
-
-### Community 29 - "Community 29"
-Cohesion: 0.09
-Nodes (18): LogItem, Return a more human-readable representation, Returns the object that has owner information, An item (component) of a log, Meal, Meta, Return a more human-readable representation, Returns the object that has owner information (+10 more)
-
-### Community 30 - "Community 30"
+### Community 18 - "AbstractChangeConfig"
 Cohesion: 0.13
-Nodes (24): GroupedLogData, LogData, RoutineLogData, WorkoutDayData, date, int, str, timedelta (+16 more)
+Nodes (23): ConfigRequirements, ConfigRequirements, AbstractChangeConfig, Meta, OperationChoices, bool, Flag indicating that there is no increase, but that the value will simply, Get the requirements as an object (+15 more)
 
-### Community 31 - "Community 31"
-Cohesion: 0.06
-Nodes (5): RiR 0 (no reps in reserve = maximum effort) maps to RPE 10, not None., RPE 10 (derived from RiR 0) must fit the serializer's DecimalField; a         tw, get_config rounds RiR to the nearest 0.5 before serialization, so the         co, Test that the text representation works as expected, SetConfigDataTestCase
+### Community 19 - "WgerEditTestCase"
+Cohesion: 0.04
+Nodes (64): Tests editing an object as an authorized user, a different one and a logged out, Tests accessing a URL per GET as an authorized user, an unauthorized one and, WgerAccessTestCase, WgerEditTestCase, EditUserTestCase, EditUserTestCase2, Test accessing the user detail page, Helper function to test deactivating users (+56 more)
 
-### Community 32 - "Community 32"
-Cohesion: 0.09
-Nodes (20): Checker for streak-based trophies.      Used for trophies that require working o, Validate that days parameter is present and valid., Check if user has achieved the required streak., Get progress as percentage of streak achieved., Get the target streak length in days., Get the user's best streak (max of current and longest)., Get human-readable progress string., StreakChecker (+12 more)
+### Community 20 - "DeletionLogTestCase"
+Cohesion: 0.05
+Nodes (19): DeletionLogTestCase, Test that routine slot entries referencing the deleted exercise are         upda, Test that a failure during the delete rolls back the deletion log and         th, Test that images and videos of the deleted exercise are reassigned to         th, Test that images and videos are cascade-deleted with the exercise when         t, When media is transferred, the underlying file is physically moved so its, Test that translations of the deleted exercise whose language is not         yet, Test that translations are cascade-deleted with the exercise when         transf (+11 more)
 
-### Community 33 - "Community 33"
-Cohesion: 0.09
-Nodes (20): Checker for volume-based trophies.      Used for trophies that require lifting a, Validate that kg parameter is present and valid., Check if user has lifted the required total weight., Get progress as percentage of weight lifted., Get the target weight in kg., Get the user's total weight lifted in kg., Get human-readable progress string., VolumeChecker (+12 more)
+### Community 21 - "SearchIngredientApiTestCase"
+Cohesion: 0.15
+Nodes (7): `lt` lookup returns ingredients with a better grade (e.g. better than C → A, B), `gt` lookup returns ingredients with a worse grade (e.g. worse than C → D, E), A barcode already in the database is returned without calling OFF, The "Testzutat" ingredient should be only found when searching in German, Passing different language codes works correctly, Unknown language codes are ignored, SearchIngredientApiTestCase
 
-### Community 34 - "Community 34"
-Cohesion: 0.08
-Nodes (20): AddView, DeleteView, ListView, Can only add contract types in own gym, Redirect back to overview page, Send some additional data to the template, View to delete an existing contract option, Can only add contract option in own gym (+12 more)
-
-### Community 35 - "Community 35"
-Cohesion: 0.08
-Nodes (20): AddView, DeleteView, ListView, Can only add contract types in own gym, Redirect back to overview page, Send some additional data to the template, View to delete an existing contract type, Can only add contract types in own gym (+12 more)
-
-### Community 36 - "Community 36"
-Cohesion: 0.09
-Nodes (14): Command, Scan the full Open Food Facts JSONL dump and identify local OFF ingredients, Collect every product code from the database dump          Returns (codes, parse, Command, Import an Open Food facts Dump      Example usage:     * Import dump (downloads, ImportProductCommand, Import an Open Food facts Dump, int (+6 more)
-
-### Community 37 - "Community 37"
-Cohesion: 0.10
-Nodes (26): create(), ExerciseInfoAliasSerializer, ExerciseTranslationInfoSerializer, ExerciseTranslationSubmissionSerializer, ExerciseVideoInfoSerializer, get_default_license(), _log_action_creation(), ExerciseVideo serializer for the info endpoint (+18 more)
-
-### Community 38 - "Community 38"
-Cohesion: 0.09
-Nodes (20): Checker for Weekend Warrior trophy.      Used for trophies that require working, Validate that weekends parameter is present and valid., Check if user has completed workouts on required consecutive weekends., Get progress as percentage of weekend streak achieved., Get the target number of consecutive complete weekends., Get the user's current weekend workout streak., Get human-readable progress string., WeekendWarriorChecker (+12 more)
-
-### Community 39 - "Community 39"
-Cohesion: 0.09
-Nodes (19): Get the target time as a string., Get the user's relevant workout time., Get human-readable progress string., Checker for time-based trophies.      Used for trophies that require working out, Parse a time string in HH:MM format., Validate that at least one of before/after is present and valid., Check if user has worked out at the required time., Get progress towards the trophy.          For time-based trophies, progress is b (+11 more)
-
-### Community 40 - "Community 40"
-Cohesion: 0.11
-Nodes (25): Synchronize ingredients from a remote wger instance      Uses /api/v2/ingredient, sync_ingredients(), Orchestrator: splits the id space into ranges of `ID_RANGE_SIZE` rows each     a, sync_all_ingredients_chunked_task(), TestSyncMethods, MockIngredientResponse, Tests for the `sync-ingredients` management command.      The `@patch('wger.core, The hyphenated module name needs importlib. (+17 more)
-
-### Community 41 - "Community 41"
+### Community 22 - "TrophyViewSet"
 Cohesion: 0.07
-Nodes (25): fa_class(), format_username(), get_item(), is_positive(), language_select(), minus(), Formats the username according to the information available, Emit a JSON object mapping language code -> hashed URL of the React app's     tr (+17 more)
+Nodes (33): Meta, Filter set for Trophy model., Filter set for UserTrophy model., TrophyFilterSet, UserTrophyFilterSet, Meta, Serializer for trophy progress information.      Used for showing progress on al, Trophy (+25 more)
 
-### Community 42 - "Community 42"
+### Community 23 - "WgerCommand"
+Cohesion: 0.09
+Nodes (12): BaseCommand, Base class for all wger commands that allows to set the remote URL, WgerCommand, Command, Download exercise images from wger.de and updates the local database      Both t, Command, Download exercise videos from wger.de and updates the local database      Both t, Command (+4 more)
+
+### Community 24 - "Translation"
+Cohesion: 0.05
+Nodes (18): Alias, Meta, Model for an exercise (name)alias, Return a more human-readable representation, Comment has no owner information, Meta, Returns the canonical URL to view an exercise, Return a more human-readable representation (+10 more)
+
+### Community 25 - "InactivityReturnCheckerTestCase"
+Cohesion: 0.12
+Nodes (6): InactivityReturnCheckerTestCase, Test the InactivityReturnChecker, Test check returns True when returned after 30+ days inactive, Test check returns False when no inactivity period recorded, Test check returns False when inactive but no return, Test progress is either 0 or 100 for inactivity return
+
+### Community 26 - "Ingredient"
+Cohesion: 0.07
+Nodes (15): Ingredient, bool, Ingredient, from_json(), Ingredient, Returns the canonical URL to view this object.          Since some names consist, Return a more human-readable representation, Compare ingredients based on their values, not like django on their PKs (+7 more)
+
+### Community 27 - "BaseTrophyChecker"
+Cohesion: 0.07
+Nodes (37): BaseTrophyChecker, check(), format_number(), get_progress(), ABC, bool, Decimal, float (+29 more)
+
+### Community 28 - "WorkoutCountBasedChecker"
+Cohesion: 0.09
+Nodes (21): bool, float, int, str, Checker for workout count-based trophies.      Used for trophies that require co, Validate that count parameter is present and valid., Check if user has completed required number of workouts., Get progress as percentage of workouts completed. (+13 more)
+
+### Community 29 - "NutritionPlan"
+Cohesion: 0.09
+Nodes (24): BaseMealItem, Base class for an item (component) of a meal or log This just provides some…, IngredientWeightUnit, A specific human usable weight unit for an ingredient, Weight unit has no owner information, Return a more human-readable representation, LogItem, Meta (+16 more)
+
+### Community 30 - "Routine"
+Cohesion: 0.09
+Nodes (28): GroupedLogData, LogData, RoutineLogData, date_sequence(), duration(), label_dict(), Meta, date (+20 more)
+
+### Community 31 - "SetConfigDataTestCase"
+Cohesion: 0.06
+Nodes (4): RiR 0 (no reps in reserve = maximum effort) maps to RPE 10, not None., RPE 10 (derived from RiR 0) must fit the serializer's DecimalField; a         tw, Test that the text representation works as expected, SetConfigDataTestCase
+
+### Community 32 - "StreakChecker"
+Cohesion: 0.09
+Nodes (20): bool, float, int, str, Checker for streak-based trophies.      Used for trophies that require working o, Validate that days parameter is present and valid., Check if user has achieved the required streak., Get progress as percentage of streak achieved. (+12 more)
+
+### Community 33 - "VolumeChecker"
+Cohesion: 0.09
+Nodes (20): bool, float, str, Checker for volume-based trophies.      Used for trophies that require lifting a, Validate that kg parameter is present and valid., Check if user has lifted the required total weight., Get progress as percentage of weight lifted., Get the target weight in kg. (+12 more)
+
+### Community 34 - "AddView"
+Cohesion: 0.08
+Nodes (23): AddView, DeleteView, ListView, CreateView, LoginRequiredMixin, PermissionRequiredMixin, Can only add contract types in own gym, Redirect back to overview page (+15 more)
+
+### Community 35 - "AddView"
+Cohesion: 0.08
+Nodes (23): AddView, DeleteView, ListView, CreateView, LoginRequiredMixin, PermissionRequiredMixin, Can only add contract types in own gym, Redirect back to overview page (+15 more)
+
+### Community 36 - "ImportProductCommand"
+Cohesion: 0.12
+Nodes (10): Command, int, str, Scan the full Open Food Facts JSONL dump and identify local OFF ingredients, Collect every product code from the database dump          Returns (codes, parse, ImportProductCommand, BaseCommand, str (+2 more)
+
+### Community 37 - "control"
+Cohesion: 0.18
+Nodes (13): ActionHistoryFilter, _content_type_map(), control(), history_revert(), Meta, HttpRequest, QuerySet, require_POST (+5 more)
+
+### Community 38 - "WeekendWarriorChecker"
+Cohesion: 0.09
+Nodes (20): bool, float, int, str, Checker for Weekend Warrior trophy.      Used for trophies that require working, Validate that weekends parameter is present and valid., Check if user has completed workouts on required consecutive weekends., Get progress as percentage of weekend streak achieved. (+12 more)
+
+### Community 39 - "TimeBasedChecker"
+Cohesion: 0.09
+Nodes (19): bool, float, str, Get the target time as a string., Get the user's relevant workout time., Get human-readable progress string., Checker for time-based trophies.      Used for trophies that require working out, Parse a time string in HH:MM format. (+11 more)
+
+### Community 40 - "sync_ingredients"
+Cohesion: 0.07
+Nodes (32): Synchronize ingredients from a remote wger instance Uses /api/v2/ingredient-…, sync_ingredients(), MockIngredientResponse, patch, Weight units that no longer exist on the remote are deleted locally, A record that fails sanity_checks() is skipped without aborting the sync., Incremental sync passes `last_update__gt` to the cursor endpoint., With show_progress_bar=True, the first call probes for the total count. (+24 more)
+
+### Community 41 - ".dict"
+Cohesion: 0.17
+Nodes (9): PATCH each field individually. ``pk=1`` is an English translation, so         th, get_custom_header(), processor(), Loads the custom header for the application, if available Currently the header…, Loads the custom header for the application, if available      Currently the hea, get_language_data(), load_language(), Language (+1 more)
+
+### Community 42 - "ExerciseHistoryControlExtras"
 Cohesion: 0.08
 Nodes (15): ExerciseHistoryControl, ExerciseHistoryControlExtras, Tests for pagination, filters and contributor flagging on the history     contro, If the action_object referenced by an Action no longer resolves to a         liv, Verify the paginator splits the action stream into pages of PAGE_SIZE., The ``user`` GET parameter filters by actor username (case-insensitive         s, Filtering by ``model_type`` should restrict to the matching content         type, Actors whose account is younger than 60 days are flagged so admins         can r (+7 more)
 
-### Community 43 - "Community 43"
-Cohesion: 0.07
-Nodes (11): AppConfig, ConfigConfig, CoreConfig, ExerciseConfig, GalleryConfig, GymConfig, Config, ManagerConfig (+3 more)
+### Community 43 - "AppConfig"
+Cohesion: 0.05
+Nodes (26): AppConfig, ConfigConfig, AppConfig, CoreConfig, AppConfig, ExerciseConfig, AppConfig, GalleryConfig (+18 more)
 
-### Community 44 - "Community 44"
-Cohesion: 0.08
-Nodes (16): Command, Import an USDA dataset, convert_to_grams(), extract_info_from_usda(), Convert a nutrient entry to grams, float, IngredientData, int (+8 more)
+### Community 44 - "ExtractInfoFromUSDATestCase"
+Cohesion: 0.11
+Nodes (15): convert_to_grams(), extract_info_from_usda(), float, IngredientData, int, Convert a nutrient entry to grams, ExtractInfoFromUSDATestCase, SimpleTestCase (+7 more)
 
-### Community 45 - "Community 45"
-Cohesion: 0.09
-Nodes (18): is_superset(), Any, bool, str, SlotData, slots_display_mode(), slots_gym_mode(), text_repr() (+10 more)
-
-### Community 46 - "Community 46"
-Cohesion: 0.08
-Nodes (16): Wger Account Adapter for allauth, Create the user via allauth, then pre-fill the wger profile bits the         old, Return the locale code of the recipient's preferred notification         languag, Add token expiration info to the email context and render the email in         t, WgerAccountAdapter, DefaultAccountAdapter, AccountAdapterNotificationLanguageTestCase, EmailVerificationFromAPITestCase (+8 more)
-
-### Community 47 - "Community 47"
-Cohesion: 0.07
-Nodes (17): UpdateView, ConfigUpdateView, View to update an existing admin gym configuration, Return to the gym user overview, Send some additional data to the template, GymConfigUpdateView, View to update an existing gym configuration, Only managers for this gym can add new members (+9 more)
-
-### Community 48 - "Community 48"
-Cohesion: 0.08
-Nodes (20): Only managers and trainers for this gym can access the members, gym_new_user_info(), GymAddUserView, GymAddView, GymDeleteView, GymUpdateView, GymUserListView, Pass other info to the template (+12 more)
-
-### Community 49 - "Community 49"
-Cohesion: 0.10
-Nodes (19): Enum, IngredientCategory, Meta, Model for an Ingredient category, Return a more human-readable representation, Category has no owner information, _derive_serving_size_gram(), _extract_off_ingredient_data() (+11 more)
-
-### Community 50 - "Community 50"
-Cohesion: 0.09
-Nodes (17): BaseDatabaseSchemaEditor, StateApps, migrate_description_to_markdown(), Migration, Reset all cached infos, Test handling of None or empty strings., Test the markdown rendering and HTML sanitization utilities.     Allowed tags: b, Test that basic markdown syntax is rendered to HTML. (+9 more)
-
-### Community 51 - "Community 51"
+### Community 45 - "SlotData"
 Cohesion: 0.12
-Nodes (23): DecimalOrIntegerField, Custom field to represent Decimal values as integers when they are whole numbers, BaseConfigSerializer, DayStructureSerializer, GroupedLogDataSerializer, LogDataSerializer, MaxRestConfigSerializer, OwnerScopedSessionField (+15 more)
+Nodes (13): Returns the slots optimized for display in the template, SlotData, slots_display_mode(), Day, DayType, Meta, int, Return a more human-readable representation (+5 more)
 
-### Community 52 - "Community 52"
-Cohesion: 0.11
-Nodes (14): DeleteUserByAdminTestCase, Tests deleting a user account by a gym administrator, Tests deleting the user account as a gym manager, Tests deleting the user account as a gym manager, Tests deleting the user account as a general manager, Tests deleting the user account as a general manager, Tests deleting the user account as a regular user, Tests deleting the user account as a gym trainer (+6 more)
+### Community 46 - "WgerAccountAdapter"
+Cohesion: 0.08
+Nodes (17): Wger Account Adapter for allauth, Create the user via allauth, then pre-fill the wger profile bits the old…, Return the locale code of the recipient's preferred notification language, or…, Add token expiration info to the email context and render the email in the…, WgerAccountAdapter, AccountAdapterNotificationLanguageTestCase, EmailVerificationFromAPITestCase, override_settings (+9 more)
 
-### Community 53 - "Community 53"
-Cohesion: 0.11
-Nodes (18): get_values(), BmrForm, DailyCaloriesForm, IngredientForm, IngredientWeightUnitChoiceField, MealLogItemForm, Meta, PhysicalActivitiesForm (+10 more)
+### Community 47 - "UpdateView"
+Cohesion: 0.05
+Nodes (25): GymConfigUpdateView, UpdateView, Generic view to edit the gym config table, Return the only gym config object, ConfigUpdateView, UpdateView, View to update an existing admin gym configuration, Return to the gym user overview (+17 more)
 
-### Community 54 - "Community 54"
+### Community 48 - "GymAddUserView"
+Cohesion: 0.05
+Nodes (41): get_permission_list(), Calculate available user permissions This is needed because a user shouldn't be…, gym_permissions_user_edit(), GymAddUserView, GymAddView, GymDeleteView, GymListView, GymUpdateView (+33 more)
+
+### Community 49 - "models/ingredient.py"
+Cohesion: 0.13
+Nodes (14): Enum, _derive_serving_size_gram(), _extract_off_ingredient_data(), fetch_ingredient_from_off(), _fetch_off_product(), Meta, IngredientData, int (+6 more)
+
+### Community 50 - "render_markdown"
+Cohesion: 0.10
+Nodes (16): migrate_description_to_markdown(), Migration, BaseDatabaseSchemaEditor, StateApps, Renders markdown text to HTML and sanitizes it to allow only basic markup., Directly sanitizes HTML (for legacy fields or non-markdown inputs), render_markdown(), sanitize_html() (+8 more)
+
+### Community 51 - "DecimalOrIntegerField"
+Cohesion: 0.14
+Nodes (54): DecimalOrIntegerField, Custom field to represent Decimal values as integers when they are whole numbers, BaseConfigSerializer, DaySerializer, DayStructureSerializer, MaxRepetitionsConfigSerializer, MaxRestConfigSerializer, MaxRiRConfigSerializer (+46 more)
+
+### Community 52 - "DeleteUserByAdminTestCase"
+Cohesion: 0.08
+Nodes (18): DeleteUserByAdminTestCase, DeleteUserTestCase, Tests deleting a user account by a gym administrator, Tests deleting the user account as a gym manager, Tests deleting the user account as a gym manager, Tests deleting the user account as a general manager, Tests deleting the user account as a general manager, Tests deleting the user account as a regular user (+10 more)
+
+### Community 53 - "Html5NumberInput"
+Cohesion: 0.20
+Nodes (12): BmrForm, DailyCaloriesForm, IngredientForm, IngredientWeightUnitChoiceField, MealItemForm, MealLogItemForm, Meta, Form for the basal metabolic rate (+4 more)
+
+### Community 54 - "ExerciseDeleteApiTestCase"
 Cohesion: 0.11
 Nodes (13): ExerciseDeleteApiTestCase, Both flags can be combined in a single request., Transfer flags without replace_by have no effect — full cascade., An invalid UUID in replace_by is silently ignored., A plain delete fires a DELETED actstream event with the model_type., A delete with replace_by fires a MERGED event pointing at the target., An unresolvable replaced_by must fall through to a DELETED event, not         em, Anonymous users cannot delete exercises. (+5 more)
 
-### Community 55 - "Community 55"
-Cohesion: 0.08
-Nodes (11): BaseCommand, Command, Download ingredient images from a wger instance and updates the local database, Command, Command, Dummy generator for measurement categories, Command, Export all ingredients as a gzipped JSONL file for bulk synchronization.      Th (+3 more)
+### Community 55 - "BaseCommand"
+Cohesion: 0.09
+Nodes (12): BaseCommand, Command, BaseCommand, Command, BaseCommand, Command, BaseCommand, Command (+4 more)
 
-### Community 56 - "Community 56"
-Cohesion: 0.11
-Nodes (16): Contract, ContractOption, ContractType, Meta, Return a more human-readable representation, Contract type has no owner information, Model for a member's contract in a gym, Model for a contract's type      A contract type is a user-editable way of enhan (+8 more)
+### Community 56 - "gym/models/__init__.py"
+Cohesion: 0.12
+Nodes (16): Contract, ContractOption, ContractType, Meta, Return a more human-readable representation, Model for a member's contract in a gym, Model for a contract's type      A contract type is a user-editable way of enhan, Return a more human-readable representation (+8 more)
 
-### Community 57 - "Community 57"
-Cohesion: 0.10
-Nodes (17): MeasurementEntryFilterSet, CategorySerializer, MeasurementSerializer, Measurement category serializer, Measurement serializer, CategoryViewSet, MeasurementViewSet, API endpoint for measurement units (+9 more)
+### Community 57 - "MeasurementViewSet"
+Cohesion: 0.09
+Nodes (19): MeasurementEntryFilterSet, Meta, CategorySerializer, MeasurementSerializer, Meta, Measurement category serializer, Measurement serializer, CategoryViewSet (+11 more)
 
-### Community 58 - "Community 58"
-Cohesion: 0.10
-Nodes (14): is_same_gym(), Check whether two users belong to the same gym.      Returns ``True`` only when, Can only add notes to users in own gym, Only trainers for this gym can edit user notes, Only trainers for this gym can delete user notes, Can only add notes to users in own gym, Can only add documents to users in own gym, Can only see contracts for own gym (+6 more)
+### Community 58 - "exercises/tests/test_sync.py"
+Cohesion: 0.06
+Nodes (16): download_exercise_images(), MockCategoryResponse, MockDeletionLogResponse, MockEquipmentResponse, MockExerciseResponse, MockImageResponse, MockInvalidImageResponse, MockLanguageResponse (+8 more)
 
-### Community 59 - "Community 59"
+### Community 59 - "GymScopeGuardsTestCase"
 Cohesion: 0.13
-Nodes (8): GymScopeGuardsTestCase, Test the gym-scope guards, A manager with gym=None must not reset another gym=None user's         password., Sanity check: an attacker with gym=None must not be able to reset         the pa, A trainer with gym=None must not list admin notes attached to         another gy, Editing an admin note that belongs to a gym=None member must be         blocked, A manager with gym=None must not be able to load (or POST to) the         delete, Even on POST with correct password confirmation the destructive         ``user.d
+Nodes (9): GymScopeGuardsTestCase, A manager with gym=None must not reset another gym=None user's         password., Test the gym-scope guards, Sanity check: an attacker with gym=None must not be able to reset         the pa, A manager with gym=None must not reset another gym=None user's password., Sanity check: an attacker with gym=None must not be able to reset the password…, Sanity check: the legitimate same-gym flow must keep working., A trainer with gym=None must not list admin notes attached to         another gy (+1 more)
 
-### Community 60 - "Community 60"
+### Community 60 - "DateBasedChecker"
 Cohesion: 0.11
-Nodes (16): DateBasedChecker, Get whether the user has achieved this., Get human-readable progress string., Checker for date-based trophies.      Used for trophies that require working out, Validate that month and day parameters are present and valid., Check if user has worked out on the specified date., Get progress towards the trophy.          For date-based trophies, progress is b, Get the target date as a string. (+8 more)
+Nodes (17): BaseTrophyChecker, DateBasedChecker, bool, float, str, Get whether the user has achieved this., Get human-readable progress string., Checker for date-based trophies.      Used for trophies that require working out (+9 more)
 
-### Community 61 - "Community 61"
-Cohesion: 0.10
-Nodes (16): AddView, DeleteView, ListView, Redirect back to user page, Send some additional data to the template, View to update an existing document, Redirect back to user page, Send some additional data to the template (+8 more)
+### Community 61 - "AddView"
+Cohesion: 0.08
+Nodes (23): AddView, DeleteView, ListView, CreateView, LoginRequiredMixin, PermissionRequiredMixin, Redirect back to user page, Can only add documents to users in own gym (+15 more)
 
-### Community 62 - "Community 62"
+### Community 62 - "ExerciseApiCacheTestCase"
 Cohesion: 0.08
 Nodes (14): ExerciseApiCacheTestCase, ExerciseInfoListCacheTestCase, Tests deleting a comment, Tests editing an alias, Tests deleting an alias, Tests the bulk cache handling of the exerciseinfo list endpoint, A warm list request reads the cached representations in bulk and must not, retrieve() and list() share the same per-exercise cache entry, so an         exe (+6 more)
 
-### Community 63 - "Community 63"
-Cohesion: 0.29
-Nodes (10): AbstractChangeConfig, Decimal, int, calculate_config_value(), duplicate_configs(), Save the object to the database, Returns the object that has owner information, This method calculates the configuration for a given iteration of a slot entry. (+2 more)
+### Community 63 - "SlotEntry"
+Cohesion: 0.20
+Nodes (14): calculate_config_value(), duplicate_configs(), Decimal, int, Returns true if the calculated config data can change across iterations, Returns true if the calculated config data can change across iterations, Save the object to the database, Returns the object that has owner information (+6 more)
 
-### Community 64 - "Community 64"
-Cohesion: 0.11
-Nodes (19): bool, Exercise, from_json(), Meta, exercise_image_upload_dir(), ExerciseImage, Only one image can be marked as main picture at a time, Reset all cached infos (+11 more)
+### Community 64 - "ExerciseVideo"
+Cohesion: 0.15
+Nodes (9): exercise_video_upload_dir(), ExerciseVideo, Meta, Returns the video URL, Video has no owner information, Save metadata about the video if ffmpeg is installed, Reset all cached infos, Returns the upload target for exercise videos (+1 more)
 
-### Community 65 - "Community 65"
-Cohesion: 0.19
-Nodes (23): _calculate_last_inactive_date(), _calculate_streaks(), _calculate_total_weight(), _calculate_weekend_streak(), _calculate_workout_times(), _check_jan_1_workout(), get_or_create_statistics(), handle_workout_deletion() (+15 more)
+### Community 65 - "AbstractWeight"
+Cohesion: 0.06
+Nodes (43): Meta, Returns the object that has owner information, Denormalized statistics table for trophy calculations.     This table is updated, UserStatistics, _calculate_last_inactive_date(), _calculate_streaks(), _calculate_total_weight(), _calculate_weekend_streak() (+35 more)
 
-### Community 66 - "Community 66"
-Cohesion: 0.14
-Nodes (18): Command, Download a JSONL dump from a wger instance and bulk-import the ingredients., download_ingredient_dump(), Download the ingredient JSONL dump from a remote wger instance.      Returns the, MagicMock, Test downloading the ingredient dump from a remote server., Test the management commands for bulk export and import., Test the export-ingredients management command. (+10 more)
+### Community 66 - "download_ingredient_dump"
+Cohesion: 0.12
+Nodes (22): download_ingredient_dump(), int, Download the ingredient JSONL dump from a remote wger instance. Returns the…, MagicMock, patch, Test downloading the ingredient dump from a remote server., Test that an already-downloaded file is reused., Test that raw response decoding is disabled to preserve gzip. (+14 more)
 
-### Community 67 - "Community 67"
-Cohesion: 0.10
-Nodes (16): AllauthLoginView, AccountUrlLanguagePrefixTestCase, Unit tests for ``WgerLoginView.get_context_data``., allauth's account URLs (including the providers' OAuth callback) are mounted, Without a URL prefix the page language comes from Accept-Language., Mocks an allauth ``Provider`` instance, When social auth is enabled, the login page renders the provider section., The preferences page links to the connected-accounts page when social auth is en (+8 more)
+### Community 67 - "test_auth_social.py"
+Cohesion: 0.08
+Nodes (17): AccountUrlLanguagePrefixTestCase, override_settings, patch, TestCase, Unit tests for ``WgerLoginView.get_context_data``., allauth's account URLs (including the providers' OAuth callback) are mounted, Without a URL prefix the page language comes from Accept-Language., Mocks an allauth ``Provider`` instance (+9 more)
 
-### Community 68 - "Community 68"
-Cohesion: 0.09
-Nodes (15): Return an instance of the form to be used in this view., Pre-process the form, cleaning up the HTML code found in the fields         give, Set necessary template data to correctly render the form, Return an instance of the form to be used in this view., Getter for success message. Can be overwritten to e.g. to provide the         na, Show a message on successful delete, WgerDeleteMixin, MuscleAddView (+7 more)
+### Community 68 - "WgerFormMixin"
+Cohesion: 0.05
+Nodes (44): LanguageCreateView, LanguageDeleteView, LanguageDetailView, LanguageEditView, LanguageListView, CreateView, DeleteView, ListView (+36 more)
 
-### Community 69 - "Community 69"
-Cohesion: 0.11
-Nodes (21): Command, Day, bool, Routine, Resets all caches related to a routine, reset_routine_cache(), handle_config_change(), handle_workout_log_change() (+13 more)
+### Community 69 - "reset_routine_cache"
+Cohesion: 0.12
+Nodes (22): Day, bool, Routine, Resets all caches related to a routine, reset_routine_cache(), handle_config_change(), handle_workout_log_change(), handle_workout_session_change() (+14 more)
 
-### Community 70 - "Community 70"
-Cohesion: 0.10
-Nodes (15): AddView, DeleteView, ListView, Redirect back to user page, View to update an existing admin note, Redirect back to user page, Send some additional data to the template, View to delete an existing admin note (+7 more)
+### Community 70 - "AddView"
+Cohesion: 0.08
+Nodes (22): AddView, DeleteView, ListView, CreateView, LoginRequiredMixin, PermissionRequiredMixin, Redirect back to user page, Can only add notes to users in own gym (+14 more)
 
-### Community 71 - "Community 71"
+### Community 71 - ".get_queryset"
 Cohesion: 0.11
 Nodes (12): PublicRoutineTemplateManager, Return all entries with kg as weight, Return all entries with lb as weight, Return all entries with reps as unit, Custom manager for log entries, Return all entries with kg as weight, Return all entries with lb as weight, Return all entries with reps as unit (+4 more)
 
-### Community 72 - "Community 72"
-Cohesion: 0.10
-Nodes (13): A table used to cache expensive queries or similar, Return a more human-readable representation, UserCache, License, Meta, License for an item (exercise, ingredient, etc.), Return a more human-readable representation, License has no owner information (+5 more)
-
-### Community 73 - "Community 73"
+### Community 72 - "core/models/__init__.py"
 Cohesion: 0.11
-Nodes (20): WorkoutDayData, Render a table with reportlab with the contents of the training day      :param, render_workout_day(), int, int, get_logo(), load_language(), Returns the currently used language, e.g. to load appropriate exercises (+12 more)
+Nodes (10): A table used to cache expensive queries or similar, Return a more human-readable representation, UserCache, DailyActivity, Meta, Meta, Weight unit, used in combination with an amount such as '10 kg', '5 plates', Return a more human-readable representation (+2 more)
 
-### Community 74 - "Community 74"
+### Community 73 - "workout_log"
+Cohesion: 0.11
+Nodes (19): int, Generates a PDF with the contents of the workout, without table for logs, Generates a PDF with the contents of the given routine, workout_log(), workout_view(), copy(), export_pdf(), int (+11 more)
+
+### Community 74 - "RoutinePdfLogExportTestCase"
 Cohesion: 0.11
 Nodes (13): Tests exporting a workout as a pdf as an anonymous user, Tests exporting a workout as a pdf as the owner user, Tests exporting a workout as a pdf as a logged user not owning the data, Tests exporting a routine as a PDF - logs, Helper function to test exporting a routine as a pdf, Helper function to test exporting a workout as a pdf, with exercise coments, Tests exporting a workout as a pdf as an anonymous user, Tests exporting a workout as a pdf as the owner user (+5 more)
 
-### Community 75 - "Community 75"
-Cohesion: 0.09
-Nodes (12): Tests the trainer login view (switching to user ID), Test the trainer login as an anonymous user, Test the trainer login as a logged in user without rights, Test the trainer login as a logged in user with enough rights, Test changing the identity to a user in a different gym, Test changing the identity to a user with trainer rights, Test changing the identity to a user with gym management rights, After a trainer legitimately switches into a regular user, the         session f (+4 more)
+### Community 75 - "TrainerLoginTestCase"
+Cohesion: 0.08
+Nodes (14): Test the trainer login as an anonymous user, Tests the trainer login view (switching to user ID), Test the trainer login as an anonymous user, Test the trainer login as a logged in user without rights, Test the trainer login as a logged in user with enough rights, Test changing the identity to a user in a different gym, Test changing the identity to a user with trainer rights, After a trainer legitimately switches into a regular user, the         session f (+6 more)
 
-### Community 76 - "Community 76"
+### Community 76 - "PreferencesTestCase"
 Cohesion: 0.09
-Nodes (12): PreferencesTestCase, Accounts with a usable password see the change-password link., Accounts without a usable password see a set-password link instead., Email management was moved to allauth's EmailView: the preferences         page, The allauth email page uses wger's template and is reachable., The preferences page links to allauth's MFA management page., The WebAuthn authenticator list uses ``{% load humanize %}``, so         django., Test that the address property works correctly (+4 more)
+Nodes (12): PreferencesTestCase, Accounts with a usable password see the change-password link., Email management was moved to allauth's EmailView: the preferences         page, The allauth email page uses wger's template and is reachable., The preferences page links to allauth's MFA management page., allauth's MFA pages render through wger's base template (the         allauth/lay, The WebAuthn authenticator list uses ``{% load humanize %}``, so         django., Test that the address property works correctly (+4 more)
 
-### Community 77 - "Community 77"
-Cohesion: 0.16
+### Community 77 - "SearchSubmissionApiTestCase"
+Cohesion: 0.20
 Nodes (12): get_counts(), get_payload(), Test that all objects were correctly created even if not all fields are present., If any part of the exercise submission fails, no exercise is created., A translation whose description language doesn't match the declared language, A comment whose detected language doesn't match the parent translation's, If any part of the exercise submission fails, no exercise is created.          -, Every object created via the submission API produces a CREATED actstream event (+4 more)
 
-### Community 78 - "Community 78"
-Cohesion: 0.27
-Nodes (10): PowerSyncHandler, Any, int, str, Last-chance mutation of the payload before validation. Default is a         no-o, kwargs forwarded to ``serializer.save()`` on create. Default forces the, Route an HTTP verb to the matching CRUD handler., Acknowledge a write whose target row is gone as an idempotent no-op.          Po (+2 more)
+### Community 78 - "PowerSyncHandler"
+Cohesion: 0.21
+Nodes (12): label(), PowerSyncHandler, Any, int, str, Last-chance mutation of the payload before validation. Default is a no-op;…, kwargs forwarded to ``serializer.save()`` on create. Default forces the owning…, Route an HTTP verb to the matching CRUD handler. (+4 more)
 
-### Community 79 - "Community 79"
+### Community 79 - "make_absolute_url"
 Cohesion: 0.10
-Nodes (13): AbsoluteUrlFileField, AbsoluteUrlImageField, ImageField whose representation is always an absolute URL.      DRF returns a ho, FileField variant of AbsoluteUrlImageField, see there for details., Absolute URL to the main muscle image, ExerciseImage, Muscle, Ingredient (+5 more)
+Nodes (13): AbsoluteUrlFileField, AbsoluteUrlImageField, ExerciseImage, ImageField whose representation is always an absolute URL.      DRF returns a ho, FileField variant of AbsoluteUrlImageField, see there for details., Absolute URL to the main muscle image, Absolute URL to the secondary muscle image, Muscle (+5 more)
 
-### Community 80 - "Community 80"
+### Community 80 - "RoutineLogsAndStatsScopeTestCase"
+Cohesion: 0.10
+Nodes (9): ApiBaseResourceTestCase, Base test case for the REST API      All logic happens in the Api*TestCase class, Tests the routine api endpoint, The /logs/ and /stats/ actions of a routine return the owner's     private worko, The /logs/ and /stats/ actions of a routine return the owner's private workout…, The template's exercise structure is the public part of the         feature — on, The template's exercise structure is the public part of the feature — only…, RoutineApiTestCase (+1 more)
+
+### Community 81 - "GymAddUserTestCase"
+Cohesion: 0.09
+Nodes (18): GymAddUserTestCase, Tests adding a user an unauthorized user, Tests adding a user as authorized user, Tests adding a user an unauthorized user, A user created via GymAddUserView must have needs_password_change set to True., Tests adding a user an unauthorized user, A member created by an admin gets an allauth EmailAddress row, so they can log…, Tests adding a user an unauthorized user (+10 more)
+
+### Community 82 - "GymUserConfig"
+Cohesion: 0.18
+Nodes (11): AbstractGymUserConfigModel, GymAdminConfig, GymUserConfig, Meta, While the model has a user foreign key, this is editable by all         trainers, Abstract class for member and admin gym configuration models, Administrator/trainer configuration options for a specific gym, Returns the object that has owner information (+3 more)
+
+### Community 83 - "MaxRiRConfigViewSet"
+Cohesion: 0.25
+Nodes (7): Meta, WorkoutLogFilterSet, MaxRiRConfigViewSet, API endpoint for set config objects, API endpoint for set config objects, Only allow access to appropriate objects, Only allow access to appropriate objects
+
+### Community 84 - "DeleteUserWithoutPasswordTestCase"
+Cohesion: 0.18
+Nodes (5): DeleteUserWithoutPasswordTestCase, Tests user deletion with trophy records and service invocation, Deleting a user removes the account without the workout cascade signals, Accounts without a usable password (e.g. social logins) confirm the     deletion, UserDeleteTrophyIntegrationTestCase
+
+### Community 86 - "ApiKeyTestCase"
 Cohesion: 0.11
-Nodes (9): ApiBaseResourceTestCase, Base test case for the REST API      All logic happens in the Api*TestCase class, Tests the routine api endpoint, The routine API must enforce sane date bounds:     - ``end`` may not be before `, The /logs/ and /stats/ actions of a routine return the owner's     private worko, The template's exercise structure is the public part of the         feature — on, RoutineApiTestCase, RoutineDateValidationTestCase (+1 more)
+Nodes (10): ApiKeyTestCase, Same CSRF-via-img-tag concern as rotation: a GET must not destroy         the us, Token rotation is a state-changing action and must not be triggered         by a, The "Revoke all API sessions" button on /user/api-key has to         blacklist e, Hitting the revoke button as user 'test' must not blacklist the         refresh, Same CSRF concern as ``new_key``: a GET must not blacklist anything,         oth, Tests the API key page, Tests the API key generation page (+2 more)
 
-### Community 81 - "Community 81"
-Cohesion: 0.13
-Nodes (12): Tests adding a user an unauthorized user, Tests adding a user as authorized user, GymAddUserTestCase, Tests adding a user an unauthorized user, Tests adding a user an unauthorized user, Tests adding a user a logged out user, Helper function to test exporting the data of a newly created user, Test exporting the data of a newly created user (+4 more)
+### Community 87 - "ExerciseFilterSet"
+Cohesion: 0.16
+Nodes (12): ExerciseFilterSet, Meta, QuerySet, str, Filters for the regular exercises endpoints to support fulltext name search, Searches for exercise matches with the given name.          If the database is p, Searches for exact exercise matches with the given name, GymManager (+4 more)
 
-### Community 82 - "Community 82"
-Cohesion: 0.11
-Nodes (13): Command, Dummy generator for users, Command, Check that all gym trainers and users have configurations, AbstractGymUserConfigModel, GymAdminConfig, GymUserConfig, Meta (+5 more)
-
-### Community 83 - "Community 83"
-Cohesion: 0.14
-Nodes (17): WorkoutLogFilterSet, MaxSetNrConfigSerializer, MaxWeightConfigSerializer, Max Weight Config serializer, Max Set Nr config serializer, AbstractConfigViewSet, MaxRiRConfigViewSet, MaxSetsConfigViewSet (+9 more)
-
-### Community 84 - "Community 84"
-Cohesion: 0.10
-Nodes (11): Service class for managing user trophy statistics.      This service handles:, UserStatisticsService, DeleteUserTestCase, DeleteUserWithoutPasswordTestCase, Tests user deletion with trophy records and service invocation, Deleting a user removes the account without the workout cascade signals, Tests deleting the user account and all his data, Tests deleting the own account as a logged in user (+3 more)
-
-### Community 86 - "Community 86"
-Cohesion: 0.10
-Nodes (12): ApiKeyTestCase, Same CSRF-via-img-tag concern as rotation: a GET must not destroy         the us, Token rotation is a state-changing action and must not be triggered         by a, The "Revoke all API sessions" button on /user/api-key has to         blacklist e, Hitting the revoke button as user 'test' must not blacklist the         refresh, Same CSRF concern as ``new_key``: a GET must not blacklist anything,         oth, Tests the API key page, Tests the API key generation page (+4 more)
-
-### Community 87 - "Community 87"
-Cohesion: 0.15
-Nodes (12): ExerciseFilterSet, Filters for the regular exercises endpoints to support fulltext name search, Searches for exercise matches with the given name.          If the database is p, Searches for exact exercise matches with the given name, Meta, QuerySet, str, GymManager (+4 more)
-
-### Community 88 - "Community 88"
+### Community 88 - "LogModelTestCase"
 Cohesion: 0.10
 Nodes (11): LogModelTestCase, When the client provides an explicit, matching session, save() must not, A log must never end up attached to another user's session, even if the, Test that the routine foreign key checks ownership, Test that the slot_entry foreign key checks ownership at the         model layer, Test that the next log foreign key checks ownership, Test that the next log foreign key checks ownership, Test some logic in the workout log model (+3 more)
 
-### Community 89 - "Community 89"
-Cohesion: 0.10
-Nodes (10): CreateUserCommand, Uniqueness must also cover allauth's ``EmailAddress`` table —         secondary, Test that with deactivated registration no users can register, Tests giving permission to register users via API, Tests revoking permission to register users via API, Tests listing created users via API, Tests registering a new user via the registration form, The signup form shows a reCAPTCHA field only when USE_RECAPTCHA is set. (+2 more)
+### Community 89 - "RegistrationTestCase"
+Cohesion: 0.07
+Nodes (15): CreateUserCommand, override_settings, The submit button must not be named "submit": a control with that name shadows…, Uniqueness must also cover allauth's ``EmailAddress`` table —         secondary, Uniqueness must also cover allauth's ``EmailAddress`` table — secondary…, Tests that a verification email is sent when a new user registers, Test that with deactivated registration no users can register, Tests giving permission to register users via API (+7 more)
 
-### Community 90 - "Community 90"
+### Community 90 - "WorkoutDayData"
 Cohesion: 0.10
-Nodes (11): Test that days do not advance if they have the need_logs_to_advance flag set, Test that days only advance if they have the need_logs_to_advance flag set, Test the different day and date functions, Test that the fit_in_week flag works, Test that the correct active day is returned, Capture the timeout date_sequence passes to cache.set, forcing a cache miss., A sequence that does not depend on the current date keeps the full cache TTL, A sequence that bakes in today's date must expire by the next local midnight (+3 more)
+Nodes (16): WorkoutDayData, WorkoutDayData, Render a table with reportlab with the contents of the training day :param…, render_workout_day(), Test that days do not advance if they have the need_logs_to_advance flag set, Test that days only advance if they have the need_logs_to_advance flag set, Test the different day and date functions, Test that the fit_in_week flag works (+8 more)
 
-### Community 91 - "Community 91"
+### Community 91 - "ExerciseInfoFilterApiTestCase"
 Cohesion: 0.15
 Nodes (9): ExerciseInfoFilterApiTestCase, Passing different language codes works correctly, Unknown language codes are ignored, Disable all language filters when language__code is omitted, Alias terms should also match, Logged-out users can search via name__search and language__code, Logged-in users get the same results, A DE-only exercise name should not be found when searching in English (+1 more)
 
-### Community 92 - "Community 92"
-Cohesion: 0.17
-Nodes (18): str, main(), bootstrap(), create_or_reset_admin(), database_exists(), load_fixtures(), load_online_fixtures(), make_program() (+10 more)
-
-### Community 93 - "Community 93"
-Cohesion: 0.13
-Nodes (15): Routine structure serializer, WorkoutDayData serializer - gym mode, RoutineStructureSerializer, WorkoutDayDataGymModeSerializer, date_sequence_gym_mode(), Only allow access to appropriate objects, API endpoint for routine template objects, Only allow access to appropriate objects (+7 more)
-
-### Community 94 - "Community 94"
+### Community 92 - "tasks.py"
 Cohesion: 0.18
-Nodes (15): Workout session serializer, Workout log serializer, RoutineSerializer, WorkoutLogSerializer, WorkoutSessionSerializer, API endpoint for workout sessions objects, Only allow access to appropriate objects, API endpoint for routine objects (+7 more)
+Nodes (20): main(), bootstrap(), create_or_reset_admin(), database_exists(), load_fixtures(), load_online_fixtures(), make_program(), migrate_db() (+12 more)
 
-### Community 95 - "Community 95"
-Cohesion: 0.14
-Nodes (12): Exercise, int, MainImageTestCase, Tests that a new image is not AI-generated by default, Tests that the AI-generated flag can be saved as True, Tests that the exercise image API exposes thumbnail URLs, Replacing the file on an existing ExerciseImage must keep the new file         o, Tests the methods to make sure there is always a main image per picture (+4 more)
+### Community 93 - "AbstractConfigViewSet"
+Cohesion: 0.08
+Nodes (27): LogDisplaySerializer, Routine structure serializer, WorkoutDayData serializer - display mode, Log Display Data serializer, RoutineStructureSerializer, WorkoutDayDataDisplayModeSerializer, AbstractConfigViewSet, date_sequence_display_mode() (+19 more)
 
-### Community 96 - "Community 96"
-Cohesion: 0.15
-Nodes (17): issue_refresh_token(), Temporary endpoint for issuing refresh tokens for authenticated users.      This, Revoking a long-lived session breaks the matching refresh token., Bulk revocation kills every long-lived session of the current user., list_long_lived_sessions(), mint_long_lived_refresh_token(), bool, int (+9 more)
+### Community 94 - "WorkoutLogViewSet"
+Cohesion: 0.13
+Nodes (18): Workout session serializer, RoutineSerializer, WorkoutSessionSerializer, API endpoint for workout sessions objects, Only allow access to appropriate objects, Only allow access to appropriate objects, Return objects to check for ownership permission, API endpoint for workout log objects (+10 more)
 
-### Community 97 - "Community 97"
-Cohesion: 0.14
-Nodes (14): ExerciseInfoSerializer, Exercise info serializer, Command, Calls the exercise api to get all exercises and caches them in the database., cache_api_exercises(), cache_exercise(), bool, Exercise (+6 more)
+### Community 95 - ".save_image"
+Cohesion: 0.09
+Nodes (18): ExerciseImagesApiTestCase, ExerciseImageThumbnailsApiTestCase, MainImageTestCase, Exercise, int, Tests that a new image is not AI-generated by default, Tests that the AI-generated flag can be saved as True, Tests that the exercise image API exposes thumbnail URLs (+10 more)
 
-### Community 98 - "Community 98"
+### Community 96 - "list_long_lived_sessions"
+Cohesion: 0.20
+Nodes (10): Revoking a long-lived session breaks the matching refresh token., list_long_lived_sessions(), bool, int, str, Delete a single long-lived session by key, but only when it actually belongs to…, Delete every long-lived session belonging to *user*. Returns the number of…, Iterate over the unexpired long-lived sessions belonging to *user*. Yields… (+2 more)
+
+### Community 97 - "cache_exercise"
+Cohesion: 0.11
+Nodes (16): cache_api_exercises(), cache_exercise(), bool, Exercise, Caches a provided exercise., Command, BaseCommand, Calls the exercise api to get all exercises and caches them in the database. (+8 more)
+
+### Community 98 - "TrophyModelTestCase"
 Cohesion: 0.10
 Nodes (11): Test all trophy types are available, Test UUID is automatically generated, Test updating a trophy, Test deleting a trophy, Test the Trophy model, Test creating a trophy, Test trophy default values, Test the is_repeatable field defaults to False (+3 more)
 
-### Community 99 - "Community 99"
+### Community 99 - "UserTrophyModelTestCase"
 Cohesion: 0.10
-Nodes (11): Test the UserTrophy model, Test awarding a trophy to a user, Test a user can't earn the same trophy twice, Test a user can earn the same repeatable trophy twice, JSON data should be stored and retrieved correctly, Test progress field for progressive trophies, Test is_notified defaults to False, Test multiple users can earn the same trophy (+3 more)
+Nodes (11): Test the UserTrophy model, Test awarding a trophy to a user, Test a user can't earn the same trophy twice, Test a user can earn the same repeatable trophy twice, Test context_data default is None, JSON data should be stored and retrieved correctly, Test progress field for progressive trophies, Test multiple users can earn the same trophy (+3 more)
 
-### Community 100 - "Community 100"
-Cohesion: 0.12
-Nodes (12): AllauthLoginForm, AllauthSignupForm, PasswordInputWithToggle, Custom PasswordInput widget with eye icon toggle functionality, allauth's login form with wger's password-visibility toggle widget., allauth's signup form with wger's password-toggle widgets and an optional     re, WgerLoginForm, WgerSignupForm (+4 more)
+### Community 100 - ".__init__"
+Cohesion: 0.18
+Nodes (9): AllauthLoginForm, AllauthSignupForm, PasswordInputWithToggle, Custom PasswordInput widget with eye icon toggle functionality, allauth's login form with wger's password-visibility toggle widget., allauth's signup form with wger's password-toggle widgets and an optional…, WgerLoginForm, WgerSignupForm (+1 more)
 
-### Community 101 - "Community 101"
-Cohesion: 0.11
-Nodes (14): CreateView, IngredientCreateView, Generic view to add a new ingredient, Demo users can't submit ingredients, AddView, View to delete an existing setting unit, Send some additional data to the template, Send some additional data to the template (+6 more)
+### Community 101 - "PermissionRequiredMixin"
+Cohesion: 0.13
+Nodes (19): AddView, CreateView, DeleteView, ListView, LoginRequiredMixin, PermissionRequiredMixin, UpdateView, View to delete an existing setting unit (+11 more)
 
-### Community 102 - "Community 102"
+### Community 102 - "widgets.py"
 Cohesion: 0.13
 Nodes (14): Select, TextInput, Html5DateField, Html5TimeField, Custom Time field that uses the Html5TimeInput widget, Custom Time field that uses the Html5DateInput widget, Html5FormDateField, Html5FormTimeField (+6 more)
 
-### Community 103 - "Community 103"
+### Community 103 - "sync_all_ingredients_chunked_task"
 Cohesion: 0.12
-Nodes (17): download_ingredient_images(), export_ingredients_dump_task(), fetch_all_ingredient_images_task(), fetch_ingredient_image_task(), int, str, Sync ingredients from a remote wger instance.      Tries to download a bulk JSON, Export all ingredients as a gzipped JSONL file for bulk synchronization. (+9 more)
+Nodes (23): export_ingredients_dump_task(), fetch_all_ingredient_images_task(), fetch_ingredient_image_task(), connect, int, str, task, Orchestrator: splits the id space into ranges of `ID_RANGE_SIZE` rows each and… (+15 more)
 
-### Community 104 - "Community 104"
+### Community 104 - "test_exercise_translation.py"
 Cohesion: 0.11
 Nodes (13): ExerciseApiTestCase, ExerciseInfoApiTestCase, ExerciseRepresentationTestCase, ExercisesTestCase, ExerciseTranslationApiTestCase, Tests the exercise base info resource, Test the representation of a model, Test that the representation of an object is correct (+5 more)
 
-### Community 105 - "Community 105"
+### Community 105 - "IngredientOverviewTestCase"
 Cohesion: 0.13
 Nodes (10): IngredientOverviewTestCase, `?before=<id>` walks backward through the catalogue., The next_url must keep filter parameters like ?is_vegan=1 attached., Helper function to test the ingredient overview page, Tests the ingredient overview page as a logged-in user with editor rights, Tests the overview page as a logged-in user without editor rights, Tests the overview page as a logged in demo user, Tests the overview page as an anonymous (logged out) user (+2 more)
 
-### Community 106 - "Community 106"
-Cohesion: 0.11
-Nodes (7): MagicMock, Variation group with 1 exercise is reported, --delete-orphan-variations cleans up single-exercise groups, Variation groups with 2+ exercises are not reported, test_sync_exercises(), TestHealthCheckManagementCommands, TestSyncManagementCommands
+### Community 106 - "TestHealthCheckManagementCommands"
+Cohesion: 0.09
+Nodes (9): MagicMock, patch, SimpleTestCase, Variation group with 1 exercise is reported, --delete-orphan-variations cleans up single-exercise groups, Variation groups with 2+ exercises are not reported, test_sync_exercises(), TestHealthCheckManagementCommands (+1 more)
 
-### Community 107 - "Community 107"
-Cohesion: 0.13
-Nodes (14): CheckboxSelectMultiple, GymUserAddForm, GymUserPermissionForm, Meta, Since User.username is unique, this check is redundant,         but it sets a ni, Form used to set the permission group of a gym member, Custom logic to reduce the available permissions, Form used when adding a user to a gym (+6 more)
+### Community 107 - "GymUserPermissionForm"
+Cohesion: 0.21
+Nodes (11): CheckboxSelectMultiple, GymAssignExistingUserForm, GymUserAddForm, GymUserPermissionForm, Meta, Since User.username is unique, this check is redundant, but it sets a nicer…, Form used by gym managers/trainers to assign an existing user (created by…, Form used to set the permission group of a gym member (+3 more)
 
-### Community 108 - "Community 108"
-Cohesion: 0.23
-Nodes (18): CheckerRegistry, Registry for trophy checker classes.      Maps checker class names (as stored in, award_trophy(), evaluate_all_trophies(), evaluate_trophy(), get_all_trophy_progress(), get_user_trophies(), Service class for trophy evaluation and management.      This service handles: (+10 more)
+### Community 108 - "User"
+Cohesion: 0.20
+Nodes (17): award_trophy(), evaluate_all_trophies(), evaluate_trophy(), get_all_trophy_progress(), get_user_trophies(), bool, float, int (+9 more)
 
-### Community 109 - "Community 109"
-Cohesion: 0.11
-Nodes (11): TemplateView, Custom dispatch method.          This basically only checks for ownerships of ed, Custom dispatch method.          This basically only checks for ownerships of ed, A regular templateView that sets the mime type as text/plain, Custom permission mixim      This simply checks that the user has the given perm, Check permissions and dispatch, TextTemplateView, WgerPermissionMixin (+3 more)
+### Community 109 - "ReactView"
+Cohesion: 0.10
+Nodes (13): TemplateView, ReactView is a TemplateView that renders a React page.      To get the correspon, Only logged-in users are allowed to access this page, ReactView, TemplateView, TemplateView, Custom dispatch method. This basically only checks for ownerships of…, Custom dispatch method. This basically only checks for ownerships of… (+5 more)
 
-### Community 110 - "Community 110"
-Cohesion: 0.13
-Nodes (14): ModelFormMixin, Getter for success message. Can be overwritten to e.g. to provide the         na, Log form errors to the console, WgerFormMixin, LanguageCreateView, LanguageDeleteView, LanguageDetailView, LanguageEditView (+6 more)
+### Community 110 - "SyncMode"
+Cohesion: 0.09
+Nodes (27): Mode for ingredient sync/import scripts. INSERT: bulk-insert new ingredients…, SyncMode, WeightUnitData, extract_info_from_wger_api(), extract_weight_unit_info_from_wger_api(), IngredientData, WeightUnitData, Extract weight unit data from a wger API ingredient response.      Returns a lis (+19 more)
 
-### Community 111 - "Community 111"
-Cohesion: 0.11
-Nodes (12): DeleteView, ImageAddView, ImageDeleteView, ImageUpdateView, overview(), View to delete an existing image, Send some additional data to the template, An overview of all the user's images (+4 more)
+### Community 111 - "CreateView"
+Cohesion: 0.09
+Nodes (18): CreateView, DeleteView, ImageAddView, ImageDeleteView, ImageUpdateView, overview(), CreateView, DeleteView (+10 more)
 
-### Community 112 - "Community 112"
-Cohesion: 0.14
-Nodes (10): count_temp_users(), DemoUserTestCase, Tests that the helper function that creates demo data does not filter out, Tests that temporary users are automatically created when visiting         URLs, Tests that demo users see a notice on every page, Tests that old demo users are deleted by the management command, Logging out a temporary user must delete the account, Logging out a regular (non-temporary) user must not delete the account. (+2 more)
+### Community 112 - "DemoUserTestCase"
+Cohesion: 0.15
+Nodes (11): count_temp_users(), DemoUserTestCase, Tests that the helper function that creates demo data does not filter out, Tests that temporary users are automatically created when visiting         URLs, Tests that demo users see a notice on every page, Tests that old demo users are deleted by the management command, Logging out a temporary user must delete the account, Logging out a regular (non-temporary) user must not delete the account. (+3 more)
 
-### Community 113 - "Community 113"
-Cohesion: 0.16
-Nodes (13): SetExerciseData, bool, int, SetConfigData, is_superset(), Meta, Model for a set of exercises, Return a more human-readable representation (+5 more)
+### Community 113 - "Slot"
+Cohesion: 0.12
+Nodes (15): SetExerciseData, is_superset(), Meta, bool, int, SetConfigData, Model for a set of exercises, Return a more human-readable representation (+7 more)
 
-### Community 114 - "Community 114"
+### Community 114 - "EmailReminderTestCase"
 Cohesion: 0.11
 Nodes (9): EmailReminderTestCase, Test that no emails are sent if the last notification field is null          Use, Test user with one routine but setting in profile off, Tests the email reminder command.      User 2 has setting in profile active, Test with no schedules or workouts, Test user with no schedules but one workout, Tests that no emails are sent if the user has provided no email, Test that no emails are sent if the last notification field is more         rece (+1 more)
 
-### Community 115 - "Community 115"
+### Community 115 - "CopyRoutineTestCase"
 Cohesion: 0.12
 Nodes (10): CopyRoutineTestCase, Test copying a workout (not template), Test copying a workout (not template) from another user, Test copying a workout template that is not marked as public and belongs to anot, Test copying a workout template that is not marked as public and belongs to the, Test copying a workout template that is marked as public and belongs to another, Tests copying a routine or template, Helper function to test copying routines (+2 more)
 
-### Community 116 - "Community 116"
+### Community 116 - "NutritionalValues"
 Cohesion: 0.12
-Nodes (11): Sums the nutritional info of all items in the meal          :param: use_metric F, BaseMealItem, NutritionalValues, Allow adding nutritional values, Base class for an item (component) of a meal or log      This just provides some, Sums the nutritional info for the ingredient in the MealItem          :param use, NutritionalValuesTestCase, Tests the Nutritional Values dataclass methods (+3 more)
+Nodes (10): NutritionalValues, Allow adding nutritional values, Sums the nutritional info for the ingredient in the MealItem :param use_metric…, Sums the nutritional info of all items in the meal          :param: use_metric F, NutritionalValuesTestCase, SimpleTestCase, Tests the Nutritional Values dataclass methods, Test that the KJ conversion is correct (+2 more)
 
-### Community 117 - "Community 117"
-Cohesion: 0.18
-Nodes (12): str, AuthProxyMiddlewareTests, test_failure_trusted_ip_header_missing(), test_failure_trusted_ip_new_user_creation_disabled(), test_failure_untrusted_ip_header_present(), test_failure_untrusted_ip_outside_subnet(), test_graceful_handling_of_invalid_subnet_format(), test_new_user_gets_verified_emailaddress() (+4 more)
+### Community 117 - ".make_request"
+Cohesion: 0.20
+Nodes (11): str, test_failure_trusted_ip_header_missing(), test_failure_trusted_ip_new_user_creation_disabled(), test_failure_untrusted_ip_header_present(), test_failure_untrusted_ip_outside_subnet(), test_graceful_handling_of_invalid_subnet_format(), test_new_user_gets_verified_emailaddress(), test_new_user_without_email_gets_no_emailaddress() (+3 more)
 
-### Community 118 - "Community 118"
-Cohesion: 0.14
-Nodes (12): AddView, DetailView, ListView, Detail view of a member's contract, View to update an existing contract, Send some additional data to the template, Overview of all available admin notes, Only documents for current user (+4 more)
+### Community 118 - "AddView"
+Cohesion: 0.10
+Nodes (19): AddView, DetailView, ListView, CreateView, LoginRequiredMixin, PermissionRequiredMixin, Can only add documents to users in own gym, Detail view of a member's contract (+11 more)
 
-### Community 119 - "Community 119"
+### Community 119 - "SearchExerciseApiTestCase"
 Cohesion: 0.13
 Nodes (9): Passing different language codes works correctly, Tests searching for exercises via the exerciseinfo endpoint's name__search filte, Helper function to test basic searching for exercises, Logged-out users are also allowed to use the search, Logged-in users get the same results, Explicitly passing the en language code, The "Testübung" exercise should not be found when searching in English, The "Testübung" exercise should be found when searching in German (+1 more)
 
-### Community 120 - "Community 120"
-Cohesion: 0.18
-Nodes (13): CacheKeyMapper, int, Simple class for mapping the cache keys of different objects, Small helper function that returns the PK for the given parameter, Return the language cache key, get nutritional info values canonical representation  using primary key., routine_api_date_sequence_display_key(), routine_api_date_sequence_gym_key() (+5 more)
+### Community 120 - "RoutineViewSet"
+Cohesion: 0.09
+Nodes (14): Test that replacing a deleted exercise invalidates the cache of every         ro, action, Return the day sequence of the routine, Return the day sequence of the routine, Return the full object structure of the routine., Returns the logs for the routine, Returns the logs for the routine, API endpoint for routine objects (+6 more)
 
-### Community 121 - "Community 121"
+### Community 121 - "reset_exercise_api_cache"
+Cohesion: 0.14
+Nodes (15): Reset cached workouts, Reset cached workouts, Reset all cached infos, Reset all cached infos, get_exercise_api_key(), int, str, reset_exercise_api_cache() (+7 more)
+
+### Community 122 - "fetch_ingredient_image"
 Cohesion: 0.12
-Nodes (10): Reset cached workouts, Reset cached workouts, Reset cached workouts, Reset cached workouts, Reset all cached infos, Save metadata about the video if ffmpeg is installed, Reset all cached infos, get_exercise_api_key() (+2 more)
+Nodes (22): fetch_ingredient_image(), FetchIngredientImageTestCase, MockOffImageResponse, MockWgerApiResponse, MagicMock, object, patch, Test fetching an ingredient image (+14 more)
 
-### Community 122 - "Community 122"
-Cohesion: 0.21
-Nodes (14): fetch_ingredient_image(), int, MagicMock, FetchIngredientImageTestCase, MockOffImageResponse, MockWgerApiResponse, Test fetching an ingredient image, test_download_ingredient_off() (+6 more)
-
-### Community 123 - "Community 123"
+### Community 123 - "UserStatisticsModelTestCase"
 Cohesion: 0.12
 Nodes (8): Test the UserStatistics model, Test creating user statistics, Test default values are set correctly, Test one user can only have one statistics record, Test updating statistics, Test deleting a user deletes their statistics, Test string representation of statistics, UserStatisticsModelTestCase
 
-### Community 124 - "Community 124"
-Cohesion: 0.15
-Nodes (10): Should return the number of suggestions, Suggestions should not exist in the database, All suggestions should contain the base username, Special characters in the username should be stripped, If the username is all special characters, suggestions should fall back to 'user, TestGenerateUsernameSuggestions, generate_username_suggestions(), int (+2 more)
-
-### Community 125 - "Community 125"
-Cohesion: 0.18
-Nodes (16): _deletion_originates_from_user(), bool, int, WorkoutLog, WorkoutSession, Handle WorkoutLog delete events.      Triggers full statistics recalculation whe, Handle WorkoutSession save events.      Updates user statistics when a workout s, Handle WorkoutSession delete events.      Triggers full statistics recalculation (+8 more)
-
-### Community 126 - "Community 126"
+### Community 124 - "generate_username_suggestions"
 Cohesion: 0.14
-Nodes (8): Command, Dummy generator for measurement entries, Meta, Category, Returns the object that has owner information, Measurement, Meta, Returns the object that has owner information
+Nodes (11): TestCase, Should return the number of suggestions, Suggestions should not exist in the database, All suggestions should contain the base username, Special characters in the username should be stripped, If the username is all special characters, suggestions should fall back to 'user, TestGenerateUsernameSuggestions, generate_username_suggestions() (+3 more)
 
-### Community 127 - "Community 127"
+### Community 125 - "Trophy"
+Cohesion: 0.08
+Nodes (31): bool, Meta, Trophies don't have an owner - they are global, Returns the relative (to the static folder) path to the trophy image, Model representing a trophy/achievement that users can earn, Trophy, Meta, Model representing a trophy earned by a user (M2M through table) (+23 more)
+
+### Community 126 - "Command"
+Cohesion: 0.15
+Nodes (9): Command, BaseCommand, Dummy generator for measurement categories, Category, Meta, Returns the object that has owner information, Measurement, Meta (+1 more)
+
+### Community 127 - "UserProfilePowerSyncTestCase"
 Cohesion: 0.12
 Nodes (8): A constraint violation can't be fixed by retrying, so it stays 200., PowerSync handler for core.UserProfile. The profile is edit-only: creation     h, A PATCH round-trips the edited preference into the database., Deleting the profile is refused, A transient DB error returns 5xx so powersync retries, never 200., An unclassified exception returns 5xx, not a silent 200 drop., A ValidationError escaping save() is a permanent 200 reject, not a retry., UserProfilePowerSyncTestCase
 
-### Community 128 - "Community 128"
-Cohesion: 0.12
-Nodes (9): FormPreview, EmailListFormPreview, Context for template rendering, Send an email to the managers with the current content, Resolve the target gym and enforce authorization., export_csv(), Exports the saved weight data as a CSV file, Context for template rendering. (+1 more)
+### Community 128 - "Log"
+Cohesion: 0.05
+Nodes (31): FormPreview, CronEntry, Simple list of emails to be sent by a cron job, Return a more human-readable representation, Log, Meta, A log of a sent email, Return a more human-readable representation (+23 more)
 
-### Community 129 - "Community 129"
+### Community 129 - "ActstreamApiMixin"
 Cohesion: 0.18
 Nodes (9): ActstreamApiMixin, ActstreamCreateMixin, _ActstreamMixinBase, ActstreamUpdateMixin, Common helpers for the actstream-event mixins.      The model whose ContentType, POSTing ``self.data`` to ``self.url`` emits a CREATED actstream event., PATCHing ``self.data`` to ``self.url_detail`` emits an UPDATED event., Covers both create and update — for endpoints supporting POST + PATCH. (+1 more)
 
-### Community 130 - "Community 130"
+### Community 130 - "IngredientDataclassTestCase"
 Cohesion: 0.12
-Nodes (8): IngredientDataclassTestCase, Test validation rules, Test that the validation proceeds with correct data, Test the validation for values bigger than 100, Test the validation for saturated fat, Test the validation for sugar, Test that valid nutriscore values are accepted, Test that invalid nutriscore values are rejected
+Nodes (9): IngredientDataclassTestCase, SimpleTestCase, Test validation rules, Test that the validation proceeds with correct data, Test the validation for values bigger than 100, Test the validation for saturated fat, Test the validation for sugar, Test that valid nutriscore values are accepted (+1 more)
 
-### Community 131 - "Community 131"
+### Community 131 - "ExerciseTestCase"
 Cohesion: 0.14
-Nodes (9): ExerciseTestCase, get_ids(), Test the different features of an exercise, Test that the properties return the correct data, Test that the base correctly returns translated exercises, Test that the base correctly returns the English translation if the         requ, Test that the base correctly returns the first translation if for whatever, Test that the variations are correctly returned (+1 more)
+Nodes (10): ExerciseTestCase, get_ids(), Test the different features of an exercise, Helper to return the IDs of the objects in a queryset, Test that the properties return the correct data, Test that the base correctly returns translated exercises, Test that the base correctly returns the English translation if the         requ, Test that the base correctly returns the first translation if for whatever (+2 more)
 
-### Community 132 - "Community 132"
-Cohesion: 0.17
-Nodes (7): PowerSyncCreateTestCase, For tables where the client generates the row's primary key (UUID PK         mod, A redelivered PUT for an already-created row is a no-op, not a conflict error., A user/user_id smuggled in the payload must not change the owner., Mixin: ownership tests for handle_create_* (HTTP PUT)., Return the single object whose pk wasn't in ``pks_before``., Return the value of the field that the client-supplied ``id`` should         rou
+### Community 132 - ".push"
+Cohesion: 0.06
+Nodes (31): APITestCase, PowerSyncBaseTestCase, PowerSyncCreateNotAllowedTestCase, PowerSyncCreateTestCase, PowerSyncDeleteTestCase, PowerSyncResourceTestCase, PowerSyncUpdateTestCase, APITestCase (+23 more)
 
-### Community 133 - "Community 133"
-Cohesion: 0.15
-Nodes (7): IngredientData, WeightUnitData, change_html_entities_to_human_readable(), str, # TODO: replace the Union with | when we drop support for python 3.9, remove_problematic_characters(), HelperFunctionsTestCase
+### Community 133 - "nutrition/helpers.py"
+Cohesion: 0.19
+Nodes (6): change_html_entities_to_human_readable(), str, # TODO: replace the Union with | when we drop support for python 3.9, remove_problematic_characters(), HelperFunctionsTestCase, SimpleTestCase
 
-### Community 134 - "Community 134"
+### Community 134 - "RoutineApiTrainerTestCase"
 Cohesion: 0.12
 Nodes (8): Tests filtering routines in the api endpoint, A user can see their own routines, An admin can see their own routines, When a trainer is impersonating a user, they can see the routines         from t, A user can see their own routine templates, An admin can see their own routine templates, When a trainer is impersonating a user, they can see the routines         from t, RoutineApiTrainerTestCase
 
-### Community 135 - "Community 135"
-Cohesion: 0.21
-Nodes (10): Command, _format_sig(), _is_allowed(), Yield every file under `path` in the configured storage backend.          Uses D, Build the set of (width, height, quality, crop) tuples produced by the         c, Delete thumbnail files whose alias is no longer configured.      When `THUMBNAIL, ArgumentParser, bool (+2 more)
+### Community 135 - "Command"
+Cohesion: 0.19
+Nodes (11): Command, _format_sig(), _is_allowed(), ArgumentParser, BaseCommand, bool, str, Yield every file under `path` in the configured storage backend.          Uses D (+3 more)
 
-### Community 136 - "Community 136"
-Cohesion: 0.17
-Nodes (14): add_deletion_log_image(), add_deletion_log_translation(), add_deletion_log_video(), auto_delete_video_on_delete(), delete_exercise_image_on_delete(), delete_exercise_image_on_update(), delete_exercise_video_on_update(), ExerciseImage (+6 more)
+### Community 136 - "ExerciseImage"
+Cohesion: 0.10
+Nodes (22): ExerciseImage, Only one image can be marked as main picture at a time, Reset all cached infos, Image has no owner information, Model for an exercise image, add_deletion_log_image(), add_deletion_log_translation(), add_deletion_log_video() (+14 more)
 
-### Community 137 - "Community 137"
+### Community 137 - "gallery/models/image.py"
 Cohesion: 0.15
-Nodes (10): Image, Meta, auto_delete_file_on_change(), auto_delete_file_on_delete(), gallery_upload_dir(), Deletes old file when corresponding `MediaFile` object is updated     with new f, Returns the upload target for exercise images, Return a more human-readable representation (+2 more)
+Nodes (11): auto_delete_file_on_change(), auto_delete_file_on_delete(), gallery_upload_dir(), Image, Meta, receiver, Deletes old file when corresponding `MediaFile` object is updated     with new f, Returns the upload target for exercise images (+3 more)
 
-### Community 138 - "Community 138"
-Cohesion: 0.13
-Nodes (8): insert_data(), Migration, Inserts initial data for repetition and weight units      Needed so that the mig, Meta, Setting unit, used in combination with an amount such as '10 reps', '5 km', Return a more human-readable representation, Unit has no owner information, RepetitionUnit
+### Community 138 - "RepetitionUnit"
+Cohesion: 0.10
+Nodes (11): insert_data(), Migration, Inserts initial data for repetition and weight units      Needed so that the mig, Meta, Checks if this unit represents a distance measurement (km, miles), Setting unit, used in combination with an amount such as '10 reps', '5 km', Return a more human-readable representation, Unit has no owner information (+3 more)
 
-### Community 139 - "Community 139"
-Cohesion: 0.20
-Nodes (12): object, AbstractHeight, cm(), g(), inches(), kg(), lb(), normalize() (+4 more)
+### Community 139 - "AbstractHeight"
+Cohesion: 0.09
+Nodes (21): Calculates the user's BMI          Formula: weight/height^2         - weight in, Calculates the user's BMI Formula: weight/height^2 - weight in kg - height in m, object, AbstractHeight, cm(), g(), inches(), kg() (+13 more)
 
-### Community 140 - "Community 140"
-Cohesion: 0.13
-Nodes (9): Make sure the API rejects cross-user references on the ``day``     foreign key w, Smoke test: the legitimate case (own routine + own day) still works.         Day, Make sure the API rejects cross-user references on the ``slot_entry``     foreig, POST /api/v2/workoutlog/ from user 'test' must not be able to attach         a l, Ensure the new ownership check does not break the legitimate case., Make sure the API rejects cross-user references on the ``next_log``     foreign, WorkoutLogNextLogOwnershipTestCase, WorkoutLogSlotEntryOwnershipTestCase (+1 more)
+### Community 140 - "WorkoutLogSlotEntryOwnershipTestCase"
+Cohesion: 0.12
+Nodes (10): Make sure the API rejects cross-user references on the ``day``     foreign key w, Smoke test: the legitimate case (own routine + own day) still works. Day pk=1…, Smoke test: the legitimate case (own routine + own day) still works.         Day, Make sure the API rejects cross-user references on the ``slot_entry``     foreig, POST /api/v2/workoutlog/ from user 'test' must not be able to attach         a l, Ensure the new ownership check does not break the legitimate case., Make sure the API rejects cross-user references on the ``next_log``     foreign, WorkoutLogNextLogOwnershipTestCase (+2 more)
 
-### Community 141 - "Community 141"
-Cohesion: 0.16
-Nodes (10): _check_duplicates(), _normalise_name(), Check that there is only one language per exercise, and that the         detecte, Regex: matches space, hyphen and underscore, and replaces with an empty string., Raise ``ValidationError`` if the detected language of ``text`` doesn't     match, validate_language_matches(), str, Language (+2 more)
-
-### Community 142 - "Community 142"
-Cohesion: 0.18
-Nodes (8): exercises(), Decimal, float, int, Rounds a value to the nearest base      If the base is None, the value will be r, round_value(), Test that the rounding helper works as expected, RoundValueTestCase
-
-### Community 143 - "Community 143"
-Cohesion: 0.13
-Nodes (8): Return the form class for the weight unit, Generic view to delete a weight unit to ingredient entry, Generic view to add a new weight unit to ingredient entry, Return the form class for the weight unit, Generic view to update an weight unit to ingredient entry, WeightUnitIngredientCreateView, WeightUnitIngredientDeleteView, WeightUnitIngredientUpdateView
-
-### Community 144 - "Community 144"
-Cohesion: 0.17
-Nodes (7): AuthProxyHeaderMiddleware, Middleware to authenticate users based on a header set by a trusted proxy., TestRemoveLanguageCode, Removes optional language code at the start of a path, remove_language_code(), logout(), Logout the user. For temporary users, delete them.
-
-### Community 145 - "Community 145"
-Cohesion: 0.20
-Nodes (11): DaySerializer, Slot entry serializer, SlotEntrySerializer, SlotSerializer, API endpoint for workout log objects, Only allow access to appropriate objects, Only allow access to appropriate objects, SlotViewSet (+3 more)
-
-### Community 146 - "Community 146"
-Cohesion: 0.14
-Nodes (8): DayModelTestCase, DaySlotTestCase, Test that a superset between two single-exercise slots of the same         exerc, Test that a day marked as a rest day deletes all slots, Test that a regular day does not delete any slots, Test that the correct slots are calculated, Test that the correct slots are returned - gym mode, Test that the correct slots are returned - display mode
-
-### Community 147 - "Community 147"
-Cohesion: 0.14
-Nodes (4): Meta, languages(), Meta, Meta
-
-### Community 148 - "Community 148"
-Cohesion: 0.21
-Nodes (8): Meta, Collect appropriate emails and save to database to send for later, CronEntry, Simple list of emails to be sent by a cron job, Return a more human-readable representation, Log, A log of a sent email, Return a more human-readable representation
-
-### Community 149 - "Community 149"
-Cohesion: 0.18
-Nodes (9): MealItemForm, MealItemApiTestCase, MealItemFormTestCase, Tests the meal overview resource, Tests for meal item form quantity/unit behavior., The empty choice should clearly represent grams., Serving-size options should include amount and gram conversion., The form should also support ingredient_id in bound data. (+1 more)
-
-### Community 150 - "Community 150"
-Cohesion: 0.14
-Nodes (8): ApiPutTestCase, # TODO: implement this, Base test case for testing PUT access to the API, PUTing to a detail view is allowed, Tests PUTTING (adding) a new object, Tests that it's not possible to PUT to the special endpoints, Returns the name of the resource. The default is the name of the model         c, url()
-
-### Community 151 - "Community 151"
-Cohesion: 0.14
-Nodes (8): LongLivedRefreshTokenTestCase, Mint, list, and revoke long-lived headless JWT refresh tokens from the     /user, POST ``new_refresh_token`` mints a token and the next page render         displa, The minted refresh token actually validates against the headless         token-r, A refresh token whose session no longer resolves to a user (here: a         pass, Posting another user's session_key must not delete that user's         long-live, State-changing actions must not be triggered by a GET (CSRF defense)., The user's regular browser session must not show up in the list of         long-
-
-### Community 152 - "Community 152"
+### Community 141 - "validate_language_matches"
 Cohesion: 0.15
+Nodes (10): _check_duplicates(), _normalise_name(), str, Check that there is only one language per exercise, and that the         detecte, Regex: matches space, hyphen and underscore, and replaces with an empty string., Language, str, Raise ``ValidationError`` if the detected language of ``text`` doesn't     match (+2 more)
+
+### Community 142 - "manager/dataclasses.py"
+Cohesion: 0.08
+Nodes (17): exercises(), is_superset(), Any, bool, Decimal, float, int, str (+9 more)
+
+### Community 143 - "WeightUnitIngredientCreateView"
+Cohesion: 0.12
+Nodes (13): CreateView, DeleteView, LoginRequiredMixin, PermissionRequiredMixin, UpdateView, Return the form class for the weight unit, Generic view to delete a weight unit to ingredient entry, Generic view to add a new weight unit to ingredient entry (+5 more)
+
+### Community 144 - "remove_language_code"
+Cohesion: 0.27
+Nodes (5): use_browser_language(), Removes optional language code at the start of a path, remove_language_code(), TestCase, TestRemoveLanguageCode
+
+### Community 146 - "SetConfigData"
+Cohesion: 0.08
+Nodes (20): ABC, AbstractSetCalculations, calculate(), ABC, AbstractChangeConfig, int, SetConfigData, WorkoutLog (+12 more)
+
+### Community 147 - "Muscle"
+Cohesion: 0.09
+Nodes (12): languages(), Language, Equipment, Meta, Equipment used or needed by an exercise, Return a more human-readable representation, Equipment has no owner information, Meta (+4 more)
+
+### Community 148 - "ChangePasswordTestCase"
+Cohesion: 0.11
+Nodes (10): ChangePasswordTestCase, Password change is intentionally session-scoped. The DRF API key and any active…, Verify that passwords without uppercase characters are rejected., Verify that passwords without lowercase characters are rejected., Verify that passwords without symbols/non-alphanumeric characters are rejected., Verify that passwords that are valid are accepted., Tests changing the password of a registered user, Test changing a password as an anonymous user (+2 more)
+
+### Community 149 - "MealItemFormTestCase"
+Cohesion: 0.15
+Nodes (8): MealItemApiTestCase, MealItemFormTestCase, Tests the meal overview resource, Tests for meal item form quantity/unit behavior., The empty choice should clearly represent grams., Serving-size options should include amount and gram conversion., The form should also support ingredient_id in bound data., Invalid ingredient values should not crash and should keep unit choices empty.
+
+### Community 150 - "ApiPutTestCase"
+Cohesion: 0.25
+Nodes (5): ApiPutTestCase, Base test case for testing PUT access to the API, PUTing to a detail view is allowed, Tests PUTTING (adding) a new object, Tests that it's not possible to PUT to the special endpoints
+
+### Community 151 - "LongLivedRefreshTokenTestCase"
+Cohesion: 0.17
+Nodes (7): LongLivedRefreshTokenTestCase, Mint, list, and revoke long-lived headless JWT refresh tokens from the     /user, POST ``new_refresh_token`` mints a token and the next page render         displa, The minted refresh token actually validates against the headless         token-r, Bulk revocation kills every long-lived session of the current user., State-changing actions must not be triggered by a GET (CSRF defense)., The user's regular browser session must not show up in the list of         long-
+
+### Community 152 - "ExerciseModelTestCase"
+Cohesion: 0.14
 Nodes (4): ExerciseModelTestCase, ExerciseTranslationHandlingTestCase, Test the logic used to handle exercises without translations, Test custom model logic
 
-### Community 153 - "Community 153"
+### Community 153 - "NutritionalValuesCalculationsTestCase"
 Cohesion: 0.14
 Nodes (8): NutritionalValuesApiTestCase, NutritionalValuesCalculationsTestCase, Tests the nutritional value calculations when using weight units, Tests that amount is treated as grams when no weight unit is set, Tests the calculations         :return:, Tests the nutritional_values action of the nutrition diary API endpoint, A non-numeric pk yields a 404 instead of raising a 500, Tests the nutritional values calculators in the different models
 
-### Community 154 - "Community 154"
-Cohesion: 0.14
+### Community 154 - "UserStatisticsServiceTestCase"
+Cohesion: 0.12
 Nodes (7): Test the UserStatisticsService, Test get_or_create creates statistics if they don't exist, Test get_or_create returns existing statistics, Test update_statistics creates statistics if missing, Test update_statistics with no workout data, Test handle_workout_deletion triggers full recalculation, UserStatisticsServiceTestCase
 
-### Community 155 - "Community 155"
-Cohesion: 0.16
-Nodes (9): Migration, populate_uuids(), TestCase, Check if the generated UUIDs have the correct version., Check if the generated UUIDs are monotonic (increasing)., UUID7TestCase, time, NOTE: this is only needed because currently there isn't a UUIDv7 implementation (+1 more)
+### Community 155 - "uuid7"
+Cohesion: 0.15
+Nodes (10): Migration, populate_uuids(), TestCase, time, TestCase, Check if the generated UUIDs have the correct version., Check if the generated UUIDs are monotonic (increasing)., UUID7TestCase (+2 more)
 
-### Community 156 - "Community 156"
-Cohesion: 0.16
-Nodes (9): IngredientDeleteView, IngredientEditView, IngredientListView, Generic view to delete an existing ingredient, Generic view to update an existing ingredient, Send some additional data to the template, Show an overview of all ingredients using cursor-based pagination.      This is, Apply language + filterset, then the cursor logic.          We fetch one extra r (+1 more)
+### Community 156 - "IngredientDeleteView"
+Cohesion: 0.10
+Nodes (17): IngredientCreateView, IngredientDeleteView, IngredientEditView, IngredientListView, CreateView, DeleteView, ListView, LoginRequiredMixin (+9 more)
 
-### Community 157 - "Community 157"
+### Community 157 - "utils/middleware.py"
 Cohesion: 0.20
-Nodes (10): MiddlewareMixin, check_current_request(), get_user(), JavascriptAJAXRedirectionMiddleware, Middleware that sends helper headers when working with AJAX.      This is used f, Simple helper function that checks whether the current request hit one     of th, Small wrapper around django's own AuthenticationMiddleware. Simply creates     a, Simple middleware that sends the "X-Robots-Tag" tag for the URLs used in     our (+2 more)
+Nodes (11): MiddlewareMixin, check_current_request(), get_user(), JavascriptAJAXRedirectionMiddleware, MiddlewareMixin, Middleware that sends helper headers when working with AJAX. This is used for…, Simple helper function that checks whether the current request hit one of the…, Small wrapper around django's own AuthenticationMiddleware. Simply creates a… (+3 more)
 
-### Community 158 - "Community 158"
-Cohesion: 0.23
-Nodes (6): Command, Find and optionally clean up variation groups with fewer than 2 exercises., Performs some sanity checks on the exercise database, Delete exercises without translations, bool, Exercise
+### Community 158 - "Command"
+Cohesion: 0.12
+Nodes (11): Command, BaseCommand, bool, Exercise, Find and optionally clean up variation groups with fewer than 2 exercises., Performs some sanity checks on the exercise database, Delete exercises without translations, ApproximateCountQuerySet (+3 more)
 
-### Community 159 - "Community 159"
-Cohesion: 0.17
-Nodes (12): disable_for_loaddata(), from_json(), make_uid(), normalize_decimal(), Any, bool, Decimal, random_string() (+4 more)
+### Community 159 - "utils/helpers.py"
+Cohesion: 0.29
+Nodes (7): make_uid(), normalize_decimal(), Decimal, random_string(), Normalizes a decimal input This simply performs a more "human" normalization,…, Generates a random string, Small wrapper to generate a UID, usually used in URLs to allow for anonymous…
 
-### Community 160 - "Community 160"
-Cohesion: 0.15
-Nodes (8): Meta, # TODO: duplicate sessions can exist for the same (user, date, routine), Meta, Return a more human-readable representation, Perform some additional validations, Returns the object that has owner information, Model for a workout session, WorkoutSession
-
-### Community 161 - "Community 161"
-Cohesion: 0.15
-Nodes (7): ImageSerializer, GalleryImageViewSet, API endpoint for gallery image, Only allow access to appropriate objects, Meta, ImageHandler, Creation (and edits that swap the file itself) goes through REST because     the
-
-### Community 162 - "Community 162"
-Cohesion: 0.15
-Nodes (7): Make sure the total amount of hours is 24, Return a more human-readable representation, Calculates the user's BMI          Formula: weight/height^2         - weight in, Calculates the basal metabolic rate.          Currently only the Mifflin-St.Jeor, Calculates the calories needed by additional physical activities          Factor, Returns the object that has owner information, UserProfile
-
-### Community 163 - "Community 163"
+### Community 160 - "WorkoutSession"
 Cohesion: 0.18
-Nodes (11): Neutralise spreadsheet formula triggers in a CSV/TSV cell., sanitize_csv_cell(), HttpResponse, calculate_activities(), calculate_bmr(), Calculates the basal metabolic rate.      Currently only the Mifflin-St.Jeor-For, Calculates the calories needed by additional physical activities, Exports all members in selected gym (+3 more)
+Nodes (7): Meta, Return a more human-readable representation, Returns the duration of the workout session as a formatted string, Perform some additional validations, Returns the object that has owner information, Model for a workout session, WorkoutSession
 
-### Community 164 - "Community 164"
-Cohesion: 0.15
-Nodes (5): Same scenarios as the REST suite, but pushed through the PowerSync upload     en, Unit tests for ``OwnerScopedSessionField`` — the dynamic queryset on     ``Worko, A serializer instantiated without any user context must not be         able to r, WorkoutLogSerializerSessionFilterTestCase, WorkoutLogSessionPinningPowerSyncTestCase
+### Community 161 - "ImageHandler"
+Cohesion: 0.17
+Nodes (7): ImageSerializer, Meta, GalleryImageViewSet, API endpoint for gallery image, Only allow access to appropriate objects, ImageHandler, Creation (and edits that swap the file itself) goes through REST because the…
 
-### Community 165 - "Community 165"
-Cohesion: 0.15
-Nodes (7): POST without a session falls back to the legacy auto-create., PATCH that tries to move a log onto a foreign session returns 403., PATCH with an own session id repoints the log., REST-API tests around pinning a log to an explicit session.      The serializer, POST with an own session UUID pins the log to that session., POST with a foreign session id must return 403 PermissionDenied., WorkoutLogSessionPinningRESTTestCase
+### Community 162 - "UserProfile"
+Cohesion: 0.09
+Nodes (12): Flag indicating whether the user "is trustworthy" and can submit or edit…, Returns the last weight entry, done here to make the behaviour more consistent…, Return the address as saved in the current contract (user's gym), Make sure the total amount of hours is 24, Calculates the basal metabolic rate.          Currently only the Mifflin-St.Jeor, Return a more human-readable representation, Simple helper that checks whether the user uses metric units or not :return:…, Calculates the calories needed by additional physical activities          Factor (+4 more)
 
-### Community 166 - "Community 166"
+### Community 163 - "gym/helpers.py"
+Cohesion: 0.17
+Nodes (10): Neutralise spreadsheet formula triggers in a CSV/TSV cell., sanitize_csv_cell(), login_required, Exports all members in selected gym, users(), gym_new_user_info(), gym_new_user_info_export(), login_required (+2 more)
+
+### Community 164 - "WorkoutLogSerializer"
+Cohesion: 0.16
+Nodes (7): Workout log serializer, WorkoutLogSerializer, Same scenarios as the REST suite, but pushed through the PowerSync upload     en, Unit tests for ``OwnerScopedSessionField`` — the dynamic queryset on     ``Worko, A serializer instantiated without any user context must not be         able to r, WorkoutLogSerializerSessionFilterTestCase, WorkoutLogSessionPinningPowerSyncTestCase
+
+### Community 165 - "exercises/models/__init__.py"
+Cohesion: 0.14
+Nodes (12): CalisthenicsExercise, ExerciseImportRaw, ExerciseTag, Meta, ExerciseComment, Model for an exercise comment, Return a more human-readable representation, Reset cached workouts (+4 more)
+
+### Community 166 - "WeightExportCsvTestCase"
 Cohesion: 0.18
 Nodes (8): Test case for the weight overview page, Helper function to test the weight overview page, Test the weight overview page by a logged in user, Tests exporting the saved weight entries as a CSV file, Helper function to test exporting the saved weight entries as a CSV file, Test exporting the saved weight entries as a CSV file by a logged in user, WeightExportCsvTestCase, WeightOverviewTestCase
 
-### Community 167 - "Community 167"
-Cohesion: 0.17
-Nodes (9): Deleting the unit with ID 1 (repetitions) is not allowed          This is the de, Send some additional data to the template, View to add a new weight unit, View to update an existing weight unit, Send some additional data to the template, View to delete an existing weight unit, UnitAddView, UnitDeleteView (+1 more)
+### Community 167 - "UnitDeleteView"
+Cohesion: 0.13
+Nodes (17): CreateView, DeleteView, ListView, LoginRequiredMixin, PermissionRequiredMixin, UpdateView, Deleting the unit with ID 1 (repetitions) is not allowed          This is the de, Send some additional data to the template (+9 more)
 
-### Community 168 - "Community 168"
-Cohesion: 0.15
+### Community 168 - "WeightEntry"
+Cohesion: 0.17
 Nodes (8): Create a new weight entry and return it, parse_weight_csv(), Meta, Model for a weight point, Metaclass to set some other properties, Return a more human-readable representation, Returns the object that has owner information, WeightEntry
 
-### Community 169 - "Community 169"
+### Community 169 - "create_temporary_user"
 Cohesion: 0.15
 Nodes (8): create_temporary_user(), HttpRequest, Creates a temporary user, Tests that temporary users do not pass the "is trustworthy" check and do not hav, Tests that new accounts are not considered trustworthy, Tests that users without verified email are not considered trustworthy, Tests that old accounts with verified email are considered trustworthy, Tests that superusers are always trustworthy even if email is unverified
 
-### Community 170 - "Community 170"
-Cohesion: 0.18
-Nodes (8): Command, Move a single file. Returns True on success, False on error., Migrate ingredient image files from the old flat-per-PK layout     to the UUID-s, ingredient_image_upload_dir(), Returns the upload target for ingredient images.      Sharded by the first two p, ArgumentParser, bool, str
+### Community 170 - "Command"
+Cohesion: 0.17
+Nodes (9): Command, ArgumentParser, BaseCommand, bool, str, Move a single file. Returns True on success, False on error., Migrate ingredient image files from the old flat-per-PK layout     to the UUID-s, ingredient_image_upload_dir() (+1 more)
 
-### Community 171 - "Community 171"
-Cohesion: 0.18
-Nodes (8): ABC, AbstractSetCalculations, calculate(), SetCalculations, AbstractChangeConfig, int, SetConfigData, WorkoutLog
+### Community 171 - "WorkoutViewsTestCase"
+Cohesion: 0.10
+Nodes (6): A confirmed workout keeps the bubble visible with either expired or absent…, A page day is not evidence that a workout is still active., Timer state is presentation state and must not become workout authority., Dashboard must use the canonical active-session status, not dashboard-only…, An overlay on another workout page must not intercept global navigation., WorkoutViewsTestCase
 
-### Community 172 - "Community 172"
+### Community 172 - "ChangeExerciseAuthorTestCase"
 Cohesion: 0.17
 Nodes (6): ChangeExerciseAuthorTestCase, Tests the change exercise author command, Test to ensure command handles a missing author parameter, Test to ensure command handles a missing exercise parameters, Test to ensure command can handle an exercise base id passed, Test to ensure command can handle an exercise id passed
 
-### Community 173 - "Community 173"
+### Community 173 - "AbstractLicenseModel"
+Cohesion: 0.10
+Nodes (23): All authors history related to the BaseExercise., total_authors_history(), exercise_image_upload_dir(), Meta, bool, Exercise, from_json(), Returns the upload target for exercise images (+15 more)
+
+### Community 174 - "Language"
+Cohesion: 0.07
+Nodes (19): migrate_verification_status(), Migration, StateApps, backfill_email_addresses(), Migration, Language, Meta, Language of an item (exercise, workout, etc.) (+11 more)
+
+### Community 175 - "ImageForm"
 Cohesion: 0.21
-Nodes (11): total_authors_history(), attribution_link(), author_history(), collect_model_author_history(), collect_models_author_history(), Meta, str, Get unique set of license authors from historical records from model. (+3 more)
+Nodes (7): DateInput, ImageForm, Meta, ModelForm, Html5DateInput, Custom Input class that is rendered with an HTML5 type="date", Pass the value as a date to the template. This is necessary because django's…
 
-### Community 174 - "Community 174"
-Cohesion: 0.18
-Nodes (6): bool, Meta, birthdate_validator(), is_trustworthy(), is_verified(), Checks to see if entered birthdate (datetime.date object) is     between 10 and
-
-### Community 175 - "Community 175"
-Cohesion: 0.20
-Nodes (7): DateInput, ImageForm, Meta, ModelForm, Html5DateInput, Custom Input class that is rendered with an HTML5 type="date", Pass the value as a date to the template. This is necessary because         djan
-
-### Community 176 - "Community 176"
+### Community 176 - "EmailListFormPreviewTestCase"
 Cohesion: 0.17
 Nodes (7): AccessContractTestCase, EmailListFormPreviewTestCase, The happy path still works: a gym manager can preview and queue emails., Test accessing the detail page of a contract, Tests authorization on the gym mass-email FormPreview (both stages)., Stage 1 must reject unauthorized callers before process_preview()         runs —, The formtools security hash only covers the form fields, not the gym.         A
 
-### Community 177 - "Community 177"
+### Community 177 - "ApiGetTestCase"
 Cohesion: 0.18
 Nodes (7): ApiGetTestCase, Base test case for testing GET access to the API, Test that ordering the resource works, Tests accessing the detail view of a resource, Test accessing the overview view of a resource, Test that accessing the overview of a cached resource results in fewer         d, Test accessing any special endpoint the resource could have
 
-### Community 178 - "Community 178"
-Cohesion: 0.17
-Nodes (6): Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream
+### Community 178 - ".perform_create"
+Cohesion: 0.14
+Nodes (8): Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream
 
-### Community 179 - "Community 179"
-Cohesion: 0.17
-Nodes (6): Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream
+### Community 179 - ".perform_update"
+Cohesion: 0.14
+Nodes (8): Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream, Save entry to activity stream
 
-### Community 180 - "Community 180"
-Cohesion: 0.20
-Nodes (7): ExerciseCreateThrottleTestCase, get_payload(), Tests the write-only create throttle shared by the exercise create endpoints., All create endpoints share the throttle scope and class., Only POST is throttled; reads and edits always pass through., A second create within the window is rejected with 429., Users with the add_exercise permission (admins/editors) aren't throttled.
+### Community 180 - "CreateScopedRateThrottle"
+Cohesion: 0.14
+Nodes (10): CreateScopedRateThrottle, Scoped rate throttle that only limits object creation (POST requests).      Read, ExerciseCreateThrottleTestCase, get_payload(), Tests the write-only create throttle shared by the exercise create endpoints., All create endpoints share the throttle scope and class., Only POST is throttled; reads and edits always pass through., A second create within the window is rejected with 429. (+2 more)
 
-### Community 181 - "Community 181"
+### Community 181 - "GymMembersCsvExportTestCase"
 Cohesion: 0.21
 Nodes (6): GymMembersCsvExportTestCase, Test case for the CSV export of gym members, Helper function to test the CSV export, Test the CSV export by authorized users, Test the CSV export by unauthorized users, Test the CSV export by a logged out user
 
-### Community 182 - "Community 182"
-Cohesion: 0.23
-Nodes (6): NutritionalPlanCacheTestCase, Create a nutrition plan and set dummy attributes that are required         Creat, Test that a cache is set once the nutritional instance is created, Test that cache is deleted when a nutrition is created or deleted., Test that the cache is deleted once a meal undergoes a save or delete operation, Test that the cache is deleted once a meal undergoes a save or delete operation
+### Community 182 - "NutritionalPlanCacheTestCase"
+Cohesion: 0.20
+Nodes (5): NutritionalPlanCacheTestCase, Test that a cache is set once the nutritional instance is created, Test that cache is deleted when a nutrition is created or deleted., Test that the cache is deleted once a meal undergoes a save or delete operation, Test that the cache is deleted once a meal undergoes a save or delete operation
 
-### Community 183 - "Community 183"
+### Community 183 - "TrophyServiceTestCase"
+Cohesion: 0.06
+Nodes (24): Process the trophy evaluation based on provided options., Award a trophy to a user.          Creates a UserTrophy record marking the troph, Check if a user should be skipped for trophy evaluation.          Users are skip, Re-evaluate trophies for users (admin function).          Can be used when troph, Evaluate a single trophy for a user.          Creates a checker instance and che, Test re-evaluating trophies for multiple users, patch, Test the TrophyService (+16 more)
+
+### Community 184 - "WebLoginViewTestCase"
+Cohesion: 0.13
+Nodes (8): override_settings, An off-site "next" URL is ignored and the user lands on the dashboard, A safe, same-host relative "next" URL is honoured, With MFA_PASSKEY_LOGIN_ENABLED the login page offers passwordless         sign-i, With MFA_PASSKEY_LOGIN_ENABLED the login page offers passwordless sign-in via a…, Without passkey or social providers the page renders just the credentials form,…, The web login view (core:user:login) is allauth's LoginView, with one wger     c, WebLoginViewTestCase
+
+### Community 185 - "WgerPermission"
 Cohesion: 0.17
-Nodes (7): Test the TrophyService, Test evaluating a trophy that should be earned, Test evaluating all trophies for a user, Test hidden trophies are included once earned, Test skipping inactive users, Test not skipping active users, TrophyServiceTestCase
+Nodes (7): CreateOnlyPermission, Checks that the user has access to the object If the object has a…, Access to public resources is allowed for all, for others, the user has to be…, Custom permission that permits read access the resource but limits the write…, Custom permission that restricts write operations to PATCH. This is currently…, UpdateOnlyPermission, WgerPermission
 
-### Community 184 - "Community 184"
-Cohesion: 0.17
-Nodes (5): An off-site "next" URL is ignored and the user lands on the dashboard, A safe, same-host relative "next" URL is honoured, With MFA_PASSKEY_LOGIN_ENABLED the login page offers passwordless         sign-i, The web login view (core:user:login) is allauth's LoginView, with one wger     c, WebLoginViewTestCase
-
-### Community 185 - "Community 185"
-Cohesion: 0.17
-Nodes (7): CreateOnlyPermission, Checks that the user has access to the object      If the object has a 'owner_ob, Access to public resources is allowed for all, for others, the user         has, Custom permission that permits read access the resource but limits the     write, Custom permission that restricts write operations to PATCH. This is currently, UpdateOnlyPermission, WgerPermission
-
-### Community 186 - "Community 186"
+### Community 186 - "UserBodyweightTestCase"
 Cohesion: 0.17
 Nodes (7): Tests the body weight generation/update function, Tests that a new weight entry is created, Tests that a new weight entry is created, Tests that a new weight entry is created even if others exist today, Tests that a new weight entry is created if there are no weight entries, # TODO: the user can't delete or create new profiles, UserBodyweightTestCase
 
-### Community 187 - "Community 187"
+### Community 187 - "PreferencesCalculationsTestCase"
 Cohesion: 0.17
 Nodes (7): PreferencesCalculationsTestCase, Tests the different calculation method in the user profile, Tests that the last weight entry is correctly returned, Tests that the last weight entry is correctly returned if no matches, Tests the BMI calculator, Tests the BMR calculator, Tests the calories calculator for physical activities
 
-### Community 188 - "Community 188"
-Cohesion: 0.22
-Nodes (5): Command, Validate a single gallery image against the validation rules, Delete an invalid image from the database and filesystem, Check existing gallery images in the database for validation issues.      This c, Process the gallery images validation
+### Community 188 - "Command"
+Cohesion: 0.20
+Nodes (6): Command, BaseCommand, Validate a single gallery image against the validation rules, Delete an invalid image from the database and filesystem, Check existing gallery images in the database for validation issues.      This c, Process the gallery images validation
 
-### Community 189 - "Community 189"
-Cohesion: 0.18
-Nodes (7): Command, Updates the user cache table, get_user_last_activity(), Find out when the user was last active. "Active" means in this context logging, Test the helper function for last user activity      TODO: check if we want to g, Test the helper function for last user activity, UserLastActivityTestCase
+### Community 189 - "Command"
+Cohesion: 0.17
+Nodes (8): Command, BaseCommand, Updates the user cache table, get_user_last_activity(), Find out when the user was last active. "Active" means in this context logging…, Test the helper function for last user activity      TODO: check if we want to g, Test the helper function for last user activity, UserLastActivityTestCase
 
-### Community 190 - "Community 190"
-Cohesion: 0.18
-Nodes (7): Command, Sends overviews of inactive users to gym trainers, Process gyms and send emails, is_any_gym_admin(), Small utility that checks that the user object has any administrator     permiss, Return a list with the users, not really a queryset., Create the user, set the user permissions and gym
+### Community 190 - "is_any_gym_admin"
+Cohesion: 0.17
+Nodes (8): Perform additional tasks, is_any_gym_admin(), Small utility that checks that the user object has any administrator permissions, Command, BaseCommand, Sends overviews of inactive users to gym trainers, Process gyms and send emails, Return a list with the users, not really a queryset.
 
-### Community 191 - "Community 191"
-Cohesion: 0.18
-Nodes (7): Only allow access to authenticated users, If the routine is a public template, allow read-only access for everyone., RoutinePermission, API endpoint for set config objects, Only allow access to appropriate objects, RiRConfigViewSet, Custom routine permissions
+### Community 191 - "RoutineDayViewSet"
+Cohesion: 0.14
+Nodes (9): Custom routine permissions, Only allow access to authenticated users, If the routine is a public template, allow read-only access for everyone., RoutinePermission, Only allow access to appropriate objects, API endpoint for routine day objects, Only allow access to appropriate objects, Return objects to check for ownership permission (+1 more)
 
-### Community 192 - "Community 192"
-Cohesion: 0.18
-Nodes (9): backfill_uuid_column(), postgres_only(), int, Model, str, Decorator that runs the decorated function only if the database is PostgreSQL., Populate a freshly added UUID column for every existing row, in batches using, DecimalJsonEncoder (+1 more)
+### Community 192 - "backfill_uuid_column"
+Cohesion: 0.17
+Nodes (10): backfill_uuid_column(), int, Model, str, Populate a freshly added UUID column for every existing row, in batches using…, DecimalJsonEncoder, Custom JSON encoder. This class is needed because we store some data as a…, gen_uuids() (+2 more)
 
-### Community 193 - "Community 193"
-Cohesion: 0.18
+### Community 193 - "Label"
+Cohesion: 0.20
 Nodes (7): Label, Meta, A free text label for routines      This can be used for example to label the di, Metaclass to set some other properties, Check that the end offset is greater than the start offset, Return a more human-readable representation, Returns the object that has owner information
 
-### Community 194 - "Community 194"
+### Community 194 - "0037_replace_variation_with_uuid_field.py"
 Cohesion: 0.25
-Nodes (10): BaseDatabaseSchemaEditor, StateApps, copy_variation_uuids(), fix_sqlite_historical_indexes(), generate_variation_uuids(), Migration, Replace the Variation ForeignKey on Exercise with a UUID field.  Exercises with, Fix index name collision caused by migration 0032_rename_exercise.      When Ren (+2 more)
+Nodes (10): copy_variation_uuids(), fix_sqlite_historical_indexes(), generate_variation_uuids(), Migration, BaseDatabaseSchemaEditor, StateApps, Replace the Variation ForeignKey on Exercise with a UUID field.  Exercises with, Fix index name collision caused by migration 0032_rename_exercise.      When Ren (+2 more)
 
-### Community 195 - "Community 195"
+### Community 195 - "WeightConversionTestCase"
 Cohesion: 0.18
 Nodes (6): Test weight subunit calculations, Test the abstract weight class, Test the weight conversion, Test the weight conversion with "subunits" (grams, ounces), Tests adding two abstract weights, WeightConversionTestCase
 
-### Community 196 - "Community 196"
+### Community 196 - "CaloriesCalculatorTestCase"
 Cohesion: 0.18
 Nodes (5): CaloriesCalculatorTestCase, Tests the calories calculator methods and views, Tests the calculator itself, The BMR form requires a height, even though it is optional on the profile., Tests that weight entries are automatically created or updated
 
-### Community 197 - "Community 197"
+### Community 197 - "TestExportIngredientDump"
 Cohesion: 0.24
 Nodes (5): Test exporting ingredients to a JSONL dump via default_storage., Test that export creates a valid gzipped JSONL file., Test that export returns the storage path., Test that a second export replaces the first., TestExportIngredientDump
 
-### Community 198 - "Community 198"
-Cohesion: 0.18
-Nodes (7): ExerciseImageFromJsonSimpleTests, ExerciseImagesApiTestCase, ExerciseImageThumbnailsApiTestCase, Tests the thumbnails action of the exercise image API endpoint, A non-numeric pk yields a 404 instead of raising a 500, # TODO: add POST and DELETE tests, Tests the exercise image resource
+### Community 198 - "ExerciseCategoryUpdateView"
+Cohesion: 0.15
+Nodes (14): ExerciseCategoryAddView, ExerciseCategoryDeleteView, ExerciseCategoryListView, ExerciseCategoryUpdateView, CreateView, DeleteView, ListView, LoginRequiredMixin (+6 more)
 
-### Community 199 - "Community 199"
+### Community 199 - "CopyPlanTestCase"
 Cohesion: 0.24
 Nodes (6): CopyPlanTestCase, Tests copying a nutritional plan, Helper function to test copying nutrition plans, Test copying a nutritional plan as an anonymous user, Test copying a nutritional plan as the owner user, Test copying a nutritional plan as a logged in user not owning the plan
 
-### Community 200 - "Community 200"
+### Community 200 - "WorkoutICalExportTestCase"
 Cohesion: 0.24
 Nodes (6): # TODO: parse the generated calendar files with the icalendar library, Tests exporting the ical file for a workout, Tests exporting a workout as an ical file as an anonymous user, Tests exporting a workout as an ical file as the owner user, Tests exporting a workout as an ical file as a logged user not owning the data, WorkoutICalExportTestCase
 
-### Community 201 - "Community 201"
-Cohesion: 0.31
-Nodes (5): PowerSyncDeleteTestCase, Mixin: ownership tests for handle_delete_* (HTTP DELETE)., A DELETE targeting another user's row resolves to a safe no-op success., A redelivered DELETE for an already-removed row is a no-op success, not an error, Send a PowerSync push as the currently authenticated user.
+### Community 201 - "check_min_server_version"
+Cohesion: 0.20
+Nodes (12): check_min_server_version(), patch, test_version_ok(), test_version_too_low(), TestCheckMinServerVersion, Command, BaseCommand, Version (+4 more)
 
-### Community 202 - "Community 202"
-Cohesion: 0.18
-Nodes (7): Tests the robots exclusion middleware, Test the middleware on URLs from manager app, Test the middleware on URLs from nutrition app, Test the middleware on URLs from exercises app, RobotsExclusionMiddlewareTestCase, test_middleware_software(), MagicMock
+### Community 202 - "RobotsExclusionMiddlewareTestCase"
+Cohesion: 0.14
+Nodes (9): MagicMock, patch, Tests the robots exclusion middleware, Test the middleware on URLs from manager app, Test the middleware on URLs from software app, Test the middleware on URLs from nutrition app, Test the middleware on URLs from exercises app, RobotsExclusionMiddlewareTestCase (+1 more)
 
-### Community 203 - "Community 203"
+### Community 203 - "NutritionalPlanPdfExportTestCase"
 Cohesion: 0.24
 Nodes (6): NutritionalPlanPdfExportTestCase, Tests exporting a nutritional plan as a pdf, Helper function to test exporting a nutritional plan as a pdf, Tests exporting a nutritional plan as a pdf as an anonymous user, Tests exporting a nutritional plan as a pdf as the owner user, Tests exporting a nutritional plan as a pdf as a logged user not owning the data
 
-### Community 204 - "Community 204"
-Cohesion: 0.38
-Nodes (5): _build_mock_request(), _build_mock_user(), TrainerLoginTestCase, Allows a trainer to 'log in' as the selected user.      POST-only: rebinding the, trainer_login()
+### Community 204 - "trainer_login"
+Cohesion: 0.39
+Nodes (6): _build_mock_request(), _build_mock_user(), patch, TrainerLoginTestCase, Allows a trainer to 'log in' as the selected user.      POST-only: rebinding the, trainer_login()
 
-### Community 205 - "Community 205"
-Cohesion: 0.18
-Nodes (6): Send some additional data to the template, Send some additional data to the template, Overview of all users in the instance, Return a list with the users, not really a queryset., Pass other info to the template, UserListView
+### Community 205 - "TokenHelperTestCase"
+Cohesion: 0.14
+Nodes (13): _active_jwt_refresh_tokens(), blacklist_jwt_refresh_tokens(), count_active_jwt_refresh_tokens(), create_token(), Creates a new token for a user or returns the existing one. :param user: User…, Outstanding refresh tokens for ``user`` that are still usable: not yet expired…, How many JWT refresh tokens are currently usable for ``user``., Blacklist every outstanding JWT refresh token belonging to ``user``. Subsequent… (+5 more)
 
-### Community 206 - "Community 206"
-Cohesion: 0.18
-Nodes (5): Only managers and trainers for this gym can access the members, View to update the personal information of an user by an admin, Check permissions          - Managers can edit members of their own gym, Check permissions          - Only managers for this gym can access the members, UserEditView
+### Community 206 - "requests.py"
+Cohesion: 0.13
+Nodes (7): Command, BaseCommand, Command, BaseCommand, features(), fetch_github_stats(), Render the landing page
 
-### Community 207 - "Community 207"
+### Community 207 - "HeadlessSmokeTestCase"
 Cohesion: 0.18
 Nodes (5): HeadlessSmokeTestCase, A JWT access token stays cryptographically valid after its user is         delet, A malformed Bearer token must not raise AuthenticationFailed in our         wrap, End-to-end smoke test for the allauth.headless surface:      - the public `confi, With ``ALLOW_REGISTRATION=False`` the WgerAccountAdapter must report         the
 
-### Community 208 - "Community 208"
-Cohesion: 0.27
-Nodes (11): create_checker(), get_all_checkers(), get_checker_class(), get_checker_for_trophy(), Convenience function to get a checker instance for a trophy.      Args:, register(), unregister(), BaseTrophyChecker (+3 more)
+### Community 208 - ".check"
+Cohesion: 0.14
+Nodes (10): bool, float, int, str, Get human-readable progress string., Validate that inactive_days parameter is present and valid., Check if user has returned to training after being inactive.          The user e, Get progress towards the trophy.          This is a special trophy - progress sh (+2 more)
 
-### Community 209 - "Community 209"
+### Community 209 - "HeadlessJWTAuthentication"
 Cohesion: 0.18
-Nodes (7): JWTTokenAuthentication, JWTTokenStrategy, HeadlessJWTAuthentication, str, Lenient variant of allauth's JWTTokenAuthentication.      Returns ``None`` for t, Hardened variant of allauth's JWTTokenStrategy.      ``internal.validate_refresh, WgerJWTTokenStrategy
+Nodes (7): JWTTokenAuthentication, JWTTokenStrategy, HeadlessJWTAuthentication, str, Lenient variant of allauth's JWTTokenAuthentication. Returns ``None`` for…, Hardened variant of allauth's JWTTokenStrategy.…, WgerJWTTokenStrategy
 
-### Community 210 - "Community 210"
+### Community 210 - "WgerOwnerObjectModelViewSet"
 Cohesion: 0.27
-Nodes (6): check_fk_ownership(), bool, int, Validate that FK references in payload belong to the given user.      Uses the s, Custom viewset that makes sure the user can only create objects for himself, WgerOwnerObjectModelViewSet
+Nodes (6): check_fk_ownership(), bool, int, Validate that FK references in payload belong to the given user. Uses the same…, Custom viewset that makes sure the user can only create objects for himself, WgerOwnerObjectModelViewSet
 
-### Community 211 - "Community 211"
-Cohesion: 0.22
-Nodes (7): PasswordGeneratorTestCase, Tests the password generator, Generated passwords must come from the secrets CSPRNG, not the random module., password_generator(), A simple password generator      Also removes some 'problematic' characters like, Resets the password of the selected user to random password      GET only render, reset_user_password()
+### Community 211 - "password_generator"
+Cohesion: 0.25
+Nodes (6): password_generator(), A simple password generator Also removes some 'problematic' characters like O…, PasswordGeneratorTestCase, SimpleTestCase, Tests the password generator, Generated passwords must come from the secrets CSPRNG, not the random module.
 
-### Community 212 - "Community 212"
+### Community 212 - "migrate_routines"
 Cohesion: 0.36
-Nodes (9): Any, int, migrate_forward(), migrate_logs(), migrate_routines(), migrate_sessions(), Migration, Migrates all logs to the new data model (basically setting the routine and sessi (+1 more)
+Nodes (9): migrate_forward(), migrate_logs(), migrate_routines(), migrate_sessions(), Migration, Any, int, Migrates all logs to the new data model (basically setting the routine and sessi (+1 more)
 
-### Community 213 - "Community 213"
-Cohesion: 0.27
-Nodes (7): WeightEntrySerializer, Meta, Any, int, str, Body weight uses a client-supplied UUID as the synchronised primary key,     so, WeightEntryHandler
+### Community 213 - "WeightEntrySerializer"
+Cohesion: 0.13
+Nodes (12): Meta, WeightEntryFilterSet, Meta, WeightEntrySerializer, API endpoint for nutrition plan objects, Only allow access to appropriate objects, WeightEntryViewSet, Any (+4 more)
 
-### Community 214 - "Community 214"
-Cohesion: 0.27
-Nodes (4): PowerSyncUpdateTestCase, Mixin: ownership tests for handle_update_* (HTTP PATCH)., Return the model instance referenced by ``update_payload['id']``. The         de, A PATCH targeting another user's row resolves to a safe no-op success.
+### Community 214 - "manifest.json"
+Cohesion: 0.13
+Nodes (14): background_color, description, display, display_override, icons, name, orientation, scope (+6 more)
 
-### Community 215 - "Community 215"
+### Community 215 - "RoutineStatisticsTestCase"
 Cohesion: 0.20
 Nodes (3): Test that intensity (Brzycki) is correctly averaged across all grouping levels, Test the statistics calculations, RoutineStatisticsTestCase
 
-### Community 216 - "Community 216"
+### Community 216 - "RoutineTemplatesTestCase"
 Cohesion: 0.20
 Nodes (3): Test the different template access methods, Test the db managers on the model, RoutineTemplatesTestCase
 
-### Community 217 - "Community 217"
-Cohesion: 0.22
-Nodes (9): evaluate_all_users_trophies_task(), evaluate_user_trophies_task(), int, Recalculate statistics for all active users.      This task can be used for data, Evaluate all trophies for a single user.      This task is typically called afte, Evaluate trophies for all active users.      This task can be run periodically (, Perform a full statistics recalculation for a user.      This task is useful for, recalculate_all_statistics_task() (+1 more)
+### Community 217 - ".evaluate_all_trophies"
+Cohesion: 0.09
+Nodes (18): Evaluate all unearned trophies for a user.          Checks each active trophy th, evaluate_all_users_trophies_task(), evaluate_user_trophies_task(), int, task, Recalculate statistics for all active users. This task can be used for data…, Evaluate all trophies for a single user. This task is typically called after a…, Evaluate trophies for all active users. This task can be run periodically… (+10 more)
 
-### Community 218 - "Community 218"
+### Community 218 - "AuthProxyUserBackend"
 Cohesion: 0.22
-Nodes (6): BaseBackend, AuthProxyUserBackend, str, Authenticates against a username passed in the request meta (header).     Relies, Authenticate the user based on the username provided.         The middleware ens, Standard Django method to retrieve a user by ID.
+Nodes (6): BaseBackend, AuthProxyUserBackend, str, Authenticates against a username passed in the request meta (header). Relies on…, Authenticate the user based on the username provided. The middleware ensures…, Standard Django method to retrieve a user by ID.
 
-### Community 219 - "Community 219"
+### Community 219 - "core/signals.py"
 Cohesion: 0.22
-Nodes (8): create_user_cache(), create_user_profile(), delete_temporary_user_on_logout(), Every new user gets a profile, Every new user gets a cache table, Inputting or changing a user's birthdate will auto-update the     user's age as, Temporary (guest) users are deleted when they log out., set_user_age()
+Nodes (9): create_user_cache(), create_user_profile(), delete_temporary_user_on_logout(), receiver, Every new user gets a profile, Every new user gets a cache table, Inputting or changing a user's birthdate will auto-update the user's age as…, Temporary (guest) users are deleted when they log out. (+1 more)
 
-### Community 220 - "Community 220"
-Cohesion: 0.22
-Nodes (3): ExercisesSitemap, NutritionSitemap, Sitemap
+### Community 220 - "ExercisesSitemap"
+Cohesion: 0.18
+Nodes (5): ExercisesSitemap, Sitemap, NutritionSitemap, Sitemap, Sitemap
 
-### Community 221 - "Community 221"
-Cohesion: 0.22
+### Community 221 - "user_document.py"
+Cohesion: 0.25
 Nodes (6): gym_document_upload_dir(), Meta, Return a more human-readable representation, While the model has a user foreign key, this is editable by all         trainers, Returns the upload target for documents, UserDocument
 
-### Community 222 - "Community 222"
+### Community 222 - "ChangeConfigTestCase"
 Cohesion: 0.22
 Nodes (5): ChangeConfigTestCase, Test some logic in the AbstractChangeConfig model     (here with a SetsConfig si, Test the ConfigRequirements object is successfully created, Test the __bool__ method in ConfigRequirements, Test the __bool__ method in ConfigRequirements
 
-### Community 223 - "Community 223"
-Cohesion: 0.22
-Nodes (5): WeightEntryFilterSet, API endpoint for nutrition plan objects, Only allow access to appropriate objects, WeightEntryViewSet, Meta
+### Community 223 - "wger_extras.py"
+Cohesion: 0.19
+Nodes (13): format_username(), get_item(), is_positive(), minus(), Formats the username according to the information available, Emit a JSON object mapping language code -> hashed URL of the React app's     tr, Emit a JSON object mapping language code -> hashed URL of the React app's…, Allows to access a specific key in a dictionary in a template (+5 more)
 
-### Community 224 - "Community 224"
-Cohesion: 0.22
-Nodes (7): StateApps, EmailAddress, migrate_verification_status(), Migration, backfill_email_addresses(), Migration, get_allauth_email()
+### Community 224 - "RoutineForm"
+Cohesion: 0.16
+Nodes (9): AddExerciseForm, DayForm, ExerciseModelChoiceField, Meta, RoutineForm, add_day_tailwind(), add_exercise_tailwind(), add_routine_tailwind() (+1 more)
 
-### Community 225 - "Community 225"
-Cohesion: 0.22
-Nodes (5): EmailLogListView, Shows a list with all sent emails, Can only view emails for own gym, Can only view email list for own gym, Pass additional data to the template
+### Community 225 - "License"
+Cohesion: 0.17
+Nodes (7): License, Meta, License for an item (exercise, ingredient, etc.), Return a more human-readable representation, License has no owner information, Command, BaseCommand
 
-### Community 226 - "Community 226"
-Cohesion: 0.22
-Nodes (8): AccessContractOverviewTestCase, AccessContractTestCase, AddContractTestCase, EditContractTestCase, Tests creating a new contract, Test accessing the detail page of a contract, Test accessing the contract list page, Tests editing a contract
+### Community 226 - "IssueRefreshTokenApiTestCase"
+Cohesion: 0.15
+Nodes (7): IssueRefreshTokenApiTestCase, Token minting is a state-changing action — a GET request must not be routed to…, Tests the ``/api/v2/issue-refresh-token`` endpoint that lets clients holding a…, Happy path: POST with ``Authorization: Token <key>`` returns a refresh token…, The minted refresh token is backed by a dedicated session row with the long-…, No credentials means no refresh token. The endpoint must not leak information…, A garbage DRF token must not mint a refresh token. The ``IsAuthenticated``…
 
-### Community 227 - "Community 227"
-Cohesion: 0.22
-Nodes (6): AddGalleryImageNoDateEXIFTestCase, AddGalleryImageNoDateTestCase, AddGalleryImageTestCase, Tests adding an image to the gallery, Tests adding an image to the gallery with no date, should read EXIF data, Tests adding an image to the gallery with no date, should default to current dat
+### Community 227 - "SimpleTestCase"
+Cohesion: 0.18
+Nodes (7): CalculateConfigValueTestCase, SimpleTestCase, Test that repeat configs can follow each other, Percent progressions can't push the output past MAX_COMPOUND_VALUE, RiR uses the tighter cap (max_digits=2, decimal_places=1), SlotEntryDuplicateConfigTestCase, SimpleTestCase
 
-### Community 228 - "Community 228"
+### Community 228 - "ExerciseCommentApiTestCase"
 Cohesion: 0.22
 Nodes (6): ExerciseCommentApiTestCase, ExerciseCommentRepresentationTestCase, Test the representation of a model, Test that the representation of an object is correct, Tests the exercise comment overview resource, Adding a comment whose language doesn't match the parent translation's         l
 
-### Community 230 - "Community 230"
+### Community 230 - "GymConfigTestCase"
 Cohesion: 0.22
 Nodes (5): GymConfigTestCase, Test the system wide gym configuration, Test that newly registered users get a gym, Test the user registration without a default gym, Test setting the gym for users when setting a default gym
 
-### Community 231 - "Community 231"
-Cohesion: 0.25
-Nodes (7): APITestCase, PowerSyncBaseTestCase, PowerSyncCreateNotAllowedTestCase, PowerSyncResourceTestCase, Mixin for tables where PUT (create) is explicitly rejected by the dispatcher, Base test case for the PowerSync push handlers., Full CRUD bundle for tables that support PUT/PATCH/DELETE.      Tables that don'
+### Community 231 - "PhysicalActivitiesForm"
+Cohesion: 0.24
+Nodes (9): PhysicalActivitiesForm, Form for the additional physical activities, calculate_activities(), calculate_bmr(), login_required, The basal metabolic rate detail page, Calculates the basal metabolic rate.      Currently only the Mifflin-St.Jeor-For, Calculates the calories needed by additional physical activities (+1 more)
 
-### Community 232 - "Community 232"
+### Community 232 - "NutritionPlanInfoQueryCountTestCase"
 Cohesion: 0.28
 Nodes (4): NutritionPlanInfoQueryCountTestCase, NutritionPlanInfoReadOnlyTestCase, The nutritionplaninfo endpoint must not issue a query per meal item., The nutritionplaninfo endpoint is read-only and must reject write methods.
 
-### Community 233 - "Community 233"
+### Community 233 - "nutrition/tests/test_powersync.py"
 Cohesion: 0.22
 Nodes (8): LogItemPowerSyncTestCase, MealItemPowerSyncTestCase, MealPowerSyncTestCase, NutritionPlanPowerSyncTestCase, PowerSync handlers for nutrition.LogItem. The handler runs     check_fk_ownershi, PowerSync handlers for nutrition.NutritionPlan., PowerSync handlers for nutrition.Meal., PowerSync handlers for nutrition.MealItem.
 
-### Community 234 - "Community 234"
-Cohesion: 0.22
-Nodes (5): Test the logic in the translation model, Test that the get_absolute_url returns the correct URL, Test that the get_absolute_url returns the correct URL, Test that the get_absolute_url returns the correct URL, TranslationModelTestCase
+### Community 234 - "IngredientCategory"
+Cohesion: 0.20
+Nodes (7): IngredientCategory, Meta, Model for an Ingredient category, Return a more human-readable representation, Category has no owner information, HttpRequest, Returns the ingredient image          If it is not available locally, it is fetc
 
-### Community 235 - "Community 235"
-Cohesion: 0.22
-Nodes (5): Form, EmailListForm, Small form to send emails, A helper form with only a textarea, WeightCsvImportForm
+### Community 235 - "EmailListForm"
+Cohesion: 0.40
+Nodes (3): EmailListForm, Form, Small form to send emails
 
-### Community 236 - "Community 236"
+### Community 236 - "Adding New Trophies"
 Cohesion: 0.22
 Nodes (8): Adding New Trophies, code:python (from .my_checker import MyCustomChecker), code:python (from wger.trophies.models import Trophy), code:json ([), code:python (# wger/trophies/checkers/my_checker.py), Method 1: Using Code (Recommended for new trophy types), Method 2: Using Existing Checkers, Method 3: Using Fixtures
 
-### Community 237 - "Community 237"
+### Community 237 - "Trophy System"
 Cohesion: 0.22
 Nodes (8): Available Checkers, code:bash (# All trophy tests), Features, Initial Trophies, License, Testing, Trophy Checkers, Trophy System
 
-### Community 238 - "Community 238"
-Cohesion: 0.32
-Nodes (6): Command, Helper admin command to send out email reminders, Find if the currently active workout is overdue, send_email(), Routine, timedelta
-
-### Community 239 - "Community 239"
+### Community 238 - "Command"
 Cohesion: 0.25
-Nodes (4): GymConfig, System wide configuration for gyms      At the moment this only allows to set on, Return a more human-readable representation, Perform additional tasks
+Nodes (8): Command, BaseCommand, Routine, timedelta, Helper admin command to send out email reminders, Find if the currently active workout is overdue, Notify a user that a workout is about to expire, send_email()
 
-### Community 240 - "Community 240"
+### Community 239 - "GymConfig"
+Cohesion: 0.40
+Nodes (3): GymConfig, System wide configuration for gyms      At the moment this only allows to set on, Return a more human-readable representation
+
+### Community 240 - "0035_add_uuids.py"
 Cohesion: 0.39
 Nodes (7): gen_uuids(), Migration, populate_logitem_meal_tmp(), populate_logitem_plan_tmp(), populate_meal_plan_tmp(), populate_mealitem_meal_tmp(), StateApps
 
-### Community 242 - "Community 242"
+### Community 242 - "SlotTestCase"
 Cohesion: 0.25
 Nodes (4): Test the slot calculations, Test that the correct sets are returned for supersets, Test that the correct sets are returned for regular sets, SlotTestCase
 
-### Community 243 - "Community 243"
+### Community 243 - "load_initial_trophies"
 Cohesion: 0.32
-Nodes (7): load_initial_trophies(), Migration, Load the initial set of 9 trophies.      This migration almost idempotent - it w, Reverse migration - delete the initial trophies.      This is optional and can b, reverse_load_trophies(), BaseDatabaseSchemaEditor, StateApps
+Nodes (7): load_initial_trophies(), Migration, BaseDatabaseSchemaEditor, StateApps, Load the initial set of 9 trophies.      This migration almost idempotent - it w, Reverse migration - delete the initial trophies.      This is optional and can b, reverse_load_trophies()
 
-### Community 244 - "Community 244"
+### Community 244 - "export"
 Cohesion: 0.32
-Nodes (7): Routine, export(), get_calendar(), get_events_workout(), Creates and returns a calendar object      :return: Calendar, Creates all necessary events from the given workout and adds them to     the cal, Export the current workout as an iCal file
+Nodes (7): export(), get_calendar(), get_events_workout(), Routine, Creates and returns a calendar object      :return: Calendar, Creates all necessary events from the given workout and adds them to     the cal, Export the current workout as an iCal file
 
-### Community 245 - "Community 245"
-Cohesion: 0.25
-Nodes (6): cache_api_exercises_task(), Fetches the exercise images from the default wger instance, Fetches the exercise videos from the default wger instance, Fetches all exercises from database and caches them., sync_images_task(), sync_videos_task()
+### Community 245 - "exercises/tasks.py"
+Cohesion: 0.24
+Nodes (9): cache_api_exercises_task(), connect, task, Fetches the exercise images from the default wger instance, Fetches the exercise videos from the default wger instance, Fetches all exercises from database and caches them., setup_periodic_tasks(), sync_images_task() (+1 more)
 
-### Community 246 - "Community 246"
-Cohesion: 0.25
-Nodes (5): ApiPatchTestCase, Base test case for testing PATCH access to the API, Test PATCHING a detail view, PATCHING to the overview is not allowed, Tests that it's not possible to patch to the special endpoints
+### Community 246 - "api_base_test.py"
+Cohesion: 0.11
+Nodes (11): ApiDeleteTestCase, ApiPatchTestCase, # TODO: implement this, Base test case for testing PATCH access to the API, Test PATCHING a detail view, PATCHING to the overview is not allowed, Tests that it's not possible to patch to the special endpoints, Base test case for testing DELETE access to the API (+3 more)
 
-### Community 247 - "Community 247"
+### Community 247 - "ApiPostTestCase"
 Cohesion: 0.25
 Nodes (5): ApiPostTestCase, Base test case for testing POST access to the API, POSTing to a detail view is not allowed, Tests POSTing (adding) a new object, Tests that it's not possible to POST to the special endpoints
 
-### Community 248 - "Community 248"
-Cohesion: 0.25
-Nodes (5): ApiDeleteTestCase, Base test case for testing DELETE access to the API, Tests DELETEing an object, DELETEing to the overview is not allowed, Tests that it's not possible to delete to the special endpoints
+### Community 248 - "IngredientDetailTestCase"
+Cohesion: 0.24
+Nodes (6): IngredientDetailTestCase, Tests the ingredient details page, Tests the ingredient details page, Tests the ingredient details page as a logged-in user with editor rights, Tests the ingredient details page as a logged-in user without editor rights, Tests the ingredient details page as an anonymous (logged out) user
 
-### Community 249 - "Community 249"
-Cohesion: 0.25
-Nodes (5): flush_expired_jwt_tokens_task(), flush_expired_long_lived_sessions_task(), Delete OutstandingToken rows whose refresh token has already expired.      With, Delete all expired DB-backed sessions, The periodic cleanup task deletes expired DB-backed long-lived sessions
+### Community 249 - "flush_expired_long_lived_sessions_task"
+Cohesion: 0.22
+Nodes (8): flush_expired_jwt_tokens_task(), flush_expired_long_lived_sessions_task(), connect, task, Delete OutstandingToken rows whose refresh token has already expired. With…, Delete all expired DB-backed sessions, setup_periodic_tasks(), The periodic cleanup task deletes expired DB-backed long-lived sessions
 
-### Community 250 - "Community 250"
+### Community 250 - "GymNameHeaderTestCase"
 Cohesion: 0.32
 Nodes (4): GymNameHeaderTestCase, Test case for showing gym name on application header, Test the custom header for gym members, Test the custom header for logged out users
 
-### Community 252 - "Community 252"
-Cohesion: 0.29
-Nodes (4): Return a more human-readable representation, Returns the object that has owner information, A log entry for an exercise, WorkoutLog
+### Community 252 - ".activate"
+Cohesion: 0.20
+Nodes (5): Overwrite some of Django's settings here, Helper function to test activating users, Tests activating a user as an administrator, Tests activating a user as another logged in user, Tests activating a user a logged out user
 
-### Community 253 - "Community 253"
+### Community 253 - "GymConfig"
 Cohesion: 0.29
 Nodes (4): GymConfig, Configuration options for a gym, Return a more human-readable representation, Config has no user owner
 
-### Community 254 - "Community 254"
-Cohesion: 0.29
-Nodes (6): LogDisplaySerializer, Log Display Data serializer, logs(), MaxRestConfigViewSet, API endpoint for max rest config objects, Only allow access to appropriate objects
+### Community 256 - "WeightConfigViewSet"
+Cohesion: 0.20
+Nodes (9): LogStatsDataSerializer, Log Stats Data serializer, Log Stats Data serializer, API endpoint for weight config objects, API endpoint for weight config objects, Only allow access to appropriate objects, Only allow access to appropriate objects, stats() (+1 more)
 
-### Community 255 - "Community 255"
-Cohesion: 0.29
-Nodes (6): WorkoutDayDataDisplayModeSerializer, date_sequence_display_mode(), API endpoint for reps config objects, Only allow access to appropriate objects, RepetitionsConfigViewSet, WorkoutDayData serializer - display mode
+### Community 257 - "DailyActivityTestCase"
+Cohesion: 0.20
+Nodes (5): DailyActivityTestCase, Test daily activity model, dashboard integration, and log endpoint, Verify DailyActivity properties/defaults, Test the log_daily_activity POST view via HTMX simulation, Verify updating goals in user profile
 
-### Community 256 - "Community 256"
-Cohesion: 0.29
-Nodes (6): LogStatsDataSerializer, Log Stats Data serializer, PublicRoutineTemplateViewSet, Only allow access to appropriate objects, stats(), API endpoint for public routine templates objects
-
-### Community 257 - "Community 257"
-Cohesion: 0.33
-Nodes (3): ApproximateCountQuerySet, Approximate count query set, postgreSQL only      While this doesn't return an e, QuerySet
-
-### Community 258 - "Community 258"
+### Community 258 - "IngredientValuesTestCase"
 Cohesion: 0.38
 Nodes (4): IngredientValuesTestCase, Tests the nutritional value calculator for an ingredient, Calculate the nutritional values as an anonymous user, Calculate the nutritional values as a logged-in user
 
-### Community 260 - "Community 260"
+### Community 259 - "UseBrowserLanguageRedirectTestCase"
+Cohesion: 0.08
+Nodes (17): CreateLanguageTestCase, DeleteLanguageTestCase, EditLanguageTestCase, LanguageApiTestCase, LanguageDetailViewTest, LanguageOverviewTest, LanguageRepresentationTestCase, Tests the language overview resource (+9 more)
+
+### Community 260 - "WeightCsvExportTestCase"
 Cohesion: 0.33
 Nodes (4): Test case for the CSV export for weight entries, Helper function to test the CSV export, Test the CSV export for weight entries by a logged in user, WeightCsvExportTestCase
 
-### Community 261 - "Community 261"
+### Community 261 - "WeightCsvImportTestCase"
 Cohesion: 0.33
 Nodes (4): Test case for the CSV import for weight entries, Helper function to test the CSV import, Test deleting a category by a logged in user, WeightCsvImportTestCase
 
-### Community 262 - "Community 262"
-Cohesion: 0.29
-Nodes (5): MealRepresentationTestCase, Test the representation of a model, Test that the representation of an object is correct, Tests the weight entry overview resource, WeightEntryTestCase
+### Community 262 - "WgerTestCase"
+Cohesion: 0.03
+Nodes (42): TestCase, Testcase to use with the regular website, WgerTestCase, UserGeneratorTestCase, Tests the generated robots.txt, RobotsTxtTestCase, Tests the generated sitemap, SitemapTestCase (+34 more)
 
-### Community 263 - "Community 263"
-Cohesion: 0.29
-Nodes (6): PowerSync handlers for manager.Routine. Creation is explicitly rejected     by t, PowerSync handlers for manager.WorkoutLog. The handler runs     check_fk_ownersh, PowerSync handlers for manager.WorkoutSession. The handler runs     check_fk_own, RoutinePowerSyncTestCase, WorkoutLogPowerSyncTestCase, WorkoutSessionPowerSyncTestCase
+### Community 263 - "manager/tests/test_powersync.py"
+Cohesion: 0.25
+Nodes (7): PowerSync handlers for manager.Routine. Creation is explicitly rejected by the…, PowerSync handlers for manager.Routine. Creation is explicitly rejected     by t, PowerSync handlers for manager.WorkoutLog. The handler runs     check_fk_ownersh, PowerSync handlers for manager.WorkoutSession. The handler runs     check_fk_own, RoutinePowerSyncTestCase, WorkoutLogPowerSyncTestCase, WorkoutSessionPowerSyncTestCase
 
-### Community 264 - "Community 264"
+### Community 264 - "api/powersync.py"
 Cohesion: 0.43
 Nodes (4): create_token(), _private_jwk(), _private_key(), PowerSync tokens and the REST API are signed with the same RS256         keypair
 
-### Community 265 - "Community 265"
+### Community 265 - "Management Commands"
 Cohesion: 0.29
 Nodes (7): code:bash (# Load trophies (overwrites existing ones if IDs match)), code:bash (# Evaluate for a specific user), code:bash (# Recalculate for a specific user), Evaluate Trophies, Load Trophies, Management Commands, Recalculate Statistics
 
-### Community 266 - "Community 266"
+### Community 266 - "Signals and Auto-Evaluation"
 Cohesion: 0.29
 Nodes (7): Celery Tasks (Optional), code:python (class TrophiesConfig(AppConfig):), code:python (from wger.trophies.tasks import evaluate_user_trophies_task), How Auto-Evaluation Works, Performance Considerations, Signal Handlers, Signals and Auto-Evaluation
 
-### Community 267 - "Community 267"
+### Community 267 - "API Endpoints"
 Cohesion: 0.29
 Nodes (7): API Endpoints, code:text (GET /api/v2/trophy/), code:text (GET /api/v2/user-trophy/), code:text (GET /api/v2/user-statistics/), Trophy Endpoints, User Statistics Endpoints, User Trophy Endpoints
 
-### Community 268 - "Community 268"
+### Community 268 - "create_demo_entries"
 Cohesion: 0.29
 Nodes (4): create_demo_entries(), Creates some demo data for temporary users, demo_entries(), Creates a set of sample entries for guest users
 
-### Community 270 - "Community 270"
+### Community 269 - "Command"
 Cohesion: 0.33
-Nodes (3): Command, Manually trigger trophy evaluation for users.      This command allows administr, Process the trophy evaluation based on provided options.
+Nodes (3): Command, BaseCommand, Alter the author name in the exercise models.
 
-### Community 271 - "Community 271"
+### Community 270 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Manually trigger trophy evaluation for users.      This command allows administr
+
+### Community 271 - "Command"
+Cohesion: 0.29
+Nodes (4): Command, BaseCommand, Recalculate user statistics from workout history.      This command performs a f, Process the statistics recalculation based on provided options.
+
+### Community 272 - "postgres_only"
+Cohesion: 0.21
+Nodes (12): add_publication(), Migration, BaseDatabaseSchemaEditor, StateApps, remove_publication(), create_synced_tables(), drop_synced_tables(), Migration (+4 more)
+
+### Community 273 - "LenientManifestStaticFilesStorage"
 Cohesion: 0.33
-Nodes (3): Command, Recalculate user statistics from workout history.      This command performs a f, Process the statistics recalculation based on provided options.
+Nodes (3): LenientManifestStaticFilesStorage, Like ManifestStaticFilesStorage but does not raise when an entry or target file…, ManifestStaticFilesStorage
 
-### Community 272 - "Community 272"
-Cohesion: 0.47
-Nodes (5): BaseDatabaseSchemaEditor, StateApps, add_publication(), Migration, remove_publication()
-
-### Community 273 - "Community 273"
-Cohesion: 0.33
-Nodes (3): LenientManifestStaticFilesStorage, Like ManifestStaticFilesStorage but does not raise when an entry or target file, ManifestStaticFilesStorage
-
-### Community 274 - "Community 274"
+### Community 274 - "0003_auto_20160921_2000.py"
 Cohesion: 0.33
 Nodes (5): capitalize_name(), copy_name(), Migration, Capitalizes the name of the exercises      The algorithm is copied here as it wa, Copies the exercise name to the original name field
 
-### Community 275 - "Community 275"
+### Community 275 - "0018_delete_pending_exercises.py"
 Cohesion: 0.33
 Nodes (5): delete_pending_bases(), delete_pending_translations(), Migration, Delete all pending translations      Note that we can't access STATUS_PENDING he, Delete all pending bases      Note that we can't access STATUS_PENDING here beca
 
-### Community 276 - "Community 276"
-Cohesion: 0.33
+### Community 276 - "AdminUserNote"
+Cohesion: 0.40
 Nodes (4): AdminUserNote, Meta, Administrator notes about a member, While the model has a user foreign key, this is editable by all         trainers
 
-### Community 277 - "Community 277"
-Cohesion: 0.33
-Nodes (5): Rest Config serializer, RestConfigSerializer, API endpoint for routine slot entry objects, Only allow access to appropriate objects, SlotEntryViewSet
+### Community 280 - "ActivityDetailsTestCase"
+Cohesion: 0.20
+Nodes (5): ActivityDetailsTestCase, Testa la GET senza parametri (data odierna), Testa la GET con una data specifica, Testa la POST per loggare i passi su una data specifica, Test case per l'endpoint dei dettagli dell'attività giornaliera
 
-### Community 278 - "Community 278"
-Cohesion: 0.33
-Nodes (5): MaxRiRConfigSerializer, RiR Config serializer, MaxWeightConfigViewSet, API endpoint for max weight config objects, Only allow access to appropriate objects
+### Community 281 - "ExerciseTranslationSubmissionSerializer"
+Cohesion: 0.28
+Nodes (6): atomic, create(), ExerciseTranslationSubmissionSerializer, _log_action_creation(), Translation serializer used as a nested child of ``ExerciseSubmissionSerializer`, Emit an actstream ``created`` event for a freshly-created instance.      Used by
 
-### Community 279 - "Community 279"
-Cohesion: 0.33
-Nodes (5): MaxRepetitionsConfigSerializer, Max Repetition Config serializer, MaxRepetitionsConfigViewSet, API endpoint for max reps config objects, Only allow access to appropriate objects
-
-### Community 280 - "Community 280"
-Cohesion: 0.33
-Nodes (5): RiR Config serializer, RiRConfigSerializer, API endpoint for set config objects, Only allow access to appropriate objects, RestConfigViewSet
-
-### Community 281 - "Community 281"
-Cohesion: 0.33
-Nodes (5): Weight Config serializer, WeightConfigSerializer, RoutineDayViewSet, API endpoint for routine day objects, Only allow access to appropriate objects
-
-### Community 282 - "Community 282"
+### Community 282 - "0002_auto_20170101_1538.py"
 Cohesion: 0.33
 Nodes (5): copy_username(), Migration, Updates the status of the ingredients, Copies the exercise name to the original name field, update_status()
 
-### Community 283 - "Community 283"
+### Community 283 - "0006_auto_20151025_2237.py"
 Cohesion: 0.33
 Nodes (5): create_usercache(), delete_usercache(), Migration, Deletes the usercache table for all users, Creates a usercache table for all users
 
-### Community 284 - "Community 284"
+### Community 284 - "0007_auto_20160311_2258.py"
 Cohesion: 0.33
 Nodes (5): convert_logs(), convert_settings(), Migration, Adds a unit to workout settings that have 99 for 'until failure', Adds a unit to users who have imperial units in the profile
 
-### Community 285 - "Community 285"
+### Community 285 - "0007_auto_20201203_1042.py"
 Cohesion: 0.33
 Nodes (5): insert_variations(), Migration, Forward migration. Add variation data to exercises, Backwards migration. Removes all variation data., remove_variations()
 
-### Community 286 - "Community 286"
-Cohesion: 0.47
-Nodes (5): create_synced_tables(), drop_synced_tables(), Migration, BaseDatabaseSchemaEditor, StateApps
+### Community 286 - "AuthProxyHeaderMiddleware"
+Cohesion: 0.25
+Nodes (6): AuthProxyHeaderMiddleware, ForcePasswordChangeMiddleware, MiddlewareMixin, Middleware to force authenticated users to change their password if their…, Middleware to authenticate users based on a header set by a trusted proxy., Middleware to authenticate users based on a header set by a trusted proxy.…
 
-### Community 287 - "Community 287"
+### Community 287 - "auto_delete_file_on_delete"
 Cohesion: 0.33
 Nodes (5): Image, auto_delete_file_on_delete(), Reset the nutrition values canonical form in cache, Delete the image along with its thumbnails, reset_nutritional_values_canonical_form()
 
-### Community 288 - "Community 288"
-Cohesion: 0.33
-Nodes (4): PlanApiTestCase, PlanCopyTestCase, Tests the nutritional plan overview resource      TODO: setting overview_cached, Tests making a copy of a meal plan
+### Community 288 - "mint_long_lived_refresh_token"
+Cohesion: 0.25
+Nodes (6): A refresh token whose session no longer resolves to a user (here: a         pass, Posting another user's session_key must not delete that user's         long-live, test_refresh_fails_under_pure_cache_engine(), test_refresh_works_under_cache_backed_engine(), mint_long_lived_refresh_token(), Create a dedicated Django session row for *user* and return a headless JWT…
 
-### Community 289 - "Community 289"
-Cohesion: 0.33
-Nodes (4): MealApiTestCase, MealMalformedFkTestCase, Tests the meal overview resource, A malformed FK reference must not crash the ownership check.
+### Community 289 - "TrainerCannotDeactivatePrivilegedUsersTestCase"
+Cohesion: 0.25
+Nodes (3): A user with only ``gym.gym_trainer`` must not be able to (de)activate other, Sanity check: the legitimate flow (trainer disables a misbehaving         member, TrainerCannotDeactivatePrivilegedUsersTestCase
 
-### Community 290 - "Community 290"
-Cohesion: 0.33
-Nodes (5): generate_aliases_uuids(), generate_comments_uuids(), Migration, Generate new UUIDs for each comment, Generate new UUIDs for each alias
+### Community 291 - "sync_exercisedb_gym_media.py"
+Cohesion: 0.39
+Nodes (6): canonical_muscles(), Command, match_exercise(), BaseCommand, Safely add ExerciseDB GIF previews to the gym exercise catalog., tokens()
 
-### Community 291 - "Community 291"
+### Community 292 - "Command"
 Cohesion: 0.33
-Nodes (4): ExerciseCategory, Model for an exercise category, Return a more human-readable representation, Category has no owner information
+Nodes (3): Command, BaseCommand, Dummy generator for workout diary entries
 
-### Community 293 - "Community 293"
+### Community 293 - "Command"
+Cohesion: 0.32
+Nodes (5): Command, BaseCommand, Helper admin command to send out email reminders, Notify a user to input the weight entry          :type user User         :type l, send_email()
+
+### Community 294 - "Command"
+Cohesion: 0.33
+Nodes (3): Command, BaseCommand, Generates a fresh RS256 keypair for JWT signing.      The same key is used by Si
+
+### Community 295 - "Command"
+Cohesion: 0.33
+Nodes (4): Command, BaseCommand, Sends the prepared mass emails, Send some mails and remove them from the list
+
+### Community 296 - "Command"
+Cohesion: 0.33
+Nodes (3): Command, BaseCommand, Bootstrap the PowerSync bucket storage in the wger Postgres database (idempotent
+
+### Community 297 - "Command"
+Cohesion: 0.33
+Nodes (3): Command, BaseCommand, Dummy generator for gyms
+
+### Community 298 - "RiRConfigViewSet"
+Cohesion: 0.22
+Nodes (8): WorkoutDayData serializer - gym mode, WorkoutDayDataGymModeSerializer, date_sequence_gym_mode(), API endpoint for set config objects, API endpoint for set config objects, Only allow access to appropriate objects, Only allow access to appropriate objects, RiRConfigViewSet
+
+### Community 299 - "0004_add_uuids.py"
 Cohesion: 0.50
-Nodes (3): Command, Helper admin command to send out email reminders, send_email()
+Nodes (4): gen_uuids(), Migration, populate_measurement_category_tmp(), StateApps
 
-### Community 295 - "Community 295"
-Cohesion: 0.40
-Nodes (3): Command, Sends the prepared mass emails, Send some mails and remove them from the list
-
-### Community 298 - "Community 298"
-Cohesion: 0.40
-Nodes (4): delete_user_document_on_delete(), gym_config(), Creates a configuration entry for newly added gyms, Deletes the document from the disk as well
-
-### Community 299 - "Community 299"
+### Community 300 - "0025_change_pk_to_uuid.py"
 Cohesion: 0.50
-Nodes (4): StateApps, gen_uuids(), Migration, populate_measurement_category_tmp()
+Nodes (4): Migration, populate_tmp_fields(), StateApps, reverse_populate_tmp_fields()
 
-### Community 300 - "Community 300"
-Cohesion: 0.50
-Nodes (4): StateApps, Migration, populate_tmp_fields(), reverse_populate_tmp_fields()
+### Community 301 - "IngredientFilterSet"
+Cohesion: 0.28
+Nodes (5): IngredientFilterSet, Meta, Filter based on language codes, not IDs          Also accepts a comma-separated, 'exact' search for the barcode.          It this is not known locally, try fetch, Try a barcode lookup first, then perform a fulltext search when Postgres is avai
 
-### Community 303 - "Community 303"
+### Community 302 - "NullMinValueValidator"
+Cohesion: 0.33
+Nodes (3): BaseValidator, deconstructible, NullMinValueValidator
+
+### Community 303 - "migrate_context_data_uuids"
 Cohesion: 0.40
-Nodes (4): migrate_context_data_uuids(), Migration, Migrate the int PKs of Log and Session objects to UUIDs (strings), StateApps
+Nodes (4): migrate_context_data_uuids(), Migration, StateApps, Migrate the int PKs of Log and Session objects to UUIDs (strings)
 
-### Community 304 - "Community 304"
+### Community 304 - "set_unit_types"
 Cohesion: 0.40
-Nodes (4): StateApps, Migration, Set the unit_type for existing RepetitionUnit records based on their ID.      De, set_unit_types()
+Nodes (4): Migration, StateApps, Set the unit_type for existing RepetitionUnit records based on their ID.      De, set_unit_types()
 
-### Community 305 - "Community 305"
+### Community 305 - "ExerciseVideosApiTestCase"
 Cohesion: 0.40
 Nodes (3): ExerciseVideosApiTestCase, # TODO: add POST and DELETE tests, Tests the exercise video resource
 
-### Community 306 - "Community 306"
-Cohesion: 0.40
-Nodes (3): AllowRegisterUser, BasePermission, Checks that users are allow to register via API.      Apps can register user via
+### Community 306 - "CanContributeExercises"
+Cohesion: 0.15
+Nodes (9): BasePermission, AllowRegisterUser, Checks that users are allow to register via API.      Apps can register user via, BasePermission, Checks that users are allow to register via API. Apps can register user via the…, CanContributeExercises, Checks that users are allowed to create or edit an exercise.      Regular users, BasePermission (+1 more)
 
-### Community 307 - "Community 307"
+### Community 307 - "EmailInactiveUserTestCase"
 Cohesion: 0.40
 Nodes (3): EmailInactiveUserTestCase, Test email reminders for inactive users, Test email reminders for inactive users
 
-### Community 308 - "Community 308"
+### Community 308 - "measurements/tests/test_powersync.py"
 Cohesion: 0.40
 Nodes (4): CategoryPowerSyncTestCase, MeasurementPowerSyncTestCase, PowerSync handlers for measurements.Category., PowerSync handlers for measurements.Measurement. ``check_fk_ownership``     reje
 
-### Community 310 - "Community 310"
+### Community 310 - "manager/helpers.py"
 Cohesion: 0.70
 Nodes (4): brzycki_intensity(), brzycki_one_rm(), Decimal, float
 
-### Community 312 - "Community 312"
-Cohesion: 0.40
-Nodes (3): Tests the trainer logout view (switching back to trainer ID), Test the trainer login as an anonymous user, TrainerLogoutTestCase
+### Community 311 - "Command"
+Cohesion: 0.44
+Nodes (4): Command, int, str, Import an Open Food facts Dump      Example usage:     * Import dump (downloads
 
-### Community 313 - "Community 313"
+### Community 312 - "gym/tests/test_user.py"
+Cohesion: 0.33
+Nodes (4): Test the trainer login as an anonymous user, Tests the trainer logout view (switching back to trainer ID), Test the trainer login as an anonymous user, TrainerLogoutTestCase
+
+### Community 313 - "Services API"
 Cohesion: 0.40
 Nodes (5): code:python (from wger.trophies.services.statistics import UserStatistics), code:python (from wger.trophies.services.trophy import TrophyService), Services API, TrophyService, UserStatisticsService
 
-### Community 322 - "Community 322"
+### Community 314 - "Command"
+Cohesion: 0.33
+Nodes (3): Command, BaseCommand, Dummy generator for weight entries
+
+### Community 317 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Helper admin command to clean up demo users, to be called e.g. by cron
+
+### Community 318 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Dummy generator for nutritional plans
+
+### Community 319 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Helper command to extract translatable content from the database such as     cat
+
+### Community 320 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Read out the user submitted exercise.      Used to generate the AUTHORS file for
+
+### Community 322 - "0011_remove_set_exercises.py"
 Cohesion: 0.50
 Nodes (3): increment_order(), Migration, Increment the oder in settings so ensure the order is preserved      Otherwise,
 
-### Community 323 - "Community 323"
-Cohesion: 0.50
-Nodes (3): StateApps, gen_uuids(), Migration
-
-### Community 324 - "Community 324"
+### Community 323 - "gen_uuids"
 Cohesion: 0.50
 Nodes (3): gen_uuids(), Migration, StateApps
 
-### Community 327 - "Community 327"
-Cohesion: 0.50
-Nodes (3): label(), Class decorator: instantiate ``cls`` and add the singleton to ``REGISTRY``     k, register_handler()
+### Community 324 - "TrophiesOverview"
+Cohesion: 0.25
+Nodes (6): ListView, LoginRequiredMixin, PermissionRequiredMixin, All available trophies (even hidden ones). This is mainly to check that the…, Return only the weight entries for the current user, TrophiesOverview
 
-### Community 329 - "Community 329"
+### Community 326 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Dummy generator for routines
+
+### Community 327 - "register_handler"
+Cohesion: 0.18
+Nodes (8): The profile row is created together with the user account and must always…, UserProfileHandler, LogItemHandler, MealHandler, Meals live under a plan; ownership is enforced via the ``plan`` FK, not a…, Diary log entries — owned via the plan FK chain., Class decorator: instantiate ``cls`` and add the singleton to ``REGISTRY``…, register_handler()
+
+### Community 329 - "0006_auto_20160214_1013.py"
 Cohesion: 0.50
 Nodes (3): Migration, Updates the wording of our three custom gym permissions, update_permission_names()
 
-### Community 331 - "Community 331"
+### Community 331 - "0017_alter_workoutlog_exercise_base.py"
 Cohesion: 0.50
 Nodes (3): migrate_bases(), Migration, Migrates the used bases      Note that we can't access STATUS_PENDING here becau
 
-### Community 332 - "Community 332"
+### Community 332 - "0022_add_remote_id_increase_author_field_length.py"
 Cohesion: 0.50
 Nodes (3): Migration, Set remote_id, used by imported ingredients (OFF, etc.), set_external_id()
 
-### Community 333 - "Community 333"
+### Community 333 - "0027_prefill_end_date.py"
 Cohesion: 0.50
 Nodes (3): Migration, prefill_end_date(), Sets the end date of each user's nutrition plan to the start date of their     n
 
-### Community 334 - "Community 334"
+### Community 334 - "0031_start_weight_unit_merge.py"
 Cohesion: 0.50
 Nodes (3): migrate_weight_units(), Migration, Copy unit names from WeightUnit into IngredientWeightUnit.name,     then delete
 
-### Community 338 - "Community 338"
+### Community 335 - "ImageMixinTestCase"
+Cohesion: 0.25
+Nodes (5): from_json(), Any, bool, ImageMixinTestCase, SimpleTestCase
+
+### Community 336 - "IngredientData"
+Cohesion: 0.25
+Nodes (3): IngredientData, IngredientData, Test that the function can read the regular case
+
+### Community 338 - "WgerLimitOffsetPagination"
 Cohesion: 0.50
 Nodes (3): LimitOffsetPagination, Default offset pagination with a hard upper bound on ``limit``., WgerLimitOffsetPagination
 
-### Community 341 - "Community 341"
-Cohesion: 0.50
-Nodes (3): str, Checks that the username is not already taken and returns suggestions if it is., validate_username()
+### Community 339 - ".get_exercise_api_key"
+Cohesion: 0.29
+Nodes (3): Serve the list from the per-exercise cache, hitting the DB only for misses., Filter by language for exercise comments, get the exercise base cache key used in the API
 
-### Community 342 - "Community 342"
+### Community 340 - "fa_class"
+Cohesion: 0.29
+Nodes (7): fa_class(), Returns the correct (translated) weight unit :param unit: the weight unit.…, Helper function to help add font awesome classes to elements      :param class_n, Helper function to help add font awesome classes to elements :param class_name:…, Returns the correct (translated) weight unit      :param unit: the weight unit., trans_weight_unit(), simple_tag
+
+### Community 341 - "core/validators.py"
+Cohesion: 0.15
+Nodes (6): LowercaseValidator, str, Checks that the username is not already taken and returns suggestions if it is., SymbolValidator, UppercaseValidator, validate_username()
+
+### Community 342 - "Database Models"
 Cohesion: 0.50
 Nodes (4): Database Models, Trophy, UserStatistics, UserTrophy
 
-### Community 343 - "Community 343"
+### Community 343 - "API Components"
 Cohesion: 0.50
 Nodes (4): API Components, code:python (# Get all volume-based trophies), Filtersets, Serializers
 
-### Community 344 - "Community 344"
+### Community 344 - "Troubleshooting"
 Cohesion: 0.50
 Nodes (4): Performance issues, Statistics not updating, Trophies not being awarded, Troubleshooting
 
-### Community 345 - "Community 345"
+### Community 345 - "Configuration"
 Cohesion: 0.50
 Nodes (4): code:python (WGER_SETTINGS = {), Configuration, Global Settings, User Preferences
 
+### Community 351 - "HttpResponse"
+Cohesion: 0.24
+Nodes (16): HttpResponse, add_custom_exercise_tailwind(), _async_push_to_baserow(), copy_routine(), delete_day_tailwind(), delete_exercise_tailwind(), delete_routine_tailwind(), delete_set_tailwind() (+8 more)
+
+### Community 353 - "RoutineDateValidationTestCase"
+Cohesion: 0.43
+Nodes (3): The routine API must enforce sane date bounds:     - ``end`` may not be before `, The routine API must enforce sane date bounds: - ``end`` may not be before…, RoutineDateValidationTestCase
+
+### Community 358 - "extract_serving_size_data"
+Cohesion: 0.43
+Nodes (6): Match, extract_serving_size_data(), _mass_match_to_gram(), float, int, str
+
+### Community 359 - "Bebas Neue by Dharma Type"
+Cohesion: 0.29
+Nodes (6): Bebas Neue by Dharma Type, Contact, Detail, FAQ, History of Bebas Neue by Dharma Type, License of Bebas Neue V2.00
+
+### Community 360 - "Command"
+Cohesion: 0.33
+Nodes (3): Command, BaseCommand, Dummy generator for users
+
+### Community 362 - "test_rest_timer_restore.js"
+Cohesion: 0.33
+Nodes (5): assert, expiredState, fs, start, template
+
+### Community 363 - "Command"
+Cohesion: 0.33
+Nodes (3): Command, BaseCommand, Dummy generator for measurement entries
+
+### Community 364 - ".get_nutritional_values"
+Cohesion: 0.33
+Nodes (3): Sums the nutritional info of all items in the plan, Returns the closest weight entry for the nutrition plan.         Returns None if, Calculates the deviation from the goal calories and the actual         amount of
+
+### Community 365 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Inizializza automaticamente il database, scarica gli esercizi e genera dati di…
+
+### Community 368 - "WorkoutSessionLifecycleTestCase"
+Cohesion: 0.12
+Nodes (9): Verify logging set with bodyweight (weight=0 or empty) results in weight…, Verify exercise completion fills remaining unlogged sets while preserving…, Verify that accessing a session/day belonging to another user returns 403…, Verify that uploading a condition photo creates Image and links it to…, Tests the workout overview resource, Unit tests for WorkoutSession lifecycle, set creation with bodyweight, exercise…, Verify session status transition: active -> finished / interrupted / restart., WorkoutSessionApiTestCase (+1 more)
+
+### Community 369 - "language_select"
+Cohesion: 0.40
+Nodes (5): language_select(), modal_link(), str, Renders a link to change the current language., inclusion_tag
+
+### Community 372 - "ImportExerciseDBTestCase"
+Cohesion: 0.40
+Nodes (3): ImportExerciseDBTestCase, patch, TestCase
+
+### Community 383 - "log_tailwind"
+Cohesion: 0.60
+Nodes (4): log_tailwind(), make_overview_redirect(), parse_duration_minutes(), login_required
+
+### Community 392 - "UnitChooserForm"
+Cohesion: 0.40
+Nodes (4): get_values(), A small form to select an amount and a unit for an ingredient, UnitChooserForm, view()
+
+### Community 393 - "Command"
+Cohesion: 0.40
+Nodes (3): Command, BaseCommand, Export all ingredients as a gzipped JSONL file for bulk synchronization.      Th
+
+### Community 398 - "WeightCsvImportForm"
+Cohesion: 0.40
+Nodes (3): Form, A helper form with only a textarea, WeightCsvImportForm
+
+### Community 402 - "Command"
+Cohesion: 0.50
+Nodes (3): Command, BaseCommand, Check that all gym trainers and users have configurations
+
+### Community 404 - "OwnerScopedSessionField"
+Cohesion: 0.50
+Nodes (3): OwnerScopedSessionField, A writeable session FK that only resolves UUIDs of sessions owned by the…, A writeable session FK that only resolves UUIDs of sessions owned by the     cur
+
+### Community 479 - "GroupedLogDataSerializer"
+Cohesion: 0.67
+Nodes (3): GroupedLogDataSerializer, Log Stats Data serializer, Log Stats Data serializer
+
+### Community 480 - "LogDataSerializer"
+Cohesion: 0.67
+Nodes (3): LogDataSerializer, Log Stats Data serializer, Log Stats Data serializer
+
+### Community 481 - "LicenseRepresentationTestCase"
+Cohesion: 0.13
+Nodes (13): AddLicenseTestCase, DeleteLicenseTestCase, EditLicenseTestCase, LicenseApiTestCase, LicenseOverviewTest, LicenseRepresentationTestCase, Test the representation of a model, Test that the representation of an object is correct (+5 more)
+
+### Community 482 - "MuscleApiTestCase"
+Cohesion: 0.12
+Nodes (13): AddMuscleTestCase, DeleteMuscleTestCase, EditMuscleTestCase, MuscleAdminOverviewTest, MuscleApiTestCase, MuscleRepresentationTestCase, Tests the muscle overview resource, Test the representation of a model (+5 more)
+
+### Community 483 - "UnitTypeTestCase"
+Cohesion: 0.09
+Nodes (17): AddTestCase, ApiTestCase, DeleteTestCase, EditTestCase, OverviewTest, Tests the unit resource, Test the representation of a model, Test that the representation of an object is correct (+9 more)
+
+### Community 500 - ".get_all_trophy_progress"
+Cohesion: 0.12
+Nodes (8): Get all trophies with progress information for a user.          Returns both ear, Test progressive trophies show partial progress, Repeatable (PR) trophies are excluded from progress by default, Repeatable (PR) trophies are included when include_repeatable=True, Test hidden trophies are not visible until earned, Test complete user journey: signup -> workouts -> earn trophies, Test getting progress for all trophies, Test hidden trophies are excluded unless earned
+
+### Community 551 - ".test_refresh_fails_under_pure_cache_engine"
+Cohesion: 0.40
+Nodes (3): override_settings, With the production-style cache-backed engine, the DB-persisted session, A pure-cache session engine cannot read the DB-persisted long-lived         sess
+
+### Community 553 - "AuthProxyMiddlewareTests"
+Cohesion: 0.11
+Nodes (12): AuthProxyMiddlewareTests, override_settings, TestCase, A user auto-created by the trusted proxy gets a verified allauth         EmailAd, A proxy user created without an email header gets no row and no crash., Should redirect to login because the middleware shouldn't authenticate, Should redirect to login, Client IP inside trusted CIDR subnet should authenticate. (+4 more)
+
+### Community 689 - ".get_values"
+Cohesion: 0.18
+Nodes (6): action, Calculates the nutritional values for current ingredient and         the given a, Return an overview of the nutritional plan's values, Return an overview of the nutritional plan's values, Return an overview of the nutritional plan's values, Return an overview of the nutritional plan's values
+
+### Community 709 - "IngredientModelTestCase"
+Cohesion: 0.10
+Nodes (13): Searches OFF by barcode and creates a local ingredient from the result, IngredientInfoLazyServingUnitSyncApiTestCase, IngredientModelTestCase, patch, Tests the ingredient model functions, Tests creating an ingredient from OFF, When OFF changes the serving_size text but the gram value stays,         the exi, Tests creating an ingredient from OFF - name gets truncated (+5 more)
+
+### Community 719 - "patch"
+Cohesion: 0.15
+Nodes (7): patch, Searching for a standard text string should fall back to full-text search, Searching for a short number (<8) should fall back to full-text search, Searching for a long number (>14) should fall back to full-text search, If search_barcode finds a match, it should return it, A barcode absent locally is fetched from OFF and the created ingredient is retur, A barcode unknown on OFF returns an empty result
+
+### Community 759 - ".get_progress_display"
+Cohesion: 0.24
+Nodes (7): get_current_value(), get_target_value(), Any, str, Get the user's current value towards the target.          Returns:             T, Get a human-readable string describing the progress.          Returns:, Get the target value the user needs to achieve.          Returns:             Th
+
 ## Knowledge Gaps
-- **280 isolated node(s):** `Migration`, `Migration`, `Migration`, `str`, `HttpRequest` (+275 more)
+- **272 isolated node(s):** `Migration`, `Migration`, `Migration`, `Migration`, `Migration` (+267 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **356 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **218 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `WgerTestCase` connect `Community 0` to `Community 1`, `Community 3`, `Community 4`, `Community 7`, `Community 9`, `Community 12`, `Community 13`, `Community 14`, `Community 16`, `Community 17`, `Community 18`, `Community 19`, `Community 20`, `Community 25`, `Community 28`, `Community 31`, `Community 32`, `Community 33`, `Community 38`, `Community 39`, `Community 40`, `Community 42`, `Community 46`, `Community 52`, `Community 59`, `Community 60`, `Community 62`, `Community 66`, `Community 67`, `Community 74`, `Community 75`, `Community 76`, `Community 80`, `Community 81`, `Community 84`, `Community 86`, `Community 88`, `Community 89`, `Community 90`, `Community 95`, `Community 97`, `Community 98`, `Community 99`, `Community 104`, `Community 105`, `Community 106`, `Community 112`, `Community 114`, `Community 115`, `Community 119`, `Community 122`, `Community 123`, `Community 131`, `Community 134`, `Community 140`, `Community 146`, `Community 149`, `Community 151`, `Community 152`, `Community 153`, `Community 154`, `Community 155`, `Community 164`, `Community 165`, `Community 166`, `Community 172`, `Community 176`, `Community 181`, `Community 182`, `Community 183`, `Community 184`, `Community 186`, `Community 187`, `Community 189`, `Community 195`, `Community 196`, `Community 197`, `Community 198`, `Community 199`, `Community 200`, `Community 202`, `Community 203`, `Community 204`, `Community 207`, `Community 215`, `Community 216`, `Community 222`, `Community 228`, `Community 229`, `Community 230`, `Community 232`, `Community 234`, `Community 241`, `Community 242`, `Community 250`, `Community 251`, `Community 258`, `Community 259`, `Community 260`, `Community 261`, `Community 262`, `Community 288`, `Community 289`, `Community 301`, `Community 307`, `Community 311`, `Community 312`, `Community 335`, `Community 336`, `Community 337`, `Community 340`, `Community 358`, `Community 361`, `Community 363`, `Community 364`?**
-  _High betweenness centrality (0.460) - this node is a cross-community bridge._
-- **Why does `BaseTestCase` connect `Community 1` to `Community 0`, `Community 258`, `Community 132`, `Community 9`, `Community 19`, `Community 21`, `Community 150`, `Community 177`, `Community 180`, `Community 54`, `Community 201`, `Community 77`, `Community 80`, `Community 85`, `Community 214`, `Community 91`, `Community 231`, `Community 246`, `Community 247`, `Community 248`?**
-  _High betweenness centrality (0.084) - this node is a cross-community bridge._
-- **Why does `WgerLoginView` connect `Community 67` to `Community 8`, `Community 110`, `Community 205`, `Community 206`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
-- **Are the 253 inferred relationships involving `WgerTestCase` (e.g. with `GymNameHeaderTestCase` and `GymConfigTestCase`) actually correct?**
-  _`WgerTestCase` has 253 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 106 inferred relationships involving `WgerEditTestCase` (e.g. with `EditLanguageTestCase` and `EditLicenseTestCase`) actually correct?**
+- **Why does `WgerTestCase` connect `WgerTestCase` to `WgerAddTestCase`, `BaseTestCase`, `wger_headers`, `Path`, `manager/models/__init__.py`, `base_testcase.py`, `WorkoutLog`, `ExerciseCategory`, `UserTrophyAPITestCase`, `UUID`, `ExerciseTranslationCustomApiTestCase`, `WgerEditTestCase`, `DeletionLogTestCase`, `Translation`, `InactivityReturnCheckerTestCase`, `WorkoutCountBasedChecker`, `SetConfigDataTestCase`, `StreakChecker`, `VolumeChecker`, `WeekendWarriorChecker`, `TimeBasedChecker`, `sync_ingredients`, `ExerciseHistoryControlExtras`, `WgerAccountAdapter`, `DeleteUserByAdminTestCase`, `exercises/tests/test_sync.py`, `GymScopeGuardsTestCase`, `DateBasedChecker`, `ExerciseApiCacheTestCase`, `download_ingredient_dump`, `test_auth_social.py`, `RoutinePdfLogExportTestCase`, `TrainerLoginTestCase`, `PreferencesTestCase`, `RoutineLogsAndStatsScopeTestCase`, `GymAddUserTestCase`, `DeleteUserWithoutPasswordTestCase`, `ApiKeyTestCase`, `LogModelTestCase`, `RegistrationTestCase`, `WorkoutDayData`, `.save_image`, `cache_exercise`, `TrophyModelTestCase`, `UserTrophyModelTestCase`, `test_exercise_translation.py`, `IngredientOverviewTestCase`, `TestHealthCheckManagementCommands`, `DemoUserTestCase`, `EmailReminderTestCase`, `CopyRoutineTestCase`, `SearchExerciseApiTestCase`, `fetch_ingredient_image`, `UserStatisticsModelTestCase`, `ExerciseTestCase`, `.push`, `RoutineApiTrainerTestCase`, `ExerciseImage`, `WorkoutLogSlotEntryOwnershipTestCase`, `SetConfigData`, `ChangePasswordTestCase`, `MealItemFormTestCase`, `LongLivedRefreshTokenTestCase`, `ExerciseModelTestCase`, `NutritionalValuesCalculationsTestCase`, `UserStatisticsServiceTestCase`, `uuid7`, `WorkoutLogSerializer`, `WeightExportCsvTestCase`, `WorkoutViewsTestCase`, `ChangeExerciseAuthorTestCase`, `EmailListFormPreviewTestCase`, `GymMembersCsvExportTestCase`, `NutritionalPlanCacheTestCase`, `TrophyServiceTestCase`, `WebLoginViewTestCase`, `UserBodyweightTestCase`, `PreferencesCalculationsTestCase`, `Command`, `WeightConversionTestCase`, `CaloriesCalculatorTestCase`, `IngredientModelTestCase`, `TestExportIngredientDump`, `CopyPlanTestCase`, `WorkoutICalExportTestCase`, `RobotsExclusionMiddlewareTestCase`, `NutritionalPlanPdfExportTestCase`, `trainer_login`, `TokenHelperTestCase`, `HeadlessSmokeTestCase`, `RoutineStatisticsTestCase`, `RoutineTemplatesTestCase`, `ChangeConfigTestCase`, `IssueRefreshTokenApiTestCase`, `SimpleTestCase`, `ExerciseCommentApiTestCase`, `AppAuthHandoffTestCase`, `GymConfigTestCase`, `NutritionPlanInfoQueryCountTestCase`, `RiRApiTestCase`, `SlotTestCase`, `IngredientDetailTestCase`, `GymNameHeaderTestCase`, `EmailWeightReminderTestCase`, `DailyActivityTestCase`, `IngredientValuesTestCase`, `UseBrowserLanguageRedirectTestCase`, `WeightCsvExportTestCase`, `WeightCsvImportTestCase`, `ActivityDetailsTestCase`, `TrainerCannotDeactivatePrivilegedUsersTestCase`, `EmailInactiveUserTestCase`, `gym/tests/test_user.py`, `RoutineDateValidationTestCase`, `AdminUserCreationTestCase`, `WorkoutSessionLifecycleTestCase`, `LicenseRepresentationTestCase`, `MuscleApiTestCase`, `UnitTypeTestCase`?**
+  _High betweenness centrality (0.509) - this node is a cross-community bridge._
+- **Why does `WgerFormMixin` connect `WgerFormMixin` to `AddView`, `AddView`, `PermissionRequiredMixin`, `LoginRequiredMixin`, `UnitDeleteView`, `is_same_gym`, `ExerciseCategoryUpdateView`, `AddView`, `ReactView`, `UpdateView`, `CreateView`, `GymAddUserView`, `WeightUnitIngredientCreateView`, `AddView`, `IngredientDeleteView`, `AddView`?**
+  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+- **Why does `WgerLoginView` connect `is_same_gym` to `test_auth_social.py`, `WgerFormMixin`?**
+  _High betweenness centrality (0.073) - this node is a cross-community bridge._
+- **Are the 263 inferred relationships involving `WgerTestCase` (e.g. with `GymNameHeaderTestCase` and `GymConfigTestCase`) actually correct?**
+  _`WgerTestCase` has 263 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 106 inferred relationships involving `WgerEditTestCase` (e.g. with `CreateLanguageTestCase` and `DeleteLanguageTestCase`) actually correct?**
   _`WgerEditTestCase` has 106 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 99 inferred relationships involving `WgerAddTestCase` (e.g. with `CreateLanguageTestCase` and `AddLicenseTestCase`) actually correct?**
+- **Are the 99 inferred relationships involving `WgerAddTestCase` (e.g. with `CreateLanguageTestCase` and `DeleteLanguageTestCase`) actually correct?**
   _`WgerAddTestCase` has 99 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 95 inferred relationships involving `WgerDeleteTestCase` (e.g. with `DeleteLanguageTestCase` and `DeleteLicenseTestCase`) actually correct?**
+- **Are the 95 inferred relationships involving `WgerDeleteTestCase` (e.g. with `CreateLanguageTestCase` and `DeleteLanguageTestCase`) actually correct?**
   _`WgerDeleteTestCase` has 95 INFERRED edges - model-reasoned connections that need verification._

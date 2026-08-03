@@ -87,6 +87,18 @@ def processor(request):
     ):
         context['active_tab'] = constants.WORKOUT_TAB
 
+    if hasattr(request, 'user') and request.user.is_authenticated:
+        try:
+            from wger.manager.models import WorkoutSession
+            active_draft = WorkoutSession.objects.filter(
+                user=request.user,
+                status='active',
+            ).select_related('day', 'routine').order_by('-date', '-time_start', '-id').first()
+            if active_draft and active_draft.routine and active_draft.day:
+                context['active_draft_session'] = active_draft
+        except Exception:
+            pass
+
     return context
 
 

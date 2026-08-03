@@ -434,9 +434,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function filterExercises() {
         const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const muscleDropdown = muscleSelect ? muscleSelect.value.toLowerCase() : '';
-        const equipmentDropdown = equipmentSelect ? equipmentSelect.value.toLowerCase() : '';
-        const skill = skillSelect ? skillSelect.value.toLowerCase() : '';
+        const muscleDropdown = muscleSelect ? muscleSelect.value.toLowerCase().trim() : '';
+        const equipmentDropdown = equipmentSelect ? equipmentSelect.value.toLowerCase().trim() : '';
+        const skill = skillSelect ? skillSelect.value.toLowerCase().trim() : '';
         
         if (clearSearchBtn) {
             if (query) {
@@ -453,29 +453,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const equipmentRaw = (item.dataset.equipment || '').toLowerCase();
             const categoryRaw = (item.dataset.category || '').toLowerCase();
             const isCal = categoryRaw === 'calisthenics' || item.dataset.calisthenics === 'true';
-            const musclesList = musclesRaw.split(',').map(m => m.trim());
-            const equipmentList = equipmentRaw.split(',').map(e => e.trim());
             const itemSkill = (item.dataset.skill || 'other').toLowerCase();
             const searchBlob = (item.dataset.searchBlob || `${name} ${itemSkill} ${musclesRaw} ${equipmentRaw} ${categoryRaw}`).toLowerCase();
 
-            // Global search query matching across name, muscles, equipment, category, skill family and skill synonyms
+            // Search Query Filter
             const queryTokens = query.split(/\s+/).filter(Boolean);
             const matchesQuery = queryTokens.length === 0 || queryTokens.every(token => searchBlob.includes(token));
 
-            // Global search mode: when text query is entered, perform global search across ALL exercises!
-            if (query.length > 0) {
-                if (matchesQuery) {
-                    item.classList.remove('hidden');
-                    item.classList.add('flex');
-                    visibleCount++;
-                } else {
-                    item.classList.remove('flex');
-                    item.classList.add('hidden');
-                }
-                return;
-            }
-
-            // Filter mode (when query is empty)
+            // Discipline / Category Filter (Gym vs Calisthenics vs All)
             let matchesDiscipline = true;
             if (activeDiscipline === 'gym') {
                 matchesDiscipline = !isCal;
@@ -483,47 +468,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesDiscipline = isCal;
             }
 
-            // If a specific skill is selected in the Skill filter dropdown, don't let activeDiscipline block matching skill exercises
+            // Skill filter overriding discipline restrictions if a specific skill is requested
             if (skill && skill !== '' && skill !== 'other') {
-                if (itemSkill === skill) {
+                if (itemSkill === skill || searchBlob.includes(skill)) {
                     matchesDiscipline = true;
                 }
             }
 
+            // Muscle Filter (Chip or Dropdown)
             let matchesMuscle = true;
             if (activeChipValue) {
                 if (activeChipValue === 'biceps') {
-                    matchesMuscle = musclesList.some(m => m === 'biceps' || m === 'biceps brachii' || m === 'bicipiti' || m === 'brachialis') || (musclesRaw.includes('biceps') && !musclesList.some(m => m === 'biceps femoris'));
+                    matchesMuscle = searchBlob.includes('biceps') || searchBlob.includes('bicipiti') || searchBlob.includes('brachialis');
                 } else if (activeChipValue === 'lats') {
-                    matchesMuscle = musclesRaw.includes('lats') || musclesRaw.includes('latissimus') || musclesRaw.includes('back') || musclesRaw.includes('dorsali') || musclesRaw.includes('schiena');
+                    matchesMuscle = searchBlob.includes('lats') || searchBlob.includes('latissimus') || searchBlob.includes('back') || searchBlob.includes('dorsali') || searchBlob.includes('schiena');
                 } else if (activeChipValue === 'quadriceps') {
-                    matchesMuscle = musclesRaw.includes('quadriceps') || musclesRaw.includes('quads') || musclesRaw.includes('legs') || musclesRaw.includes('gambe') || musclesRaw.includes('biceps femoris') || musclesRaw.includes('glute');
+                    matchesMuscle = searchBlob.includes('quadriceps') || searchBlob.includes('quads') || searchBlob.includes('legs') || searchBlob.includes('gambe') || searchBlob.includes('glute') || searchBlob.includes('calves') || searchBlob.includes('hamstrings');
                 } else if (activeChipValue === 'chest') {
-                    matchesMuscle = musclesRaw.includes('chest') || musclesRaw.includes('pectoral') || musclesRaw.includes('petto') || musclesRaw.includes('pettorali');
+                    matchesMuscle = searchBlob.includes('chest') || searchBlob.includes('pectoral') || searchBlob.includes('petto') || searchBlob.includes('pettorali');
                 } else if (activeChipValue === 'deltoids') {
-                    matchesMuscle = musclesRaw.includes('deltoid') || musclesRaw.includes('shoulder') || musclesRaw.includes('spalle') || musclesRaw.includes('deltoidi');
+                    matchesMuscle = searchBlob.includes('deltoid') || searchBlob.includes('shoulder') || searchBlob.includes('spalle') || searchBlob.includes('deltoidi');
                 } else if (activeChipValue === 'triceps') {
-                    matchesMuscle = musclesRaw.includes('triceps') || musclesRaw.includes('tricipiti');
+                    matchesMuscle = searchBlob.includes('triceps') || searchBlob.includes('tricipiti');
                 } else if (activeChipValue === 'abs') {
-                    matchesMuscle = musclesRaw.includes('abs') || musclesRaw.includes('core') || musclesRaw.includes('abdominis') || musclesRaw.includes('addom');
+                    matchesMuscle = searchBlob.includes('abs') || searchBlob.includes('core') || searchBlob.includes('abdominis') || searchBlob.includes('addom');
                 } else {
-                    matchesMuscle = musclesRaw.includes(activeChipValue);
+                    matchesMuscle = searchBlob.includes(activeChipValue) || musclesRaw.includes(activeChipValue);
                 }
             } else if (muscleDropdown) {
-                matchesMuscle = musclesList.includes(muscleDropdown) || musclesRaw.includes(muscleDropdown);
+                const mTokens = muscleDropdown.split(/\s+/).filter(Boolean);
+                matchesMuscle = mTokens.every(token => musclesRaw.includes(token) || searchBlob.includes(token));
             }
 
+            // Equipment Filter
             let matchesEquipment = true;
             if (equipmentDropdown) {
-                matchesEquipment = equipmentList.includes(equipmentDropdown) || equipmentRaw.includes(equipmentDropdown);
+                const eqTokens = equipmentDropdown.split(/\s+/).filter(Boolean);
+                matchesEquipment = eqTokens.every(token => equipmentRaw.includes(token) || searchBlob.includes(token));
             }
 
+            // Skill Filter Dropdown
             let matchesSkill = true;
             if (skill) {
-                matchesSkill = (itemSkill === skill);
+                matchesSkill = (itemSkill === skill || searchBlob.includes(skill));
             }
 
-            if (matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill) {
+            if (matchesQuery && matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill) {
                 item.classList.remove('hidden');
                 item.classList.add('flex');
                 visibleCount++;
@@ -813,8 +803,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const mainForm = document.querySelector('form');
+    const mainSubmitBtn = document.getElementById('submit-btn');
     const isSupersetInput = document.getElementById('is-superset-input');
     const createSupersetBtn = document.getElementById('create-superset-btn');
+
+    if (mainSubmitBtn) {
+        mainSubmitBtn.addEventListener('click', function(e) {
+            if (selectedExercises.length > 0 && mainForm) {
+                if (isSupersetInput) isSupersetInput.value = 'false';
+            }
+        });
+    }
 
     if (createSupersetBtn) {
         createSupersetBtn.addEventListener('click', function(e) {

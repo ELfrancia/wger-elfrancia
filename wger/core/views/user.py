@@ -905,15 +905,10 @@ def dashboard_tailwind(request):
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
     latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date', '-time_start').first()
 
-    active_draft_session = None
-    active_candidates = WorkoutSession.objects.filter(
+    active_draft_session = WorkoutSession.objects.filter(
         user=request.user,
         status='active',
-        date=timezone.localdate(),
-        time_end__isnull=True
-    ).select_related('day', 'routine').order_by('-date', '-time_start', '-id')
-    if active_candidates.exists():
-        active_draft_session = active_candidates.first()
+    ).select_related('day', 'routine').order_by('-date', '-time_start', '-id').first()
 
     activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
     profile = request.user.userprofile
@@ -1150,6 +1145,5 @@ def update_log_ajax(request):
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
 
 

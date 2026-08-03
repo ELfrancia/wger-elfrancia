@@ -170,6 +170,99 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertNotEqual(response.context['session'].id, session_24h.id)
         self.assertEqual(response.context['session'].status, 'active')
 
+    def test_active_session_navigation_remains_available_with_expired_or_absent_rest_timer(self):
+        """A confirmed workout keeps the bubble visible with either expired or absent timer state."""
+        import datetime
+        from django.utils import timezone
+
+        active_session = WorkoutSession.objects.create(
+            user=self.user,
+            routine=self.routine,
+            day=self.day,
+            date=datetime.date.today(),
+            time_start=timezone.localtime(timezone.now()).time(),
+            status='active',
+        )
+        response = self.client.get(reverse('core:dashboard'))
+        expected_url = reverse(
+            'manager:day:overview',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_draft_session'].pk, active_session.pk)
+        self.assertContains(response, f'const serverActiveUrl = "{expected_url}";')
+
+        rendered = response.content.decode()
+        get_url_start = rendered.index('function getActiveWorkoutUrl()')
+        rest_timer_lookup = rendered.index("localStorage.getItem('onyx_active_rest_timer')", get_url_start)
+        server_url_return = rendered.index('if (serverActiveUrl) {\n            return serverActiveUrl;\n        }', get_url_start)
+        self.assertLess(server_url_return, rest_timer_lookup)
+        self.assertIn('const hasActiveWorkout = Boolean(serverActiveUrl);', rendered)
+        self.assertIn('if (state.isRunning || msLeft > 0 || state.hasNotifiedZero)', rendered)
+        self.assertNotIn("const isOverlayOpen = document.getElementById('rest-timer-overlay')", rendered)
+        self.assertIn("bubble.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');", rendered)
+        self.assertNotIn('onyx_active_workout_url', rendered)
+
+    def test_day_context_without_an_active_session_does_not_supply_a_workout_url(self):
+        """A page day is not evidence that a workout is still active."""
+        from django.template.loader import render_to_string
+
+        request = self.client.get(reverse('core:dashboard')).wsgi_request
+        rendered = render_to_string('navigation_tailwind.html', {'day': self.day}, request=request)
+
+        self.assertIn('const serverActiveUrl = "";', rendered)
+
+    def test_rest_timer_does_not_persist_workout_identity(self):
+        """Timer state is presentation state and must not become workout authority."""
+        from pathlib import Path
+
+        wger_root = Path(__file__).resolve().parents[2]
+        navigation = (wger_root / 'core/templates/navigation_tailwind.html').read_text(encoding='utf-8')
+        workout_log = (wger_root / 'manager/templates/workout/log_tailwind.html').read_text(encoding='utf-8')
+
+        self.assertNotIn('onyx_active_workout_url', navigation)
+        self.assertNotIn('onyx_active_workout_url', workout_log)
+        self.assertNotIn('workoutName:', workout_log)
+
+    def test_dashboard_exposes_active_session_regardless_of_date_or_end_time(self):
+        """Dashboard must use the canonical active-session status, not dashboard-only filters."""
+        import datetime
+        from django.utils import timezone
+
+        active_session = WorkoutSession.objects.create(
+            user=self.user,
+            routine=self.routine,
+            day=self.day,
+            date=datetime.date.today() - datetime.timedelta(days=3),
+            time_start=timezone.localtime(timezone.now()).time(),
+            time_end=timezone.localtime(timezone.now()).time(),
+            status='active',
+        )
+
+        response = self.client.get(reverse('core:dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_draft_session'].pk, active_session.pk)
+        expected_url = reverse(
+            'manager:day:overview',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk},
+        )
+        self.assertContains(response, f'const serverActiveUrl = "{expected_url}";')
+
+    def test_global_navigation_only_uses_overlay_on_the_server_active_workout_page(self):
+        """An overlay on another workout page must not intercept global navigation."""
+        from pathlib import Path
+
+        navigation = (
+            Path(__file__).resolve().parents[2] / 'core/templates/navigation_tailwind.html'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn('function isCurrentActiveWorkoutPage()', navigation)
+        self.assertIn('const isCurrentActiveWorkout = isCurrentActiveWorkoutPage();', navigation)
+        self.assertIn('if (isCurrentActiveWorkout && (hasOverlay || hasOpenOverlayFn))', navigation)
+        self.assertIn('if (isCurrentActiveWorkout && (hasOverlay || hasCloseOverlayFn))', navigation)
+
     def test_finish_and_discard_workout_actions(self):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
 
@@ -195,5 +288,3 @@ class WorkoutViewsTestCase(WgerTestCase):
         session_new.refresh_from_db()
         self.assertEqual(session_new.status, 'interrupted')
         self.assertEqual(session_new.logs.count(), 0)
-
-

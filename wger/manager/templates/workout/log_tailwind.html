@@ -107,7 +107,7 @@
     <!-- Top Progress Bar & Workout Name -->
     <div class="w-full flex flex-col pt-4 px-2.5 sm:px-6 pb-4">
         <div class="w-full h-1.5 bg-[#16171A] rounded-full overflow-hidden mb-2">
-            <div id="workout-progress-bar" class="h-full bg-[#caf300] shadow-[0_0_8px_rgba(202,243,0,0.4)] transition-all duration-500" style="width: {{ progress_percentage }}%;"></div>
+            <div id="workout-progress-bar" class="h-full bg-[#caf300] shadow-[0_0_8px_rgba(202,243,0,0.4)] transition-all duration-500" style="--progress-width: {{ progress_percentage|default:0 }}%; width: var(--progress-width, 0%);"></div>
         </div>
         <div class="w-full flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
             <div class="flex items-center gap-1.5">
@@ -675,13 +675,6 @@
         updateMiniTimerVisibility();
     }
 
-    function getCleanWorkoutUrl() {
-        return (window.location.pathname + window.location.search)
-            .replace(/[\?&]open_timer=true/, '')
-            .replace(/^&/, '?')
-            .split('#')[0];
-    }
-
     function saveTimerStateToStorage(expiredAtVal = null) {
         try {
             const currentMs = getRemainingTimeMs();
@@ -692,8 +685,6 @@
                 isRunning: isRunning,
                 hasNotifiedZero: hasNotifiedZero,
                 expiredAt: expiredAtVal || window._timerExpiredAt || (hasNotifiedZero ? Date.now() : null),
-                workoutUrl: getCleanWorkoutUrl(),
-                workoutName: "{{ day.routine.name|escapejs }} - {{ day.name|escapejs }}",
                 updatedAt: Date.now()
             };
             localStorage.setItem('onyx_active_rest_timer', JSON.stringify(state));
@@ -734,10 +725,23 @@
                 isRunning = false;
                 hasNotifiedZero = state.hasNotifiedZero || false;
                 updateDisplay();
+            } else if (state.remainingMs === 0 && state.hasNotifiedZero) {
+                remainingMs = 0;
+                startedAt = null;
+                isRunning = false;
+                hasNotifiedZero = true;
+                updateDisplay();
             }
         } catch (e) {
             console.error('Error restoring timer from localStorage:', e);
         }
+    }
+
+    // Auto-restore active timer state on page load & auto-open overlay if requested from navigation
+    restoreTimerFromStorage();
+    if (sessionStorage.getItem('open_timer_overlay') === 'true' || window.location.search.includes('open_timer=true') || window.location.hash.includes('rest-timer')) {
+        sessionStorage.removeItem('open_timer_overlay');
+        openOverlay();
     }
 
     function updateMiniTimerVisibility() {
@@ -862,11 +866,6 @@
         resetTimerControls();
         updateDisplay();
         try {
-            const cleanPath = typeof getCleanWorkoutUrl === 'function' ? getCleanWorkoutUrl() : window.location.pathname;
-            if (cleanPath && cleanPath !== '/' && !cleanPath.includes('/dashboard')) {
-                localStorage.setItem('onyx_active_workout_url', cleanPath);
-                sessionStorage.setItem('onyx_active_workout_url', cleanPath);
-            }
             localStorage.removeItem('onyx_active_rest_timer');
         } catch (e) {}
 
@@ -878,6 +877,11 @@
             updateGlobalMiniTimer();
         }
     }
+
+    window.stopTimer = stopTimer;
+    window.resetTimer = resetTimer;
+    window.adjustTimer = adjustTimer;
+    window.setTimerPreset = setTimerPreset;
 
     function resetTimer() {
         stopTimer();
@@ -1385,20 +1389,13 @@
         try {
             localStorage.removeItem('onyx_active_rest_timer');
             localStorage.removeItem('onyx_active_rest_timer_paused');
-            localStorage.removeItem('onyx_active_workout_url');
-            sessionStorage.removeItem('onyx_active_workout_url');
             if (typeof sessionId !== 'undefined' && sessionId) {
                 localStorage.removeItem(`onyx_workout_start_${sessionId}`);
             }
             try {
                 Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('onyx_workout_start_') || key.startsWith('onyx_rest_timer') || key.includes('active_workout')) {
+                    if (key.startsWith('onyx_workout_start_') || key.startsWith('onyx_rest_timer')) {
                         localStorage.removeItem(key);
-                    }
-                });
-                Object.keys(sessionStorage).forEach(key => {
-                    if (key.includes('active_workout')) {
-                        sessionStorage.removeItem(key);
                     }
                 });
             } catch(e) {}
@@ -1763,13 +1760,6 @@
             [saveBtn, saveFinishBtn].forEach(b => b && (b.disabled = false));
         }
     }
-
-    // Initial render & active URL cache
-    const currentCleanPath = getCleanWorkoutUrl();
-    try {
-        localStorage.setItem('onyx_active_workout_url', currentCleanPath);
-        sessionStorage.setItem('onyx_active_workout_url', currentCleanPath);
-    } catch(e) {}
 
     restoreTimerFromStorage();
     saveTimerStateToStorage();
