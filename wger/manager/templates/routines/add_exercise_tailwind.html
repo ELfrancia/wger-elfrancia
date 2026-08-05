@@ -370,6 +370,8 @@
     }
 </style>
 
+<script type="application/json" id="catalog-json-data">{{ catalog_json|safe }}</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('exercise-search');
@@ -383,11 +385,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetFiltersBtn = document.getElementById('reset-filters-btn');
 
     let exerciseCatalog = [];
-    try {
-        const rawCatalog = JSON.parse('{{ catalog_json|escapejs }}');
-        exerciseCatalog = rawCatalog.items || [];
-    } catch(e) {
-        console.error('Failed to parse catalog JSON:', e);
+    const catalogScript = document.getElementById('catalog-json-data');
+    if (catalogScript && catalogScript.textContent) {
+        try {
+            const rawCatalog = JSON.parse(catalogScript.textContent);
+            exerciseCatalog = rawCatalog.items || [];
+        } catch(e) {
+            console.error('Failed to parse catalog JSON element:', e);
+        }
     }
 
     if (!exerciseCatalog.length) {
