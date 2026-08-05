@@ -425,6 +425,10 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'wger-cache',
         'TIMEOUT': 30 * 24 * 60 * 60,  # Cache for a month
+        'OPTIONS': {
+            'MAX_ENTRIES': 10000,
+            'CULL_FREQUENCY': 0,
+        }
     }
 }
 

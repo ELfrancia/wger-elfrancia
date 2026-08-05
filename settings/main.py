@@ -211,14 +211,23 @@ AUTH_PROXY_USER_NAME_HEADER = env.str('AUTH_PROXY_USER_NAME_HEADER', '')
 
 # Cache
 if os.environ.get('DJANGO_CACHE_BACKEND'):
+    client_class = env.str('DJANGO_CACHE_CLIENT_CLASS', '')
+    if not client_class and 'redis' in env.str('DJANGO_CACHE_BACKEND').lower():
+        client_class = 'django_redis.client.DefaultClient'
+
     CACHES = {
         'default': {
             'BACKEND': env.str('DJANGO_CACHE_BACKEND'),
             'LOCATION': env.str('DJANGO_CACHE_LOCATION', ''),
-            'TIMEOUT': env.int('DJANGO_CACHE_TIMEOUT', 300),
-            'OPTIONS': {'CLIENT_CLASS': env.str('DJANGO_CACHE_CLIENT_CLASS', '')},
+            'TIMEOUT': env.int('DJANGO_CACHE_TIMEOUT', 86400),
+            'OPTIONS': {
+                'MAX_ENTRIES': 10000,
+                'CULL_FREQUENCY': 0,
+            },
         }
     }
+    if client_class:
+        CACHES['default']['OPTIONS']['CLIENT_CLASS'] = client_class
 
     if os.environ.get('DJANGO_CACHE_CLIENT_PASSWORD'):
         CACHES['default']['OPTIONS']['PASSWORD'] = env.str('DJANGO_CACHE_CLIENT_PASSWORD')
@@ -297,8 +306,11 @@ HEADLESS_JWT_REFRESH_TOKEN_EXPIRES_IN = REFRESH_TOKEN_LIFETIME_HOURS * 3600
 #
 CSRF_TRUSTED_ORIGINS = env.list(
     'CSRF_TRUSTED_ORIGINS',
-    default=['http://127.0.0.1', 'http://localhost', 'https://localhost'],
+    default=['http://127.0.0.1', 'http://localhost', 'https://localhost', 'http://192.168.1.103:8000', 'http://192.168.1.103'],
 )
+
+if SITE_URL and SITE_URL not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(SITE_URL)
 
 if env.bool('X_FORWARDED_PROTO_HEADER_SET', False):
     SECURE_PROXY_SSL_HEADER = (
