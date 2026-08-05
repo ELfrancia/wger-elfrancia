@@ -46,6 +46,7 @@ from wger.exercises.api import views as exercises_api_views
 from wger.exercises.sitemap import ExercisesSitemap
 from wger.gallery.api import views as gallery_api_views
 from wger.manager.api import views as manager_api_views
+from wger.manager.api import v1_views as manager_v1_api_views
 from wger.measurements.api import views as measurements_api_views
 from wger.nutrition.api import views as nutrition_api_views
 from wger.trophies.api import views as trophies_api_views
@@ -320,7 +321,16 @@ urlpatterns += [
     path('account/', include('allauth.urls')),
     # REST auth API consumed by the Flutter app.
     path('allauth/', include('allauth.headless.urls')),
-    # API
+    # API v1 (Decoupled Frontend & Fast Catalog Cache)
+    path('api/v1/exercises/', manager_v1_api_views.api_v1_exercises_list, name='api-v1-exercises-list'),
+    path('api/v1/exercises/<int:pk>/', manager_v1_api_views.api_v1_exercise_detail, name='api-v1-exercise-detail'),
+    path('api/v1/muscles/', manager_v1_api_views.api_v1_muscles_list, name='api-v1-muscles-list'),
+    path('api/v1/routines/', manager_v1_api_views.api_v1_routines_list, name='api-v1-routines-list'),
+    path('api/v1/routines/<int:pk>/', manager_v1_api_views.api_v1_routine_detail, name='api-v1-routine-detail'),
+    path('api/v1/routines/<int:routine_id>/exercises/', manager_v1_api_views.api_v1_routine_add_exercise, name='api-v1-routine-add-exercise'),
+    path('api/v1/routines/<int:routine_id>/exercises/<int:exercise_id>/', manager_v1_api_views.api_v1_routine_delete_exercise, name='api-v1-routine-delete-exercise'),
+
+    # API v2
     path(
         'api/v2/exercise-submission/',
         exercises_api_views.ExerciseSubmissionViewSet.as_view(),

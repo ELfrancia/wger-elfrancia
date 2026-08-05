@@ -17,8 +17,11 @@ MANAGERS = ADMINS
 # Don't use this key in production!
 SECRET_KEY = 'wger-local-development-supersecret-key-1234567890!'
 
-# Allow all hosts to access the application.
+# List of allowed hosts (Explicit LAN IP & localhost)
 ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.1.103',
     '*',
 ]
 
@@ -43,9 +46,6 @@ WGER_SETTINGS['ROUTINE_CACHE_TTL'] = 500
 DEFAULT_FROM_EMAIL = WGER_SETTINGS['EMAIL_FROM']
 
 
-# CELERY_BROKER_URL = "redis://localhost:6379/2"
-# CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
-
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
@@ -54,6 +54,9 @@ _csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'http://192.168.1.103:8000',
+    'https://192.168.1.103:8000',
+    'http://192.168.1.103',
     'https://onyx.francescoadreani.dev',
     'http://onyx.francescoadreani.dev',
 ]
@@ -80,12 +83,16 @@ CACHES_DUMMY = {
     }
 }
 
-# In-memory cache, resets when the server restarts
+# High-performance in-memory cache, resets when the server restarts
 CACHE_LOCMEM = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'wger-cache',
         'TIMEOUT': 86400,
+        'OPTIONS': {
+            'MAX_ENTRIES': 10000,
+            'CULL_FREQUENCY': 0,
+        }
     }
 }
 
@@ -100,8 +107,11 @@ CACHE_REDIS = {
 }
 
 
-# CACHES = CACHE_REDIS
-CACHES = CACHE_LOCMEM
+# Use Redis if environment variable set, else high-capacity LocMemCache
+if os.environ.get('USE_REDIS', 'false').lower() == 'true':
+    CACHES = CACHE_REDIS
+else:
+    CACHES = CACHE_LOCMEM
 # CACHES = CACHES_DUMMY
 
 

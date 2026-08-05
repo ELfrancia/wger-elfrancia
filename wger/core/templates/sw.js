@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wger-cache-v1';
+const CACHE_NAME = 'wger-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/images/logos/logo-192.png',
@@ -32,29 +32,46 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Let the browser handle foreign domains, API, user auth/POST requests naturally.
+  const reqUrl = new URL(event.request.url);
+
+  // Ignore cross-origin requests (CDNs, Google Fonts, etc.)
+  if (reqUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  // Only handle GET requests and skip dynamic / API / auth routes
   if (
     event.request.method !== 'GET' || 
-    event.request.url.includes('/api/v2/') || 
-    event.request.url.includes('/account/') ||
-    event.request.url.includes('/user/')
+    reqUrl.pathname.startsWith('/api/') || 
+    reqUrl.pathname.startsWith('/account/') ||
+    reqUrl.pathname.startsWith('/user/')
   ) {
     return;
   }
   
   event.respondWith(
     fetch(event.request)
-      .catch(() => {
-        return caches.match(event.request)
-          .then(response => {
-            if (response) {
-              return response;
-            }
-            // Fallback for document navigation if offline
-            if (event.request.headers && event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
-              return caches.match('/');
-            }
-          });
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        // Fallback for HTML document navigation if offline
+        const acceptHeader = event.request.headers ? event.request.headers.get('accept') : '';
+        if (acceptHeader && acceptHeader.includes('text/html')) {
+          const rootCache = await caches.match('/');
+          if (rootCache) {
+            return rootCache;
+          }
+        }
+        
+        // Always guarantee a valid Response object (never undefined)
+        return new Response('Network unavailable', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: new Headers({ 'Content-Type': 'text/plain' })
+        });
       })
   );
 });
