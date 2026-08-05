@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let exerciseCatalog = [];
     try {
-        const rawCatalog = {{ catalog_json|safe }};
+        const rawCatalog = JSON.parse('{{ catalog_json|escapejs }}');
         exerciseCatalog = rawCatalog.items || [];
     } catch(e) {
         console.error('Failed to parse catalog JSON:', e);
@@ -887,7 +887,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Event delegation on container for instant click capture on any item
-    const listContainer = document.getElementById('exercise-list-container');
     if (listContainer) {
         listContainer.addEventListener('click', function(e) {
             const item = e.target.closest('.exercise-item');
