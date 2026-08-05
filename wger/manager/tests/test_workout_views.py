@@ -201,6 +201,7 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertIn('const hasActiveWorkout = Boolean(serverActiveUrl);', rendered)
         self.assertIn('if (state.isRunning || msLeft > 0 || state.hasNotifiedZero)', rendered)
         self.assertNotIn("const isOverlayOpen = document.getElementById('rest-timer-overlay')", rendered)
+        self.assertNotIn("const isLocalTimerVisible = localMiniTimer", rendered)
         self.assertIn("bubble.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');", rendered)
         self.assertNotIn('onyx_active_workout_url', rendered)
 
@@ -262,6 +263,19 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertIn('const isCurrentActiveWorkout = isCurrentActiveWorkoutPage();', navigation)
         self.assertIn('if (isCurrentActiveWorkout && (hasOverlay || hasOpenOverlayFn))', navigation)
         self.assertIn('if (isCurrentActiveWorkout && (hasOverlay || hasCloseOverlayFn))', navigation)
+
+    def test_only_the_global_bubble_controls_floating_timer_visibility(self):
+        """The local workout bubble must not compete with the global navigation bubble."""
+        from pathlib import Path
+
+        wger_root = Path(__file__).resolve().parents[2]
+        navigation = (wger_root / 'core/templates/navigation_tailwind.html').read_text(encoding='utf-8')
+        workout_log = (wger_root / 'manager/templates/workout/log_tailwind.html').read_text(encoding='utf-8')
+
+        self.assertIn('window.globalMiniTimerInterval = window.setInterval', navigation)
+        self.assertIn('window.clearInterval(window.globalMiniTimerInterval)', navigation)
+        self.assertNotIn('const isLocalTimerVisible = localMiniTimer', navigation)
+        self.assertNotIn('const shouldShowMiniTimer =', workout_log)
 
     def test_finish_and_discard_workout_actions(self):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})

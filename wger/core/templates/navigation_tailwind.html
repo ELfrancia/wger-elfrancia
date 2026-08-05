@@ -381,7 +381,7 @@
                         const elapsed = Date.now() - state.startedAt;
                         msLeft = Math.max(0, state.remainingMs - elapsed);
                     }
-                    if (state.isRunning || (state.hasNotifiedZero && msLeft <= 0)) {
+                    if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
                         hasActiveRestTimer = true;
                     }
                 }
@@ -391,10 +391,11 @@
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
         const hasActiveWorkout = Boolean(serverActiveUrl);
 
-        const localMiniTimer = document.getElementById('mini-timer-overlay');
-        const isLocalTimerVisible = localMiniTimer && !localMiniTimer.classList.contains('hidden') && !localMiniTimer.classList.contains('opacity-0');
-
-        if (isLocalTimerVisible || (!hasActiveRestTimer && !hasActiveWorkout)) {
+        // This is the only floating timer.  The workout page has an inline timer,
+        // but it must not be allowed to take ownership of this bubble: two
+        // overlapping components were alternately hiding one another while their
+        // independent update loops ran.
+        if (!hasActiveRestTimer && !hasActiveWorkout) {
             bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
             bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             return;
@@ -484,6 +485,11 @@
         }
     }
 
-    setInterval(updateGlobalMiniTimer, 500);
+    // Navigation can be re-rendered by partial page updates.  Keep exactly one
+    // scheduler alive so a replacement script cannot multiply DOM updates.
+    if (window.globalMiniTimerInterval) {
+        window.clearInterval(window.globalMiniTimerInterval);
+    }
+    window.globalMiniTimerInterval = window.setInterval(updateGlobalMiniTimer, 500);
     document.addEventListener('DOMContentLoaded', updateGlobalMiniTimer);
 </script>

@@ -746,18 +746,12 @@
 
     function updateMiniTimerVisibility() {
         window.isInlineTimerVisible = isInlineTimerVisible;
-        const isOverlayOpen = overlay && !overlay.classList.contains('hidden');
-        const isTimerActive = isRunning || (remainingMs < durationSeconds * 1000) || hasNotifiedZero;
-        const shouldShowMiniTimer = !isInlineTimerVisible && !isOverlayOpen && isTimerActive;
-
+        // The persistent navigation bubble is the sole floating timer.  Keeping
+        // this page-specific bubble hidden avoids two elements fighting for the
+        // same position and producing a visible flash while scrolling or ticking.
         if (miniTimerOverlay) {
-            if (shouldShowMiniTimer) {
-                miniTimerOverlay.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-                miniTimerOverlay.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
-            } else {
-                miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-                miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
-            }
+            miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
         }
         if (typeof updateGlobalMiniTimer === 'function') {
             updateGlobalMiniTimer();

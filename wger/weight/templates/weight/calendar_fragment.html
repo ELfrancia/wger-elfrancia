@@ -528,7 +528,7 @@
 
             // Chart.js Hourly Graph
             const hourlyCanvas = document.getElementById('hourlyActivityChart');
-            if (hourlyCanvas) {
+            if (hourlyCanvas && typeof Chart !== 'undefined') {
                 const hourlyData = JSON.parse('{{ hourly_distribution_json|escapejs }}');
                 const ctx = hourlyCanvas.getContext('2d');
                 
