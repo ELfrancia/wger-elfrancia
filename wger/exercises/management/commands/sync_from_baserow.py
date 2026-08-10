@@ -284,8 +284,12 @@ class Command(BaseCommand):
         if removed_count:
             self.stdout.write(self.style.WARNING(f"Marked {removed_count} local exercises as unpublished."))
 
+        from wger.manager.services.exercise_catalog import bump_catalog_version
+        new_ver = bump_catalog_version()
+
         self.stdout.write(
             self.style.SUCCESS(
-                f"Sync completed successfully. Synced {sync_count} exercises and saved their media locally!"
+                f"Sync completed successfully. Synced {sync_count} exercises and saved their media locally! Catalog cache bumped to {new_ver}."
             )
         )
+

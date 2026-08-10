@@ -7,10 +7,17 @@
     <!-- Header Section -->
     <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-            <a href="{% url 'manager:routine:view' day.routine.pk %}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
-                <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
-                {% translate "BACK TO ROUTINE" %}
-            </a>
+            {% if from_workout %}
+                <a href="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-boost="false" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
+                    {% translate "TORNA AL WORKOUT" %}
+                </a>
+            {% else %}
+                <a href="{% url 'manager:routine:view' day.routine.pk %}" hx-boost="false" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
+                    {% translate "BACK TO ROUTINE" %}
+                </a>
+            {% endif %}
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/25">
                 Day: {{ day.name }}
             </span>
@@ -30,6 +37,9 @@
     <div class="bg-[#161618] border border-white/[0.08] rounded-2xl p-4 sm:p-6 flex flex-col gap-5 shadow-lg">
         <form method="post" action="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-5">
             {% csrf_token %}
+            {% if from_workout %}
+                <input type="hidden" name="from" value="workout">
+            {% endif %}
             
             <!-- Controls Section -->
             <div id="exercise-picker" class="flex flex-col gap-4">
@@ -130,50 +140,25 @@
                 </div>
             </div>
 
-            <!-- Exercise List Cards Container -->
+            <!-- Exercise List Cards Container (Virtualized Batch Rendering: 30 items per batch) -->
             <div id="exercise-list-container" class="max-h-[460px] overflow-y-auto flex flex-col gap-2 rounded-xl border border-white/[0.08] p-2 bg-[#111113] custom-scrollbar">
-                {% for ex in exercises_list %}
-                    <div class="exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]" 
-                         data-id="{{ ex.id }}" 
-                         data-name="{{ ex.name }}" 
-                         data-muscles="{{ ex.muscles }}" 
-                         data-equipment="{{ ex.equipment }}"
-                         data-category="{{ ex.category }}"
-                         data-calisthenics="{{ ex.is_calisthenics|yesno:'true,false' }}"
-                         data-skill="{{ ex.skill_family }}"
-                         data-search-blob="{{ ex.search_blob }}">
-                        
+                {# Keep the picker usable when inline JavaScript is delayed or unavailable. #}
+                {% for ex in exercises_list|slice:":30" %}
+                    <div class="exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]"
+                         data-id="{{ ex.id }}" data-name="{{ ex.name }}">
                         <div class="flex items-center gap-3.5 min-w-0 flex-1">
-                            <!-- Preview Thumbnail -->
                             <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors pointer-events-none">
-                                {% if ex.preview_url %}
-                                    {% if '.mp4' in ex.preview_url.lower or '.webm' in ex.preview_url.lower or '.mov' in ex.preview_url.lower %}
-                                        <video src="{{ ex.preview_url }}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
-                                    {% else %}
-                                        <img src="{{ ex.preview_url }}" class="w-full h-full object-cover" alt="{{ ex.name }}" loading="lazy" onerror="this.style.display='none'; this.parentElement.querySelector('.preview-fallback').classList.remove('hidden');">
-                                        <span class="preview-fallback material-symbols-outlined hidden text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
-                                    {% endif %}
+                                {% if ex.image %}
+                                    <img src="{{ ex.image }}" alt="{{ ex.name }}" class="w-full h-full object-cover" loading="lazy">
                                 {% else %}
                                     <span class="material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
                                 {% endif %}
                             </div>
-
-                            <div class="flex min-w-0 flex-1 items-center">
-                                <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">
-                                    {{ ex.name }}
-                                </span>
-                            </div>
+                            <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">{{ ex.name }}</span>
                         </div>
-
-                        <!-- Selection Indicator -->
                         <div class="selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3">
                             <span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
                         </div>
-                    </div>
-                {% empty %}
-                    <div class="text-center py-12 px-4 flex flex-col items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-3xl text-zinc-600">search_off</span>
-                        <p class="text-zinc-400 text-sm font-medium">{% translate "No exercises found." %}</p>
                     </div>
                 {% endfor %}
 
@@ -226,9 +211,15 @@
                         <span id="superset-btn-text">{% translate "CREA SUPERSET" %}</span>
                     </button>
                     
-                    <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
-                        {% translate "CANCEL" %}
-                    </a>
+                    {% if from_workout %}
+                        <a href="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-boost="false" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
+                            {% translate "CANCEL" %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'manager:routine:view' day.routine.pk %}" hx-boost="false" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
+                            {% translate "CANCEL" %}
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </form>
@@ -415,29 +406,169 @@
     }
 </style>
 
+{{ catalog_dto|json_script:"catalog-json-data" }}
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('exercise-search');
-    const clearSearchBtn = document.getElementById('clear-search-btn');
-    const muscleSelect = document.getElementById('filter-muscle');
-    const equipmentSelect = document.getElementById('filter-equipment');
-    const skillSelect = document.getElementById('filter-skill');
-    const muscleChips = document.querySelectorAll('.muscle-chip');
-    const disciplineTabs = document.querySelectorAll('.discipline-tab');
-    const noResultsPlaceholder = document.getElementById('no-results-placeholder');
-    const resetFiltersBtn = document.getElementById('reset-filters-btn');
+(function() {
+    function initAddExercisePage() {
+        const picker = document.getElementById('exercise-picker');
+        if (!picker || picker.dataset.initialized === 'true') return;
+        picker.dataset.initialized = 'true';
+
+        const searchInput = document.getElementById('exercise-search');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        const muscleSelect = document.getElementById('filter-muscle');
+        const equipmentSelect = document.getElementById('filter-equipment');
+        const skillSelect = document.getElementById('filter-skill');
+        const muscleChips = document.querySelectorAll('.muscle-chip');
+        const disciplineTabs = document.querySelectorAll('.discipline-tab');
+        const noResultsPlaceholder = document.getElementById('no-results-placeholder');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
+
+    let exerciseCatalog = [];
+    const catalogScript = document.getElementById('catalog-json-data');
+    if (catalogScript && catalogScript.textContent) {
+        try {
+            const rawCatalog = JSON.parse(catalogScript.textContent);
+            exerciseCatalog = rawCatalog.items || [];
+        } catch(e) {
+            console.error('Failed to parse catalog JSON element:', e);
+        }
+    }
+
+    if (!exerciseCatalog.length) {
+        fetch('/api/v1/exercises/')
+            .then(res => res.json())
+            .then(data => {
+                exerciseCatalog = data.items || [];
+                filterExercises();
+            })
+            .catch(err => console.error('API catalog fetch failed:', err));
+    }
 
     let activeChipValue = '';
     let activeDiscipline = '';
     let selectedExercises = []; // Array of { id: int, name: string }
-    let activeSelection = null;  // { id: int, name: string }
+    let currentFiltered = [];
+    let renderOffset = 0;
+    const BATCH_SIZE = 30;
+
+    const listContainer = document.getElementById('exercise-list-container');
+
+    function createExerciseCard(ex) {
+        const item = document.createElement('div');
+        item.className = 'exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]';
+        item.setAttribute('data-id', ex.id);
+        item.setAttribute('data-name', ex.name);
+
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'flex items-center gap-3.5 min-w-0 flex-1';
+
+        const imgDiv = document.createElement('div');
+        imgDiv.className = 'w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors pointer-events-none';
+
+        if (ex.image) {
+            const url = ex.image.toLowerCase();
+            if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov')) {
+                const vid = document.createElement('video');
+                vid.src = ex.image;
+                vid.className = 'w-full h-full object-cover';
+                vid.autoplay = true;
+                vid.loop = true;
+                vid.muted = true;
+                vid.playsInline = true;
+                imgDiv.appendChild(vid);
+            } else {
+                const img = document.createElement('img');
+                img.src = ex.image;
+                img.alt = ex.name;
+                img.className = 'w-full h-full object-cover';
+                img.loading = 'lazy';
+                img.onerror = function() {
+                    img.style.display = 'none';
+                    const fallback = document.createElement('span');
+                    fallback.className = 'material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors';
+                    fallback.textContent = 'fitness_center';
+                    imgDiv.appendChild(fallback);
+                };
+                imgDiv.appendChild(img);
+            }
+        } else {
+            const fallback = document.createElement('span');
+            fallback.className = 'material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors';
+            fallback.textContent = 'fitness_center';
+            imgDiv.appendChild(fallback);
+        }
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'flex min-w-0 flex-1 items-center';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug';
+        nameSpan.textContent = ex.name;
+        titleDiv.appendChild(nameSpan);
+
+        leftDiv.appendChild(imgDiv);
+        leftDiv.appendChild(titleDiv);
+
+        const indicator = document.createElement('div');
+        indicator.className = 'selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3';
+
+        const isSelectedIdx = selectedExercises.findIndex(s => String(s.id) === String(ex.id));
+        if (isSelectedIdx !== -1) {
+            item.classList.remove('border-white/[0.04]', 'bg-[#18181a]');
+            item.classList.add('border-[#caf300]', 'bg-[#caf300]/10', 'shadow-sm');
+            if (selectedExercises.length > 1) {
+                indicator.innerHTML = `<span class="bg-[#caf300] text-[#131313] text-xs font-black w-6 h-6 rounded-lg flex items-center justify-center">${isSelectedIdx + 1}</span>`;
+            } else {
+                indicator.innerHTML = `<span class="material-symbols-outlined text-2xl text-[#caf300]" style="font-variation-settings: 'FILL' 1;">check_circle</span>`;
+            }
+        } else {
+            indicator.innerHTML = `<span class="material-symbols-outlined text-xl text-zinc-600 group-hover:text-[#caf300] transition-colors">radio_button_unchecked</span>`;
+        }
+
+        item.appendChild(leftDiv);
+        item.appendChild(indicator);
+
+        return item;
+    }
+
+    function renderBatch(clear = false) {
+        if (clear) {
+            renderOffset = 0;
+            if (listContainer) {
+                const oldItems = listContainer.querySelectorAll('.exercise-item');
+                oldItems.forEach(el => el.remove());
+            }
+        }
+
+        const slice = currentFiltered.slice(renderOffset, renderOffset + BATCH_SIZE);
+        slice.forEach(ex => {
+            const card = createExerciseCard(ex);
+            if (listContainer && noResultsPlaceholder) {
+                listContainer.insertBefore(card, noResultsPlaceholder);
+            }
+        });
+
+        renderOffset += slice.length;
+
+        if (noResultsPlaceholder) {
+            if (currentFiltered.length === 0) {
+                noResultsPlaceholder.classList.remove('hidden');
+                noResultsPlaceholder.classList.add('flex');
+            } else {
+                noResultsPlaceholder.classList.remove('flex');
+                noResultsPlaceholder.classList.add('hidden');
+            }
+        }
+    }
 
     function filterExercises() {
         const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
         const muscleDropdown = muscleSelect ? muscleSelect.value.toLowerCase().trim() : '';
         const equipmentDropdown = equipmentSelect ? equipmentSelect.value.toLowerCase().trim() : '';
         const skill = skillSelect ? skillSelect.value.toLowerCase().trim() : '';
-        
+
         if (clearSearchBtn) {
             if (query) {
                 clearSearchBtn.classList.remove('hidden');
@@ -446,21 +577,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        let visibleCount = 0;
-        document.querySelectorAll('.exercise-item').forEach(item => {
-            const name = (item.dataset.name || '').toLowerCase();
-            const musclesRaw = (item.dataset.muscles || '').toLowerCase();
-            const equipmentRaw = (item.dataset.equipment || '').toLowerCase();
-            const categoryRaw = (item.dataset.category || '').toLowerCase();
-            const isCal = categoryRaw === 'calisthenics' || item.dataset.calisthenics === 'true';
-            const itemSkill = (item.dataset.skill || 'other').toLowerCase();
-            const searchBlob = (item.dataset.searchBlob || `${name} ${itemSkill} ${musclesRaw} ${equipmentRaw} ${categoryRaw}`).toLowerCase();
+        const queryTokens = query.split(/\s+/).filter(Boolean);
 
-            // Search Query Filter
-            const queryTokens = query.split(/\s+/).filter(Boolean);
+        currentFiltered = exerciseCatalog.filter(ex => {
+            const name = (ex.name || '').toLowerCase();
+            const musclesRaw = Array.isArray(ex.muscles) ? ex.muscles.join(' ').toLowerCase() : (ex.muscles || '').toLowerCase();
+            const equipmentRaw = Array.isArray(ex.equipment) ? ex.equipment.join(' ').toLowerCase() : (ex.equipment || '').toLowerCase();
+            const categoryRaw = (ex.category || '').toLowerCase();
+            const isCal = categoryRaw === 'calisthenics' || ex.is_calisthenics === true;
+            const itemSkill = (ex.skill_family || 'other').toLowerCase();
+            const searchBlob = (ex.search_blob || `${name} ${itemSkill} ${musclesRaw} ${equipmentRaw} ${categoryRaw}`).toLowerCase();
+
             const matchesQuery = queryTokens.length === 0 || queryTokens.every(token => searchBlob.includes(token));
 
-            // Discipline / Category Filter (Gym vs Calisthenics vs All)
             let matchesDiscipline = true;
             if (activeDiscipline === 'gym') {
                 matchesDiscipline = !isCal;
@@ -468,14 +597,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesDiscipline = isCal;
             }
 
-            // Skill filter overriding discipline restrictions if a specific skill is requested
             if (skill && skill !== '' && skill !== 'other') {
                 if (itemSkill === skill || searchBlob.includes(skill)) {
                     matchesDiscipline = true;
                 }
             }
 
-            // Muscle Filter (Chip or Dropdown)
             let matchesMuscle = true;
             if (activeChipValue) {
                 if (activeChipValue === 'biceps') {
@@ -500,39 +627,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesMuscle = mTokens.every(token => musclesRaw.includes(token) || searchBlob.includes(token));
             }
 
-            // Equipment Filter
             let matchesEquipment = true;
             if (equipmentDropdown) {
                 const eqTokens = equipmentDropdown.split(/\s+/).filter(Boolean);
                 matchesEquipment = eqTokens.every(token => equipmentRaw.includes(token) || searchBlob.includes(token));
             }
 
-            // Skill Filter Dropdown
             let matchesSkill = true;
             if (skill) {
                 matchesSkill = (itemSkill === skill || searchBlob.includes(skill));
             }
 
-            if (matchesQuery && matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill) {
-                item.classList.remove('hidden');
-                item.classList.add('flex');
-                visibleCount++;
-            } else {
-                item.classList.remove('flex');
-                item.classList.add('hidden');
-            }
+            return matchesQuery && matchesDiscipline && matchesMuscle && matchesEquipment && matchesSkill;
         });
 
-        if (noResultsPlaceholder) {
-            if (visibleCount === 0) {
-                noResultsPlaceholder.classList.remove('hidden');
-                noResultsPlaceholder.classList.add('flex');
-            } else {
-                noResultsPlaceholder.classList.remove('flex');
-                noResultsPlaceholder.classList.add('hidden');
-            }
-        }
+        renderBatch(true);
     }
+
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    const debouncedFilter = debounce(filterExercises, 150);
+
+    if (searchInput) {
+        searchInput.addEventListener('input', debouncedFilter);
+    }
+
+    if (listContainer) {
+        listContainer.addEventListener('scroll', function() {
+            if (listContainer.scrollTop + listContainer.clientHeight >= listContainer.scrollHeight - 80) {
+                if (renderOffset < currentFiltered.length) {
+                    renderBatch(false);
+                }
+            }
+        });
+    }
+
+    // Initial load
+    filterExercises();
 
     if (disciplineTabs && disciplineTabs.length > 0) {
         disciplineTabs.forEach(tab => {
@@ -792,7 +929,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Event delegation on container for instant click capture on any item
-    const listContainer = document.getElementById('exercise-list-container');
     if (listContainer) {
         listContainer.addEventListener('click', function(e) {
             const item = e.target.closest('.exercise-item');
@@ -1054,6 +1190,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-});
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAddExercisePage);
+    } else {
+        initAddExercisePage();
+    }
+    document.addEventListener('htmx:afterSettle', initAddExercisePage);
+    document.addEventListener('htmx:load', initAddExercisePage);
+})();
 </script>
 {% endblock %}

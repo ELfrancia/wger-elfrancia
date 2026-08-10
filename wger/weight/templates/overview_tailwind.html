@@ -286,7 +286,7 @@
 
     // Top Exercises Volume Bar Chart initialization
     const exerciseVolumeCanvas = document.getElementById('exerciseVolumeChart');
-    if (exerciseVolumeCanvas && exerciseStatsData && exerciseStatsData.length > 0) {
+    if (exerciseVolumeCanvas && exerciseStatsData && exerciseStatsData.length > 0 && typeof Chart !== 'undefined') {
         const ctx = exerciseVolumeCanvas.getContext('2d');
         const exLabels = exerciseStatsData.slice(0, 6).map(e => e.name.length > 15 ? e.name.substring(0, 15) + '...' : e.name);
         const exVolumes = exerciseStatsData.slice(0, 6).map(e => e.total_volume);
@@ -356,7 +356,7 @@
     const activityCanvas = document.getElementById('activityChart');
     const hasActivityData = activityData.some(d => d.volume > 0 || d.sessions > 0);
 
-    if (activityCanvas && hasActivityData) {
+    if (activityCanvas && hasActivityData && typeof Chart !== 'undefined') {
         const ctx = activityCanvas.getContext('2d');
         const barGradient = ctx.createLinearGradient(0, 0, 0, 300);
         barGradient.addColorStop(0, 'rgba(202, 243, 0, 0.95)');

@@ -18,6 +18,7 @@ from unittest import mock
 
 # Django
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.urls import reverse
 
 # wger
@@ -647,3 +648,51 @@ class RoutineLogsAndStatsScopeTestCase(WgerTestCase):
         self.user_login('test')
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, 200)
+
+
+class AddExerciseCatalogFallbackTestCase(WgerTestCase):
+    """The picker must show exercises before its JavaScript is available."""
+
+    def test_picker_renders_initial_catalog_items_server_side(self):
+        user = User.objects.get(username='test')
+        self.client.force_login(user)
+        routine = Routine.objects.create(
+            user=user,
+            name='Catalog fallback',
+            start=datetime.date(2024, 1, 1),
+            end=datetime.date(2024, 1, 2),
+        )
+        day = Day.objects.create(routine=routine, description='Day 1', order=1)
+        catalog = {
+            'version': 'test',
+            'items': [{
+                'id': 987,
+                'name': 'Server exercise',
+                'category': 'Gym',
+                'muscles': [],
+                'equipment': [],
+                'skill_family': 'Other',
+                'is_calisthenics': False,
+                'image': '',
+                'search_blob': 'server exercise gym',
+            }],
+            'muscles': [],
+            'categories': ['Gym'],
+            'equipment': [],
+            'total_count': 1,
+        }
+
+        with mock.patch(
+            'wger.manager.services.exercise_catalog.get_cached_exercise_catalog',
+            return_value=catalog,
+        ):
+            response = self.client.get(
+                reverse(
+                    'manager:routine:add-exercise',
+                    kwargs={'routine_pk': routine.pk, 'day_pk': day.pk},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Server exercise')
+        self.assertContains(response, 'data-id="987"')

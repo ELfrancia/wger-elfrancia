@@ -180,8 +180,14 @@
         </div>
 
         <!-- Exercise & Set Logging Grid -->
-        <div id="active-exercises-section" class="w-full flex flex-col gap-5 pt-2">
-            <h2 id="active-exercises-heading" class="font-headline-lg-mobile text-lg text-white tracking-widest uppercase text-center font-bold scroll-mt-20">{% translate "Active Exercises" %}</h2>
+        <div id="active-exercises-section" class="w-full flex flex-col gap-4 pt-2">
+            <div class="flex items-center justify-between">
+                <h2 id="active-exercises-heading" class="font-headline-lg-mobile text-lg text-white tracking-widest uppercase font-bold scroll-mt-20">{% translate "Active Exercises" %}</h2>
+                <a href="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}?from=workout" hx-boost="false" class="px-3.5 py-1.5 rounded-full bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300]/20 hover:border-[#caf300] text-[#caf300] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-base">add_circle</span>
+                    <span>{% translate "Aggiungi" %}</span>
+                </a>
+            </div>
             
             <div class="flex flex-col gap-4">
                 {% for slot in day.slots.all %}
@@ -190,6 +196,12 @@
                     <p class="text-xs text-gray-500 text-center py-4">{% translate "No exercises configured for this day." %}</p>
                 {% endfor %}
             </div>
+
+            <!-- Prominent Add Exercise Button at bottom of exercise list -->
+            <a href="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}?from=workout" hx-boost="false" class="w-full bg-[#16171A] text-[#caf300] border-2 border-dashed border-[#caf300]/40 hover:border-[#caf300] hover:bg-[#caf300]/10 min-h-[50px] py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-xs sm:text-sm tracking-widest uppercase hover:scale-[1.01] transition-all duration-300 shadow-sm mt-1">
+                <span class="material-symbols-outlined text-lg">add_circle</span>
+                <span>{% translate "AGGIUNGI ESERCIZIO AL WORKOUT" %}</span>
+            </a>
         </div>
     </div>
 
@@ -746,18 +758,12 @@
 
     function updateMiniTimerVisibility() {
         window.isInlineTimerVisible = isInlineTimerVisible;
-        const isOverlayOpen = overlay && !overlay.classList.contains('hidden');
-        const isTimerActive = isRunning || (remainingMs < durationSeconds * 1000) || hasNotifiedZero;
-        const shouldShowMiniTimer = !isInlineTimerVisible && !isOverlayOpen && isTimerActive;
-
+        // The persistent navigation bubble is the sole floating timer.  Keeping
+        // this page-specific bubble hidden avoids two elements fighting for the
+        // same position and producing a visible flash while scrolling or ticking.
         if (miniTimerOverlay) {
-            if (shouldShowMiniTimer) {
-                miniTimerOverlay.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-                miniTimerOverlay.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
-            } else {
-                miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-                miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
-            }
+            miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
         }
         if (typeof updateGlobalMiniTimer === 'function') {
             updateGlobalMiniTimer();
