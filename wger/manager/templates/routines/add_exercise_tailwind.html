@@ -7,10 +7,17 @@
     <!-- Header Section -->
     <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-            <a href="{% url 'manager:routine:view' day.routine.pk %}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
-                <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
-                {% translate "BACK TO ROUTINE" %}
-            </a>
+            {% if from_workout %}
+                <a href="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-boost="false" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
+                    {% translate "TORNA AL WORKOUT" %}
+                </a>
+            {% else %}
+                <a href="{% url 'manager:routine:view' day.routine.pk %}" hx-boost="false" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#caf300] hover:underline transition-colors uppercase tracking-wider group py-1">
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
+                    {% translate "BACK TO ROUTINE" %}
+                </a>
+            {% endif %}
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#caf300]/10 text-[#caf300] border border-[#caf300]/25">
                 Day: {{ day.name }}
             </span>
@@ -30,6 +37,9 @@
     <div class="bg-[#161618] border border-white/[0.08] rounded-2xl p-4 sm:p-6 flex flex-col gap-5 shadow-lg">
         <form method="post" action="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-5">
             {% csrf_token %}
+            {% if from_workout %}
+                <input type="hidden" name="from" value="workout">
+            {% endif %}
             
             <!-- Controls Section -->
             <div id="exercise-picker" class="flex flex-col gap-4">
@@ -132,6 +142,26 @@
 
             <!-- Exercise List Cards Container (Virtualized Batch Rendering: 30 items per batch) -->
             <div id="exercise-list-container" class="max-h-[460px] overflow-y-auto flex flex-col gap-2 rounded-xl border border-white/[0.08] p-2 bg-[#111113] custom-scrollbar">
+                {# Keep the picker usable when inline JavaScript is delayed or unavailable. #}
+                {% for ex in exercises_list|slice:":30" %}
+                    <div class="exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]"
+                         data-id="{{ ex.id }}" data-name="{{ ex.name }}">
+                        <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] group-hover:border-[#caf300]/40 flex items-center justify-center transition-colors pointer-events-none">
+                                {% if ex.image %}
+                                    <img src="{{ ex.image }}" alt="{{ ex.name }}" class="w-full h-full object-cover" loading="lazy">
+                                {% else %}
+                                    <span class="material-symbols-outlined text-zinc-500 group-hover:text-[#caf300] text-lg transition-colors">fitness_center</span>
+                                {% endif %}
+                            </div>
+                            <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">{{ ex.name }}</span>
+                        </div>
+                        <div class="selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3">
+                            <span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
+                        </div>
+                    </div>
+                {% endfor %}
+
                 <!-- Dynamic Empty State -->
                 <div id="no-results-placeholder" class="hidden text-center py-12 px-4 flex-col items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-3xl text-zinc-600">search_off</span>
@@ -181,9 +211,15 @@
                         <span id="superset-btn-text">{% translate "CREA SUPERSET" %}</span>
                     </button>
                     
-                    <a href="{% url 'manager:routine:view' day.routine.pk %}" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
-                        {% translate "CANCEL" %}
-                    </a>
+                    {% if from_workout %}
+                        <a href="{% url 'manager:day:overview' day.routine.pk day.pk %}" hx-boost="false" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
+                            {% translate "CANCEL" %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'manager:routine:view' day.routine.pk %}" hx-boost="false" class="flex-1 sm:flex-initial bg-[#18181a] border-2 border-white/15 text-zinc-300 hover:text-white hover:border-white/30 h-15 sm:h-16 px-7 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200">
+                            {% translate "CANCEL" %}
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </form>
@@ -370,19 +406,24 @@
     }
 </style>
 
-<script type="application/json" id="catalog-json-data">{{ catalog_json|safe }}</script>
+{{ catalog_dto|json_script:"catalog-json-data" }}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('exercise-search');
-    const clearSearchBtn = document.getElementById('clear-search-btn');
-    const muscleSelect = document.getElementById('filter-muscle');
-    const equipmentSelect = document.getElementById('filter-equipment');
-    const skillSelect = document.getElementById('filter-skill');
-    const muscleChips = document.querySelectorAll('.muscle-chip');
-    const disciplineTabs = document.querySelectorAll('.discipline-tab');
-    const noResultsPlaceholder = document.getElementById('no-results-placeholder');
-    const resetFiltersBtn = document.getElementById('reset-filters-btn');
+(function() {
+    function initAddExercisePage() {
+        const picker = document.getElementById('exercise-picker');
+        if (!picker || picker.dataset.initialized === 'true') return;
+        picker.dataset.initialized = 'true';
+
+        const searchInput = document.getElementById('exercise-search');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        const muscleSelect = document.getElementById('filter-muscle');
+        const equipmentSelect = document.getElementById('filter-equipment');
+        const skillSelect = document.getElementById('filter-skill');
+        const muscleChips = document.querySelectorAll('.muscle-chip');
+        const disciplineTabs = document.querySelectorAll('.discipline-tab');
+        const noResultsPlaceholder = document.getElementById('no-results-placeholder');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
 
     let exerciseCatalog = [];
     const catalogScript = document.getElementById('catalog-json-data');
@@ -1149,6 +1190,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-});
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAddExercisePage);
+    } else {
+        initAddExercisePage();
+    }
+    document.addEventListener('htmx:afterSettle', initAddExercisePage);
+    document.addEventListener('htmx:load', initAddExercisePage);
+})();
 </script>
 {% endblock %}

@@ -335,6 +335,8 @@ SKILL_KEYWORDS = {
 @login_required
 def add_exercise_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
+    from_workout = (request.GET.get('from') == 'workout') or (request.POST.get('from') == 'workout')
+
     if request.method == 'POST':
         exercise_ids = request.POST.getlist('exercise')
         is_superset = request.POST.get('is_superset') == 'true'
@@ -382,10 +384,19 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
             from wger.manager.helpers import reset_routine_cache
             reset_routine_cache(day.routine)
             
+            if from_workout:
+                from django.urls import reverse
+                redirect_url = reverse('manager:day:overview', kwargs={'routine_pk': day.routine.pk, 'day_pk': day.pk})
+            else:
+                redirect_url = day.routine.get_absolute_url()
+
             if request.headers.get('HX-Request'):
                 response = HttpResponse()
-                response['HX-Redirect'] = day.routine.get_absolute_url()
+                response['HX-Redirect'] = redirect_url
                 return response
+
+            if from_workout:
+                return redirect('manager:day:overview', routine_pk=day.routine.pk, day_pk=day.pk)
             return redirect('manager:routine:view', pk=day.routine.pk)
     else:
         form = AddExerciseForm()
@@ -406,18 +417,21 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
     }
 
     import json
-    catalog_json = json.dumps(catalog_dto, ensure_ascii=False)
+    from django.core.serializers.json import DjangoJSONEncoder
+    catalog_json = json.dumps(catalog_dto, cls=DjangoJSONEncoder, ensure_ascii=False)
         
     return render(request, 'routines/add_exercise_tailwind.html', {
         'form': form,
         'day': day,
         'exercises_list': exercises_list,
+        'catalog_dto': catalog_dto,
         'catalog_json': catalog_json,
         'muscles_list': muscles_list,
         'skills_list': skills_list,
         'equipment_list': equipment_list,
         'categories_list': categories_list,
         'exercise_counts': exercise_counts,
+        'from_workout': from_workout,
     })
 
 
