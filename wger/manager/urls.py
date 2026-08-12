@@ -80,6 +80,11 @@ patterns_routine = [
         name='update-week',
     ),
     path(
+        '<int:pk>/update-category',
+        routine.update_routine_category_tailwind,
+        name='update-category',
+    ),
+    path(
         '<int:pk>/delete',
         routine.delete_routine_tailwind,
         name='delete',

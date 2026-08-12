@@ -1052,13 +1052,28 @@ def log_daily_activity(request):
 
 @login_required
 def session_details_tailwind(request, session_id):
-    from wger.manager.models import WorkoutSession, WorkoutLog
+    from wger.manager.models import WorkoutSession, WorkoutLog, Routine
+    from wger.manager.helpers import create_day_from_session
     from collections import OrderedDict
     import datetime
 
     session = get_object_or_404(WorkoutSession, id=session_id)
     if session.user != request.user:
         return HttpResponseForbidden()
+
+    if request.method == 'POST' and request.POST.get('action') == 'save_as_routine_day':
+        target_routine_id = request.POST.get('target_routine_id')
+        new_routine_name = request.POST.get('new_routine_name')
+        routine_day_name = request.POST.get('routine_day_name')
+        created_day = create_day_from_session(
+            user=request.user,
+            session=session,
+            target_routine_id=target_routine_id,
+            new_routine_name=new_routine_name,
+            day_name=routine_day_name,
+        )
+        messages.success(request, _("Workout salvato come giorno di routine con successo!"))
+        return redirect('manager:routine:view', pk=created_day.routine.pk)
 
     from django.utils import timezone
     time_start_local = None
@@ -1104,12 +1119,15 @@ def session_details_tailwind(request, session_id):
             grouped_logs[exercise] = []
         grouped_logs[exercise].append(log)
 
+    user_routines = Routine.objects.filter(user=request.user)
+
     return render(request, 'user/session_details.html', {
         'session': session,
         'duration_str': duration_str,
         'grouped_logs': grouped_logs.items(),
         'time_start_local': time_start_local,
         'time_end_local': time_end_local,
+        'user_routines': user_routines,
     })
 
 

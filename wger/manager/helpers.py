@@ -210,3 +210,116 @@ def brzycki_one_rm(weight: float | None, reps: float | None) -> Decimal:
 def brzycki_intensity(weight, reps) -> Decimal:
     one_rm = brzycki_one_rm(weight, reps)
     return Decimal(weight / one_rm if one_rm != 0 else 0)
+
+
+def create_day_from_session(user, session, target_routine_id=None, new_routine_name=None, day_name=None):
+    """
+    Creates a new Day in a Routine (existing or new) based on a completed WorkoutSession.
+    """
+    from django.db import transaction
+    from django.db.models import Max
+    from wger.manager.models import (
+        Routine,
+        Day,
+        Slot,
+        SlotEntry,
+        SetsConfig,
+        RepetitionsConfig,
+        WeightConfig,
+        WorkoutLog,
+    )
+
+    with transaction.atomic():
+        routine = None
+        if target_routine_id and str(target_routine_id).isdigit():
+            routine = Routine.objects.filter(id=int(target_routine_id), user=user).first()
+
+        import datetime
+        start_date = datetime.date.today()
+        end_date = start_date + datetime.timedelta(days=28)
+
+        if not routine and new_routine_name and new_routine_name.strip():
+            routine = Routine.objects.create(
+                user=user,
+                name=new_routine_name.strip(),
+                start=start_date,
+                end=end_date,
+            )
+        elif not routine:
+            if session.routine:
+                routine = session.routine
+            else:
+                routine = Routine.objects.create(
+                    user=user,
+                    name=f"Routine - {session.date.strftime('%d/%m/%Y')}",
+                    start=start_date,
+                    end=end_date,
+                )
+
+        if not day_name or not day_name.strip():
+            if session.day and session.day.name:
+                day_name = f"{session.day.name} (Copia)"
+            else:
+                day_name = f"Allenamento {session.date.strftime('%d/%m/%Y')}"
+        else:
+            day_name = day_name.strip()
+
+        max_order = routine.days.aggregate(Max('order'))['order__max']
+        day = Day.objects.create(
+            routine=routine,
+            name=day_name,
+            order=(max_order or 0) + 1
+        )
+
+        session_logs = WorkoutLog.objects.filter(session=session).select_related('exercise').order_by('date', 'id')
+        
+        exercise_groups = []
+        seen_exercises = {}
+        for log in session_logs:
+            if not log.exercise:
+                continue
+            ex_id = log.exercise_id
+            if ex_id not in seen_exercises:
+                group = {
+                    'exercise': log.exercise,
+                    'logs': [log]
+                }
+                seen_exercises[ex_id] = group
+                exercise_groups.append(group)
+            else:
+                seen_exercises[ex_id]['logs'].append(log)
+
+        slot_order = 1
+        for group in exercise_groups:
+            exercise = group['exercise']
+            logs = group['logs']
+            sets_count = len(logs)
+            
+            first_log = logs[0]
+            reps = first_log.repetitions or 10
+            weight = first_log.weight or 0
+
+            slot = Slot.objects.create(
+                day=day,
+                order=slot_order
+            )
+            slot_order += 1
+
+            slot_entry = SlotEntry.objects.create(
+                slot=slot,
+                exercise=exercise,
+                order=1
+            )
+
+            SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=sets_count)
+            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
+            WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight)
+
+        session.routine = routine
+        session.day = day
+        session.save()
+        WorkoutLog.objects.filter(session=session).update(routine=routine)
+
+        reset_routine_cache(routine)
+        return day
+

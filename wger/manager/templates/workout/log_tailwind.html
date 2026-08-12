@@ -232,9 +232,9 @@
 
 <!-- Finish Workout Details Review & Editing Modal -->
 <div id="finish-workout-review-modal" onclick="closeFinishWorkoutReviewModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
-    <div id="finish-workout-review-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
+    <div id="finish-workout-review-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl transform transition-transform duration-300 scale-95 max-h-[85vh] flex flex-col my-auto overflow-hidden">
         <!-- Header -->
-        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A]">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A] shrink-0">
             <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
                     <span class="material-symbols-outlined text-xl">done_all</span>
@@ -250,11 +250,11 @@
         </div>
 
         <!-- Form Body -->
-        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" onsubmit="onFinishWorkoutSubmitted()">
+        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" onsubmit="onFinishWorkoutSubmitted()" class="flex flex-col flex-1 min-h-0 overflow-hidden">
             {% csrf_token %}
             <input type="hidden" name="action" value="finish_workout">
 
-            <div class="p-6 flex flex-col gap-4">
+            <div class="p-6 flex flex-col gap-4 overflow-y-auto flex-1 text-white">
                 <!-- Date Picker -->
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
@@ -281,10 +281,97 @@
                     </label>
                     <textarea name="notes" placeholder="Es. Sensazioni ottime, carichi incrementati..." rows="2" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-600 focus:outline-none transition-colors resize-none"></textarea>
                 </div>
+
+                <!-- Save as Routine Day Option -->
+                <div class="border-t border-white/10 pt-4 flex flex-col gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="save-as-routine-day-checkbox" name="save_as_routine_day" value="true" onchange="toggleSaveAsRoutineDayFields(this.checked)" class="w-4 h-4 rounded accent-[#caf300] cursor-pointer">
+                        <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm text-[#caf300]">bookmark_add</span>
+                            {% translate "Salva come Giorno di Routine" %}
+                        </span>
+                    </label>
+
+                    <div id="save-as-routine-day-fields" class="hidden flex flex-col gap-3 pl-6 border-l-2 border-[#caf300]/40 transition-all duration-200">
+                        <!-- Day Name Input -->
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+                                {% translate "Nome Giorno Routine" %}
+                            </label>
+                            <input type="text" name="routine_day_name" value="{% if day.name %}{{ day.name }}{% else %}Giorno {{ day.order }}{% endif %}" placeholder="Es. Giorno A - Petto" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-colors">
+                        </div>
+
+                        <!-- Target Routine Custom Dropdown -->
+                        <div class="flex flex-col gap-1 relative">
+                            <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+                                {% translate "Seleziona Routine" %}
+                            </label>
+                            
+                            <div class="relative w-full" id="log-routine-select-wrapper">
+                                <input type="hidden" name="target_routine_id" id="log-target-routine-id-input" value="{% if day.routine %}{{ day.routine.id }}{% elif user_routines.first %}{{ user_routines.first.id }}{% else %}new{% endif %}">
+                                
+                                <button type="button" 
+                                        id="log-routine-select-trigger" 
+                                        onclick="toggleLogRoutineCustomDropdown()" 
+                                        class="w-full bg-[#18191D] border border-white/10 hover:border-[#caf300]/50 focus:border-[#caf300] rounded-xl px-3.5 py-2.5 text-xs font-bold text-white flex items-center justify-between transition-all duration-200 shadow-md cursor-pointer select-none group">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="material-symbols-outlined text-base text-[#caf300]">folder_open</span>
+                                        <span id="log-selected-routine-label" class="truncate">
+                                            {% if day.routine %}
+                                                {{ day.routine.name }} <span class="text-[10px] text-[#caf300] font-normal font-mono ml-1">(Corrente)</span>
+                                            {% elif user_routines.first %}
+                                                {{ user_routines.first.name }}
+                                            {% else %}
+                                                + {% translate "Crea Nuova Routine..." %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <span id="log-routine-select-chevron" class="material-symbols-outlined text-base text-zinc-400 group-hover:text-white transition-transform duration-200">unfold_more</span>
+                                </button>
+
+                                <div id="log-routine-custom-dropdown-menu" 
+                                     class="hidden mt-1.5 bg-[#16171A] border border-white/15 rounded-xl p-1 shadow-2xl flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                                    {% for r in user_routines %}
+                                        <button type="button" 
+                                                data-routine-id="{{ r.id }}"
+                                                data-routine-name="{{ r.name }}"
+                                                data-is-current="{% if day.routine and day.routine.id == r.id %}true{% else %}false{% endif %}"
+                                                onclick="onSelectLogRoutineClick(this)" 
+                                                class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-between transition-all duration-150 group cursor-pointer hover:bg-white/10 text-zinc-200 hover:text-white">
+                                            <div class="flex items-center gap-2 truncate">
+                                                <span class="material-symbols-outlined text-sm text-zinc-400 group-hover:text-[#caf300] transition-colors">fitness_center</span>
+                                                <span class="truncate">{{ r.name }}</span>
+                                                {% if day.routine and day.routine.id == r.id %}
+                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-[#caf300] bg-[#caf300]/10 border border-[#caf300]/30 px-1.5 py-0.5 rounded-full shrink-0">Corrente</span>
+                                                {% endif %}
+                                            </div>
+                                        </button>
+                                    {% endfor %}
+
+                                    <div class="border-t border-white/10 my-0.5"></div>
+                                    <button type="button" 
+                                            onclick="selectLogRoutineOption('new', '+ Crea Nuova Routine...', false)" 
+                                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#caf300] hover:bg-[#caf300]/10 flex items-center gap-2 transition-all cursor-pointer group">
+                                        <span class="material-symbols-outlined text-sm text-[#caf300] group-hover:rotate-90 transition-transform">add_circle</span>
+                                        <span>{% translate "Crea Nuova Routine..." %}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New Routine Name Input (conditional) -->
+                        <div id="new-routine-input-container" class="hidden flex flex-col gap-1">
+                            <label class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+                                {% translate "Nome Nuova Routine" %}
+                            </label>
+                            <input type="text" name="new_routine_name" placeholder="Es. Scheda Forza Ipertrofia" class="w-full bg-[#18191D] border border-white/10 focus:border-[#caf300] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-colors">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Footer Actions -->
-            <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex gap-2 justify-end">
+            <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex gap-2 justify-end shrink-0">
                 <button type="button" onclick="closeFinishWorkoutReviewModal()" class="px-4 py-2.5 rounded-full border border-white/20 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all">
                     {% translate "Annulla" %}
                 </button>
@@ -1784,5 +1871,78 @@
             }
         }, 120);
     }
+
+    function toggleSaveAsRoutineDayFields(checked) {
+        const fields = document.getElementById('save-as-routine-day-fields');
+        if (fields) {
+            if (checked) {
+                fields.classList.remove('hidden');
+            } else {
+                fields.classList.add('hidden');
+            }
+        }
+    }
+
+    function toggleLogRoutineCustomDropdown() {
+        const menu = document.getElementById('log-routine-custom-dropdown-menu');
+        const chevron = document.getElementById('log-routine-select-chevron');
+        if (!menu) return;
+
+        const isHidden = menu.classList.contains('hidden');
+        if (isHidden) {
+            menu.classList.remove('hidden');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        } else {
+            closeLogRoutineCustomDropdown();
+        }
+    }
+
+    function closeLogRoutineCustomDropdown() {
+        const menu = document.getElementById('log-routine-custom-dropdown-menu');
+        const chevron = document.getElementById('log-routine-select-chevron');
+        if (menu) {
+            menu.classList.add('hidden');
+        }
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+
+    function onSelectLogRoutineClick(btn) {
+        const val = btn.getAttribute('data-routine-id');
+        const labelText = btn.getAttribute('data-routine-name');
+        const isCurrent = btn.getAttribute('data-is-current') === 'true';
+        selectLogRoutineOption(val, labelText, isCurrent);
+    }
+
+    function selectLogRoutineOption(val, labelText, isCurrent) {
+        const hiddenInput = document.getElementById('log-target-routine-id-input');
+        const labelSpan = document.getElementById('log-selected-routine-label');
+        const newRoutineContainer = document.getElementById('new-routine-input-container');
+
+        if (hiddenInput) hiddenInput.value = val;
+        if (labelSpan) {
+            if (isCurrent) {
+                labelSpan.innerHTML = `${labelText} <span class="text-[10px] text-[#caf300] font-normal font-mono ml-1">(Corrente)</span>`;
+            } else {
+                labelSpan.innerText = labelText;
+            }
+        }
+
+        if (newRoutineContainer) {
+            if (val === 'new') {
+                newRoutineContainer.classList.remove('hidden');
+            } else {
+                newRoutineContainer.classList.add('hidden');
+            }
+        }
+
+        closeLogRoutineCustomDropdown();
+    }
+
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('log-routine-select-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            closeLogRoutineCustomDropdown();
+        }
+    });
 </script>
 {% endblock %}

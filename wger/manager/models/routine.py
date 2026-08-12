@@ -88,6 +88,24 @@ class Routine(models.Model):
         blank=True,
     )
 
+    CATEGORY_CHOICES = (
+        ('calisthenics', 'Calisthenics'),
+        ('strength', 'Strength'),
+        ('hypertrophy', 'Ipertrofia'),
+        ('cardio', 'Cardio'),
+        ('powerlifting', 'Powerlifting'),
+        ('crossfit', 'CrossFit'),
+        ('mobility', 'Mobilità'),
+    )
+
+    category = models.CharField(
+        verbose_name='Category',
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='calisthenics',
+        blank=True,
+    )
+
     description = models.TextField(
         verbose_name='Description',
         max_length=1000,

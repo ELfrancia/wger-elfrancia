@@ -48,7 +48,20 @@
                 </form>
             </div>
 
-            <span class="bg-[#16171A] text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-xl border border-white/10 tracking-wider">{% translate "CALISTHENICS" %}</span>
+            <!-- Category Selector Dropdown Badge -->
+            <form action="{% url 'manager:routine:update-category' routine.pk %}" method="post" class="inline-block relative">
+                {% csrf_token %}
+                <select name="category" onchange="this.form.submit()" class="bg-[#16171A] text-[#caf300] text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-xl border border-white/10 tracking-wider appearance-none pr-6 cursor-pointer focus:outline-none focus:border-[#caf300]/50">
+                    <option value="calisthenics" {% if routine.category == 'calisthenics' %}selected{% endif %}>CALISTHENICS</option>
+                    <option value="strength" {% if routine.category == 'strength' %}selected{% endif %}>STRENGTH</option>
+                    <option value="hypertrophy" {% if routine.category == 'hypertrophy' %}selected{% endif %}>IPERTROFIA</option>
+                    <option value="cardio" {% if routine.category == 'cardio' %}selected{% endif %}>CARDIO</option>
+                    <option value="powerlifting" {% if routine.category == 'powerlifting' %}selected{% endif %}>POWERLIFTING</option>
+                    <option value="crossfit" {% if routine.category == 'crossfit' %}selected{% endif %}>CROSSFIT</option>
+                    <option value="mobility" {% if routine.category == 'mobility' %}selected{% endif %}>MOBILITÀ</option>
+                </select>
+                <span class="material-symbols-outlined text-[10px] text-[#caf300] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+            </form>
         </div>
         <h2 class="text-3xl font-display font-black text-white tracking-tight uppercase">{{ routine.name }}</h2>
     </div>

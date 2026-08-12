@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from wger.manager.models import (
+    Routine,
     Day,
     WorkoutSession,
     WorkoutLog,
@@ -19,7 +20,7 @@ from wger.manager.models import (
     RepetitionsConfig,
     WeightConfig,
 )
-from wger.manager.helpers import reset_routine_cache
+from wger.manager.helpers import reset_routine_cache, create_day_from_session
 from wger.gallery.models.image import Image
 from wger.gallery.forms import ImageForm
 
@@ -258,6 +259,20 @@ def log_tailwind(request, routine_pk, day_pk):
                 if not session.time_end:
                     session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
+
+                if request.POST.get('save_as_routine_day') == 'true':
+                    target_routine_id = request.POST.get('target_routine_id')
+                    new_routine_name = request.POST.get('new_routine_name')
+                    routine_day_name = request.POST.get('routine_day_name')
+                    create_day_from_session(
+                        user=request.user,
+                        session=session,
+                        target_routine_id=target_routine_id,
+                        new_routine_name=new_routine_name,
+                        day_name=routine_day_name,
+                    )
+                    messages.success(request, _("Workout salvato come giorno di routine con successo!"))
+
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)
@@ -299,16 +314,46 @@ def log_tailwind(request, routine_pk, day_pk):
                             if slot_entry.id not in logged_set_ids:
                                 reps = None
                                 weight = None
-                                if hasattr(slot_entry, 'reps_config') and slot_entry.reps_config:
-                                    reps = slot_entry.reps_config.reps
-                                if hasattr(slot_entry, 'weight_config') and slot_entry.weight_config:
-                                    weight = slot_entry.weight_config.weight
+
+                                # 1. Read POST value specifically submitted for this slot_entry
+                                post_reps = request.POST.get(f'reps_{slot_entry.id}') or request.POST.get(f'repetitions_{slot_entry.id}')
+                                post_weight = request.POST.get(f'weight_{slot_entry.id}')
+
+                                if post_reps is not None and str(post_reps).strip() != '':
+                                    try:
+                                        reps = int(Decimal(str(post_reps)))
+                                    except (TypeError, ValueError):
+                                        reps = None
+
+                                if post_weight is not None and str(post_weight).strip() != '':
+                                    try:
+                                        weight = Decimal(str(post_weight))
+                                    except (TypeError, ValueError):
+                                        weight = None
+
+                                # 2. Fallback to reps_config / weight_config on slot_entry
+                                if reps is None and hasattr(slot_entry, 'reps_config') and slot_entry.reps_config:
+                                    if slot_entry.reps_config.reps is not None:
+                                        reps = int(slot_entry.reps_config.reps)
+
+                                if weight is None and hasattr(slot_entry, 'weight_config') and slot_entry.weight_config:
+                                    if slot_entry.weight_config.weight is not None:
+                                        weight = Decimal(str(slot_entry.weight_config.weight))
+
+                                # 3. Fallback to sibling set configs if reps is still None
                                 if reps is None:
+                                    for sibling in target_entries:
+                                        if hasattr(sibling, 'reps_config') and sibling.reps_config and sibling.reps_config.reps is not None:
+                                            reps = int(sibling.reps_config.reps)
+                                            break
+
+                                # 4. Final safety defaults
+                                if reps is None or reps <= 0:
                                     reps = 10
+
                                 if weight is None:
                                     weight = Decimal('0')
-                                else:
-                                    weight = Decimal(str(weight))
+
                                 WorkoutLog.objects.create(
                                     user=request.user,
                                     session=session,
@@ -517,6 +562,7 @@ def log_tailwind(request, routine_pk, day_pk):
 
     session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
     today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
+    user_routines = Routine.objects.filter(user=request.user)
 
     return render(request, 'workout/log_tailwind.html', {
         'day': day,
@@ -528,6 +574,7 @@ def log_tailwind(request, routine_pk, day_pk):
         'elapsed_seconds': elapsed_seconds,
         'session_logs_map': session_logs_map,
         'today_photos_count': today_photos_count,
+        'user_routines': user_routines,
     })
 
 

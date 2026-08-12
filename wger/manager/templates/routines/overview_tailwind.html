@@ -23,19 +23,19 @@
         
         <!-- Filtri and Sort buttons -->
         <div class="flex items-center gap-3">
-            <button class="flex-1 bg-[#161618] border border-white/[0.05] rounded-2xl h-11 flex items-center justify-center gap-2 hover:border-[#caf300]/30 text-neutral-300 hover:text-white transition-all text-xs font-bold uppercase tracking-wider">
+            <button type="button" onclick="openManageFiltersModal()" class="flex-1 bg-[#161618] border border-white/[0.05] rounded-2xl h-11 flex items-center justify-center gap-2 hover:border-[#caf300]/30 text-neutral-300 hover:text-white transition-all text-xs font-bold uppercase tracking-wider cursor-pointer">
                 <span class="material-symbols-outlined text-base">tune</span>
-                <span class="font-label-caps text-[10px]">{% translate "Filtri" %}</span>
+                <span class="font-label-caps text-[10px]">{% translate "Gestisci Filtri" %}</span>
             </button>
-            <button class="flex-1 bg-[#161618] border border-white/[0.05] rounded-2xl h-11 flex items-center justify-center gap-2 hover:border-[#caf300]/30 text-neutral-300 hover:text-white transition-all text-xs font-bold uppercase tracking-wider">
+            <button type="button" onclick="toggleSortRoutines()" class="flex-1 bg-[#161618] border border-white/[0.05] rounded-2xl h-11 flex items-center justify-center gap-2 hover:border-[#caf300]/30 text-neutral-300 hover:text-white transition-all text-xs font-bold uppercase tracking-wider cursor-pointer">
                 <span class="material-symbols-outlined text-base">swap_vert</span>
                 <span class="font-label-caps text-[10px]">{% translate "Sort" %}</span>
             </button>
         </div>
     </div>
 
-    <!-- Category Pills (Horizontal Scroll) -->
-    <div class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+    <!-- Category Pills (Horizontal Scroll & Configurable Filters) -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="category-pills-bar">
         <button class="category-btn bg-[#caf300] text-[#131313] border border-[#caf300] px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase" data-category="all">
             {% translate "Tutti" %}
         </button>
@@ -45,15 +45,21 @@
         <button class="category-btn bg-[#161618]/80 text-[#8e8e93] border border-white/[0.05] hover:text-white px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase" data-category="strength">
             {% translate "Strength" %}
         </button>
+        <button class="category-btn bg-[#161618]/80 text-[#8e8e93] border border-white/[0.05] hover:text-white px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase" data-category="hypertrophy">
+            {% translate "Ipertrofia" %}
+        </button>
+        <button class="category-btn bg-[#161618]/80 text-[#8e8e93] border border-white/[0.05] hover:text-white px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase" data-category="cardio">
+            {% translate "Cardio" %}
+        </button>
     </div>
 
     <!-- Programs List (Single full-width column) -->
-    <div class="flex flex-col gap-5 w-full">
+    <div class="flex flex-col gap-5 w-full" id="routines-list-container">
         {% for routine in routines %}
             <!-- Card -->
             <a href="{% url 'manager:routine:view' routine.pk %}" class="workout-card relative overflow-hidden rounded-[24px] border border-white/[0.05] hover:border-[#caf300]/30 bg-[#161618] h-64 block shadow-lg transition-all duration-300 group" 
                data-name="{{ routine.name|default:'' }}" 
-               data-category="{% if 'strength' in routine.name|lower or 'forza' in routine.name|lower or 'test' in routine.name|lower %}strength{% else %}calisthenics{% endif %}">
+               data-category="{% if routine.category %}{{ routine.category|lower }}{% elif 'strength' in routine.name|lower or 'forza' in routine.name|lower %}strength{% else %}calisthenics{% endif %}">
                 
                 <!-- Background image overlay -->
                 <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-40" 
@@ -67,7 +73,9 @@
                         <!-- Premium Badges -->
                         <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
                             <span class="bg-black/60 text-[#caf300] border border-[#caf300]/25 text-[8px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider w-max">
-                                {% if "strength" in routine.name|lower or "forza" in routine.name|lower or "test" in routine.name|lower %}
+                                {% if routine.category %}
+                                    {{ routine.get_category_display|default:routine.category }}
+                                {% elif "strength" in routine.name|lower or "forza" in routine.name|lower %}
                                     {% translate "Strength" %}
                                 {% else %}
                                     {% translate "Calisthenics" %}
@@ -83,7 +91,7 @@
                             {{ routine.name|default:"Untitled Routine" }}
                         </h4>
                         <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-1">
-                            {{ routine.days.count }} {% translate "Days" %}
+                            {{ routine.days.count }} GIORNI PROGRAMMATI
                         </span>
                     </div>
                     
@@ -107,15 +115,96 @@
         {% endfor %}
     </div>
 
-    <!-- Client-side Instant Search & Category Filter Script -->
+    <!-- Modal Gestione Filtri -->
+    <div id="manage-filters-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-[#161618] border border-white/10 rounded-t-[2.2rem] sm:rounded-[2.2rem] w-full max-w-md p-6 flex flex-col gap-5 shadow-2xl relative max-h-[85vh] overflow-y-auto no-scrollbar transform translate-y-10 transition-transform duration-300">
+            <div class="flex justify-between items-center pb-3 border-b border-white/10">
+                <h3 class="text-white font-black text-base uppercase tracking-tight flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#caf300]">tune</span>
+                    Configura Filtri Categorie
+                </h3>
+                <button type="button" onclick="closeManageFiltersModal()" class="w-8 h-8 rounded-full bg-[#202024] text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+
+            <p class="text-xs text-neutral-400">Seleziona le categorie da mostrare nella barra filtri rapida o aggiungine di nuove:</p>
+
+            <div class="flex flex-col gap-2.5" id="filters-checklist-container">
+                <!-- Checkboxes populated via JS -->
+            </div>
+
+            <!-- Custom Category Add Field -->
+            <div class="pt-2 border-t border-white/10 flex items-center gap-2">
+                <input type="text" id="new-custom-filter-input" placeholder="Nuova categoria (es. Powerlifting)..." class="flex-1 bg-[#121214] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 outline-none focus:border-[#caf300]">
+                <button type="button" onclick="addCustomFilterCategory()" class="px-4 py-2 bg-[#caf300] text-[#121214] font-black text-xs rounded-xl hover:scale-105 active:scale-95 transition-all">
+                    + Aggiungi
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" onclick="saveConfiguredFilters()" class="flex-1 py-3 rounded-full bg-[#caf300] text-[#121214] font-black text-xs uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-all shadow-md">
+                    Salva Configurazione
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-side Instant Search & Configurable Category Filter Script -->
     <script>
+        const DEFAULT_CATEGORIES = [
+            { id: 'all', label: 'TUTTI', enabled: true },
+            { id: 'calisthenics', label: 'CALISTHENICS', enabled: true },
+            { id: 'strength', label: 'STRENGTH', enabled: true },
+            { id: 'hypertrophy', label: 'IPERTROFIA', enabled: true },
+            { id: 'cardio', label: 'CARDIO', enabled: true },
+            { id: 'powerlifting', label: 'POWERLIFTING', enabled: false },
+            { id: 'crossfit', label: 'CROSSFIT', enabled: false },
+            { id: 'mobility', label: 'MOBILITÀ', enabled: false },
+        ];
+
+        function getStoredCategories() {
+            try {
+                const stored = localStorage.getItem('onyx_routine_categories');
+                if (stored) return JSON.parse(stored);
+            } catch (e) {}
+            return DEFAULT_CATEGORIES;
+        }
+
+        function saveStoredCategories(categories) {
+            localStorage.setItem('onyx_routine_categories', JSON.stringify(categories));
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('search-routines');
             const cards = document.querySelectorAll('.workout-card');
-            const categoryButtons = document.querySelectorAll('.category-btn');
-
             let activeCategory = 'all';
             let searchQuery = '';
+            let sortAsc = true;
+
+            function renderFilterBar() {
+                const bar = document.getElementById('category-pills-bar');
+                if (!bar) return;
+                const categories = getStoredCategories();
+                
+                bar.innerHTML = '';
+                categories.filter(c => c.enabled !== false).forEach(cat => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.dataset.category = cat.id;
+                    const isActive = cat.id === activeCategory;
+                    btn.className = isActive 
+                        ? 'category-btn bg-[#caf300] text-[#131313] border border-[#caf300] px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase cursor-pointer'
+                        : 'category-btn bg-[#161618]/80 text-[#8e8e93] border border-white/[0.05] hover:text-white px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase cursor-pointer';
+                    btn.textContent = cat.label;
+                    btn.addEventListener('click', () => {
+                        activeCategory = cat.id;
+                        renderFilterBar();
+                        filterCards();
+                    });
+                    bar.appendChild(btn);
+                });
+            }
 
             function filterCards() {
                 cards.forEach(card => {
@@ -140,17 +229,78 @@
                 });
             }
 
-            categoryButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    categoryButtons.forEach(b => {
-                        b.className = 'category-btn bg-[#161618]/80 text-[#8e8e93] border border-white/[0.05] hover:text-white px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase';
-                    });
-                    btn.className = 'category-btn bg-[#caf300] text-[#131313] border border-[#caf300] px-5 h-9 rounded-full text-[10px] font-black tracking-widest whitespace-nowrap transition-all uppercase';
-
-                    activeCategory = btn.dataset.category;
-                    filterCards();
+            window.toggleSortRoutines = function() {
+                const container = document.getElementById('routines-list-container');
+                const cardArray = Array.from(cards);
+                cardArray.sort((a, b) => {
+                    const nameA = a.dataset.name.toLowerCase();
+                    const nameB = b.dataset.name.toLowerCase();
+                    return sortAsc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
                 });
-            });
+                sortAsc = !sortAsc;
+                cardArray.forEach(c => container.appendChild(c));
+            };
+
+            window.openManageFiltersModal = function() {
+                const modal = document.getElementById('manage-filters-modal');
+                const checklist = document.getElementById('filters-checklist-container');
+                const categories = getStoredCategories();
+
+                checklist.innerHTML = '';
+                categories.forEach((cat, idx) => {
+                    if (cat.id === 'all') return;
+                    const item = document.createElement('label');
+                    item.className = 'flex items-center justify-between p-3 bg-[#121214] border border-white/5 rounded-xl text-xs text-white font-bold cursor-pointer hover:border-white/20 transition-all';
+                    item.innerHTML = `
+                        <span class="uppercase tracking-wider">${cat.label}</span>
+                        <input type="checkbox" class="filter-toggle-cb rounded accent-[#caf300] w-4 h-4" data-id="${cat.id}" ${cat.enabled !== false ? 'checked' : ''}>
+                    `;
+                    checklist.appendChild(item);
+                });
+
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.firstElementChild.classList.remove('translate-y-10');
+            };
+
+            window.closeManageFiltersModal = function() {
+                const modal = document.getElementById('manage-filters-modal');
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.firstElementChild.classList.add('translate-y-10');
+            };
+
+            window.addCustomFilterCategory = function() {
+                const input = document.getElementById('new-custom-filter-input');
+                const val = input.value.trim();
+                if (!val) return;
+                const id = val.toLowerCase().replace(/\s+/g, '-');
+                const categories = getStoredCategories();
+                if (!categories.find(c => c.id === id)) {
+                    categories.push({ id: id, label: val.toUpperCase(), enabled: true });
+                    saveStoredCategories(categories);
+                    input.value = '';
+                    openManageFiltersModal();
+                    renderFilterBar();
+                }
+            };
+
+            window.saveConfiguredFilters = function() {
+                const cbs = document.querySelectorAll('.filter-toggle-cb');
+                const categories = getStoredCategories();
+                cbs.forEach(cb => {
+                    const id = cb.dataset.id;
+                    const cat = categories.find(c => c.id === id);
+                    if (cat) {
+                        cat.enabled = cb.checked;
+                    }
+                });
+                saveStoredCategories(categories);
+                closeManageFiltersModal();
+                renderFilterBar();
+                filterCards();
+            };
+
+            renderFilterBar();
+            filterCards();
         });
     </script>
 </main>

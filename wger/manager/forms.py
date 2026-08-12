@@ -15,11 +15,14 @@ class RoutineForm(forms.ModelForm):
 
     class Meta:
         model = Routine
-        fields = ['name', 'description', 'start', 'current_week', 'total_weeks', 'fit_in_week']
+        fields = ['name', 'category', 'description', 'start', 'current_week', 'total_weeks', 'fit_in_week']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed',
                 'placeholder': _('e.g. Push Pull Legs')
+            }),
+            'category': forms.Select(attrs={
+                'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary font-bold focus:outline-none focus:border-primary-fixed'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 text-primary focus:outline-none focus:border-primary-fixed',

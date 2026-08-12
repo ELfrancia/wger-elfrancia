@@ -237,6 +237,19 @@ def update_current_week_tailwind(request, pk):
 
 
 @login_required
+def update_routine_category_tailwind(request, pk):
+    routine = get_object_or_404(Routine, pk=pk, user=request.user)
+    if request.method == 'POST':
+        category = request.POST.get('category', '').strip().lower()
+        if category:
+            routine.category = category
+            routine.save()
+            from wger.manager.helpers import reset_routine_cache
+            reset_routine_cache(routine)
+    return redirect('manager:routine:view', pk=routine.pk)
+
+
+@login_required
 def delete_routine_tailwind(request, pk):
     routine = get_object_or_404(Routine, pk=pk, user=request.user)
     routine.delete()
