@@ -242,8 +242,11 @@
             </button>
         </div>
         
-        <form id="custom-exercise-form" method="post" action="{% url 'manager:routine:add-custom-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-4">
+        <form id="custom-exercise-form" method="post" action="{% url 'manager:routine:add-custom-exercise' day.routine.pk day.pk %}" class="flex flex-col gap-4" hx-boost="false">
             {% csrf_token %}
+            {% if from_workout %}
+                <input type="hidden" name="from" value="workout">
+            {% endif %}
             
             <div class="flex flex-col gap-1.5">
                 <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider">{% translate "Name" %}</label>
@@ -1180,6 +1183,10 @@
                         exerciseListContainer.insertBefore(newItem, exerciseListContainer.firstChild);
                     }
 
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
                     selectItem(newItem);
                     closeModal();
                 }

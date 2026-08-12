@@ -60,6 +60,12 @@ class WorkoutViewsTestCase(WgerTestCase):
         # Get the newly created slot entry
         new_entry = slot.entries.order_by('-order').first()
 
+        # Newly created set should be pending (not logged/completed)
+        from wger.manager.models import WorkoutSession
+        session = WorkoutSession.objects.filter(routine=self.routine).first()
+        if session:
+            self.assertFalse(session.logs.filter(slot_entry_id=new_entry.id).exists())
+
         # POST to delete set configuration (not the last one)
         response = self.client.post(url, {'action': 'delete_set_config', 'slot_entry_id': new_entry.id}, HTTP_HX_REQUEST='true')
         self.assertEqual(response.status_code, 200)

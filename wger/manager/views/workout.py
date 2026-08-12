@@ -382,17 +382,6 @@ def log_tailwind(request, routine_pk, day_pk):
                         SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
                         RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
                         WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
-
-                        WorkoutLog.objects.create(
-                            user=request.user,
-                            session=session,
-                            exercise_id=exercise.id,
-                            routine_id=routine_pk,
-                            slot_entry_id=slot_entry.id,
-                            repetitions=reps_val,
-                            weight=weight_val,
-                            date=timezone.now(),
-                        )
                         reset_routine_cache(day.routine)
 
             elif action == 'add_exercise_on_the_fly':

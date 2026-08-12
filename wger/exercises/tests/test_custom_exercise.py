@@ -51,3 +51,22 @@ class CustomExerciseTestCase(WgerTestCase):
         # Check native wger structures
         self.assertEqual(Exercise.objects.filter(uuid=cal_ex.id).count(), 1)
         self.assertEqual(Translation.objects.filter(name='Custom Handstand Push-up').count(), 1)
+        
+        # Check slot creation on day
+        self.assertEqual(self.day.slots.count(), 1)
+
+    def test_create_custom_exercise_standard_post(self):
+        url = reverse('manager:routine:add-custom-exercise', kwargs={
+            'routine_pk': self.routine.pk,
+            'day_pk': self.day.pk
+        })
+        
+        response = self.client.post(url, {
+            'name': 'Custom Planche Push-up',
+            'instructions': 'Get in planche.\nPush up.',
+            'skill_family': 'planche',
+            'target_muscle': 'chest',
+        })
+        
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.day.slots.count(), 1)

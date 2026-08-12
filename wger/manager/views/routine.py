@@ -34,7 +34,8 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
@@ -632,96 +633,146 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
         source_id = f"custom-{uuid.uuid4().hex[:8]}"
         slug = f"{slugify(name)}-{source_id}"
         equipment_name = 'weighted body weight' if weighted else 'body weight'
-        
+        eq_name = 'Dumbbells' if weighted else 'Body weight'
         instructions_list = [line.strip() for line in instructions.split('\n') if line.strip()]
 
-        cal_exercise = CalisthenicsExercise.objects.create(
-            source='custom',
-            source_exercise_id=source_id,
-            slug=slug,
-            name=name,
-            instructions=instructions_list,
-            target_muscle=target_muscle_name,
-            equipment=equipment_name,
-            skill_family=skill_family,
-            discipline='calisthenics',
-            is_published=True
-        )
+        existing_trans = Translation.objects.filter(name__iexact=name).first()
+        existing_cal = CalisthenicsExercise.objects.filter(name__iexact=name).first()
 
-        # 2. Create native Exercise
-        category, _ = ExerciseCategory.objects.get_or_create(name='Calisthenics')
-        default_license = License.objects.first()
-        if not default_license:
-            default_license = License.objects.create(
-                short_name='CC-BY-SA 4.0',
-                full_name='Creative Commons Attribution Share Alike 4.0'
+        if existing_trans and existing_trans.exercise:
+            base_exercise = existing_trans.exercise
+        elif existing_cal:
+            base_exercise = Exercise.objects.filter(uuid=existing_cal.id).first()
+        else:
+            base_exercise = None
+
+        if not base_exercise:
+            # 1. Create CalisthenicsExercise locally
+            source_id = f"custom-{uuid.uuid4().hex[:8]}"
+            slug = f"{slugify(name)}-{source_id}"
+
+            cal_exercise = CalisthenicsExercise.objects.create(
+                source='custom',
+                source_exercise_id=source_id,
+                slug=slug,
+                name=name,
+                instructions=instructions_list,
+                target_muscle=target_muscle_name,
+                equipment=equipment_name,
+                skill_family=skill_family,
+                discipline='calisthenics',
+                is_published=True
             )
-        
-        base_exercise = Exercise.objects.create(
-            uuid=cal_exercise.id,
-            category=category,
-            license=default_license
-        )
 
-        # 3. Associate equipment
-        eq_name = 'Dumbbells' if weighted else 'Body weight'
-        equipment, _ = Equipment.objects.get_or_create(name=eq_name)
-        base_exercise.equipment.add(equipment)
-
-        # 4. Associate target muscle
-        if target_muscle_name:
-            muscle, _ = Muscle.objects.get_or_create(
-                name=target_muscle_name.capitalize(),
-                defaults={'name_en': target_muscle_name, 'is_front': True}
+            # 2. Create native Exercise
+            category, _ = ExerciseCategory.objects.get_or_create(name='Calisthenics')
+            default_license = License.objects.first()
+            if not default_license:
+                default_license = License.objects.create(
+                    short_name='CC-BY-SA 4.0',
+                    full_name='Creative Commons Attribution Share Alike 4.0'
+                )
+            
+            base_exercise = Exercise.objects.create(
+                uuid=cal_exercise.id,
+                category=category,
+                license=default_license
             )
-            base_exercise.muscles.add(muscle)
 
-        # 5. Create English Translation
-        english_lang = Language.objects.filter(short_name='en').first()
-        if not english_lang:
-            english_lang = Language.objects.first()
-        if not english_lang:
-            english_lang = Language.objects.create(short_name='en', full_name='English')
+            # 3. Associate equipment
+            equipment, _ = Equipment.objects.get_or_create(name=eq_name)
+            base_exercise.equipment.add(equipment)
 
-        Translation.objects.create(
+            # 4. Associate target muscle
+            if target_muscle_name:
+                muscle, _ = Muscle.objects.get_or_create(
+                    name=target_muscle_name.capitalize(),
+                    defaults={'name_en': target_muscle_name, 'is_front': True}
+                )
+                base_exercise.muscles.add(muscle)
+
+            # 5. Create English Translation
+            english_lang = Language.objects.filter(short_name='en').first()
+            if not english_lang:
+                english_lang = Language.objects.first()
+            if not english_lang:
+                english_lang = Language.objects.create(short_name='en', full_name='English')
+
+            Translation.objects.create(
+                exercise=base_exercise,
+                language=english_lang,
+                name=name,
+                description="\n".join(instructions_list),
+                license=default_license
+            )
+
+            # 6. Create initial tags
+            tags = ['bodyweight', 'calisthenics', 'custom']
+            if weighted:
+                tags.append('weighted')
+            if skill_family != 'other':
+                tags.append(skill_family.replace('_', '-'))
+            for t in tags:
+                ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
+
+            # 7. Start background thread to push to Baserow
+            threading.Thread(
+                target=_async_push_to_baserow,
+                args=(name, instructions, skill_family, target_muscle_name, equipment_name),
+                daemon=True
+            ).start()
+
+        # 8. Add exercise to the routine day
+        day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
+        max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+        slot = Slot.objects.create(
+            day=day,
+            order=(max_order or 0) + 1,
+        )
+        slot_entry = SlotEntry.objects.create(
+            slot=slot,
             exercise=base_exercise,
-            language=english_lang,
-            name=name,
-            description="\n".join(instructions_list),
-            license=default_license
+            order=1,
         )
+        SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+        RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+        WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=0)
 
-        # 6. Create initial tags
-        tags = ['bodyweight', 'calisthenics', 'custom']
-        if weighted:
-            tags.append('weighted')
-        if skill_family != 'other':
-            tags.append(skill_family.replace('_', '-'))
-        for t in tags:
-            ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
-
-        # 7. Start background thread to push to Baserow
-        threading.Thread(
-            target=_async_push_to_baserow,
-            args=(name, instructions, skill_family, target_muscle_name, equipment_name),
-            daemon=True
-        ).start()
+        from wger.manager.helpers import reset_routine_cache
+        reset_routine_cache(day.routine)
 
         # Invalidate catalog cache so newly added exercise appears on refresh
-        current_version = cache.get('add_exercise_catalog_version', 1)
-        cache.set('add_exercise_catalog_version', current_version + 1)
+        from wger.manager.services.exercise_catalog import bump_catalog_version
+        bump_catalog_version()
 
-        # Return response with full attributes needed for frontend list item
-        return JsonResponse({
-            'status': 'success',
-            'id': base_exercise.id,
-            'name': name,
-            'muscles': target_muscle_name,
-            'equipment': eq_name,
-            'category': 'Calisthenics',
-            'is_calisthenics': True,
-            'skill_family': skill_family
-        })
+        from_workout = request.POST.get('from') == 'workout' or 'from=workout' in request.META.get('HTTP_REFERER', '')
+        if from_workout:
+            redirect_url = reverse('manager:day:overview', kwargs={'routine_pk': day.routine.pk, 'day_pk': day.pk})
+        else:
+            redirect_url = reverse('manager:routine:view', kwargs={'pk': day.routine.pk})
+
+        if request.headers.get('HX-Request'):
+            from django.http import HttpResponse
+            response = HttpResponse()
+            response['HX-Redirect'] = redirect_url
+            return response
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'success',
+                'id': base_exercise.id,
+                'name': name,
+                'muscles': target_muscle_name,
+                'equipment': eq_name,
+                'category': 'Calisthenics',
+                'is_calisthenics': True,
+                'skill_family': skill_family,
+                'redirect_url': redirect_url,
+            })
+
+        response = redirect(redirect_url)
+        response['HX-Redirect'] = redirect_url
+        return response
     except Exception as e:
         logger.error(f"Error creating custom exercise: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

@@ -75,6 +75,8 @@ def get_cached_exercise_catalog(language_code='it'):
         'i will be deleted'
     }
 
+    seen_names = set()
+
     for ex in exercise_qs:
         translation = ex.get_translation()
         cal = calisthenics_map.get(str(ex.uuid))
@@ -92,6 +94,11 @@ def get_cached_exercise_catalog(language_code='it'):
             
         if name and name.islower():
             name = name.title()
+
+        name_key = name.strip().lower()
+        if name_key in seen_names:
+            continue
+        seen_names.add(name_key)
             
         preview_url = cal.demo_media_url if (cal and cal.demo_media_url) else ex.demo_media_url
         skill_family = (cal.skill_family.replace('_', ' ').title() if (cal and cal.skill_family) else 'Other')
