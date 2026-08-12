@@ -362,22 +362,13 @@ def log_tailwind(request, routine_pk, day_pk):
                             else:
                                 reps_val = 10
 
-                        if req_weight is not None and str(req_weight).strip() not in ('', '0'):
+                        if req_weight is not None and str(req_weight).strip() != '':
                             try:
                                 weight_val = Decimal(str(req_weight))
                             except (TypeError, ValueError):
                                 weight_val = Decimal('0')
                         else:
-                            last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
-                            if (
-                                last_entry
-                                and hasattr(last_entry, 'weight_config')
-                                and last_entry.weight_config
-                                and last_entry.weight_config.weight is not None
-                            ):
-                                weight_val = Decimal(str(last_entry.weight_config.weight))
-                            else:
-                                weight_val = Decimal('0')
+                            weight_val = Decimal('0')
 
                         SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
                         RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)

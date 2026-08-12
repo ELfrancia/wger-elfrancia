@@ -465,7 +465,10 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
             if first_entry:
                 target_exercise = first_entry.exercise
                 
-        if target_exercise and reps and weight:
+        if weight is None or str(weight).strip() == '':
+            weight = 0
+
+        if target_exercise and reps:
             max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
             slot_entry = SlotEntry.objects.create(
                 slot=slot,
@@ -526,6 +529,8 @@ def update_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
                 rep_config.save()
                 
         if weight is not None:
+            if str(weight).strip() == '':
+                weight = 0
             weight_config, created = WeightConfig.objects.get_or_create(
                 slot_entry=entry,
                 iteration=1,

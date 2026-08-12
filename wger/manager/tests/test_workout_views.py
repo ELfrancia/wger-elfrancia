@@ -59,6 +59,7 @@ class WorkoutViewsTestCase(WgerTestCase):
 
         # Get the newly created slot entry
         new_entry = slot.entries.order_by('-order').first()
+        self.assertEqual(new_entry.weight_config.weight, 0)
 
         # Newly created set should be pending (not logged/completed)
         from wger.manager.models import WorkoutSession
