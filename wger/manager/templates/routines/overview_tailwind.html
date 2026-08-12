@@ -62,8 +62,13 @@
                data-category="{% if routine.category %}{{ routine.category|lower }}{% elif 'strength' in routine.name|lower or 'forza' in routine.name|lower %}strength{% else %}calisthenics{% endif %}">
                 
                 <!-- Background image overlay -->
+                {% if forloop.counter|divisibleby:2 %}
+                    {% static 'images/routines/gym_rack.jpg' as bg_img %}
+                {% else %}
+                    {% static 'images/routines/gym_barbell.jpg' as bg_img %}
+                {% endif %}
                 <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-40" 
-                     style="background-image: url('{% if forloop.counter|divisibleby:2 %}{% static 'images/routines/gym_rack.jpg' %}{% else %}{% static 'images/routines/gym_barbell.jpg' %}{% endif %}')">
+                     style="background-image: url('{{ bg_img }}')">
                 </div>
                 <div class="absolute inset-0 bg-gradient-to-t from-[#121214] via-[#121214]/30 to-transparent"></div>
                 
