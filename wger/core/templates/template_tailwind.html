@@ -36,7 +36,7 @@
       if ('caches' in window) {
         caches.keys().then(function(names) {
           names.forEach(function(name) {
-            if (name !== 'onyx-cache-v5') {
+            if (name !== 'onyx-cache-v6') {
               caches.delete(name);
             }
           });
@@ -46,7 +46,7 @@
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=5').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=6').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {

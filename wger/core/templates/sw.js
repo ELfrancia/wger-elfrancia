@@ -1,6 +1,5 @@
-const CACHE_NAME = 'onyx-cache-v5';
+const CACHE_NAME = 'onyx-cache-v6';
 const ASSETS_TO_CACHE = [
-  '/',
   '/static/images/logos/logo-192.png',
   '/static/images/logos/logo-512.png',
   '/static/images/favicon.png'
