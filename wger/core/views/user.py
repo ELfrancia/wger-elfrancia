@@ -273,9 +273,24 @@ def logout(request):
     Logout the user. For temporary users, delete them.
     """
     user = request.user
+    is_temp = False
+    user_id = None
+    if user and user.is_authenticated:
+        user_id = getattr(user, 'id', None)
+        try:
+            is_temp = getattr(user.userprofile, 'is_temporary', False)
+        except Exception:
+            is_temp = False
+
     django_logout(request)
-    if user.is_authenticated and user.userprofile.is_temporary:
-        user.delete()
+
+    if is_temp and user_id is not None:
+        try:
+            from django.contrib.auth.models import User
+            User.objects.filter(id=user_id).delete()
+        except Exception:
+            pass
+
     return HttpResponseRedirect(reverse('core:user:login'))
 
 

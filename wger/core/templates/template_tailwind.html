@@ -36,6 +36,7 @@
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {
             console.log('SW reg error:', err);

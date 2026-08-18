@@ -637,8 +637,10 @@ def _async_push_to_baserow(name, instructions, skill_family, target_muscle, equi
 
 
 @login_required
-@require_POST
 def add_custom_exercise_tailwind(request, routine_pk, day_pk):
+    if request.method != 'POST':
+        return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
     name = request.POST.get('name', '').strip()
     instructions = request.POST.get('instructions', '').strip()
     skill_family = request.POST.get('skill_family', 'other').strip()

@@ -400,12 +400,21 @@ urlpatterns += [
 ]
 
 
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.urls import re_path
+from django.views.static import serve
+
 #
-# URL for user uploaded files, served like this during development only
+# URL for static and media files
 #
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    # urlpatterns.append(path('__debug__/', include('debug_toolbar.urls')))
+urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns += [
+    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
 
 if settings.EXPOSE_PROMETHEUS_METRICS:
     urlpatterns += [path('prometheus/', include('django_prometheus.urls'))]
