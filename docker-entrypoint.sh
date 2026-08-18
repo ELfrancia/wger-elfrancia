@@ -25,7 +25,20 @@ with connection.cursor() as cursor:
         cursor.execute(\"ALTER TABLE manager_routine ADD COLUMN current_week INTEGER DEFAULT 1\")
     if 'total_weeks' not in r_cols:
         cursor.execute(\"ALTER TABLE manager_routine ADD COLUMN total_weeks INTEGER DEFAULT 4\")
+
+# Auto-cleanup any stale active sessions from past days
+try:
+    from django.utils import timezone
+    from wger.manager.models import WorkoutSession
+    stale_count = WorkoutSession.objects.filter(status='active', date__lt=timezone.now().date()).update(status='interrupted')
+    if stale_count > 0:
+        print(f'🧹 Ripulite {stale_count} sessioni workout rimaste attive da giorni precedenti.')
+except Exception as e:
+    print(f'Nota cleanup sessioni: {e}')
 " || true
+
+echo "📦 Raccolta file statici (collectstatic)..."
+python manage.py collectstatic --noinput || true
 
 echo "🚀 Avvio server di produzione (Gunicorn)..."
 if [ "$#" -gt 0 ]; then

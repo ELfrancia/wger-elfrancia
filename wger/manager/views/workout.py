@@ -89,19 +89,19 @@ def log_tailwind(request, routine_pk, day_pk):
         o_dt = datetime.datetime.combine(other_active.date, other_active.time_start or datetime.time.min)
         if timezone.is_naive(o_dt):
             o_dt = timezone.make_aware(o_dt)
-        if o_dt >= cutoff_24h:
+        if o_dt >= cutoff_24h and other_active.logs.exists():
             messages.warning(
                 request,
                 _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
             )
             return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
+        else:
+            WorkoutSession.objects.filter(id=other_active.id).update(status='interrupted')
 
     # If ?start=true is passed, we explicitly want to start a brand new session
     if request.GET.get('start') == 'true':
         WorkoutSession.objects.filter(
             user=request.user,
-            routine_id=routine_pk,
-            day=day,
             status='active'
         ).update(status='interrupted')
 
@@ -119,7 +119,7 @@ def log_tailwind(request, routine_pk, day_pk):
     # 1. Try to load existing active session from session key
     session_id = request.session.get(session_key)
     if session_id:
-        s = WorkoutSession.objects.filter(id=session_id, user=request.user).first()
+        s = WorkoutSession.objects.filter(id=session_id, user=request.user, status='active').first()
         if s:
             s_dt = datetime.datetime.combine(s.date, s.time_start or datetime.time.min)
             if timezone.is_naive(s_dt):
@@ -220,6 +220,7 @@ def log_tailwind(request, routine_pk, day_pk):
                     session.status = 'finished'
                     session.time_end = timezone.localtime(timezone.now()).time()
                     session.save()
+                    WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='finished')
                     if session_key in request.session:
                         del request.session[session_key]
                     return make_overview_redirect(request)
@@ -259,6 +260,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 if not session.time_end:
                     session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
+                WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='finished')
 
                 if request.POST.get('save_as_routine_day') == 'true':
                     target_routine_id = request.POST.get('target_routine_id')
@@ -281,6 +283,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 session.status = 'interrupted'
                 session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
+                WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='interrupted')
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)
@@ -290,6 +293,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 session.status = 'interrupted'
                 session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
+                WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='interrupted')
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)

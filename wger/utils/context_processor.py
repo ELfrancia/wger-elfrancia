@@ -89,13 +89,22 @@ def processor(request):
 
     if hasattr(request, 'user') and request.user.is_authenticated:
         try:
+            import datetime
+            from django.utils import timezone
             from wger.manager.models import WorkoutSession
             active_draft = WorkoutSession.objects.filter(
                 user=request.user,
                 status='active',
             ).select_related('day', 'routine').order_by('-date', '-time_start', '-id').first()
             if active_draft and active_draft.routine and active_draft.day:
-                context['active_draft_session'] = active_draft
+                a_dt = datetime.datetime.combine(active_draft.date, active_draft.time_start or datetime.time.min)
+                if timezone.is_naive(a_dt):
+                    a_dt = timezone.make_aware(a_dt)
+                cutoff_24h = timezone.now() - datetime.timedelta(hours=24)
+                if a_dt >= cutoff_24h:
+                    context['active_draft_session'] = active_draft
+                else:
+                    WorkoutSession.objects.filter(id=active_draft.id).update(status='interrupted')
         except Exception:
             pass
 

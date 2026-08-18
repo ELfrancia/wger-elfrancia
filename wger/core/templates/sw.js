@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wger-cache-v2';
+const CACHE_NAME = 'onyx-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/images/logos/logo-192.png',
@@ -8,10 +8,20 @@ const ASSETS_TO_CACHE = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(ASSETS_TO_CACHE);
-      })
+    caches.open(CACHE_NAME).then(async cache => {
+      await Promise.allSettled(
+        ASSETS_TO_CACHE.map(async url => {
+          try {
+            const response = await fetch(url, { cache: 'no-cache' });
+            if (response && response.ok) {
+              await cache.put(url, response);
+            }
+          } catch (err) {
+            console.warn('[SW] Non-critical cache skip for:', url, err);
+          }
+        })
+      );
+    })
   );
   self.skipWaiting();
 });

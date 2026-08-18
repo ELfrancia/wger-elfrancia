@@ -27,6 +27,7 @@ import uuid
 import requests
 
 # Django
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import (
@@ -37,6 +38,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 # wger
@@ -683,7 +685,7 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
             )
 
             # 2. Create native Exercise
-            category, _ = ExerciseCategory.objects.get_or_create(name='Calisthenics')
+            category, _created = ExerciseCategory.objects.get_or_create(name='Calisthenics')
             default_license = License.objects.first()
             if not default_license:
                 default_license = License.objects.create(
@@ -698,12 +700,12 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
             )
 
             # 3. Associate equipment
-            equipment, _ = Equipment.objects.get_or_create(name=eq_name)
+            equipment, _created = Equipment.objects.get_or_create(name=eq_name)
             base_exercise.equipment.add(equipment)
 
             # 4. Associate target muscle
             if target_muscle_name:
-                muscle, _ = Muscle.objects.get_or_create(
+                muscle, _created = Muscle.objects.get_or_create(
                     name=target_muscle_name.capitalize(),
                     defaults={'name_en': target_muscle_name, 'is_front': True}
                 )
@@ -769,13 +771,14 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
         else:
             redirect_url = reverse('manager:routine:view', kwargs={'pk': day.routine.pk})
 
-        if request.headers.get('HX-Request'):
-            from django.http import HttpResponse
-            response = HttpResponse()
-            response['HX-Redirect'] = redirect_url
-            return response
+        is_json_request = (
+            'application/json' in request.headers.get('Accept', '')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or request.content_type == 'application/json'
+            or request.POST.get('format') == 'json'
+        )
 
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if is_json_request:
             return JsonResponse({
                 'status': 'success',
                 'id': base_exercise.id,
@@ -788,10 +791,20 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
                 'redirect_url': redirect_url,
             })
 
+        if request.headers.get('HX-Request'):
+            from django.http import HttpResponse
+            response = HttpResponse()
+            response['HX-Redirect'] = redirect_url
+            return response
+
+        messages.success(request, _("Esercizio custom creato con successo!"))
         response = redirect(redirect_url)
         response['HX-Redirect'] = redirect_url
         return response
     except Exception as e:
         logger.error(f"Error creating custom exercise: {e}", exc_info=True)
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        if 'application/json' in request.headers.get('Accept', '') or request.content_type == 'application/json':
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        messages.error(request, _(f"Errore durante la creazione dell'esercizio: {e}"))
+        return redirect(reverse('manager:routine:view', kwargs={'pk': routine_pk}))
 
