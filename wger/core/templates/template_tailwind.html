@@ -32,10 +32,21 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+      // Clear any legacy broken cache stores from previous SW versions
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) {
+            if (name !== 'onyx-cache-v4') {
+              caches.delete(name);
+            }
+          });
+        });
+      }
+
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=4').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {

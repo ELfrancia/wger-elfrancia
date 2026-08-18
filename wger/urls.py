@@ -54,6 +54,20 @@ from wger.utils.generic_views import TextTemplateView
 from wger.weight.api import views as weight_api_views
 
 
+from django.views.decorators.cache import never_cache
+from django.template.response import TemplateResponse
+
+
+@never_cache
+def service_worker_view(request):
+    response = TemplateResponse(request, 'sw.js', content_type='application/javascript')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    response['Service-Worker-Allowed'] = '/'
+    return response
+
+
 #
 # REST API
 #
@@ -310,10 +324,7 @@ urlpatterns += [
     ),
     path(
         'sw.js',
-        TemplateView.as_view(
-            template_name='sw.js',
-            content_type='application/javascript',
-        ),
+        service_worker_view,
         name='service-worker',
     ),
     # allauth account pages are mounted without a language prefix: the OAuth
