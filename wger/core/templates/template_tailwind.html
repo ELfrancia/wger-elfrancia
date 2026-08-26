@@ -66,82 +66,10 @@
         }
       });
 
-      function toggleAppFullscreen() {
-        const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        if (!isFS) {
-          const docEl = document.documentElement;
-          if (docEl.requestFullscreen) {
-            docEl.requestFullscreen().then(() => {
-              sessionStorage.setItem('app_fullscreen', 'true');
-              window.updateFullscreenUI(true);
-            }).catch(err => {
-              console.log('Fullscreen error:', err);
-            });
-          } else if (docEl.webkitRequestFullscreen) {
-            docEl.webkitRequestFullscreen();
-            sessionStorage.setItem('app_fullscreen', 'true');
-            window.updateFullscreenUI(true);
-          }
-        } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen().then(() => {
-              sessionStorage.setItem('app_fullscreen', 'false');
-              window.updateFullscreenUI(false);
-            }).catch(err => {
-              console.log('Exit fullscreen error:', err);
-            });
-          } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-            sessionStorage.setItem('app_fullscreen', 'false');
-            window.updateFullscreenUI(false);
-          }
-        }
-      }
+      // Fullscreen mode disabled: Native status bar and Dynamic Island remain visible
+      function toggleAppFullscreen() {}
+      window.updateFullscreenUI = function() {};
 
-      window.updateFullscreenUI = function(isFS) {
-        const isCurrentlyFS = isFS !== undefined ? isFS : !!(document.fullscreenElement || document.webkitFullscreenElement);
-        document.querySelectorAll('.fullscreen-toggle-icon, #fullscreen-toggle-icon').forEach(icon => {
-          icon.textContent = isCurrentlyFS ? 'fullscreen_exit' : 'fullscreen';
-        });
-      };
-
-      document.addEventListener('fullscreenchange', () => {
-        const isFS = !!document.fullscreenElement;
-        sessionStorage.setItem('app_fullscreen', isFS ? 'true' : 'false');
-        window.updateFullscreenUI(isFS);
-      });
-
-      document.addEventListener('webkitfullscreenchange', () => {
-        const isFS = !!document.webkitFullscreenElement;
-        sessionStorage.setItem('app_fullscreen', isFS ? 'true' : 'false');
-        window.updateFullscreenUI(isFS);
-      });
-
-      function setupFullscreenRestorer() {
-        window.updateFullscreenUI();
-        if (sessionStorage.getItem('app_fullscreen') === 'true' && !document.fullscreenElement && !document.webkitFullscreenElement) {
-          const tryRestore = () => {
-            if (sessionStorage.getItem('app_fullscreen') === 'true' && !document.fullscreenElement && !document.webkitFullscreenElement) {
-              const docEl = document.documentElement;
-              if (docEl.requestFullscreen) {
-                docEl.requestFullscreen().catch(() => {});
-              } else if (docEl.webkitRequestFullscreen) {
-                docEl.webkitRequestFullscreen();
-              }
-            }
-            document.removeEventListener('click', tryRestore, true);
-            document.removeEventListener('touchstart', tryRestore, true);
-          };
-          document.addEventListener('click', tryRestore, { once: true, capture: true });
-          document.addEventListener('touchstart', tryRestore, { once: true, capture: true });
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupFullscreenRestorer);
-      } else {
-        setupFullscreenRestorer();
-      }
 
       tailwind.config = {
         darkMode: "class",

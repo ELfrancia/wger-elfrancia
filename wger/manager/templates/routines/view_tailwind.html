@@ -208,7 +208,7 @@
                                                                                     
                                                                                     <!-- Weight Input -->
                                                                                     <div class="flex items-center gap-1 shrink-0">
-                                                                                        <input type="number" name="weight" value="{{ entry.weight_config.weight }}" min="0" step="0.1" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                                        <input type="text" inputmode="decimal" step="any" name="weight" value="{{ entry.weight_config.weight }}" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
                                                                                         <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
                                                                                     </div>
                                                                                 </div> 
@@ -251,7 +251,7 @@
                                                                  <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
 
                                                                  <!-- Weight Input -->
-                                                                 <input type="number" name="weight" placeholder="0" min="0" step="0.5" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50">
+                                                                 <input type="text" inputmode="decimal" step="any" name="weight" placeholder="0" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50" oninput="this.value = this.value.replace(',', '.');">
                                                                  <span class="text-[9px] text-[#caf300]/90 font-extrabold uppercase select-none">KG</span>
 
                                                                  <div class="h-3.5 w-px bg-zinc-800/80 mx-1 shrink-0 hidden sm:block"></div>
@@ -364,7 +364,7 @@
                                                                          
                                                                          <!-- Weight Input -->
                                                                          <div class="flex items-center gap-1 shrink-0">
-                                                                             <input type="number" name="weight" value="{{ entry.weight_config.weight }}" min="0" step="0.1" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                             <input type="text" inputmode="decimal" step="any" name="weight" value="{{ entry.weight_config.weight }}" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
                                                                              <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
                                                                          </div>
                                                                      </div>   
@@ -408,7 +408,7 @@
                                                             <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
 
                                                             <!-- Weight Input -->
-                                                            <input type="number" name="weight" placeholder="0" min="0" step="0.5" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50">
+                                                            <input type="text" inputmode="decimal" step="any" name="weight" placeholder="0" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50" oninput="this.value = this.value.replace(',', '.');">
                                                             <span class="text-[9px] text-[#caf300]/90 font-extrabold uppercase select-none">KG</span>
 
                                                             <div class="h-3.5 w-px bg-zinc-800/80 mx-1 shrink-0 hidden sm:block"></div>

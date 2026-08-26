@@ -75,8 +75,8 @@ def api_v1_routines_list(request):
         items.append({
             'id': r.id,
             'name': r.name or f"Routine #{r.id}",
-            'created': r.creation_date.isoformat() if r.creation_date else None,
-            'is_active': r.is_active,
+            'created': r.created.isoformat() if hasattr(r, 'created') and r.created else None,
+            'is_active': getattr(r, 'is_active', True),
         })
     return Response({'items': items})
 
@@ -89,11 +89,11 @@ def api_v1_routine_detail(request, pk):
     """
     routine = get_object_or_404(Routine, pk=pk, user=request.user)
     days_data = []
-    for day in routine.day_set.all():
+    for day in routine.days.all():
         slots_data = []
-        for slot in day.slot_set.all():
+        for slot in day.slots.all():
             entries_data = []
-            for entry in slot.slotentry_set.all():
+            for entry in slot.entries.all():
                 entries_data.append({
                     'id': entry.id,
                     'exercise_id': entry.exercise.id,

@@ -472,16 +472,8 @@
 
         if (ex.image) {
             const url = ex.image.toLowerCase();
-            if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov')) {
-                const vid = document.createElement('video');
-                vid.src = ex.image;
-                vid.className = 'w-full h-full object-cover';
-                vid.autoplay = true;
-                vid.loop = true;
-                vid.muted = true;
-                vid.playsInline = true;
-                imgDiv.appendChild(vid);
-            } else {
+            const isVideo = url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') || url.includes('/video/');
+            if (!isVideo) {
                 const img = document.createElement('img');
                 img.src = ex.image;
                 img.alt = ex.name;
@@ -495,6 +487,11 @@
                     imgDiv.appendChild(fallback);
                 };
                 imgDiv.appendChild(img);
+            } else {
+                const fallback = document.createElement('span');
+                fallback.className = 'material-symbols-outlined text-[#caf300]/80 group-hover:text-[#caf300] text-lg transition-colors';
+                fallback.textContent = 'fitness_center';
+                imgDiv.appendChild(fallback);
             }
         } else {
             const fallback = document.createElement('span');
@@ -687,10 +684,6 @@
                 filterExercises();
             });
         });
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener('input', filterExercises);
     }
 
     if (muscleSelect) {
@@ -1154,40 +1147,31 @@
             })
             .then(data => {
                 if (data.status === 'success') {
-                    const newItem = document.createElement('div');
-                    newItem.className = "exercise-item group flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-[#18181a] hover:bg-[#202023] hover:border-[#caf300]/40 transition-all duration-150 cursor-pointer select-none min-h-[64px]";
-                    newItem.setAttribute('data-id', data.id);
-                    newItem.setAttribute('data-name', data.name);
-                    newItem.setAttribute('data-muscles', data.muscles || '');
-                    newItem.setAttribute('data-equipment', data.equipment || '');
-                    newItem.setAttribute('data-category', data.category || 'Calisthenics');
-                    newItem.setAttribute('data-calisthenics', data.is_calisthenics ? 'true' : 'false');
-                    newItem.setAttribute('data-skill', data.skill_family || '');
                     const searchBlob = `${data.name} ${data.skill_family || ''} ${data.muscles || ''} ${data.equipment || ''} ${data.category || ''}`.toLowerCase();
-                    newItem.setAttribute('data-search-blob', searchBlob);
-                    
-                    newItem.innerHTML = `
-                        <div class="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div class="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#0d0d0e] border border-white/[0.08] flex items-center justify-center">
-                                <span class="material-symbols-outlined text-zinc-500 text-lg">fitness_center</span>
-                            </div>
-                            <div class="flex min-w-0 flex-1 items-center">
-                                <span class="text-sm font-bold text-zinc-100 group-hover:text-[#caf300] transition-colors truncate leading-snug">${data.name}</span>
-                            </div>
-                        </div>
-                        <div class="selected-indicator text-zinc-600 group-hover:text-[#caf300] transition-colors flex-shrink-0 ml-3">
-                            <span class="material-symbols-outlined text-xl">radio_button_unchecked</span>
-                        </div>
-                    `;
+                    const newExObj = {
+                        id: data.id,
+                        name: data.name,
+                        category: data.category || 'Calisthenics',
+                        muscles: data.muscles ? [data.muscles] : [],
+                        equipment: data.equipment ? [data.equipment] : [],
+                        skill_family: data.skill_family || 'Other',
+                        is_calisthenics: data.is_calisthenics === true,
+                        image: '',
+                        search_blob: searchBlob
+                    };
 
-                    if (exerciseListContainer) {
-                        exerciseListContainer.insertBefore(newItem, exerciseListContainer.firstChild);
-                    }
+                    exerciseCatalog.unshift(newExObj);
 
                     if (data.redirect_url) {
                         window.location.href = data.redirect_url;
                         return;
                     }
+
+                    const newItem = createExerciseCard(newExObj);
+                    if (exerciseListContainer) {
+                        exerciseListContainer.insertBefore(newItem, exerciseListContainer.firstChild);
+                    }
+
                     selectItem(newItem);
                     closeModal();
                 }

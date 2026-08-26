@@ -68,10 +68,14 @@
 
     <!-- Adjustment controls and Presets -->
     <div id="overlay-controls-container" class="flex flex-col items-center gap-6 w-full max-w-sm mb-12">
-        <!-- Adjust +/- Buttons -->
-        <div class="flex items-center justify-center gap-6">
+        <!-- Adjust +/- and Play/Pause Buttons -->
+        <div class="flex items-center justify-center gap-4">
             <button type="button" onclick="adjustTimer(-10)" class="w-12 h-12 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-white/30 text-white flex items-center justify-center transition-all">
                 <span class="material-symbols-outlined text-xl">remove</span>
+            </button>
+            <button id="overlay-btn-timer-play" type="button" onclick="toggleTimer()" class="px-6 py-3 rounded-full bg-[#caf300]/10 border border-[#caf300]/20 hover:border-[#caf300] text-[#caf300] text-sm font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-xl" id="overlay-icon-timer-play">play_arrow</span>
+                <span id="overlay-text-timer-play">{% translate "Start" %}</span>
             </button>
             <button type="button" onclick="adjustTimer(10)" class="w-12 h-12 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-white/30 text-white flex items-center justify-center transition-all">
                 <span class="material-symbols-outlined text-xl">add</span>
@@ -565,28 +569,6 @@
         </div>
     </div>
 </div>
-
-<!-- Floating Mini Timer Overlay (Positioned above floating navigation dock) -->
-<div id="mini-timer-overlay" class="fixed bottom-[99px] left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-40 bg-[#121316]/95 border border-[#caf300]/30 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md rounded-full px-4 py-2.5 flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
-    <!-- Clickable timer display section -->
-    <button type="button" onclick="openGlobalTimerOptionsModal()" class="flex items-center gap-2 group cursor-pointer" title="{% translate 'Opzioni Timer' %}">
-        <span id="mini-timer-icon" class="material-symbols-outlined text-[#caf300] text-lg group-hover:scale-110 transition-transform">timer</span>
-        <span id="mini-timer-display" class="font-display text-base font-black text-[#caf300] tracking-tight tabular-nums">00:45</span>
-        <span class="material-symbols-outlined text-xs text-zinc-400">unfold_more</span>
-    </button>
-
-    <div class="h-4 w-px bg-white/10"></div>
-
-    <!-- Play/Pause Button -->
-    <button id="btn-mini-timer-play" type="button" onclick="toggleTimer()" class="w-8 h-8 rounded-full bg-white/[0.05] border border-white/10 hover:border-[#caf300]/50 text-white hover:text-[#caf300] flex items-center justify-center transition-all">
-        <span id="icon-mini-timer-play" class="material-symbols-outlined text-sm">play_arrow</span>
-    </button>
-
-    <!-- Termina Timer Button -->
-    <button id="btn-mini-timer-stop" type="button" onclick="stopTimer()" class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/30 text-red-400 hover:text-red-300 flex items-center justify-center transition-all" title="{% translate 'Termina Timer' %}">
-        <span class="material-symbols-outlined text-sm">stop</span>
-    </button>
-</div>
 {% endblock %}
 
 {% block extra_body %}
@@ -611,10 +593,9 @@
     const iconPlay = document.getElementById('icon-timer-play');
     const textPlay = document.getElementById('text-timer-play');
 
-    const miniTimerOverlay = document.getElementById('mini-timer-overlay');
-    const miniTimerIcon = document.getElementById('mini-timer-icon');
-    const miniTimerDisplay = document.getElementById('mini-timer-display');
-    const iconMiniPlay = document.getElementById('icon-mini-timer-play');
+    const overlayBtnPlay = document.getElementById('overlay-btn-timer-play');
+    const overlayIconPlay = document.getElementById('overlay-icon-timer-play');
+    const overlayTextPlay = document.getElementById('overlay-text-timer-play');
 
     let audioCtx = null;
     let isInlineTimerVisible = true;
@@ -705,18 +686,6 @@
             timerDisplay.classList.remove('text-red-500', 'animate-pulse');
             timerDisplay.classList.add('text-[#caf300]');
         }
-        if (miniTimerOverlay) {
-            miniTimerOverlay.classList.remove('bg-[#caf300]');
-            miniTimerOverlay.classList.add('bg-[#121316]/95');
-        }
-        if (miniTimerDisplay) {
-            miniTimerDisplay.classList.remove('text-black', 'animate-pulse');
-            miniTimerDisplay.classList.add('text-[#caf300]');
-        }
-        if (miniTimerIcon) {
-            miniTimerIcon.classList.remove('text-black', 'animate-pulse');
-            miniTimerIcon.classList.add('text-[#caf300]');
-        }
     }
 
     function updateDisplay() {
@@ -726,7 +695,6 @@
 
         if (timerDisplay) timerDisplay.innerText = timeStr;
         if (overlayTimerDisplay) overlayTimerDisplay.innerText = timeStr;
-        if (miniTimerDisplay) miniTimerDisplay.innerText = timeStr;
 
         if (msLeft <= 0 && (isRunning || hasNotifiedZero)) {
             // Expired state: Turn screen yellow-green, make text black, show TEMPO SCADUTO
@@ -756,18 +724,6 @@
             if (timerDisplay) {
                 timerDisplay.classList.add('text-red-500', 'animate-pulse');
                 timerDisplay.classList.remove('text-[#caf300]');
-            }
-            if (miniTimerOverlay) {
-                miniTimerOverlay.classList.add('bg-[#caf300]');
-                miniTimerOverlay.classList.remove('bg-[#121316]/95');
-            }
-            if (miniTimerDisplay) {
-                miniTimerDisplay.classList.add('text-black', 'animate-pulse');
-                miniTimerDisplay.classList.remove('text-[#caf300]');
-            }
-            if (miniTimerIcon) {
-                miniTimerIcon.classList.add('text-black', 'animate-pulse');
-                miniTimerIcon.classList.remove('text-[#caf300]');
             }
         }
 
@@ -845,13 +801,6 @@
 
     function updateMiniTimerVisibility() {
         window.isInlineTimerVisible = isInlineTimerVisible;
-        // The persistent navigation bubble is the sole floating timer.  Keeping
-        // this page-specific bubble hidden avoids two elements fighting for the
-        // same position and producing a visible flash while scrolling or ticking.
-        if (miniTimerOverlay) {
-            miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-            miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
-        }
         if (typeof updateGlobalMiniTimer === 'function') {
             updateGlobalMiniTimer();
         }
@@ -879,12 +828,29 @@
             openOverlay();
         }
 
+        try {
+            const sec = Math.ceil(remainingMs / 1000);
+            if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
+                window.AndroidTimer.startTimer(sec, "Recupero in corso");
+            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                window.Capacitor.Plugins.WorkoutTimer.startTimer({
+                    durationSeconds: sec,
+                    title: "Recupero in corso"
+                });
+            }
+        } catch(e) {}
+
         if (textPlay) textPlay.innerText = "{% translate 'Pause' %}";
         if (iconPlay) iconPlay.innerText = "pause";
-        if (iconMiniPlay) iconMiniPlay.innerText = "pause";
+        if (overlayTextPlay) overlayTextPlay.innerText = "{% translate 'Pause' %}";
+        if (overlayIconPlay) overlayIconPlay.innerText = "pause";
         if (btnPlay) {
             btnPlay.classList.add('bg-[#caf300]/10', 'border-[#caf300]/20', 'text-[#caf300]');
             btnPlay.classList.remove('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
+        }
+        if (overlayBtnPlay) {
+            overlayBtnPlay.classList.add('bg-[#caf300]/10', 'border-[#caf300]/20', 'text-[#caf300]');
+            overlayBtnPlay.classList.remove('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
         }
 
         updateDisplay();
@@ -922,6 +888,15 @@
             clearInterval(timerInterval);
             timerInterval = null;
         }
+
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
+                window.AndroidTimer.stopTimer();
+            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                window.Capacitor.Plugins.WorkoutTimer.pauseTimer();
+            }
+        } catch(e) {}
+
         resetTimerControls();
         updateDisplay();
         saveTimerStateToStorage();
@@ -930,10 +905,15 @@
     function resetTimerControls() {
         if (textPlay) textPlay.innerText = "{% translate 'Start' %}";
         if (iconPlay) iconPlay.innerText = "play_arrow";
-        if (iconMiniPlay) iconMiniPlay.innerText = "play_arrow";
+        if (overlayTextPlay) overlayTextPlay.innerText = "{% translate 'Start' %}";
+        if (overlayIconPlay) overlayIconPlay.innerText = "play_arrow";
         if (btnPlay) {
             btnPlay.classList.remove('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
             btnPlay.classList.add('bg-[#caf300]/10', 'border-[#caf300]/20', 'text-[#caf300]');
+        }
+        if (overlayBtnPlay) {
+            overlayBtnPlay.classList.remove('bg-amber-500/10', 'border-amber-500/20', 'text-amber-500');
+            overlayBtnPlay.classList.add('bg-[#caf300]/10', 'border-[#caf300]/20', 'text-[#caf300]');
         }
     }
 
@@ -955,6 +935,16 @@
         remainingMs = durationSeconds * 1000;
         hasNotifiedZero = false;
 
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
+                window.AndroidTimer.stopTimer();
+                window.AndroidTimer.stopAlarm();
+            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                window.Capacitor.Plugins.WorkoutTimer.stopTimer();
+                window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+            }
+        } catch(e) {}
+
         clearExpiringStyles();
         resetTimerControls();
         updateDisplay();
@@ -962,10 +952,6 @@
             localStorage.removeItem('onyx_active_rest_timer');
         } catch (e) {}
 
-        if (miniTimerOverlay) {
-            miniTimerOverlay.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-            miniTimerOverlay.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
-        }
         if (typeof updateGlobalMiniTimer === 'function') {
             updateGlobalMiniTimer();
         }
@@ -988,6 +974,17 @@
         remainingMs = newMs;
         if (isRunning) {
             startedAt = Date.now();
+            try {
+                const sec = Math.ceil(remainingMs / 1000);
+                if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
+                    window.AndroidTimer.startTimer(sec, "Recupero in corso");
+                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                    window.Capacitor.Plugins.WorkoutTimer.startTimer({
+                        durationSeconds: sec,
+                        title: "Recupero in corso"
+                    });
+                }
+            } catch(e) {}
         }
         hasNotifiedZero = false;
 
@@ -1069,7 +1066,7 @@
     window.applyCustomTimer = applyCustomTimer;
 
     function playBeepAndVibrate() {
-        // Web Audio API synthesized tone
+        // Web Audio API synthesized harmonic chime sequence
         try {
             const ctx = getAudioContext();
             if (ctx) {
@@ -1078,38 +1075,49 @@
                 }
                 const now = ctx.currentTime;
                 
-                // Tone 1: 880Hz (A5)
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(880, now);
-                gain1.gain.setValueAtTime(0.3, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-                osc1.connect(gain1);
-                gain1.connect(ctx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.18);
+                // 3 ascending tones: 880Hz (A5), 988Hz (B5), 1175Hz (D6)
+                const sequence = [
+                    { freq: 880, start: now, dur: 0.08, gain: 0.28 },
+                    { freq: 988, start: now + 0.10, dur: 0.08, gain: 0.32 },
+                    { freq: 1175, start: now + 0.20, dur: 0.09, gain: 0.36 }
+                ];
 
-                // Tone 2: 1174.66Hz (D6)
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(1174.66, now + 0.22);
-                gain2.gain.setValueAtTime(0.35, now + 0.22);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.start(now + 0.22);
-                osc2.stop(now + 0.45);
+                sequence.forEach(step => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(step.freq, step.start);
+                    gain.gain.setValueAtTime(step.gain, step.start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, step.start + step.dur);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(step.start);
+                    osc.stop(step.start + step.dur);
+                });
+
+                // Final resonant chime chord (1318.5Hz E6 + 1760Hz A6 with rich decay)
+                const chimeStart = now + 0.32;
+                [1318.5, 1760].forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = idx === 0 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(freq, chimeStart);
+                    gain.gain.setValueAtTime(0.35 / (idx + 1), chimeStart);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, chimeStart + 0.7);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(chimeStart);
+                    osc.stop(chimeStart + 0.7);
+                });
             }
         } catch (e) {
             console.warn("Web Audio API beep error:", e);
         }
 
-        // Vibration API fallback
+        // Vibration API
         try {
             if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
+                navigator.vibrate([150, 80, 150, 80, 350]);
             }
         } catch (e) {
             console.warn("Vibration API error:", e);
@@ -1225,11 +1233,6 @@
         
         // Update progress bar instantly
         updateProgressBar();
-
-        // 4. Smoothly open timer overlay modal after 750ms slider completion
-        setTimeout(() => {
-            openOverlay();
-        }, 750);
     }
 
     function handleSetUncheck(form) {
@@ -1531,7 +1534,7 @@
                         startedAt = Date.now();
                         hasNotifiedZero = false;
                         clearExpiringStyles();
-                        startCountdown();
+                        startCountdown(true);
                     }
                 }
             }

@@ -6,9 +6,6 @@
             <h1 class="text-md text-white tracking-tight font-extrabold uppercase font-display">ONYX CLUB</h1>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="toggleAppFullscreen()" class="w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-[#caf300]/10 hover:border-[#caf300]/20 text-[#888888] hover:text-[#caf300] transition-all duration-200" title="{% translate 'Modalità Schermo Intero / Standalone' %}">
-                <span class="fullscreen-toggle-icon material-symbols-outlined text-lg">fullscreen</span>
-            </button>
             <button class="w-9 h-9 flex items-center justify-center hover:opacity-80 transition-opacity">
                 <span class="material-symbols-outlined text-primary text-xl">notifications</span>
             </button>
@@ -92,7 +89,7 @@
 </nav>
 
 <!-- Global Floating Mini Timer Bubble (Above Floating Navigation Dock) -->
-<div id="global-mini-timer-bubble" onclick="openGlobalTimerOptionsModal()" class="fixed bottom-[99px] left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-40 bg-[#121316]/95 border-2 border-[#caf300]/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none select-none min-h-[52px]" title="{% translate 'Opzioni Timer / Workout' %}">
+<div id="global-mini-timer-bubble" onclick="openGlobalTimerOptionsModal()" class="fixed bottom-[calc(82px+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 bg-[#121316]/95 border-2 border-[#caf300]/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none select-none min-h-[52px]" title="{% translate 'Opzioni Timer / Workout' %}">
     <div id="global-mini-timer-dot" class="w-3 h-3 rounded-full bg-[#caf300] animate-pulse shadow-[0_0_10px_#caf300]"></div>
     <span id="global-mini-timer-icon" class="material-symbols-outlined text-[#caf300] text-xl">timer</span>
     <span id="global-mini-timer-display" class="font-display text-base font-black text-white tracking-tight tabular-nums">00:45</span>
@@ -325,6 +322,16 @@
             localStorage.removeItem('onyx_active_rest_timer');
         } catch(e) {}
 
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
+                window.AndroidTimer.stopAlarm();
+                window.AndroidTimer.stopTimer();
+            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+                window.Capacitor.Plugins.WorkoutTimer.stopTimer();
+            }
+        } catch(e) {}
+
         if (typeof window.stopTimer === 'function') {
             window.stopTimer();
         } else if (typeof stopTimer === 'function') {
@@ -492,4 +499,129 @@
     }
     window.globalMiniTimerInterval = window.setInterval(updateGlobalMiniTimer, 500);
     document.addEventListener('DOMContentLoaded', updateGlobalMiniTimer);
+
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+        try {
+            window.Capacitor.Plugins.WorkoutTimer.addListener('onTimerExpired', () => {
+                const raw = localStorage.getItem('onyx_active_rest_timer');
+                if (raw) {
+                    try {
+                        const s = JSON.parse(raw);
+                        s.remainingMs = 0;
+                        s.isRunning = false;
+                        s.hasNotifiedZero = true;
+                        localStorage.setItem('onyx_active_rest_timer', JSON.stringify(s));
+                    } catch(e) {}
+                }
+                updateGlobalMiniTimer();
+            });
+            window.Capacitor.Plugins.WorkoutTimer.addListener('onTimerStopped', () => {
+                try {
+                    localStorage.removeItem('onyx_active_rest_timer');
+                } catch(e) {}
+                updateGlobalMiniTimer();
+            });
+        } catch(e) {}
+    }
+
+    function hasOpenModals() {
+        const photoModal = document.getElementById('condition-photo-modal');
+        if (photoModal && !photoModal.classList.contains('hidden') && !photoModal.classList.contains('opacity-0')) return true;
+
+        const customTimerModal = document.getElementById('custom-timer-modal');
+        if (customTimerModal && !customTimerModal.classList.contains('hidden') && !customTimerModal.classList.contains('opacity-0')) return true;
+
+        const finishModal = document.getElementById('finish-workout-review-modal');
+        if (finishModal && !finishModal.classList.contains('hidden') && !finishModal.classList.contains('opacity-0')) return true;
+
+        const exitModal = document.getElementById('custom-exit-modal');
+        if (exitModal && !exitModal.classList.contains('hidden') && !exitModal.classList.contains('opacity-0')) return true;
+
+        const globalTimerModal = document.getElementById('global-timer-options-modal');
+        if (globalTimerModal && !globalTimerModal.classList.contains('hidden') && !globalTimerModal.classList.contains('opacity-0')) return true;
+
+        const quickAction = document.getElementById('onyx-quick-action-overlay');
+        if (quickAction && !quickAction.classList.contains('opacity-0') && !quickAction.classList.contains('pointer-events-none')) return true;
+
+        const restTimerOverlay = document.getElementById('rest-timer-overlay');
+        if (restTimerOverlay && !restTimerOverlay.classList.contains('hidden')) return true;
+
+        const dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
+        for (let i = 0; i < dialogs.length; i++) {
+            const d = dialogs[i];
+            if (!d.classList.contains('hidden') && !d.classList.contains('opacity-0')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function closeTopModal() {
+        const photoModal = document.getElementById('condition-photo-modal');
+        if (photoModal && !photoModal.classList.contains('hidden') && !photoModal.classList.contains('opacity-0')) {
+            if (typeof window.closeConditionPhotoModal === 'function') window.closeConditionPhotoModal();
+            else if (typeof closeConditionPhotoModal === 'function') closeConditionPhotoModal();
+            else photoModal.classList.add('hidden');
+            return true;
+        }
+
+        const customTimerModal = document.getElementById('custom-timer-modal');
+        if (customTimerModal && !customTimerModal.classList.contains('hidden') && !customTimerModal.classList.contains('opacity-0')) {
+            if (typeof window.closeCustomTimerModal === 'function') window.closeCustomTimerModal();
+            else if (typeof closeCustomTimerModal === 'function') closeCustomTimerModal();
+            else customTimerModal.classList.add('hidden');
+            return true;
+        }
+
+        const finishModal = document.getElementById('finish-workout-review-modal');
+        if (finishModal && !finishModal.classList.contains('hidden') && !finishModal.classList.contains('opacity-0')) {
+            if (typeof window.closeFinishWorkoutReviewModal === 'function') window.closeFinishWorkoutReviewModal();
+            else if (typeof closeFinishWorkoutReviewModal === 'function') closeFinishWorkoutReviewModal();
+            else finishModal.classList.add('hidden');
+            return true;
+        }
+
+        const exitModal = document.getElementById('custom-exit-modal');
+        if (exitModal && !exitModal.classList.contains('hidden') && !exitModal.classList.contains('opacity-0')) {
+            if (typeof window.closeExitModal === 'function') window.closeExitModal();
+            else if (typeof closeExitModal === 'function') closeExitModal();
+            else exitModal.classList.add('hidden');
+            return true;
+        }
+
+        const globalTimerModal = document.getElementById('global-timer-options-modal');
+        if (globalTimerModal && !globalTimerModal.classList.contains('hidden') && !globalTimerModal.classList.contains('opacity-0')) {
+            closeGlobalTimerOptionsModal();
+            return true;
+        }
+
+        const quickAction = document.getElementById('onyx-quick-action-overlay');
+        if (quickAction && !quickAction.classList.contains('opacity-0') && !quickAction.classList.contains('pointer-events-none')) {
+            toggleQuickActionMenu();
+            return true;
+        }
+
+        const restTimerOverlay = document.getElementById('rest-timer-overlay');
+        if (restTimerOverlay && !restTimerOverlay.classList.contains('hidden')) {
+            if (typeof window.closeOverlay === 'function') window.closeOverlay();
+            else if (typeof closeOverlay === 'function') closeOverlay();
+            else restTimerOverlay.classList.add('hidden');
+            return true;
+        }
+
+        const dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
+        for (let i = dialogs.length - 1; i >= 0; i--) {
+            const d = dialogs[i];
+            if (!d.classList.contains('hidden') && !d.classList.contains('opacity-0')) {
+                d.classList.add('hidden');
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    window.hasOpenModals = hasOpenModals;
+    window.closeTopModal = closeTopModal;
 </script>

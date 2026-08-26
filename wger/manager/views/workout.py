@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
-from decimal import Decimal
+import decimal
+from decimal import Decimal, DecimalException
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import models as django_models
@@ -331,8 +332,9 @@ def log_tailwind(request, routine_pk, day_pk):
 
                                 if post_weight is not None and str(post_weight).strip() != '':
                                     try:
-                                        weight = Decimal(str(post_weight))
-                                    except (TypeError, ValueError):
+                                        clean_w = str(post_weight).strip().replace(',', '.')
+                                        weight = Decimal(clean_w)
+                                    except (decimal.DecimalException, ValueError, TypeError):
                                         weight = None
 
                                 # 2. Fallback to reps_config / weight_config on slot_entry
@@ -342,7 +344,11 @@ def log_tailwind(request, routine_pk, day_pk):
 
                                 if weight is None and hasattr(slot_entry, 'weight_config') and slot_entry.weight_config:
                                     if slot_entry.weight_config.weight is not None:
-                                        weight = Decimal(str(slot_entry.weight_config.weight))
+                                        try:
+                                            clean_w = str(slot_entry.weight_config.weight).strip().replace(',', '.')
+                                            weight = Decimal(clean_w)
+                                        except (decimal.DecimalException, ValueError, TypeError):
+                                            weight = Decimal('0')
 
                                 # 3. Fallback to sibling set configs if reps is still None
                                 if reps is None:
@@ -413,8 +419,9 @@ def log_tailwind(request, routine_pk, day_pk):
 
                         if req_weight is not None and str(req_weight).strip() != '':
                             try:
-                                weight_val = Decimal(str(req_weight))
-                            except (TypeError, ValueError):
+                                clean_w = str(req_weight).strip().replace(',', '.')
+                                weight_val = Decimal(clean_w)
+                            except (decimal.DecimalException, ValueError, TypeError):
                                 weight_val = Decimal('0')
                         else:
                             weight_val = Decimal('0')
@@ -446,8 +453,9 @@ def log_tailwind(request, routine_pk, day_pk):
                 req_weight = request.POST.get('weight')
                 if req_weight is not None and str(req_weight).strip() not in ('', '0'):
                     try:
-                        weight_val = Decimal(str(req_weight))
-                    except (TypeError, ValueError):
+                        clean_w = str(req_weight).strip().replace(',', '.')
+                        weight_val = Decimal(clean_w)
+                    except (decimal.DecimalException, ValueError, TypeError):
                         weight_val = Decimal('0')
                 else:
                     weight_val = Decimal('0')
@@ -492,8 +500,9 @@ def log_tailwind(request, routine_pk, day_pk):
                     weight = Decimal('0')
                 else:
                     try:
-                        weight = Decimal(str(weight))
-                    except (TypeError, ValueError):
+                        clean_w = str(weight).strip().replace(',', '.')
+                        weight = Decimal(clean_w)
+                    except (decimal.DecimalException, ValueError, TypeError):
                         weight = Decimal('0')
 
                 # Create WorkoutLog entry

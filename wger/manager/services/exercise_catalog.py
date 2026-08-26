@@ -78,9 +78,12 @@ def get_cached_exercise_catalog(language_code='it'):
     seen_names = set()
 
     for ex in exercise_qs:
-        translation = ex.get_translation()
+        translation = ex.get_translation(language=language_code)
         cal = calisthenics_map.get(str(ex.uuid))
-        is_calisthenics = bool(cal and cal.discipline == 'calisthenics')
+        is_calisthenics = bool(
+            (cal and cal.discipline == 'calisthenics') or
+            (ex.category and ex.category.name.lower() == 'calisthenics')
+        )
         
         if translation and translation.name:
             name = translation.name
@@ -116,12 +119,15 @@ def get_cached_exercise_catalog(language_code='it'):
         for eq in equipment:
             equipment_set.add(eq)
             
-        cat_name = ex.category.name if ex.category else ('Calisthenics' if is_calisthenics else 'General')
-        if cat_name not in ['Another category', 'Yet another category', 'I will be deleted', 'Category']:
-            categories_set.add(cat_name)
+        if ex.category:
+            cat_name = ex.category.name
         else:
-            cat_name = 'Gym' if not is_calisthenics else 'Calisthenics'
-            categories_set.add(cat_name)
+            cat_name = 'Calisthenics' if is_calisthenics else 'Palestra'
+
+        if cat_name in ['Another category', 'Yet another category', 'I will be deleted', 'Category', 'General']:
+            cat_name = 'Calisthenics' if is_calisthenics else 'Palestra'
+
+        categories_set.add(cat_name)
 
         search_blob = f"{name} {skill_family} {' '.join(muscles)} {' '.join(equipment)} {cat_name}".lower()
 
