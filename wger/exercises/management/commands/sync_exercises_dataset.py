@@ -21,7 +21,7 @@ from wger.exercises.models import (
     Exercise,
     ExerciseCategory,
     ExerciseImage,
-    ExerciseTranslation,
+    Translation,
     ExerciseVideo,
     Equipment,
     Muscle,
@@ -144,7 +144,7 @@ class Command(BaseCommand):
 
                     # Update Italian translation instructions
                     if instructions_it:
-                        it_trans = ExerciseTranslation.objects.filter(exercise=matched_exercise).first()
+                        it_trans = Translation.objects.filter(exercise=matched_exercise).first()
                         if it_trans and (not it_trans.description or len(it_trans.description) < 30):
                             it_trans.description = instructions_it
                             it_trans.save(update_fields=["description"])
