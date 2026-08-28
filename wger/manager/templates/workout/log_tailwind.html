@@ -2353,5 +2353,93 @@
             closeLogRoutineCustomDropdown();
         }
     });
+
+    // Auto-Commit Snapshot & Full Final Commit Engine
+    function collectWorkoutPayload() {
+        const completedSets = [];
+        document.querySelectorAll('.set-row').forEach(row => {
+            const isCompleted = row.getAttribute('data-completed') === 'true';
+            if (!isCompleted) return;
+
+            const card = row.closest('.exercise-group');
+            const exerciseId = card ? card.getAttribute('data-id') : null;
+            const slotEntryId = row.id ? row.id.replace('set-row-', '') : null;
+            const repsInput = row.querySelector('.input-set-value');
+            const weightInput = row.querySelector('input[name="weight"]') || row.querySelector('input[type="number"][disabled]:last-of-type');
+
+            const reps = repsInput ? parseFloat(repsInput.value) || 10 : 10;
+            const weight = weightInput ? parseFloat(weightInput.value) || 0 : 0;
+
+            if (exerciseId && slotEntryId) {
+                completedSets.push({
+                    exercise_id: parseInt(exerciseId, 10),
+                    slot_entry_id: parseInt(slotEntryId, 10),
+                    repetitions: reps,
+                    weight: weight,
+                    is_completed: true
+                });
+            }
+        });
+
+        let elapsedSec = 0;
+        const totalTimerText = document.getElementById('total-workout-timer')?.innerText || '00:00:00';
+        const parts = totalTimerText.split(':').map(Number);
+        if (parts.length === 3) {
+            elapsedSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+        }
+
+        return {
+            completed_sets: completedSets,
+            elapsed_seconds: elapsedSec,
+            updated_at: Date.now()
+        };
+    }
+
+    async function autoSaveWorkoutSnapshot() {
+        try {
+            const payload = collectWorkoutPayload();
+            localStorage.setItem('onyx_active_workout_snapshot', JSON.stringify(payload));
+
+            if (!navigator.onLine) return;
+
+            const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+            const formData = new FormData();
+            formData.append('action', 'auto_save_snapshot');
+            formData.append('snapshot_payload', JSON.stringify(payload));
+
+            await fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrf,
+                    'HX-Request': 'true'
+                }
+            });
+        } catch(e) {}
+    }
+
+    // Auto-save interval every 30 seconds
+    setInterval(autoSaveWorkoutSnapshot, 30000);
+    document.addEventListener('htmx:afterSwap', () => { setTimeout(autoSaveWorkoutSnapshot, 500); });
+
+    // Full Final Commit handler
+    window.onFinishWorkoutSubmitted = function() {
+        const payload = collectWorkoutPayload();
+        const finishForm = document.getElementById('finish-workout-review-form') || document.querySelector('form input[value="finish_workout"]')?.closest('form');
+        if (finishForm) {
+            let hidden = finishForm.querySelector('input[name="full_payload"]');
+            if (!hidden) {
+                hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'full_payload';
+                finishForm.appendChild(hidden);
+            }
+            hidden.value = JSON.stringify(payload);
+        }
+
+        // Clean local active session keys upon completion
+        localStorage.removeItem('onyx_active_workout_snapshot');
+        localStorage.removeItem('onyx_active_rest_timer');
+    };
 </script>
 {% endblock %}

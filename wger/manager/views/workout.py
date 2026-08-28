@@ -233,7 +233,49 @@ def log_tailwind(request, routine_pk, day_pk):
                         'message': 'Foto caricata con successo!',
                         'photos_count': today_photos_count,
                     })
-                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+            elif action == 'auto_save_snapshot':
+                payload_str = request.POST.get('snapshot_payload')
+                if payload_str:
+                    try:
+                        data = json.loads(payload_str)
+                        elapsed = int(data.get('elapsed_seconds', 0))
+                        if elapsed > 0:
+                            now_dt = timezone.localtime(timezone.now())
+                            session.time_end = now_dt.time()
+                            start_dt = now_dt - datetime.timedelta(seconds=elapsed)
+                            session.time_start = start_dt.time()
+                        notes = data.get('notes')
+                        if notes:
+                            session.notes = notes.strip()
+                        session.save()
+
+                        # Batch sync any completed sets in payload
+                        completed_sets = data.get('completed_sets', [])
+                        for cs in completed_sets:
+                            s_entry_id = cs.get('slot_entry_id')
+                            ex_id = cs.get('exercise_id')
+                            if s_entry_id and ex_id:
+                                try:
+                                    s_entry = SlotEntry.objects.get(id=s_entry_id)
+                                    reps_val = float(cs.get('repetitions', 10))
+                                    wt_val = float(cs.get('weight', 0))
+                                    # Update or create log
+                                    WorkoutLog.objects.update_or_create(
+                                        session=session,
+                                        exercise_id=ex_id,
+                                        slot_entry=s_entry,
+                                        defaults={
+                                            'user': request.user,
+                                            'repetitions': reps_val,
+                                            'weight': wt_val,
+                                            'date': session.date
+                                        }
+                                    )
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+                return JsonResponse({'status': 'ok', 'saved_at': timezone.now().isoformat()})
 
             elif action == 'finish_workout':
                 custom_date_str = request.POST.get('custom_date')
@@ -256,6 +298,35 @@ def log_tailwind(request, routine_pk, day_pk):
 
                 if notes_str:
                     session.notes = notes_str.strip()
+
+                full_payload_str = request.POST.get('full_payload')
+                if full_payload_str:
+                    try:
+                        data = json.loads(full_payload_str)
+                        completed_sets = data.get('completed_sets', [])
+                        for cs in completed_sets:
+                            s_entry_id = cs.get('slot_entry_id')
+                            ex_id = cs.get('exercise_id')
+                            if s_entry_id and ex_id:
+                                try:
+                                    s_entry = SlotEntry.objects.get(id=s_entry_id)
+                                    reps_val = float(cs.get('repetitions', 10))
+                                    wt_val = float(cs.get('weight', 0))
+                                    WorkoutLog.objects.update_or_create(
+                                        session=session,
+                                        exercise_id=ex_id,
+                                        slot_entry=s_entry,
+                                        defaults={
+                                            'user': request.user,
+                                            'repetitions': reps_val,
+                                            'weight': wt_val,
+                                            'date': session.date
+                                        }
+                                    )
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
 
                 session.status = 'finished'
                 if not session.time_end:
