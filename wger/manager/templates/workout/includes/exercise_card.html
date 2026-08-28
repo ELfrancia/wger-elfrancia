@@ -100,16 +100,18 @@
                                     <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-[#caf300] select-none shrink-0">{{ forloop.counter }}</span>
                                     
                                     {% with logged_set=session_logs_map|get_item:slot_entry.id %}
-                                    <!-- Reps / Time & Weight Inputs -->
+                                    <!-- Reps / Time & Weight Display -->
                                     <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
-                                        <!-- Reps / Time Input -->
-                                        <input type="number" disabled value="{% if logged_set %}{{ logged_set.repetitions|floatformat:"-2" }}{% elif slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-zinc-400 border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
+                                        <!-- Reps / Time Input & Unit -->
+                                        <div class="flex items-center gap-1 justify-center">
+                                            <input type="number" disabled value="{% if logged_set %}{{ logged_set.repetitions|floatformat:"-2" }}{% elif slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-zinc-400 border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
+                                            <span class="unit-badge-sec hidden text-[11px] font-black text-[#caf300] select-none">s</span>
+                                        </div>
                                         
-                                        <span class="unit-badge-sec hidden text-[9px] font-black text-zinc-500 select-none">s</span>
                                         <span class="unit-multi-x text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
                                         
-                                        <!-- Weight Input -->
-                                        <div class="flex items-center gap-1 shrink-0">
+                                        <!-- Weight Input Container (Hidden in pure Time mode) -->
+                                        <div class="weight-input-container flex items-center gap-1 shrink-0">
                                             <input type="number" disabled value="{% if logged_set %}{{ logged_set.weight|floatformat:"-2" }}{% elif slot_entry.weight_config.weight is not None %}{{ slot_entry.weight_config.weight }}{% else %}0{% endif %}" class="w-11 sm:w-14 min-w-0 bg-transparent text-zinc-400 border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
                                             <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-zinc-500 select-none">KG</span>
                                         </div>
@@ -148,21 +150,23 @@
                                         <button type="button" 
                                                 onclick="toggleSetStopwatch(this, event, '{{ slot_entry.id|unlocalize }}', '{{ exercise.get_translation.name|escapejs }}')" 
                                                 id="stopwatch-btn-{{ slot_entry.id|unlocalize }}" 
-                                                class="btn-start-set-timer hidden h-7 px-2 rounded-lg bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black" 
+                                                class="btn-start-set-timer hidden h-7 px-2.5 rounded-lg bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black" 
                                                 title="Avvia/Ferma cronometro di tenuta">
                                             <span class="material-symbols-outlined text-xs font-black stopwatch-icon">play_arrow</span>
                                             <span class="stopwatch-label font-mono font-black uppercase">AVVIA</span>
                                         </button>
 
-                                        <!-- Reps / Time Input -->
-                                        <input type="number" id="input-set-value-{{ slot_entry.id|unlocalize }}" name="repetitions" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" oninput="var h=document.getElementById('reps-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" required min="1" max="600" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
-                                        <input type="hidden" id="reps-hidden-{{ slot_entry.id|unlocalize }}" name="reps_{{ slot_entry.id|unlocalize }}" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}">
-                                        
-                                        <span class="unit-badge-sec hidden text-[9px] font-black text-[#caf300] select-none">s</span>
+                                        <!-- Reps / Time Input Container -->
+                                        <div class="flex items-center gap-1 justify-center">
+                                            <input type="number" id="input-set-value-{{ slot_entry.id|unlocalize }}" name="repetitions" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" oninput="var h=document.getElementById('reps-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" required min="1" max="600" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
+                                            <input type="hidden" id="reps-hidden-{{ slot_entry.id|unlocalize }}" name="reps_{{ slot_entry.id|unlocalize }}" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}">
+                                            <span class="unit-badge-sec hidden text-[11px] font-black text-[#caf300] select-none">s</span>
+                                        </div>
+
                                         <span class="unit-multi-x text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
                                         
-                                        <!-- Weight Input -->
-                                        <div class="flex items-center gap-1 shrink-0">
+                                        <!-- Weight Input Container (Hidden in pure Time mode) -->
+                                        <div class="weight-input-container flex items-center gap-1 shrink-0">
                                             <input type="text" inputmode="decimal" step="any" name="weight" value="{% if slot_entry.weight_config.weight is not None %}{{ slot_entry.weight_config.weight }}{% else %}0{% endif %}" oninput="this.value = this.value.replace(',', '.'); var h=document.getElementById('weight-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
                                             <input type="hidden" id="weight-hidden-{{ slot_entry.id|unlocalize }}" name="weight_{{ slot_entry.id|unlocalize }}" value="{% if slot_entry.weight_config.weight is not None %}{{ slot_entry.weight_config.weight }}{% else %}0{% endif %}">
                                             <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
@@ -216,21 +220,24 @@
 
                         <!-- Borderless Reps / Time x Weight Inputs -->
                         <div class="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                            <!-- Reps / Time Input -->
-                            <input type="number" name="reps" placeholder="10" required min="1" max="600" class="draft-input-value clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
-                            <span class="draft-unit-reps text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
-                            <span class="draft-unit-time hidden text-[9px] text-[#caf300] font-extrabold uppercase select-none">SEC</span>
+                            <!-- Reps / Time Input Container -->
+                            <div class="flex items-center gap-1 justify-center">
+                                <input type="number" name="reps" placeholder="10" required min="1" max="600" class="draft-input-value clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
+                                <span class="draft-unit-reps text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
+                                <span class="draft-unit-time hidden text-[11px] text-[#caf300] font-black uppercase select-none">s</span>
+                            </div>
 
-                            <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
+                            <span class="unit-multi-x text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
 
-                            <!-- Weight Input -->
-                            <input type="text" inputmode="decimal" step="any" name="weight" placeholder="0" oninput="this.value = this.value.replace(',', '.');" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50">
-                            <span class="text-[9px] text-[#caf300]/90 font-extrabold uppercase select-none">KG</span>
+                            <!-- Weight Input Container (Hidden in pure Time mode) -->
+                            <div class="weight-input-container flex items-center gap-1 shrink-0">
+                                <input type="text" inputmode="decimal" step="any" name="weight" placeholder="0" oninput="this.value = this.value.replace(',', '.');" class="clean-input w-10 sm:w-12 bg-transparent text-xs sm:text-sm text-center text-[#caf300] font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-[#caf300]/50">
+                                <span class="text-[9px] text-[#caf300]/90 font-extrabold uppercase select-none">KG</span>
+                            </div>
 
                             <div class="h-3.5 w-px bg-zinc-800/80 mx-1 shrink-0 hidden sm:block"></div>
 
                             <!-- Optional Note Input -->
-                            <input type="text" name="comment" placeholder="{% translate 'Optional note' %}" class="clean-input hidden sm:block flex-1 min-w-[90px] bg-transparent text-xs text-zinc-300 placeholder-zinc-600 border-0 p-0 outline-none focus:outline-none focus:ring-0">
                         </div>
 
                         <!-- Action Buttons -->

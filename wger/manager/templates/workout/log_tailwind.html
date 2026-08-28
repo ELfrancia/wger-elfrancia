@@ -2095,6 +2095,10 @@
             card.classList.add('mode-time');
             card.classList.remove('mode-reps');
 
+            // Hide the 'x' multiplication sign and weight container in Time mode
+            card.querySelectorAll('.unit-multi-x').forEach(el => el.classList.add('hidden'));
+            card.querySelectorAll('.weight-input-container').forEach(el => el.classList.add('hidden'));
+
             // Update unit badges and timer buttons
             card.querySelectorAll('.unit-badge-sec').forEach(el => el.classList.remove('hidden'));
             card.querySelectorAll('.btn-start-set-timer').forEach(el => el.classList.remove('hidden'));
@@ -2112,6 +2116,10 @@
             }
             card.classList.add('mode-reps');
             card.classList.remove('mode-time');
+
+            // Show the 'x' multiplication sign and weight container in Reps mode
+            card.querySelectorAll('.unit-multi-x').forEach(el => el.classList.remove('hidden'));
+            card.querySelectorAll('.weight-input-container').forEach(el => el.classList.remove('hidden'));
 
             // Revert unit badges and timer buttons
             card.querySelectorAll('.unit-badge-sec').forEach(el => el.classList.add('hidden'));
