@@ -22,11 +22,22 @@
             
             <div class="min-w-0 flex-1">
                 <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{{ exercise.get_translation.name }}</h3>
-                <span class="text-xs text-secondary mt-0.5 inline-block">
-                    {% with entries_count=slot.entries.all|length %}
-                        {{ entries_count }} set
-                    {% endwith %}
-                </span>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs text-secondary inline-block">
+                        {% with entries_count=slot.entries.all|length %}
+                            {{ entries_count }} set
+                        {% endwith %}
+                    </span>
+                    <!-- Mode Switcher: REPS vs TEMPO -->
+                    <div class="inline-flex items-center bg-[#18191C] border border-[#26282E] p-0.5 rounded-lg text-[9px] font-black select-none" onclick="event.stopPropagation();">
+                        <button type="button" onclick="setExerciseMode('{{ slot.id|unlocalize }}', 'reps', event)" id="mode-btn-reps-{{ slot.id|unlocalize }}" class="mode-tab-reps px-1.5 py-0.5 rounded-md transition-all duration-200 bg-[#caf300] text-black font-black">
+                            REPS
+                        </button>
+                        <button type="button" onclick="setExerciseMode('{{ slot.id|unlocalize }}', 'time', event)" id="mode-btn-time-{{ slot.id|unlocalize }}" class="mode-tab-time px-1.5 py-0.5 rounded-md transition-all duration-200 text-zinc-400 hover:text-white font-bold">
+                            TEMPO
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -86,12 +97,13 @@
                                     <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-[#caf300] select-none shrink-0">{{ forloop.counter }}</span>
                                     
                                     {% with logged_set=session_logs_map|get_item:slot_entry.id %}
-                                    <!-- Reps & Weight Inputs (Borderless, No REPS text) -->
+                                    <!-- Reps / Time & Weight Inputs -->
                                     <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
-                                        <!-- Reps Input -->
-                                        <input type="number" disabled value="{% if logged_set %}{{ logged_set.repetitions|floatformat:"-2" }}{% elif slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" class="w-9 sm:w-12 min-w-0 bg-transparent text-zinc-400 border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
+                                        <!-- Reps / Time Input -->
+                                        <input type="number" disabled value="{% if logged_set %}{{ logged_set.repetitions|floatformat:"-2" }}{% elif slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-zinc-400 border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
                                         
-                                        <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
+                                        <span class="unit-badge-sec hidden text-[9px] font-black text-zinc-500 select-none">s</span>
+                                        <span class="unit-multi-x text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
                                         
                                         <!-- Weight Input -->
                                         <div class="flex items-center gap-1 shrink-0">
@@ -127,13 +139,19 @@
                                     <!-- Set Number Only (No SET badge) -->
                                     <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-zinc-400 select-none shrink-0">{{ forloop.counter }}</span>
                                     
-                                    <!-- Reps & Weight Inputs (Borderless, No REPS text) -->
+                                    <!-- Reps / Time & Weight Inputs -->
                                     <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
-                                        <!-- Reps Input -->
-                                        <input type="number" name="repetitions" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" oninput="var h=document.getElementById('reps-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" required min="1" max="100" class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
+                                        <!-- Quick Timer Launch Button for Time Mode -->
+                                        <button type="button" onclick="startSetCountdown(this, event, '{{ exercise.get_translation.name|escapejs }}')" class="btn-start-set-timer hidden w-6 h-6 rounded-md bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center justify-center transition-all cursor-pointer mr-0.5 shrink-0" title="Avvia cronometro serie">
+                                            <span class="material-symbols-outlined text-xs">timer</span>
+                                        </button>
+
+                                        <!-- Reps / Time Input -->
+                                        <input type="number" name="repetitions" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" oninput="var h=document.getElementById('reps-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" required min="1" max="600" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
                                         <input type="hidden" id="reps-hidden-{{ slot_entry.id|unlocalize }}" name="reps_{{ slot_entry.id|unlocalize }}" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}">
                                         
-                                        <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
+                                        <span class="unit-badge-sec hidden text-[9px] font-black text-[#caf300] select-none">s</span>
+                                        <span class="unit-multi-x text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
                                         
                                         <!-- Weight Input -->
                                         <div class="flex items-center gap-1 shrink-0">
@@ -188,11 +206,12 @@
                         <!-- Plus Icon Badge -->
                         <span class="w-6 text-center font-mono font-black text-xs sm:text-sm text-[#caf300] select-none shrink-0">+</span>
 
-                        <!-- Borderless Reps x Weight Inputs -->
+                        <!-- Borderless Reps / Time x Weight Inputs -->
                         <div class="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                            <!-- Reps Input -->
-                            <input type="number" name="reps" placeholder="10" required min="1" max="100" class="clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
-                            <span class="text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
+                            <!-- Reps / Time Input -->
+                            <input type="number" name="reps" placeholder="10" required min="1" max="600" class="draft-input-value clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
+                            <span class="draft-unit-reps text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
+                            <span class="draft-unit-time hidden text-[9px] text-[#caf300] font-extrabold uppercase select-none">SEC</span>
 
                             <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
 

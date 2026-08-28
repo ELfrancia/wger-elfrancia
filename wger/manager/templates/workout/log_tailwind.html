@@ -92,6 +92,10 @@
                 <span class="material-symbols-outlined text-xs">edit_calendar</span>
                 <span>{% translate "Personalizzato" %}</span>
             </button>
+            <button type="button" onclick="openTimerSoundModal()" class="px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.08] hover:border-[#caf300]/40 hover:bg-[#caf300]/10 text-neutral-300 hover:text-[#caf300] text-xs font-semibold flex items-center gap-1.5 transition-all">
+                <span class="material-symbols-outlined text-xs text-[#caf300]">volume_up</span>
+                <span id="current-timer-sound-label">{% translate "Suoneria" %}</span>
+            </button>
         </div>
     </div>
 
@@ -104,6 +108,114 @@
             <span class="material-symbols-outlined text-base">stop</span>
             {% translate "Termina Timer" %}
         </button>
+    </div>
+</div>
+
+<!-- Timer Sound Picker Modal -->
+<div id="timer-sound-modal" onclick="closeTimerSoundModal()" class="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
+    <div onclick="event.stopPropagation()" class="bg-[#121316] border border-[#222429] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-5 py-4 border-b border-white/10 bg-[#16171A]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                    <span class="material-symbols-outlined text-lg">notifications_active</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Suoneria Fine Esercizio" %}</h3>
+                    <p class="text-[10px] text-zinc-400">{% translate "Scegli il suono riprodotto allo scadere del timer" %}</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeTimerSoundModal()" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <!-- Sound list -->
+        <div class="p-4 flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+            <!-- Option 1: Gong -->
+            <button type="button" onclick="selectTimerSound('gong', 'Gong Palestra')" class="sound-option-btn w-full p-3 rounded-2xl bg-[#18191D] border border-white/5 hover:border-[#caf300]/40 flex items-center justify-between text-left transition-all group" data-sound-id="gong">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-lg text-[#caf300]">sports_martial_arts</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">Gong Palestra</span>
+                        <span class="text-[10px] text-zinc-500">Risonanza profonda calma e potente</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="sound-check-icon material-symbols-outlined text-[#caf300] text-lg hidden">check_circle</span>
+                </div>
+            </button>
+
+            <!-- Option 2: Boxing Bell -->
+            <button type="button" onclick="selectTimerSound('boxing', 'Campana Boxing')" class="sound-option-btn w-full p-3 rounded-2xl bg-[#18191D] border border-white/5 hover:border-[#caf300]/40 flex items-center justify-between text-left transition-all group" data-sound-id="boxing">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-lg text-[#caf300]">sports_mma</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">Campana Boxing</span>
+                        <span class="text-[10px] text-zinc-500">Doppio rintocco da ring di pugilato</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="sound-check-icon material-symbols-outlined text-[#caf300] text-lg hidden">check_circle</span>
+                </div>
+            </button>
+
+            <!-- Option 3: Sport Beep -->
+            <button type="button" onclick="selectTimerSound('beep', 'Beep Elettronico')" class="sound-option-btn w-full p-3 rounded-2xl bg-[#18191D] border border-white/5 hover:border-[#caf300]/40 flex items-center justify-between text-left transition-all group" data-sound-id="beep">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-lg text-[#caf300]">timer</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">Beep Elettronico</span>
+                        <span class="text-[10px] text-zinc-500">Triplo beep ritmico digitale</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="sound-check-icon material-symbols-outlined text-[#caf300] text-lg hidden">check_circle</span>
+                </div>
+            </button>
+
+            <!-- Option 4: Whistle -->
+            <button type="button" onclick="selectTimerSound('whistle', 'Fischietto Sportivo')" class="sound-option-btn w-full p-3 rounded-2xl bg-[#18191D] border border-white/5 hover:border-[#caf300]/40 flex items-center justify-between text-left transition-all group" data-sound-id="whistle">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-lg text-[#caf300]">sports</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">Fischietto Sportivo</span>
+                        <span class="text-[10px] text-zinc-500">Fischio atletico squillante</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="sound-check-icon material-symbols-outlined text-[#caf300] text-lg hidden">check_circle</span>
+                </div>
+            </button>
+
+            <!-- Option 5: System Alarm -->
+            <button type="button" onclick="selectTimerSound('system_alarm', 'Sveglia di Sistema')" class="sound-option-btn w-full p-3 rounded-2xl bg-[#18191D] border border-white/5 hover:border-[#caf300]/40 flex items-center justify-between text-left transition-all group" data-sound-id="system_alarm">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-lg text-[#caf300]">alarm</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">Allarme di Sistema</span>
+                        <span class="text-[10px] text-zinc-500">Suoneria predefinita del telefono</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="sound-check-icon material-symbols-outlined text-[#caf300] text-lg hidden">check_circle</span>
+                </div>
+            </button>
+
+            <!-- Option 6: Vibration only -->
+            <button type="button" onclick="selectTimerSound('vibration_only', 'Solo Vibrazione')" class="sound-option-btn w-full p-3 rounded-2xl bg-[#18191D] border border-white/5 hover:border-[#caf300]/40 flex items-center justify-between text-left transition-all group" data-sound-id="vibration_only">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-lg text-[#caf300]">vibration</span>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-white group-hover:text-[#caf300] transition-colors">Solo Vibrazione</span>
+                        <span class="text-[10px] text-zinc-500">Silenzioso con pattern di vibrazione</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="sound-check-icon material-symbols-outlined text-[#caf300] text-lg hidden">check_circle</span>
+                </div>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -1065,64 +1177,169 @@
     window.setCustomTimerValues = setCustomTimerValues;
     window.applyCustomTimer = applyCustomTimer;
 
-    function playBeepAndVibrate() {
-        // Web Audio API synthesized harmonic chime sequence
+    // -------------------------------------------------------------
+    // TIMER SOUND SELECTOR & WEB AUDIO SYNTHESIZER
+    // -------------------------------------------------------------
+    let currentTimerSound = localStorage.getItem('onyx_timer_sound') || 'gong';
+
+    function getSelectedTimerSound() {
+        return localStorage.getItem('onyx_timer_sound') || 'gong';
+    }
+
+    function openTimerSoundModal() {
+        const modal = document.getElementById('timer-sound-modal');
+        if (!modal) return;
+        updateSoundModalChecks();
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+        }, 10);
+    }
+
+    function closeTimerSoundModal() {
+        const modal = document.getElementById('timer-sound-modal');
+        if (!modal) return;
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+
+    function updateSoundModalChecks() {
+        const current = getSelectedTimerSound();
+        document.querySelectorAll('.sound-option-btn').forEach(btn => {
+            const soundId = btn.getAttribute('data-sound-id');
+            const checkIcon = btn.querySelector('.sound-check-icon');
+            if (soundId === current) {
+                btn.classList.add('border-[#caf300]/80', 'bg-[#caf300]/10');
+                btn.classList.remove('border-white/5', 'bg-[#18191D]');
+                if (checkIcon) checkIcon.classList.remove('hidden');
+            } else {
+                btn.classList.remove('border-[#caf300]/80', 'bg-[#caf300]/10');
+                btn.classList.add('border-white/5', 'bg-[#18191D]');
+                if (checkIcon) checkIcon.classList.add('hidden');
+            }
+        });
+
+        const labelEl = document.getElementById('current-timer-sound-label');
+        if (labelEl) {
+            const names = {
+                'gong': 'Gong Palestra',
+                'boxing': 'Campana Boxing',
+                'beep': 'Beep Elettronico',
+                'whistle': 'Fischietto',
+                'system_alarm': 'Sveglia Sistema',
+                'vibration_only': 'Solo Vibrazione'
+            };
+            labelEl.innerText = names[current] || 'Suoneria';
+        }
+    }
+
+    function selectTimerSound(soundId, label) {
+        currentTimerSound = soundId;
+        try {
+            localStorage.setItem('onyx_timer_sound', soundId);
+        } catch(e) {}
+        updateSoundModalChecks();
+        previewSound(soundId);
+        setTimeout(closeTimerSoundModal, 350);
+    }
+
+    function previewSound(soundId, evt) {
+        if (evt) evt.stopPropagation();
+        unlockAudioContext();
+        playSynthesizedSound(soundId);
+    }
+
+    function playSynthesizedSound(soundId) {
+        if (soundId === 'vibration_only') {
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            return;
+        }
+
         try {
             const ctx = getAudioContext();
-            if (ctx) {
-                if (ctx.state === 'suspended') {
-                    ctx.resume();
-                }
-                const now = ctx.currentTime;
-                
-                // 3 ascending tones: 880Hz (A5), 988Hz (B5), 1175Hz (D6)
-                const sequence = [
-                    { freq: 880, start: now, dur: 0.08, gain: 0.28 },
-                    { freq: 988, start: now + 0.10, dur: 0.08, gain: 0.32 },
-                    { freq: 1175, start: now + 0.20, dur: 0.09, gain: 0.36 }
-                ];
+            if (!ctx) return;
+            if (ctx.state === 'suspended') ctx.resume();
+            const now = ctx.currentTime;
 
-                sequence.forEach(step => {
+            if (soundId === 'boxing') {
+                // Boxing double bell: 880Hz strike x 2
+                [0, 0.28].forEach(offset => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(880, now + offset);
+                    gain.gain.setValueAtTime(0.4, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.5);
+                });
+            } else if (soundId === 'beep') {
+                // Tri-beep
+                [0, 0.16, 0.32].forEach(offset => {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(step.freq, step.start);
-                    gain.gain.setValueAtTime(step.gain, step.start);
-                    gain.gain.exponentialRampToValueAtTime(0.001, step.start + step.dur);
+                    osc.frequency.setValueAtTime(1200, now + offset);
+                    gain.gain.setValueAtTime(0.35, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.1);
                     osc.connect(gain);
                     gain.connect(ctx.destination);
-                    osc.start(step.start);
-                    osc.stop(step.start + step.dur);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.1);
                 });
-
-                // Final resonant chime chord (1318.5Hz E6 + 1760Hz A6 with rich decay)
-                const chimeStart = now + 0.32;
-                [1318.5, 1760].forEach((freq, idx) => {
+            } else if (soundId === 'whistle') {
+                // Whistle
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(2400, now);
+                osc.frequency.linearRampToValueAtTime(2600, now + 0.2);
+                osc.frequency.linearRampToValueAtTime(2350, now + 0.5);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            } else {
+                // Default: Rich Gym Gong
+                const freqs = [160, 320, 480];
+                freqs.forEach((freq, idx) => {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = idx === 0 ? 'sine' : 'triangle';
-                    osc.frequency.setValueAtTime(freq, chimeStart);
-                    gain.gain.setValueAtTime(0.35 / (idx + 1), chimeStart);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, chimeStart + 0.7);
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.4 / (idx + 1), now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
                     osc.connect(gain);
                     gain.connect(ctx.destination);
-                    osc.start(chimeStart);
-                    osc.stop(chimeStart + 0.7);
+                    osc.start(now);
+                    osc.stop(now + 1.6);
                 });
             }
-        } catch (e) {
-            console.warn("Web Audio API beep error:", e);
+        } catch(e) {
+            console.warn('Audio preview error:', e);
         }
 
-        // Vibration API
-        try {
-            if (navigator.vibrate) {
-                navigator.vibrate([150, 80, 150, 80, 350]);
-            }
-        } catch (e) {
-            console.warn("Vibration API error:", e);
+        if (navigator.vibrate) {
+            navigator.vibrate([150, 80, 150, 80, 350]);
         }
     }
+
+    function playBeepAndVibrate() {
+        const chosen = getSelectedTimerSound();
+        playSynthesizedSound(chosen);
+    }
+
+    window.openTimerSoundModal = openTimerSoundModal;
+    window.closeTimerSoundModal = closeTimerSoundModal;
+    window.selectTimerSound = selectTimerSound;
+    window.previewSound = previewSound;
+    window.getSelectedTimerSound = getSelectedTimerSound;
 
     function updateProgressBar() {
         const totalSets = document.querySelectorAll('.set-row').length;
@@ -1857,11 +2074,107 @@
         }
     }
 
+    // -------------------------------------------------------------
+    // EXERCISE MODE SWITCHER (REPS vs TEMPO) & INSTANT SET TIMER
+    // -------------------------------------------------------------
+    function setExerciseMode(slotId, mode, evt) {
+        if (evt) evt.stopPropagation();
+        const card = document.getElementById('exercise-card-' + slotId);
+        if (!card) return;
+
+        const btnReps = document.getElementById('mode-btn-reps-' + slotId);
+        const btnTime = document.getElementById('mode-btn-time-' + slotId);
+
+        if (mode === 'time') {
+            if (btnReps) {
+                btnReps.className = 'mode-tab-reps px-1.5 py-0.5 rounded-md transition-all duration-200 text-zinc-400 hover:text-white font-bold';
+            }
+            if (btnTime) {
+                btnTime.className = 'mode-tab-time px-1.5 py-0.5 rounded-md transition-all duration-200 bg-[#caf300] text-black font-black shadow-xs';
+            }
+            card.classList.add('mode-time');
+            card.classList.remove('mode-reps');
+
+            // Update unit badges and timer buttons
+            card.querySelectorAll('.unit-badge-sec').forEach(el => el.classList.remove('hidden'));
+            card.querySelectorAll('.btn-start-set-timer').forEach(el => el.classList.remove('hidden'));
+            card.querySelectorAll('.draft-unit-reps').forEach(el => el.classList.add('hidden'));
+            card.querySelectorAll('.draft-unit-time').forEach(el => el.classList.remove('hidden'));
+            card.querySelectorAll('.draft-input-value').forEach(el => {
+                if (!el.value || el.value === '10') el.placeholder = '30';
+            });
+        } else {
+            if (btnReps) {
+                btnReps.className = 'mode-tab-reps px-1.5 py-0.5 rounded-md transition-all duration-200 bg-[#caf300] text-black font-black shadow-xs';
+            }
+            if (btnTime) {
+                btnTime.className = 'mode-tab-time px-1.5 py-0.5 rounded-md transition-all duration-200 text-zinc-400 hover:text-white font-bold';
+            }
+            card.classList.add('mode-reps');
+            card.classList.remove('mode-time');
+
+            // Revert unit badges and timer buttons
+            card.querySelectorAll('.unit-badge-sec').forEach(el => el.classList.add('hidden'));
+            card.querySelectorAll('.btn-start-set-timer').forEach(el => el.classList.add('hidden'));
+            card.querySelectorAll('.draft-unit-reps').forEach(el => el.classList.remove('hidden'));
+            card.querySelectorAll('.draft-unit-time').forEach(el => el.classList.add('hidden'));
+            card.querySelectorAll('.draft-input-value').forEach(el => {
+                el.placeholder = '10';
+            });
+        }
+
+        try {
+            localStorage.setItem('onyx_slot_mode_' + slotId, mode);
+        } catch(e) {}
+    }
+
+    function initExerciseModes() {
+        document.querySelectorAll('.exercise-group').forEach(card => {
+            const cardId = card.id;
+            if (!cardId || !cardId.startsWith('exercise-card-')) return;
+            const slotId = cardId.replace('exercise-card-', '');
+            let mode = 'reps';
+            try {
+                const saved = localStorage.getItem('onyx_slot_mode_' + slotId);
+                if (saved === 'time' || saved === 'reps') {
+                    mode = saved;
+                } else {
+                    const nameEl = card.querySelector('h3');
+                    const name = nameEl ? nameEl.innerText.toLowerCase() : '';
+                    if (name.includes('plank') || name.includes('hold') || name.includes('isomet') || name.includes('handstand') || name.includes('l-sit') || name.includes('hang') || name.includes('lever') || name.includes('tenuta')) {
+                        mode = 'time';
+                    }
+                }
+            } catch(e) {}
+            setExerciseMode(slotId, mode);
+        });
+    }
+
+    function startSetCountdown(btn, evt, exerciseName) {
+        if (evt) evt.stopPropagation();
+        const row = btn.closest('.set-row');
+        if (!row) return;
+        const input = row.querySelector('.input-set-value');
+        const seconds = parseInt(input ? input.value : 30, 10) || 30;
+
+        startCountdown(seconds, (exerciseName ? exerciseName + ' (Tenuta)' : 'Esercizio a Tempo'));
+        openOverlay();
+    }
+
+    window.setExerciseMode = setExerciseMode;
+    window.initExerciseModes = initExerciseModes;
+    window.startSetCountdown = startSetCountdown;
+
+    document.addEventListener('DOMContentLoaded', initExerciseModes);
+    document.addEventListener('htmx:afterSwap', initExerciseModes);
+    document.addEventListener('htmx:afterOnLoad', initExerciseModes);
+
     restoreTimerFromStorage();
     saveTimerStateToStorage();
     updateDisplay();
     updateProgressBar();
     updateTotalTimer();
+    initExerciseModes();
 
     if (sessionStorage.getItem('open_timer_overlay') === 'true' || window.location.hash === '#rest-timer' || window.location.search.includes('open_timer=true')) {
         sessionStorage.removeItem('open_timer_overlay');
