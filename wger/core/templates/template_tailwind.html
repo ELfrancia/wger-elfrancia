@@ -1311,7 +1311,68 @@
                 }
             }
         });
+
+        // Check and prompt native permissions on launch
+        function checkAndPromptPermissions() {
+            if (window.AndroidTimer && typeof window.AndroidTimer.areNotificationsEnabled === 'function') {
+                try {
+                    const enabled = window.AndroidTimer.areNotificationsEnabled();
+                    const dismissed = sessionStorage.getItem('onyx_permission_prompt_dismissed');
+                    if (!enabled && !dismissed) {
+                        const modal = document.getElementById('onyx-permission-prompt-modal');
+                        if (modal) {
+                            modal.classList.remove('hidden');
+                            setTimeout(() => modal.classList.remove('opacity-0'), 50);
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+
+        window.enablePermissionsNow = function() {
+            if (window.AndroidTimer) {
+                if (typeof window.AndroidTimer.requestAllPermissions === 'function') {
+                    window.AndroidTimer.requestAllPermissions();
+                }
+                if (typeof window.AndroidTimer.openNotificationSettings === 'function') {
+                    window.AndroidTimer.openNotificationSettings();
+                }
+            }
+            window.dismissPermissionPrompt();
+        };
+
+        window.dismissPermissionPrompt = function() {
+            sessionStorage.setItem('onyx_permission_prompt_dismissed', 'true');
+            const modal = document.getElementById('onyx-permission-prompt-modal');
+            if (modal) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 250);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => { setTimeout(checkAndPromptPermissions, 1200); });
     </script>
+
+    <!-- Dynamic Island / Notification Permission Helper Modal -->
+    <div id="onyx-permission-prompt-modal" class="fixed inset-0 z-[250] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
+        <div class="bg-[#121316] border border-[#caf300]/40 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6 flex flex-col items-center text-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                <span class="material-symbols-outlined text-3xl">notifications_active</span>
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">Attiva Notifiche & Dynamic Island</h3>
+                <p class="text-xs text-zinc-400">Consenti le notifiche e la comparsa nella barra di stato per visualizzare il timer e l'allenamento in tempo reale nella capsula in alto.</p>
+            </div>
+            <div class="w-full flex flex-col gap-2 pt-2">
+                <button type="button" onclick="enablePermissionsNow()" class="w-full py-3.5 rounded-full bg-[#caf300] text-black font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform">
+                    Consenti & Attiva
+                </button>
+                <button type="button" onclick="dismissPermissionPrompt()" class="w-full py-2.5 rounded-full text-zinc-400 text-xs font-bold uppercase tracking-wider hover:text-white">
+                    Più tardi
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Floating Offline Sync Status Banner -->
     <div id="onyx-offline-sync-banner" class="fixed top-3 inset-x-0 mx-auto w-fit max-w-[90%] z-50 transition-all duration-300 pointer-events-none opacity-0 -translate-y-6">
