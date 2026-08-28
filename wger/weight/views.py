@@ -355,6 +355,19 @@ def weight_overview_tailwind(request):
         weight_change = float(weight_change)
         avg_weight = float(avg_weight)
 
+    # All-time best records per exercise for this user
+    all_time_stats = {
+        item['exercise']: item
+        for item in (
+            WorkoutLog.objects.filter(user=request.user)
+            .values('exercise')
+            .annotate(
+                all_time_max_weight=Max('weight'),
+                all_time_max_reps=Max('repetitions')
+            )
+        )
+    }
+
     # Query Exercise stats for the period
     exercise_stats_query = (
         logs
@@ -365,7 +378,6 @@ def weight_overview_tailwind(request):
             total_volume=Sum(F('repetitions') * F('weight')),
             max_weight=Max('weight')
         )
-        .order_by('-total_volume')
     )
     
     exercise_stats = []
@@ -374,11 +386,15 @@ def weight_overview_tailwind(request):
         if not exercise_id:
             continue
         try:
-            exercise = Exercise.objects.get(pk=exercise_id)
+            exercise = Exercise.objects.prefetch_related('equipment', 'category').get(pk=exercise_id)
             translation = exercise.get_translation()
             name = translation.name if translation else f"Exercise {exercise_id}"
+            equipment_names = [eq.name.lower() for eq in exercise.equipment.all()]
+            category_name = exercise.category.name.lower() if exercise.category else ''
         except Exercise.DoesNotExist:
             name = f"Exercise {exercise_id}"
+            equipment_names = []
+            category_name = ''
             
         t_vol = stat['total_volume'] or 0
         if isinstance(t_vol, float) or hasattr(t_vol, 'quantize'):
@@ -399,24 +415,87 @@ def weight_overview_tailwind(request):
                 m_weight = int(m_weight)
                 
         sets_comp = stat['sets_completed'] or 0
+
+        # Retrieve All-Time Best (Record di sempre)
+        at_data = all_time_stats.get(exercise_id, {})
+        at_max_weight = at_data.get('all_time_max_weight') or m_weight or 0
+        if isinstance(at_max_weight, float) or hasattr(at_max_weight, 'quantize'):
+            at_max_weight = float(at_max_weight)
+            if at_max_weight.is_integer():
+                at_max_weight = int(at_max_weight)
+
+        at_max_reps = at_data.get('all_time_max_reps') or 0
+        if isinstance(at_max_reps, float) or hasattr(at_max_reps, 'quantize'):
+            at_max_reps = float(at_max_reps)
+            if at_max_reps.is_integer():
+                at_max_reps = int(at_max_reps)
+
+        # Detect exercise category: weighted vs bodyweight reps vs bodyweight time
+        name_lower = name.lower()
+        has_weight = (t_vol > 0 or m_weight > 0 or at_max_weight > 0 or 
+                      any(eq in equipment_names for eq in ['barbell', 'dumbbell', 'kettlebell', 'sz-bar', 'incline bench', 'machine']))
         
+        is_time = not has_weight and any(k in name_lower for k in [
+            'hold', 'plank', 'handstand', 'front lever', 'back lever', 'planche', 'tuck', 'l-sit', 'isometria', 'tenuta', 'hang'
+        ])
+
+        if has_weight:
+            ex_type = 'weighted'
+            type_label = 'Pesi'
+            primary_value = f"{t_vol}"
+            primary_unit = "kg vol"
+            best_record_label = f"{at_max_weight} kg"
+            sub_metric = f"{sets_comp} serie • {t_reps} reps"
+            score = t_vol if t_vol > 0 else (sets_comp * 100)
+        elif is_time:
+            ex_type = 'bodyweight_time'
+            type_label = 'Isometria'
+            if t_reps >= 60:
+                mins = t_reps // 60
+                secs = t_reps % 60
+                time_str = f"{mins}m {secs}s" if secs > 0 else f"{mins}m"
+            else:
+                time_str = f"{t_reps}s"
+            primary_value = time_str
+            primary_unit = "tempo tot"
+            best_record_label = f"{at_max_reps}s hold" if at_max_reps < 60 else f"{at_max_reps//60}m {at_max_reps%60}s hold"
+            sub_metric = f"{sets_comp} serie"
+            score = sets_comp * 300 + t_reps * 5
+        else:
+            ex_type = 'bodyweight_reps'
+            type_label = 'Corpo Libero'
+            primary_value = f"{t_reps}"
+            primary_unit = "reps tot"
+            best_record_label = f"{at_max_reps} reps/set"
+            sub_metric = f"{sets_comp} serie"
+            score = sets_comp * 300 + t_reps * 10
+
         exercise_stats.append({
             'name': name,
             'sets_completed': sets_comp,
             'total_repetitions': t_reps,
             'total_volume': t_vol,
             'max_weight': m_weight,
+            'all_time_max_weight': at_max_weight,
+            'all_time_max_reps': at_max_reps,
+            'ex_type': ex_type,
+            'type_label': type_label,
+            'primary_value': primary_value,
+            'primary_unit': primary_unit,
+            'best_record_label': best_record_label,
+            'sub_metric': sub_metric,
+            'score': score,
         })
         
-    exercise_stats = sorted(exercise_stats, key=lambda x: x['total_volume'], reverse=True)[:10]
+    exercise_stats = sorted(exercise_stats, key=lambda x: x['score'], reverse=True)[:15]
     
-    # Calculate volume percentage for progress bars
-    max_volume_stat = max([x['total_volume'] for x in exercise_stats]) if exercise_stats else 0
+    # Calculate progress percentage based on highest score
+    max_score = max([x['score'] for x in exercise_stats]) if exercise_stats else 0
     for stat in exercise_stats:
-        if max_volume_stat > 0:
-            stat['volume_percentage'] = int((stat['total_volume'] / max_volume_stat) * 100)
+        if max_score > 0:
+            stat['volume_percentage'] = max(15, int((stat['score'] / max_score) * 100))
         else:
-            stat['volume_percentage'] = 0
+            stat['volume_percentage'] = 20
 
     # Fetch weight trend data
     weight_data = [

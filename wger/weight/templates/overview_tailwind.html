@@ -117,58 +117,102 @@
         </div>
 
         <!-- Top Exercises Section -->
-        <div class="bg-[#14161d] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl mt-2">
-            <div class="flex items-center justify-between mb-5 pb-4 border-b border-white/10">
+        <!-- Top Exercises Section (Redesigned Onyx Luxury Card) -->
+        <div class="bg-[#121316] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl mt-2">
+            <!-- Header & Filter Tabs -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-white/10">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
-                        <span class="material-symbols-outlined text-xl">bar_chart</span>
+                    <div class="w-11 h-11 rounded-2xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300] shadow-[0_0_15px_rgba(202,243,0,0.15)]">
+                        <span class="material-symbols-outlined text-2xl">leaderboard</span>
                     </div>
                     <div>
                         <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Analisi Esercizi Top" %}</h3>
-                        <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "I 10 esercizi con maggior volume di allenamento." %}</p>
+                        <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "I migliori esercizi per attività, volume e record." %}</p>
                     </div>
+                </div>
+
+                <!-- Quick Filter Tabs -->
+                <div class="flex items-center gap-1.5 bg-[#0e0f12] p-1 rounded-2xl border border-white/10 self-start sm:self-auto select-none">
+                    <button type="button" onclick="filterTopExercises('all', this)" class="top-ex-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-[#caf300] text-[#08090A] shadow-sm cursor-pointer">
+                        {% translate "Tutti" %}
+                    </button>
+                    <button type="button" onclick="filterTopExercises('weighted', this)" class="top-ex-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all text-zinc-400 hover:text-white cursor-pointer">
+                        {% translate "Pesi" %}
+                    </button>
+                    <button type="button" onclick="filterTopExercises('bodyweight', this)" class="top-ex-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all text-zinc-400 hover:text-white cursor-pointer">
+                        {% translate "Corpo Libero" %}
+                    </button>
                 </div>
             </div>
 
             {% if exercise_stats %}
-            <div class="space-y-3.5">
+            <div id="top-exercises-list" class="space-y-3">
                 {% for stat in exercise_stats %}
-                <div class="group bg-[#1a1d26] border border-white/5 hover:border-primary/30 rounded-2xl p-4 transition-all duration-200 flex flex-col gap-2.5 shadow-sm">
+                <div class="top-ex-item group bg-[#16171a] border border-white/5 hover:border-[#caf300]/40 rounded-2xl p-4 transition-all duration-200 flex flex-col gap-3 shadow-md"
+                     data-type="{{ stat.ex_type }}">
+                    
                     <div class="flex justify-between items-start gap-3">
-                        <div class="min-w-0 flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-xl bg-primary/10 border border-primary/20 text-primary font-mono text-xs font-black flex items-center justify-center flex-shrink-0">
-                                {{ forloop.counter }}
-                            </span>
-                            <div>
-                                <span class="text-sm font-bold text-white block truncate group-hover:text-primary transition-colors">
-                                    {{ stat.name }}
-                                </span>
+                        <div class="min-w-0 flex items-center gap-3.5 flex-1">
+                            <!-- Rank Badge -->
+                            {% if forloop.counter == 1 %}
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#caf300] to-[#8eb800] text-[#08090A] font-black text-xs flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(202,243,0,0.4)] ring-2 ring-[#caf300]/50">
+                                    🥇
+                                </div>
+                            {% elif forloop.counter == 2 %}
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-200 to-slate-400 text-[#08090A] font-black text-xs flex items-center justify-center flex-shrink-0 shadow-sm ring-1 ring-white/30">
+                                    🥈
+                                </div>
+                            {% elif forloop.counter == 3 %}
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 text-white font-black text-xs flex items-center justify-center flex-shrink-0 shadow-sm ring-1 ring-amber-500/30">
+                                    🥉
+                                </div>
+                            {% else %}
+                                <div class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 text-zinc-400 font-mono text-xs font-black flex items-center justify-center flex-shrink-0 group-hover:text-[#caf300] group-hover:border-[#caf300]/30 transition-colors">
+                                    {{ forloop.counter }}
+                                </div>
+                            {% endif %}
+
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-black text-white truncate group-hover:text-[#caf300] transition-colors font-display">
+                                        {{ stat.name }}
+                                    </span>
+                                    <!-- Category Pill -->
+                                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md {% if stat.ex_type == 'weighted' %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% elif stat.ex_type == 'bodyweight_time' %}bg-purple-500/10 text-purple-400 border border-purple-500/20{% else %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% endif %} flex-shrink-0">
+                                        {{ stat.type_label }}
+                                    </span>
+                                </div>
+
                                 <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-[11px] font-bold text-zinc-300 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
-                                        {{ stat.sets_completed }} serie &bull; {{ stat.total_repetitions }} reps
+                                    <span class="text-[11px] font-bold text-zinc-400 font-mono">
+                                        {{ stat.sub_metric }}
                                     </span>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-right flex-shrink-0 font-mono">
-                            <span class="text-white text-xs font-black block">
-                                {{ stat.total_volume }} <span class="text-[10px] font-bold text-primary">kg vol</span>
+
+                        <!-- Right Metric & All-time Record Badge -->
+                        <div class="text-right flex-shrink-0">
+                            <span class="text-white text-sm font-black block font-display tracking-tight">
+                                {{ stat.primary_value }} <span class="text-xs font-bold text-[#caf300]">{{ stat.primary_unit }}</span>
                             </span>
-                            <span class="text-[10px] font-bold text-zinc-400 block mt-0.5">Max: <strong class="text-zinc-200">{{ stat.max_weight }}</strong> kg</span>
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-[#caf300] bg-[#caf300]/10 border border-[#caf300]/25 px-2 py-0.5 rounded-md mt-1 shadow-sm">
+                                🏆 Best: <strong class="text-white font-black">{{ stat.best_record_label }}</strong>
+                            </span>
                         </div>
                     </div>
                     
                     <!-- Progress Bar -->
-                    <div class="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
-                        <div class="bg-gradient-to-r from-primary to-[#8eb800] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(202,243,0,0.3)]" 
+                    <div class="w-full bg-[#0a0b0d] h-2 rounded-full overflow-hidden border border-white/5">
+                        <div class="bg-gradient-to-r from-[#caf300] to-[#8eb800] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(202,243,0,0.3)]" 
                              style="width: {{ stat.volume_percentage }}%"></div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <div class="flex flex-col items-center justify-center py-8 text-center gap-2 text-zinc-400">
-                <span class="material-symbols-outlined text-3xl text-zinc-500">fitness_center</span>
+            <div class="flex flex-col items-center justify-center py-10 text-center gap-2 text-zinc-400">
+                <span class="material-symbols-outlined text-4xl text-zinc-600">fitness_center</span>
                 <p class="text-xs font-semibold">{% translate "Nessun dato esercizi disponibile per il periodo selezionato" %}</p>
             </div>
             {% endif %}
@@ -499,6 +543,30 @@
         if (activityCanvas) activityCanvas.style.display = 'none';
         document.getElementById('activityChartEmpty')?.classList.remove('hidden');
     }
+
+    function filterTopExercises(type, btn) {
+        document.querySelectorAll('.top-ex-filter-btn').forEach(b => {
+            b.classList.remove('bg-[#caf300]', 'text-[#08090A]', 'shadow-sm');
+            b.classList.add('text-zinc-400');
+        });
+        if (btn) {
+            btn.classList.add('bg-[#caf300]', 'text-[#08090A]', 'shadow-sm');
+            btn.classList.remove('text-zinc-400');
+        }
+
+        const items = document.querySelectorAll('.top-ex-item');
+        items.forEach(item => {
+            const itemType = item.getAttribute('data-type');
+            if (type === 'all') {
+                item.style.display = '';
+            } else if (type === 'weighted') {
+                item.style.display = itemType === 'weighted' ? '' : 'none';
+            } else if (type === 'bodyweight') {
+                item.style.display = (itemType === 'bodyweight_reps' || itemType === 'bodyweight_time') ? '' : 'none';
+            }
+        });
+    }
+    window.filterTopExercises = filterTopExercises;
 </script>
 {% endblock %}
 
