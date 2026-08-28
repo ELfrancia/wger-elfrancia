@@ -10,7 +10,9 @@
             <!-- Thumbnail Image -->
             <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-900 border border-outline flex-shrink-0 group">
                 {% if exercise.main_image %}
-                    <img src="{{ exercise.main_image.image.url }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                    <img src="{{ exercise.main_image.image.url }}" class="w-full h-full object-cover" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
+                {% elif exercise.demo_media_url %}
+                    <img src="{{ exercise.demo_media_url }}" class="w-full h-full object-cover" loading="lazy" onerror="this.onerror=null; this.src='/media/exercises/4GqRrAk.gif';">
                 {% else %}
                     <div class="w-full h-full bg-zinc-800 flex items-center justify-center text-gray-500">
                         <span class="material-symbols-outlined text-lg">fitness_center</span>

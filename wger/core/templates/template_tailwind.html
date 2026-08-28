@@ -871,35 +871,15 @@
                     };
                     mediaContainer.insertBefore(videoEl, mediaContainer.firstChild);
                 } else {
-                    let mp4Url = safeMedia;
-                    if (mp4Url.endsWith('.gif')) {
-                        mp4Url = mp4Url.replace(/\.gif$/i, '.mp4');
-                    }
-                    
-                    const videoEl = document.createElement('video');
-                    videoEl.id = 'official-exercise-gif';
-                    videoEl.src = mp4Url;
-                    videoEl.autoplay = true;
-                    videoEl.loop = true;
-                    videoEl.muted = true;
-                    videoEl.playsInline = true;
-                    videoEl.setAttribute('playsinline', '');
-                    videoEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
-                    
-                    videoEl.onerror = function() {
-                        const imgEl = document.createElement('img');
-                        imgEl.id = 'official-exercise-gif';
-                        imgEl.src = safeMedia;
-                        imgEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
-                        imgEl.onerror = function() {
-                            this.src = '/media/exercises/4GqRrAk.gif';
-                        };
-                        if (videoEl.parentNode) {
-                            videoEl.parentNode.replaceChild(imgEl, videoEl);
-                        }
+                    const imgEl = document.createElement('img');
+                    imgEl.id = 'official-exercise-gif';
+                    imgEl.src = safeMedia;
+                    imgEl.className = 'max-w-full max-h-full object-contain rounded-2xl select-none';
+                    imgEl.onerror = function() {
+                        this.onerror = null;
+                        this.src = '/media/exercises/4GqRrAk.gif';
                     };
-                    
-                    mediaContainer.insertBefore(videoEl, mediaContainer.firstChild);
+                    mediaContainer.insertBefore(imgEl, mediaContainer.firstChild);
                 }
             }
             
