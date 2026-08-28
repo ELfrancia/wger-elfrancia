@@ -1171,6 +1171,154 @@
                 }
             });
         })();
+
+        // Onyx Offline-First Sync Engine
+        const OnyxOfflineSync = {
+            QUEUE_KEY: 'onyx_offline_sync_queue',
+
+            getQueue() {
+                try {
+                    return JSON.parse(localStorage.getItem(this.QUEUE_KEY) || '[]');
+                } catch(e) {
+                    return [];
+                }
+            },
+
+            setQueue(queue) {
+                localStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+                this.updateBadge();
+            },
+
+            enqueue(entry) {
+                const queue = this.getQueue();
+                queue.push({
+                    ...entry,
+                    id: 'sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    queuedAt: Date.now()
+                });
+                this.setQueue(queue);
+                this.showBanner('offline', `Offline • ${queue.length} serie salvata${queue.length > 1 ? 'e' : ''} in locale`);
+            },
+
+            async syncPending() {
+                if (!navigator.onLine) return;
+                const queue = this.getQueue();
+                if (queue.length === 0) return;
+
+                this.showBanner('syncing', `Sincronizzazione di ${queue.length} elementi in corso...`);
+                const remaining = [];
+
+                for (const item of queue) {
+                    try {
+                        const formData = new FormData();
+                        for (const [k, v] of Object.entries(item.data || {})) {
+                            formData.append(k, v);
+                        }
+                        const res = await fetch(item.url, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRFToken': item.csrfToken || '',
+                                'HX-Request': 'true'
+                            }
+                        });
+                        if (!res.ok && res.status < 500) {
+                            // Client error, discard
+                        } else if (!res.ok) {
+                            remaining.push(item);
+                        }
+                    } catch(err) {
+                        remaining.push(item);
+                    }
+                }
+
+                this.setQueue(remaining);
+                if (remaining.length === 0) {
+                    this.showBanner('success', 'Tutti i dati sono sincronizzati con il server');
+                    setTimeout(() => this.hideBanner(), 3500);
+                } else {
+                    this.showBanner('offline', `${remaining.length} elementi ancora in attesa di connessione`);
+                }
+            },
+
+            showBanner(status, text) {
+                const banner = document.getElementById('onyx-offline-sync-banner');
+                const badge = document.getElementById('onyx-offline-sync-badge');
+                const dot = document.getElementById('onyx-offline-sync-dot');
+                const label = document.getElementById('onyx-offline-sync-text');
+                if (!banner || !badge || !dot || !label) return;
+
+                if (status === 'offline') {
+                    badge.className = 'px-4 py-2 rounded-full backdrop-blur-xl border border-amber-500/40 bg-amber-500/15 text-amber-300 flex items-center gap-2 shadow-2xl text-xs font-bold font-mono select-none';
+                    dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+                } else if (status === 'syncing') {
+                    badge.className = 'px-4 py-2 rounded-full backdrop-blur-xl border border-blue-500/40 bg-blue-500/15 text-blue-300 flex items-center gap-2 shadow-2xl text-xs font-bold font-mono select-none';
+                    dot.className = 'w-2 h-2 rounded-full bg-blue-400 animate-ping';
+                } else if (status === 'success') {
+                    badge.className = 'px-4 py-2 rounded-full backdrop-blur-xl border border-[#caf300]/40 bg-[#caf300]/15 text-[#caf300] flex items-center gap-2 shadow-2xl text-xs font-bold font-mono select-none';
+                    dot.className = 'w-2 h-2 rounded-full bg-[#caf300]';
+                }
+                label.innerText = text;
+                banner.classList.remove('opacity-0', '-translate-y-6', 'pointer-events-none');
+                banner.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+            },
+
+            hideBanner() {
+                const banner = document.getElementById('onyx-offline-sync-banner');
+                if (banner) {
+                    banner.classList.add('opacity-0', '-translate-y-6', 'pointer-events-none');
+                    banner.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                }
+            },
+
+            updateBadge() {
+                const q = this.getQueue();
+                if (q.length > 0) {
+                    this.showBanner('offline', `Offline • ${q.length} in coda di sync`);
+                }
+            }
+        };
+
+        window.OnyxOfflineSync = OnyxOfflineSync;
+        window.addEventListener('online', () => OnyxOfflineSync.syncPending());
+        window.addEventListener('offline', () => OnyxOfflineSync.showBanner('offline', 'Dispositivo Offline • I dati vengono salvati localmente'));
+        setInterval(() => { if (navigator.onLine) OnyxOfflineSync.syncPending(); }, 15000);
+        document.addEventListener('DOMContentLoaded', () => { OnyxOfflineSync.updateBadge(); });
+
+        // Global HTMX Offline error interceptor for sets & workouts
+        document.body.addEventListener('htmx:sendError', function(evt) {
+            const form = evt.detail.elt ? evt.detail.elt.closest('form') : null;
+            if (form) {
+                const formData = new FormData(form);
+                const data = {};
+                formData.forEach((value, key) => { data[key] = value; });
+                const url = form.getAttribute('action') || form.getAttribute('hx-post') || window.location.href;
+                const csrf = form.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+                OnyxOfflineSync.enqueue({ url, data, csrfToken: csrf });
+
+                // Optimistic UI: complete set row immediately
+                const setRow = form.closest('.set-row');
+                if (setRow) {
+                    setRow.classList.add('is-completing', 'bg-[#caf300]/[0.05]', 'border-[#caf300]/25');
+                    setRow.classList.remove('border-outline', 'bg-[#121316]');
+                    setRow.setAttribute('data-completed', 'true');
+                    const checkBtn = setRow.querySelector('button[type="submit"]');
+                    if (checkBtn) {
+                        checkBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-sm';
+                        checkBtn.innerHTML = '<span class="material-symbols-outlined text-sm sm:text-base font-black">check</span>';
+                    }
+                }
+            }
+        });
     </script>
+
+    <!-- Floating Offline Sync Status Banner -->
+    <div id="onyx-offline-sync-banner" class="fixed top-3 inset-x-0 mx-auto w-fit max-w-[90%] z-50 transition-all duration-300 pointer-events-none opacity-0 -translate-y-6">
+        <div class="px-4 py-2 rounded-full backdrop-blur-xl border flex items-center gap-2 shadow-2xl text-xs font-bold font-mono select-none" id="onyx-offline-sync-badge">
+            <span class="w-2 h-2 rounded-full" id="onyx-offline-sync-dot"></span>
+            <span id="onyx-offline-sync-text">Offline</span>
+        </div>
+    </div>
 </body>
 </html>
