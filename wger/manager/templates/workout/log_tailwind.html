@@ -758,6 +758,13 @@
         if (overlay) {
             overlay.classList.add('hidden');
         }
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
+                window.AndroidTimer.stopAlarm();
+            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+            }
+        } catch(e) {}
         if (window.location.search.includes('open_timer=true') || window.location.hash === '#rest-timer') {
             const cleanQuery = window.location.search.replace(/[\?&]open_timer=true/, '').replace(/^&/, '?');
             const cleanHash = window.location.hash === '#rest-timer' ? '' : window.location.hash;
@@ -771,6 +778,13 @@
     window.closeOverlay = closeOverlay;
 
     function clearExpiringStyles() {
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
+                window.AndroidTimer.stopAlarm();
+            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+            }
+        } catch(e) {}
         if (overlay) {
             overlay.classList.remove('bg-[#caf300]');
             overlay.classList.add('bg-[#08090A]');
