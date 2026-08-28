@@ -2,7 +2,9 @@
 {% load l10n %}
 {% load wger_extras %}
 {% with exercise=slot.obj %}
-<div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id|unlocalize }}" id="exercise-card-{{ slot.id|unlocalize }}" style="view-transition-name: exercise-card-{{ slot.id|unlocalize }};">
+{% with eq_names=exercise.equipment.all|join:" "|lower %}
+{% with is_weighted="barbell" in eq_names or "dumbbell" in eq_names or "kettlebell" in eq_names or "sz-bar" in eq_names or "incline bench" in eq_names %}
+<div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id|unlocalize }}" data-is-weighted="{% if is_weighted %}true{% else %}false{% endif %}" id="exercise-card-{{ slot.id|unlocalize }}" style="view-transition-name: exercise-card-{{ slot.id|unlocalize }};">
     <!-- Card Header -->
     <div class="flex w-full items-center justify-between p-3.5 cursor-pointer select-none" onclick="toggleCollapse('{{ slot.id|unlocalize }}')">
         <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -28,7 +30,8 @@
                             {{ entries_count }} set
                         {% endwith %}
                     </span>
-                    <!-- Mode Switcher: REPS vs TEMPO -->
+                    {% if not is_weighted %}
+                    <!-- Mode Switcher: REPS vs TEMPO (Only for Bodyweight / Free Exercises) -->
                     <div class="inline-flex items-center bg-[#18191C] border border-[#26282E] p-0.5 rounded-lg text-[9px] font-black select-none" onclick="event.stopPropagation();">
                         <button type="button" onclick="setExerciseMode('{{ slot.id|unlocalize }}', 'reps', event)" id="mode-btn-reps-{{ slot.id|unlocalize }}" class="mode-tab-reps px-1.5 py-0.5 rounded-md transition-all duration-200 bg-[#caf300] text-black font-black">
                             REPS
@@ -37,6 +40,7 @@
                             TEMPO
                         </button>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -141,13 +145,18 @@
                                     
                                     <!-- Reps / Time & Weight Inputs -->
                                     <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
-                                        <!-- Quick Timer Launch Button for Time Mode -->
-                                        <button type="button" onclick="startSetCountdown(this, event, '{{ exercise.get_translation.name|escapejs }}')" class="btn-start-set-timer hidden w-6 h-6 rounded-md bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center justify-center transition-all cursor-pointer mr-0.5 shrink-0" title="Avvia cronometro serie">
-                                            <span class="material-symbols-outlined text-xs">timer</span>
+                                        <!-- Live Hold Stopwatch Button (Start / Stop) for Time Mode -->
+                                        <button type="button" 
+                                                onclick="toggleSetStopwatch(this, event, '{{ slot_entry.id|unlocalize }}', '{{ exercise.get_translation.name|escapejs }}')" 
+                                                id="stopwatch-btn-{{ slot_entry.id|unlocalize }}" 
+                                                class="btn-start-set-timer hidden h-7 px-2 rounded-lg bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black" 
+                                                title="Avvia/Ferma cronometro di tenuta">
+                                            <span class="material-symbols-outlined text-xs font-black stopwatch-icon">play_arrow</span>
+                                            <span class="stopwatch-label font-mono font-black uppercase">AVVIA</span>
                                         </button>
 
                                         <!-- Reps / Time Input -->
-                                        <input type="number" name="repetitions" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" oninput="var h=document.getElementById('reps-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" required min="1" max="600" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
+                                        <input type="number" id="input-set-value-{{ slot_entry.id|unlocalize }}" name="repetitions" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}" oninput="var h=document.getElementById('reps-hidden-{{ slot_entry.id|unlocalize }}'); if(h) h.value=this.value;" required min="1" max="600" class="input-set-value w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0">
                                         <input type="hidden" id="reps-hidden-{{ slot_entry.id|unlocalize }}" name="reps_{{ slot_entry.id|unlocalize }}" value="{% if slot_entry.reps_config.reps is not None %}{{ slot_entry.reps_config.reps }}{% else %}10{% endif %}">
                                         
                                         <span class="unit-badge-sec hidden text-[9px] font-black text-[#caf300] select-none">s</span>
@@ -241,4 +250,6 @@
         </div>
     </div>
 </div>
+{% endwith %}
+{% endwith %}
 {% endwith %}

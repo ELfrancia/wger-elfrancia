@@ -2128,11 +2128,95 @@
         } catch(e) {}
     }
 
+    // -------------------------------------------------------------
+    // LIVE HOLD STOPWATCH (START / STOP) FOR BODYWEIGHT / TIMED SETS
+    // -------------------------------------------------------------
+    const activeSetStopwatches = {};
+
+    function toggleSetStopwatch(btn, evt, slotEntryId, exerciseName) {
+        if (evt) evt.stopPropagation();
+        
+        const row = document.getElementById('set-row-' + slotEntryId);
+        const input = document.getElementById('input-set-value-' + slotEntryId) || (row ? row.querySelector('.input-set-value') : null);
+        const hiddenInput = document.getElementById('reps-hidden-' + slotEntryId);
+        const labelEl = btn.querySelector('.stopwatch-label');
+        const iconEl = btn.querySelector('.stopwatch-icon');
+
+        if (activeSetStopwatches[slotEntryId]) {
+            // STOP THE STOPWATCH!
+            const sw = activeSetStopwatches[slotEntryId];
+            clearInterval(sw.interval);
+            const elapsedSeconds = Math.max(1, Math.floor((Date.now() - sw.startTime) / 1000));
+            delete activeSetStopwatches[slotEntryId];
+
+            // Save measured seconds directly into the set inputs
+            if (input) {
+                input.value = elapsedSeconds;
+                input.classList.add('ring-2', 'ring-[#caf300]', 'text-[#caf300]');
+                setTimeout(() => input.classList.remove('ring-2', 'ring-[#caf300]'), 2000);
+            }
+            if (hiddenInput) {
+                hiddenInput.value = elapsedSeconds;
+            }
+
+            // Play completion chime & vibrate
+            playSynthesizedSound(getSelectedTimerSound());
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+            // Revert button UI
+            btn.className = "btn-start-set-timer h-7 px-2.5 rounded-lg bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black";
+            if (iconEl) iconEl.innerText = "replay";
+            if (labelEl) labelEl.innerText = elapsedSeconds + "s";
+            
+            // Stop Android background timer if active
+            try {
+                if (window.AndroidTimer) window.AndroidTimer.stopTimer();
+            } catch(e) {}
+
+        } else {
+            // START THE STOPWATCH!
+            unlockAudioContext();
+            const startTime = Date.now();
+            
+            // Transform button to pulsing active STOP button
+            btn.className = "btn-start-set-timer h-7 px-2.5 rounded-lg bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500 hover:text-white flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black animate-pulse shadow-sm shadow-red-500/30";
+            if (iconEl) iconEl.innerText = "stop";
+            if (labelEl) labelEl.innerText = "0s STOP";
+
+            // Trigger Android native timer in stopwatch mode
+            try {
+                if (window.AndroidTimer) {
+                    window.AndroidTimer.startTimer(600, (exerciseName || "Esercizio a Corpo Libero") + " (In corso)");
+                }
+            } catch(e) {}
+
+            const interval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                if (labelEl) labelEl.innerText = elapsed + "s STOP";
+                if (input) input.value = elapsed;
+                if (hiddenInput) hiddenInput.value = elapsed;
+            }, 1000);
+
+            activeSetStopwatches[slotEntryId] = {
+                startTime: startTime,
+                interval: interval
+            };
+        }
+    }
+
     function initExerciseModes() {
         document.querySelectorAll('.exercise-group').forEach(card => {
             const cardId = card.id;
             if (!cardId || !cardId.startsWith('exercise-card-')) return;
             const slotId = cardId.replace('exercise-card-', '');
+            const isWeighted = card.getAttribute('data-is-weighted') === 'true';
+            
+            if (isWeighted) {
+                // Strictly Reps mode for weighted exercises
+                setExerciseMode(slotId, 'reps');
+                return;
+            }
+
             let mode = 'reps';
             try {
                 const saved = localStorage.getItem('onyx_slot_mode_' + slotId);
@@ -2141,7 +2225,7 @@
                 } else {
                     const nameEl = card.querySelector('h3');
                     const name = nameEl ? nameEl.innerText.toLowerCase() : '';
-                    if (name.includes('plank') || name.includes('hold') || name.includes('isomet') || name.includes('handstand') || name.includes('l-sit') || name.includes('hang') || name.includes('lever') || name.includes('tenuta')) {
+                    if (name.includes('plank') || name.includes('hold') || name.includes('isomet') || name.includes('handstand') || name.includes('l-sit') || name.includes('hang') || name.includes('lever') || name.includes('tenuta') || name.includes('wall sit') || name.includes('hollow')) {
                         mode = 'time';
                     }
                 }
@@ -2164,6 +2248,7 @@
     window.setExerciseMode = setExerciseMode;
     window.initExerciseModes = initExerciseModes;
     window.startSetCountdown = startSetCountdown;
+    window.toggleSetStopwatch = toggleSetStopwatch;
 
     document.addEventListener('DOMContentLoaded', initExerciseModes);
     document.addEventListener('htmx:afterSwap', initExerciseModes);
