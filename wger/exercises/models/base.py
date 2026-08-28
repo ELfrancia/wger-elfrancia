@@ -271,37 +271,16 @@ class Exercise(AbstractLicenseModel, AbstractHistoryMixin, models.Model):
             from wger.exercises.models import CalisthenicsExercise
             cal = CalisthenicsExercise.objects.filter(id=str(self.uuid)).first()
             if cal and cal.demo_media_url:
+                if cal.demo_media_url.startswith('http://') or cal.demo_media_url.startswith('https://'):
+                    return cal.demo_media_url
                 rel_path = cal.demo_media_url.lstrip('/')
                 full_path = os.path.join(settings.BASE_DIR, rel_path)
-                if os.path.exists(full_path):
+                if os.path.exists(full_path) or os.path.exists(os.path.join(settings.MEDIA_ROOT, rel_path)):
                     return cal.demo_media_url
         except Exception:
             pass
 
-        # Fallback by muscle / category
-        fallback_map = {
-            'biceps': '/media/exercises/0br45wL.mp4',
-            'triceps': '/media/exercises/x6KpKpq.mp4',
-            'chest': '/media/exercises/edb-001.mp4',
-            'pectoral': '/media/exercises/edb-001.mp4',
-            'quadriceps': '/media/exercises/QpXqiq8.mp4',
-            'leg': '/media/exercises/QpXqiq8.mp4',
-            'latissimus': '/media/exercises/lBDjFxJ.mp4',
-            'lats': '/media/exercises/lBDjFxJ.mp4',
-            'back': '/media/exercises/lBDjFxJ.mp4',
-            'deltoid': '/media/exercises/gw9PqGk.mp4',
-            'shoulder': '/media/exercises/gw9PqGk.mp4',
-            'abdominis': '/media/exercises/IaGQCrC.mp4',
-            'abs': '/media/exercises/IaGQCrC.mp4',
-        }
-
-        for m in self.muscles.all():
-            m_name = m.name.lower()
-            for key, url in fallback_map.items():
-                if key in m_name:
-                    return url
-
-        return '/media/exercises/4GqRrAk.gif'
+        return None
 
     @property
     def languages(self) -> List[Language]:

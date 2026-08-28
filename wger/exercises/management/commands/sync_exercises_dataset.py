@@ -1,4 +1,4 @@
-﻿"""
+"""
 Django Management Command: sync_exercises_dataset
 Syncs 1,324 exercises, Italian step-by-step instructions, and accurate animation media
 from https://github.com/hasaneyldrm/exercises-dataset.
@@ -161,6 +161,14 @@ class Command(BaseCommand):
                     CalisthenicsExercise.objects.bulk_update(cal_to_update, ["demo_media_url", "description"], batch_size=200)
                 if trans_to_update:
                     Translation.objects.bulk_update(trans_to_update, ["description"], batch_size=200)
+
+            try:
+                from wger.manager.services.exercise_catalog import bump_catalog_version
+                from django.core.cache import cache
+                bump_catalog_version()
+                cache.clear()
+            except Exception as e:
+                logger.warning(f"Could not bump catalog cache: {e}")
 
         self.stdout.write(self.style.SUCCESS(
             f"Sync complete! Matched: {matched_count} exercises | Video media linked: {updated_media_count} | Italian instructions updated: {updated_trans_count}."
