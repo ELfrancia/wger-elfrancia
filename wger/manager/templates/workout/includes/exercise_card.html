@@ -3,8 +3,7 @@
 {% load wger_extras %}
 {% with exercise=slot.obj %}
 {% with eq_names=exercise.equipment.all|join:" "|lower %}
-{% with is_weighted="barbell" in eq_names or "dumbbell" in eq_names or "kettlebell" in eq_names or "sz-bar" in eq_names or "incline bench" in eq_names %}
-<div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id|unlocalize }}" data-is-weighted="{% if is_weighted %}true{% else %}false{% endif %}" id="exercise-card-{{ slot.id|unlocalize }}" style="view-transition-name: exercise-card-{{ slot.id|unlocalize }};">
+<div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id|unlocalize }}" data-is-weighted="{% if 'barbell' in eq_names or 'dumbbell' in eq_names or 'kettlebell' in eq_names or 'sz-bar' in eq_names or 'incline bench' in eq_names %}true{% else %}false{% endif %}" id="exercise-card-{{ slot.id|unlocalize }}" style="view-transition-name: exercise-card-{{ slot.id|unlocalize }};">
     <!-- Card Header -->
     <div class="flex w-full items-center justify-between p-3.5 cursor-pointer select-none" onclick="toggleCollapse('{{ slot.id|unlocalize }}')">
         <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -30,7 +29,7 @@
                             {{ entries_count }} set
                         {% endwith %}
                     </span>
-                    {% if not is_weighted %}
+                    {% if 'barbell' not in eq_names and 'dumbbell' not in eq_names and 'kettlebell' not in eq_names and 'sz-bar' not in eq_names and 'incline bench' not in eq_names %}
                     <!-- Mode Switcher: REPS vs TEMPO (Only for Bodyweight / Free Exercises) -->
                     <div class="inline-flex items-center bg-[#18191C] border border-[#26282E] p-0.5 rounded-lg text-[9px] font-black select-none" onclick="event.stopPropagation();">
                         <button type="button" onclick="setExerciseMode('{{ slot.id|unlocalize }}', 'reps', event)" id="mode-btn-reps-{{ slot.id|unlocalize }}" class="mode-tab-reps px-1.5 py-0.5 rounded-md transition-all duration-200 bg-[#caf300] text-black font-black">
@@ -250,6 +249,5 @@
         </div>
     </div>
 </div>
-{% endwith %}
 {% endwith %}
 {% endwith %}
