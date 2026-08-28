@@ -1,4 +1,5 @@
 {% load static i18n %}
+{% if user.is_authenticated %}
 <!-- TopAppBar (Web & Mobile) -->
 <header class="w-full sticky top-0 z-50 bg-[#08090A]/95 backdrop-blur-md border-b border-[#222429]">
     <div class="w-full max-w-5xl mx-auto flex justify-between items-center px-4 sm:px-6 py-3.5 pt-[max(env(safe-area-inset-top),14px)]">
@@ -399,20 +400,24 @@
                         const elapsed = Date.now() - state.startedAt;
                         msLeft = Math.max(0, state.remainingMs - elapsed);
                     }
-                    if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
+                    if (state.isRunning || (msLeft > 0 && !state.hasNotifiedZero)) {
                         hasActiveRestTimer = true;
+                    } else if (state.hasNotifiedZero && state.isRunning) {
+                        hasActiveRestTimer = true;
+                    } else {
+                        // Stale timer: clean up localStorage so bubble does not linger
+                        localStorage.removeItem('onyx_active_rest_timer');
+                        hasActiveRestTimer = false;
                     }
                 }
             } catch(e) {}
         }
 
+        const isWorkoutPage = window.location.pathname.includes('/workout/') || window.location.pathname.includes('/day/');
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
-        const hasActiveWorkout = Boolean(serverActiveUrl);
+        const hasActiveWorkout = Boolean(serverActiveUrl) && !isWorkoutPage;
 
-        // This is the only floating timer.  The workout page has an inline timer,
-        // but it must not be allowed to take ownership of this bubble: two
-        // overlapping components were alternately hiding one another while their
-        // independent update loops ran.
+        // Hide bubble if no active rest timer and no active workout, or if on workout page without active rest timer
         if (!hasActiveRestTimer && !hasActiveWorkout) {
             bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
             bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
@@ -636,3 +641,4 @@
     window.hasOpenModals = hasOpenModals;
     window.closeTopModal = closeTopModal;
 </script>
+{% endif %}

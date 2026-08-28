@@ -187,6 +187,16 @@
             btn.classList.add('text-neutral-500');
         }
     }
+
+    // Clean up any stale timer or workout state on login page
+    try {
+        localStorage.removeItem('onyx_active_rest_timer');
+        localStorage.removeItem('onyx_active_rest_timer_paused');
+        if (window.AndroidTimer) {
+            window.AndroidTimer.stopTimer();
+            window.AndroidTimer.stopAlarm();
+        }
+    } catch(e) {}
 </script>
 {% endblock %}
 
