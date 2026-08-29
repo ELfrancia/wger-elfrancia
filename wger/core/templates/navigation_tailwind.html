@@ -534,6 +534,12 @@
         const notch = document.getElementById('onyx-dynamic-notch');
         if (!notch) return;
 
+        // In native Android app, notch is rendered directly by the native OS overlay and HyperOS Focus Notification
+        if (window.AndroidTimer || window.Capacitor?.isNativePlatform?.()) {
+            notch.classList.add('hidden', '-translate-y-16', 'opacity-0', 'pointer-events-none');
+            return;
+        }
+
         const path = window.location.pathname || '';
         if (path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password/reset')) {
             notch.classList.add('-translate-y-16', 'opacity-0', 'pointer-events-none');
