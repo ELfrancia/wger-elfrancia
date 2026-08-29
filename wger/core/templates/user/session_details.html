@@ -91,6 +91,29 @@
         </div>
     </div>
 
+    <!-- Condition Photo Section -->
+    {% if session.condition_photo %}
+        <div class="bg-surface border border-outline rounded-3xl p-4 flex items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-3.5 min-w-0">
+                <a href="{{ session.condition_photo.image.url }}" target="_blank" class="relative group shrink-0 block">
+                    <img src="{{ session.condition_photo.image.url }}" alt="Foto Condizione" class="w-16 h-16 object-cover rounded-2xl border border-primary/40 group-hover:scale-105 transition-transform duration-200">
+                </a>
+                <div class="min-w-0">
+                    <span class="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">photo_camera</span>
+                        {% translate "Foto Condizione" %}
+                    </span>
+                    <span class="text-xs text-zinc-300 truncate block mt-0.5" title="{{ session.condition_photo.description }}">
+                        {{ session.condition_photo.description|default:"Fine allenamento" }}
+                    </span>
+                </div>
+            </div>
+            <a href="{{ session.condition_photo.image.url }}" target="_blank" class="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-primary hover:text-black border border-white/[0.1] text-zinc-300 text-xs font-bold uppercase transition-all shrink-0">
+                {% translate "Vedi" %}
+            </a>
+        </div>
+    {% endif %}
+
     <!-- Notes Section -->
     {% if session.notes %}
         <div class="bg-surface-card/40 border-l-4 border-primary rounded-r-3xl p-4.5 flex gap-3.5 items-start border border-outline border-l-0 shadow-sm">

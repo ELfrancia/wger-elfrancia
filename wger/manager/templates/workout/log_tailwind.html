@@ -394,8 +394,8 @@
         <button type="button" onclick="openConditionPhotoModal()" class="w-full bg-[#16171A] text-[#caf300] border border-[#caf300]/40 hover:border-[#caf300] hover:bg-[#caf300]/10 min-h-[50px] py-3.5 px-4 rounded-full flex items-center justify-center gap-2 font-bold text-xs sm:text-sm tracking-widest uppercase hover:scale-[1.01] transition-all duration-300 shadow-sm">
             <span class="material-symbols-outlined text-lg">add_a_photo</span>
             <span>{% translate "FOTO CONDIZIONE" %}</span>
-            <span id="condition-photo-badge" class="ml-1 px-2 py-0.5 rounded-full bg-[#caf300] text-black text-[10px] font-black {% if today_photos_count == 0 %}hidden{% endif %}">
-                {% if today_photos_count > 0 %}{{ today_photos_count }}{% else %}0{% endif %}
+            <span id="condition-photo-badge" class="ml-1 px-2 py-0.5 rounded-full bg-[#caf300] text-black text-[10px] font-black {% if not session.condition_photo %}hidden{% endif %}">
+                {% if session.condition_photo %}1{% else %}0{% endif %}
             </span>
         </button>
 

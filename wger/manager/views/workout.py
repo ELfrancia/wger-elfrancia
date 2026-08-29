@@ -192,6 +192,7 @@ def log_tailwind(request, routine_pk, day_pk):
         with transaction.atomic():
             if action == 'restart_workout':
                 session.logs.all().delete()
+                session.condition_photo = None
                 session.status = 'active'
                 session.time_start = timezone.localtime(timezone.now()).time()
                 session.time_end = None
@@ -226,12 +227,12 @@ def log_tailwind(request, routine_pk, day_pk):
                         del request.session[session_key]
                     return make_overview_redirect(request)
 
-                today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
+                session_photos_count = 1 if session.condition_photo else 0
                 if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
                         'status': 'ok',
                         'message': 'Foto caricata con successo!',
-                        'photos_count': today_photos_count,
+                        'photos_count': session_photos_count,
                     })
             elif action == 'auto_save_snapshot':
                 payload_str = request.POST.get('snapshot_payload')
@@ -645,7 +646,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 completed_exercise_ids.append(s.obj.id)
 
     session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
-    today_photos_count = Image.objects.filter(user=request.user, date=datetime.date.today()).count()
+    session_photos_count = 1 if session.condition_photo else 0
     user_routines = Routine.objects.filter(user=request.user)
 
     return render(request, 'workout/log_tailwind.html', {
@@ -657,7 +658,7 @@ def log_tailwind(request, routine_pk, day_pk):
         'progress_percentage': progress_percentage,
         'elapsed_seconds': elapsed_seconds,
         'session_logs_map': session_logs_map,
-        'today_photos_count': today_photos_count,
+        'today_photos_count': session_photos_count,
         'user_routines': user_routines,
     })
 
