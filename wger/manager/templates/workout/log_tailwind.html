@@ -1446,36 +1446,6 @@
         
         if (progressBar) progressBar.style.width = `${percentage}%`;
         if (progressText) progressText.innerText = `${percentage}%`;
-
-        // Calculate exercises progress for Top Dynamic Notch and Native Android bridge
-        const exerciseCards = document.querySelectorAll('.exercise-group');
-        const totalExercises = exerciseCards.length;
-        let completedExercises = 0;
-        exerciseCards.forEach(card => {
-            const uncompleted = card.querySelectorAll('.set-row[data-completed="false"]');
-            if (uncompleted.length === 0 && card.querySelectorAll('.set-row').length > 0) {
-                completedExercises++;
-            }
-        });
-        const remainingExercises = Math.max(0, totalExercises - completedExercises);
-
-        try {
-            localStorage.setItem('onyx_workout_progress', JSON.stringify({
-                total: totalExercises,
-                completed: completedExercises,
-                remaining: remainingExercises
-            }));
-        } catch(e) {}
-
-        if (typeof updateDynamicNotch === 'function') {
-            updateDynamicNotch();
-        }
-
-        try {
-            if (window.AndroidTimer && typeof window.AndroidTimer.updateProgress === 'function') {
-                window.AndroidTimer.updateProgress(completedExercises, totalExercises, remainingExercises);
-            }
-        } catch(e) {}
     }
 
     function toggleCollapse(exerciseId) {
@@ -2553,33 +2523,6 @@
         // Clean local active session keys upon completion
         localStorage.removeItem('onyx_active_workout_snapshot');
         localStorage.removeItem('onyx_active_rest_timer');
-
-        try {
-            if (window.AndroidTimer && typeof window.AndroidTimer.stopWorkout === 'function') {
-                window.AndroidTimer.stopWorkout();
-            }
-        } catch(e) {}
     };
-
-    // Initialize Native Android Workout Notch Activity
-    function initAndroidWorkoutSession() {
-        try {
-            let elapsedSec = 0;
-            const totalTimerText = document.getElementById('total-workout-timer')?.innerText || '00:00:00';
-            const parts = totalTimerText.split(':').map(Number);
-            if (parts.length === 3) {
-                elapsedSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
-            }
-            const startTimeEpoch = Date.now() - (elapsedSec * 1000);
-            const workoutTitle = "{{ day.routine.name|escapejs }} - {{ day.name|escapejs }}";
-
-            if (window.AndroidTimer && typeof window.AndroidTimer.startWorkout === 'function') {
-                window.AndroidTimer.startWorkout(workoutTitle, startTimeEpoch);
-            }
-        } catch(e) {}
-    }
-
-    document.addEventListener('DOMContentLoaded', initAndroidWorkoutSession);
-    setTimeout(initAndroidWorkoutSession, 800);
 </script>
 {% endblock %}
