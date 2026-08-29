@@ -799,8 +799,8 @@ class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 
 class WgerPasswordChangeView(PasswordChangeView):
-    template_name = 'form_content.html'
-    success_url = reverse_lazy('core:user:preferences')
+    template_name = 'user/change_password_tailwind.html'
+    success_url = reverse_lazy('core:dashboard')
     title = gettext_lazy('Change password')
 
     def get_form(self, form_class=None):
@@ -824,11 +824,12 @@ class WgerPasswordChangeView(PasswordChangeView):
         if profile.needs_password_change:
             profile.needs_password_change = False
             profile.save()
+        messages.success(self.request, _('Password aggiornata con successo! Benvenuto in Onyx.'))
         return response
 
 
 class WgerPasswordResetView(PasswordResetView):
-    template_name = 'form_content.html'
+    template_name = 'user/password_reset_tailwind.html'
     email_template_name = 'registration/password_reset_email.html'
     success_url = reverse_lazy('core:user:password_reset_done')
     from_email = settings.WGER_SETTINGS['EMAIL_FROM']
@@ -853,7 +854,7 @@ class WgerPasswordResetView(PasswordResetView):
 
 
 class WgerPasswordResetConfirmView(PasswordResetConfirmView):
-    template_name = 'form_content.html'
+    template_name = 'user/password_reset_confirm_tailwind.html'
     success_url = reverse_lazy('core:user:login')
 
     def get_form(self, form_class=None):

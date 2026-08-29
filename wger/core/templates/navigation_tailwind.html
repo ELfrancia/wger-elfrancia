@@ -91,17 +91,57 @@
 
 <style>
     #global-mini-timer-bubble {
-        bottom: calc(108px + env(safe-area-inset-bottom, 0px)) !important;
+        bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
     }
     @media (min-width: 640px) {
         #global-mini-timer-bubble {
-            bottom: calc(118px + env(safe-area-inset-bottom, 0px)) !important;
+            bottom: calc(108px + env(safe-area-inset-bottom, 0px)) !important;
         }
     }
 </style>
 
+<!-- Top Dynamic Notch Capsule (Live Island Status / Notch Indicator) -->
+<div id="onyx-dynamic-notch" onclick="handleNotchClick(event)" class="fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform -translate-y-16 opacity-0 pointer-events-none select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95" title="{% translate 'Onyx Dynamic Island' %}">
+    
+    <!-- Left: Onyx Badge (Icon + Wordmark) -->
+    <div class="flex items-center gap-1.5 shrink-0">
+        <div id="notch-logo-badge" class="w-6 h-6 rounded-full bg-[#121316] border border-[#2a2c33] flex items-center justify-center shrink-0">
+            <svg class="w-3.5 h-3.5 text-[#caf300]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 5H4v14h2V5zm14 0h-2v14h2V5zM8 9h2v6H8V9zm8 0h-2v6h2V9zm-5 2h2v2h-2v-2z"/>
+            </svg>
+        </div>
+        <span id="notch-logo-text" class="text-[8px] font-black text-white/90 uppercase tracking-widest font-display">ONYX</span>
+    </div>
+
+    <!-- Center: Dynamic Status / Time Label -->
+    <div class="flex items-center gap-1 min-w-0">
+        <span id="notch-status-text" class="text-[11px] font-black font-mono text-white tracking-tight tabular-nums truncate">00:45</span>
+    </div>
+
+    <!-- Right: Progress / Rest State -->
+    <div class="flex items-center shrink-0">
+        <!-- 1. Workout Progress Circle (When workout is active) -->
+        <div id="notch-workout-progress-container" class="relative w-6 h-6 flex items-center justify-center">
+            <svg class="w-6 h-6 -rotate-90 transform" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#22251a" stroke-width="3.5" />
+                <circle id="notch-workout-progress-circle" cx="18" cy="18" r="14" fill="none" stroke="#8da815" stroke-width="3.5" stroke-dasharray="88" stroke-dashoffset="25" stroke-linecap="round" class="transition-all duration-500" />
+            </svg>
+            <span id="notch-exercises-remaining-count" class="absolute text-[8px] font-black font-mono text-[#caf300]">0</span>
+        </div>
+
+        <!-- 2. Rest Timer Hourglass Circle (When rest timer is running) -->
+        <div id="notch-rest-progress-container" class="relative w-6 h-6 flex items-center justify-center hidden">
+            <svg class="w-6 h-6 -rotate-90 transform" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#222429" stroke-width="3.5" />
+                <circle id="notch-rest-timer-circle" cx="18" cy="18" r="14" fill="none" stroke="#caf300" stroke-width="3.5" stroke-dasharray="88" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-300" />
+            </svg>
+            <span id="notch-hourglass-icon" class="material-symbols-outlined text-[#caf300] text-[12px] absolute animate-pulse">hourglass_top</span>
+        </div>
+    </div>
+</div>
+
 <!-- Global Floating Mini Timer Bubble (Above Floating Navigation Dock) -->
-<div id="global-mini-timer-bubble" onclick="openGlobalTimerOptionsModal()" class="fixed left-1/2 -translate-x-1/2 z-40 bg-[#121316]/95 border-2 border-[#caf300]/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none select-none min-h-[52px]" style="bottom: calc(108px + env(safe-area-inset-bottom, 0px));" title="{% translate 'Opzioni Timer / Workout' %}">
+<div id="global-mini-timer-bubble" onclick="openGlobalTimerOptionsModal()" class="fixed left-1/2 -translate-x-1/2 z-40 bg-[#121316]/95 border-2 border-[#caf300]/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none select-none min-h-[52px]" style="bottom: calc(96px + env(safe-area-inset-bottom, 0px));" title="{% translate 'Opzioni Timer / Workout' %}">
     <div id="global-mini-timer-dot" class="w-3 h-3 rounded-full bg-[#caf300] animate-pulse shadow-[0_0_10px_#caf300]"></div>
     <span id="global-mini-timer-icon" class="material-symbols-outlined text-[#caf300] text-xl">timer</span>
     <span id="global-mini-timer-display" class="font-display text-base font-black text-white tracking-tight tabular-nums">00:45</span>
@@ -372,8 +412,23 @@
     window.handleGlobalTimerModalOption3 = handleGlobalTimerModalOption3;
 
     function updateGlobalMiniTimer() {
-        const raw = localStorage.getItem('onyx_active_rest_timer');
         const bubble = document.getElementById('global-mini-timer-bubble');
+        if (!bubble) return;
+
+        const path = window.location.pathname || '';
+        if (path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password/reset')) {
+            bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+            bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            return;
+        }
+
+        if (typeof hasOpenModals === 'function' && hasOpenModals()) {
+            bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+            bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            return;
+        }
+
+        const raw = localStorage.getItem('onyx_active_rest_timer');
         const display = document.getElementById('global-mini-timer-display');
         const icon = document.getElementById('global-mini-timer-icon');
         const dot = document.getElementById('global-mini-timer-dot');
@@ -384,8 +439,6 @@
         const opt3Icon = document.getElementById('global-timer-modal-option3-icon');
         const stopBtn = document.getElementById('global-mini-timer-stop-btn');
         const chevron = document.getElementById('global-mini-timer-chevron');
-
-        if (!bubble) return;
 
         let state = null;
         let hasActiveRestTimer = false;
@@ -477,13 +530,205 @@
         }
     }
 
+    function updateDynamicNotch() {
+        const notch = document.getElementById('onyx-dynamic-notch');
+        if (!notch) return;
+
+        const path = window.location.pathname || '';
+        if (path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password/reset')) {
+            notch.classList.add('-translate-y-16', 'opacity-0', 'pointer-events-none');
+            notch.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            return;
+        }
+
+        // Check if rest timer is active
+        const rawTimer = localStorage.getItem('onyx_active_rest_timer');
+        let timerState = null;
+        let msLeft = 0;
+        let hasActiveTimer = false;
+        let totalDurationMs = 45000;
+
+        if (rawTimer) {
+            try {
+                timerState = JSON.parse(rawTimer);
+                if (timerState) {
+                    totalDurationMs = (timerState.durationSeconds || 45) * 1000;
+                    msLeft = timerState.remainingMs || 0;
+                    if (timerState.isRunning && timerState.startedAt) {
+                        const elapsed = Date.now() - timerState.startedAt;
+                        msLeft = Math.max(0, timerState.remainingMs - elapsed);
+                    }
+                    if (timerState.isRunning || (msLeft > 0 && !timerState.hasNotifiedZero)) {
+                        hasActiveTimer = true;
+                    } else if (timerState.hasNotifiedZero && timerState.isRunning) {
+                        hasActiveTimer = true;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Check if workout session is active
+        let hasActiveWorkout = false;
+        let workoutData = null;
+        const progressRaw = localStorage.getItem('onyx_workout_progress');
+        if (progressRaw) {
+            try {
+                workoutData = JSON.parse(progressRaw);
+            } catch(e) {}
+        }
+
+        // Check if we are on a workout logging page
+        const isWorkoutPage = path.includes('/day/') || !!document.querySelector('.exercise-group');
+        if (isWorkoutPage) {
+            hasActiveWorkout = true;
+            // Compute real-time exercise counts on workout page
+            const exerciseCards = document.querySelectorAll('.exercise-group');
+            const totalCount = exerciseCards.length;
+            let completedCount = 0;
+            exerciseCards.forEach(card => {
+                const uncompletedSets = card.querySelectorAll('.set-row[data-completed="false"]');
+                if (uncompletedSets.length === 0 && card.querySelectorAll('.set-row').length > 0) {
+                    completedCount++;
+                }
+            });
+            const remainingCount = Math.max(0, totalCount - completedCount);
+            workoutData = {
+                total: totalCount,
+                completed: completedCount,
+                remaining: remainingCount
+            };
+            try {
+                localStorage.setItem('onyx_workout_progress', JSON.stringify(workoutData));
+            } catch(e) {}
+        } else if (workoutData && workoutData.total > 0) {
+            hasActiveWorkout = true;
+        }
+
+        // If neither timer nor workout active, hide notch
+        if (!hasActiveTimer && !hasActiveWorkout) {
+            notch.classList.add('-translate-y-16', 'opacity-0', 'pointer-events-none');
+            notch.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            return;
+        }
+
+        // Show notch!
+        notch.classList.remove('-translate-y-16', 'opacity-0', 'pointer-events-none');
+        notch.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+
+        const statusText = document.getElementById('notch-status-text');
+        const workoutProgContainer = document.getElementById('notch-workout-progress-container');
+        const restProgContainer = document.getElementById('notch-rest-progress-container');
+        const workoutCircle = document.getElementById('notch-workout-progress-circle');
+        const remainingCountEl = document.getElementById('notch-exercises-remaining-count');
+        const restCircle = document.getElementById('notch-rest-timer-circle');
+        const hourglassIcon = document.getElementById('notch-hourglass-icon');
+
+        if (hasActiveTimer) {
+            // MODE A: Rest Timer active
+            if (workoutProgContainer) workoutProgContainer.classList.add('hidden');
+            if (restProgContainer) restProgContainer.classList.remove('hidden');
+
+            const secLeft = Math.ceil(msLeft / 1000);
+            const m = Math.floor(secLeft / 60).toString().padStart(2, '0');
+            const s = (secLeft % 60).toString().padStart(2, '0');
+            const timeStr = `${m}:${s}`;
+
+            // Calculate circle progress (from 0 full to 88 empty)
+            const progressRatio = Math.max(0, Math.min(1, msLeft / totalDurationMs));
+            const dashoffset = 88 * (1 - progressRatio);
+            if (restCircle) {
+                restCircle.style.strokeDashoffset = dashoffset;
+            }
+
+            if (msLeft <= 0) {
+                // EXPIRED: Illumination yellow state
+                notch.className = "fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-[#caf300] text-black border-2 border-white rounded-full px-4 py-1.5 flex items-center justify-between gap-3 shadow-[0_0_25px_rgba(202,243,0,0.85)] backdrop-blur-xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto select-none min-h-[38px] max-w-[280px] cursor-pointer animate-pulse scale-105";
+                if (statusText) {
+                    statusText.innerText = "{% translate 'TEMPO SCADUTO!' %}";
+                    statusText.className = "text-[10px] font-black uppercase tracking-wider text-black font-display";
+                }
+                if (hourglassIcon) {
+                    hourglassIcon.innerText = "alarm";
+                    hourglassIcon.className = "material-symbols-outlined text-black text-[13px] absolute animate-bounce";
+                }
+                if (restCircle) {
+                    restCircle.setAttribute('stroke', '#000000');
+                }
+            } else {
+                // COUNTING DOWN: Standard sleek black notch
+                notch.className = "fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95";
+                if (statusText) {
+                    statusText.innerText = timeStr;
+                    statusText.className = "text-[11px] font-black font-mono text-[#caf300] tracking-tight tabular-nums";
+                }
+                if (hourglassIcon) {
+                    hourglassIcon.innerText = (secLeft % 2 === 0) ? "hourglass_top" : "hourglass_bottom";
+                    hourglassIcon.className = "material-symbols-outlined text-[#caf300] text-[12px] absolute";
+                }
+                if (restCircle) {
+                    restCircle.setAttribute('stroke', '#caf300');
+                }
+            }
+
+        } else if (hasActiveWorkout) {
+            // MODE B: Workout in progress (no rest timer)
+            notch.className = "fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95";
+            if (workoutProgContainer) workoutProgContainer.classList.remove('hidden');
+            if (restProgContainer) restProgContainer.classList.add('hidden');
+
+            const total = (workoutData && workoutData.total) || 1;
+            const completed = (workoutData && workoutData.completed) || 0;
+            const remaining = (workoutData && workoutData.remaining !== undefined) ? workoutData.remaining : Math.max(0, total - completed);
+
+            if (remainingCountEl) {
+                remainingCountEl.innerText = remaining;
+            }
+            if (statusText) {
+                statusText.innerText = remaining > 0 ? `${remaining} {% translate 'RIMANENTI' %}` : "{% translate 'COMPLETATO' %}";
+                statusText.className = "text-[10px] font-black uppercase tracking-wider text-zinc-300 font-display";
+            }
+            if (workoutCircle) {
+                const ratio = Math.max(0, Math.min(1, completed / total));
+                const dashoffset = 88 * (1 - ratio);
+                workoutCircle.style.strokeDashoffset = dashoffset;
+            }
+        }
+    }
+
+    function handleNotchClick(event) {
+        if (event) event.stopPropagation();
+        const rawTimer = localStorage.getItem('onyx_active_rest_timer');
+        if (rawTimer) {
+            try {
+                const s = JSON.parse(rawTimer);
+                if (s && s.hasNotifiedZero) {
+                    stopGlobalTimerAlarm(event);
+                    return;
+                }
+            } catch(e) {}
+        }
+        if (typeof openOverlay === 'function') {
+            openOverlay();
+        } else {
+            openGlobalTimerOptionsModal();
+        }
+    }
+
+    window.handleNotchClick = handleNotchClick;
+    window.updateDynamicNotch = updateDynamicNotch;
+
+    function runGlobalTimersUpdate() {
+        updateGlobalMiniTimer();
+        updateDynamicNotch();
+    }
+
     // Navigation can be re-rendered by partial page updates.  Keep exactly one
     // scheduler alive so a replacement script cannot multiply DOM updates.
     if (window.globalMiniTimerInterval) {
         window.clearInterval(window.globalMiniTimerInterval);
     }
-    window.globalMiniTimerInterval = window.setInterval(updateGlobalMiniTimer, 500);
-    document.addEventListener('DOMContentLoaded', updateGlobalMiniTimer);
+    window.globalMiniTimerInterval = window.setInterval(runGlobalTimersUpdate, 500);
+    document.addEventListener('DOMContentLoaded', runGlobalTimersUpdate);
 
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
         try {

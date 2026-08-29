@@ -102,7 +102,7 @@ patterns_user = [
     ),
     path(
         'password/reset/done/',
-        views.PasswordResetDoneView.as_view(),
+        views.PasswordResetDoneView.as_view(template_name='user/password_reset_done_tailwind.html'),
         name='password_reset_done',
     ),
     re_path(

@@ -219,6 +219,73 @@
     </div>
 </div>
 
+<!-- Custom Duration Picker Modal -->
+<div id="custom-timer-modal" onclick="closeCustomTimerModal()" class="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
+    <div id="custom-timer-modal-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-[#222429] rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95 flex flex-col">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-5 py-4 border-b border-white/10 bg-[#16171A]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                    <span class="material-symbols-outlined text-lg">edit_calendar</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Tempo Personalizzato" %}</h3>
+                    <p class="text-[10px] text-zinc-400">{% translate "Imposta minuti e secondi di recupero" %}</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCustomTimerModal()" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 flex flex-col gap-4 bg-[#121316]">
+            <!-- Minutes & Seconds Inputs -->
+            <div class="grid grid-cols-2 gap-3 items-center">
+                <!-- Minutes -->
+                <div class="flex flex-col items-center gap-1.5 bg-[#18191D] border border-white/5 p-3 rounded-2xl">
+                    <label class="text-[10px] font-extrabold uppercase text-zinc-400 tracking-wider">{% translate "Minuti" %}</label>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="adjustCustomField('custom-timer-minutes', -1, 0, 59)" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center text-sm font-bold active:scale-95 transition-all">-</button>
+                        <input type="number" id="custom-timer-minutes" min="0" max="59" value="0" class="w-12 bg-transparent text-center text-2xl font-black font-mono text-[#caf300] border-0 p-0 focus:ring-0">
+                        <button type="button" onclick="adjustCustomField('custom-timer-minutes', 1, 0, 59)" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center text-sm font-bold active:scale-95 transition-all">+</button>
+                    </div>
+                </div>
+                <!-- Seconds -->
+                <div class="flex flex-col items-center gap-1.5 bg-[#18191D] border border-white/5 p-3 rounded-2xl">
+                    <label class="text-[10px] font-extrabold uppercase text-zinc-400 tracking-wider">{% translate "Secondi" %}</label>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="adjustCustomField('custom-timer-seconds', -5, 0, 59)" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center text-sm font-bold active:scale-95 transition-all">-</button>
+                        <input type="number" id="custom-timer-seconds" min="0" max="59" step="5" value="45" class="w-12 bg-transparent text-center text-2xl font-black font-mono text-[#caf300] border-0 p-0 focus:ring-0">
+                        <button type="button" onclick="adjustCustomField('custom-timer-seconds', 5, 0, 59)" class="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center text-sm font-bold active:scale-95 transition-all">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Add Pills -->
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">{% translate "Scelte rapide" %}</span>
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button type="button" onclick="setCustomTimerValues(0, 15)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">15s</button>
+                    <button type="button" onclick="setCustomTimerValues(0, 45)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">45s</button>
+                    <button type="button" onclick="setCustomTimerValues(1, 15)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">1:15</button>
+                    <button type="button" onclick="setCustomTimerValues(2, 30)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">2:30</button>
+                    <button type="button" onclick="setCustomTimerValues(3, 0)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">3:00</button>
+                    <button type="button" onclick="setCustomTimerValues(4, 0)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">4:00</button>
+                    <button type="button" onclick="setCustomTimerValues(5, 0)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">5:00</button>
+                    <button type="button" onclick="setCustomTimerValues(6, 0)" class="py-1.5 rounded-xl bg-[#18191D] hover:bg-[#caf300]/10 hover:border-[#caf300]/40 border border-white/5 text-zinc-300 hover:text-[#caf300] text-xs font-bold transition-all cursor-pointer">6:00</button>
+                </div>
+            </div>
+
+            <!-- Apply and Start Button -->
+            <button type="button" onclick="applyCustomTimer()" class="w-full py-3.5 rounded-2xl bg-[#caf300] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-lg font-display cursor-pointer mt-1">
+                <span class="material-symbols-outlined text-lg">play_arrow</span>
+                <span>{% translate "Avvia Timer" %}</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <main class="flex-grow flex flex-col items-center justify-between w-full relative z-10 h-full max-w-full mx-auto pb-24" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <!-- Top Progress Bar & Workout Name -->
     <div class="w-full flex flex-col pt-4 px-2.5 sm:px-6 pb-4">
@@ -1098,7 +1165,10 @@
         const newMs = Math.max(0, currentMs + (amount * 1000));
 
         remainingMs = newMs;
-        if (isRunning) {
+        if (!isRunning) {
+            durationSeconds = Math.max(5, Math.ceil(newMs / 1000));
+            defaultDuration = durationSeconds;
+        } else {
             startedAt = Date.now();
             try {
                 const sec = Math.ceil(remainingMs / 1000);
@@ -1125,6 +1195,7 @@
         unlockAudioContext();
         if (timerInterval) clearInterval(timerInterval);
         durationSeconds = seconds;
+        defaultDuration = seconds;
         remainingMs = seconds * 1000;
         startedAt = Date.now();
         isRunning = true;
@@ -1139,8 +1210,9 @@
         const card = document.getElementById('custom-timer-modal-card');
         if (!modal || !card) return;
         
-        const currentMins = Math.floor(durationSeconds / 60);
-        const currentSecs = durationSeconds % 60;
+        const effectiveSecs = (isRunning ? Math.ceil(getRemainingTimeMs() / 1000) : durationSeconds) || 45;
+        const currentMins = Math.floor(effectiveSecs / 60);
+        const currentSecs = effectiveSecs % 60;
         const minsInput = document.getElementById('custom-timer-minutes');
         const secsInput = document.getElementById('custom-timer-seconds');
         if (minsInput) minsInput.value = currentMins;
@@ -1167,6 +1239,14 @@
         }, 200);
     }
 
+    function adjustCustomField(id, delta, minVal, maxVal) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        let cur = parseInt(input.value, 10) || 0;
+        cur = Math.max(minVal, Math.min(maxVal, cur + delta));
+        input.value = cur;
+    }
+
     function setCustomTimerValues(mins, secs) {
         const minsInput = document.getElementById('custom-timer-minutes');
         const secsInput = document.getElementById('custom-timer-seconds');
@@ -1188,6 +1268,7 @@
 
     window.openCustomTimerModal = openCustomTimerModal;
     window.closeCustomTimerModal = closeCustomTimerModal;
+    window.adjustCustomField = adjustCustomField;
     window.setCustomTimerValues = setCustomTimerValues;
     window.applyCustomTimer = applyCustomTimer;
 
@@ -1365,6 +1446,36 @@
         
         if (progressBar) progressBar.style.width = `${percentage}%`;
         if (progressText) progressText.innerText = `${percentage}%`;
+
+        // Calculate exercises progress for Top Dynamic Notch and Native Android bridge
+        const exerciseCards = document.querySelectorAll('.exercise-group');
+        const totalExercises = exerciseCards.length;
+        let completedExercises = 0;
+        exerciseCards.forEach(card => {
+            const uncompleted = card.querySelectorAll('.set-row[data-completed="false"]');
+            if (uncompleted.length === 0 && card.querySelectorAll('.set-row').length > 0) {
+                completedExercises++;
+            }
+        });
+        const remainingExercises = Math.max(0, totalExercises - completedExercises);
+
+        try {
+            localStorage.setItem('onyx_workout_progress', JSON.stringify({
+                total: totalExercises,
+                completed: completedExercises,
+                remaining: remainingExercises
+            }));
+        } catch(e) {}
+
+        if (typeof updateDynamicNotch === 'function') {
+            updateDynamicNotch();
+        }
+
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.updateProgress === 'function') {
+                window.AndroidTimer.updateProgress(completedExercises, totalExercises, remainingExercises);
+            }
+        } catch(e) {}
     }
 
     function toggleCollapse(exerciseId) {
@@ -2189,11 +2300,6 @@
             btn.className = "btn-start-set-timer h-7 px-2.5 rounded-lg bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black";
             if (iconEl) iconEl.innerText = "replay";
             if (labelEl) labelEl.innerText = elapsedSeconds + "s";
-            
-            // Stop Android background timer if active
-            try {
-                if (window.AndroidTimer) window.AndroidTimer.stopTimer();
-            } catch(e) {}
 
         } else {
             // START THE STOPWATCH!
@@ -2204,13 +2310,6 @@
             btn.className = "btn-start-set-timer h-7 px-2.5 rounded-lg bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500 hover:text-white flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black animate-pulse shadow-sm shadow-red-500/30";
             if (iconEl) iconEl.innerText = "stop";
             if (labelEl) labelEl.innerText = "0s STOP";
-
-            // Trigger Android native timer in stopwatch mode
-            try {
-                if (window.AndroidTimer) {
-                    window.AndroidTimer.startTimer(600, (exerciseName || "Esercizio a Corpo Libero") + " (In corso)");
-                }
-            } catch(e) {}
 
             const interval = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -2379,10 +2478,10 @@
             const exerciseId = card ? card.getAttribute('data-id') : null;
             const slotEntryId = row.id ? row.id.replace('set-row-', '') : null;
             const repsInput = row.querySelector('.input-set-value');
-            const weightInput = row.querySelector('input[name="weight"]') || row.querySelector('input[type="number"][disabled]:last-of-type');
+            const weightInput = row.querySelector('input[name="weight"]') || row.querySelector('.weight-input-container input');
 
-            const reps = repsInput ? parseFloat(repsInput.value) || 10 : 10;
-            const weight = weightInput ? parseFloat(weightInput.value) || 0 : 0;
+            const reps = repsInput ? parseFloat(String(repsInput.value).replace(',', '.')) || 10 : 10;
+            const weight = weightInput ? parseFloat(String(weightInput.value).replace(',', '.')) || 0 : 0;
 
             if (exerciseId && slotEntryId) {
                 completedSets.push({
