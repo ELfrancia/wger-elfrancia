@@ -26,6 +26,7 @@ from django.test import SimpleTestCase
 # wger
 from wger.core.tests.base_testcase import WgerTestCase
 from wger.exercises.models import (
+    CalisthenicsExercise,
     Exercise,
     Translation,
 )
@@ -154,3 +155,37 @@ class TestHealthCheckManagementCommands(WgerTestCase):
 
         call_command('exercises-health-check', stdout=self.out)
         self.assertNotIn('Variation', self.out.getvalue())
+
+
+class TestSyncFromBaserowCommand(WgerTestCase):
+    def setUp(self):
+        super().setUp()
+        self.cal_ex = CalisthenicsExercise.objects.create(
+            name="Push-up Test",
+            slug="push-up-test",
+            source_exercise_id="src-123",
+            is_published=True,
+        )
+
+    @patch('wger.exercises.management.commands.sync_from_baserow.requests.get')
+    def test_sync_from_baserow_empty_rows_does_not_unpublish(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {'results': [], 'next': None}
+        mock_get.return_value = mock_response
+
+        out = StringIO()
+        call_command('sync_from_baserow', stdout=out)
+
+        self.cal_ex.refresh_from_db()
+        self.assertTrue(self.cal_ex.is_published, "Existing exercise should remain published if Baserow returns 0 rows")
+
+    @patch('wger.exercises.management.commands.sync_from_baserow.requests.get')
+    def test_sync_from_baserow_api_error_does_not_unpublish(self, mock_get):
+        mock_get.side_effect = Exception("Connection error")
+
+        out = StringIO()
+        call_command('sync_from_baserow', stdout=out)
+
+        self.cal_ex.refresh_from_db()
+        self.assertTrue(self.cal_ex.is_published, "Existing exercise should remain published if Baserow fails")
