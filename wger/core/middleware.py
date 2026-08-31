@@ -24,6 +24,7 @@ from django.contrib.auth import (
     login,
     logout,
 )
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
@@ -177,9 +178,21 @@ class ForcePasswordChangeMiddleware(MiddlewareMixin):
                 if profile.needs_password_change:
                     path_info = remove_language_code(request.path_info)
                     
-                    # Exclude API endpoints
+                    # For API endpoints, allow only authentication/token endpoints, and reject all others with 403
                     if path_info.startswith('/api/'):
-                        return None
+                        api_exempt_prefixes = (
+                            '/api/v2/auth/login',
+                            '/api/v2/auth/logout',
+                            '/api/v2/user/token',
+                            '/api/v2/auth-token',
+                            '/api/v2/token/refresh',
+                            '/api/v2/token/verify',
+                            '/api/v2/issue-refresh-token',
+                            '/api/v2/schema',
+                        )
+                        if any(path_info.startswith(prefix) for prefix in api_exempt_prefixes):
+                            return None
+                        return JsonResponse({'detail': 'Password change required.'}, status=403)
 
                     change_pwd_path = remove_language_code(reverse('core:user:change-password'))
                     logout_path = remove_language_code(reverse('core:user:logout'))

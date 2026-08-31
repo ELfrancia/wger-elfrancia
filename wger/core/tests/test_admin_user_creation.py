@@ -80,8 +80,42 @@ class AdminUserCreationTestCase(WgerTestCase):
             'new_password2': 'NewSecurePassword123!',
         }
         response = self.client.post(reverse('core:user:change-password'), change_data)
-        self.assertRedirects(response, reverse('core:user:preferences'))
+        self.assertRedirects(response, reverse('core:dashboard'))
         
         # Verify flag is cleared
         user.refresh_from_db()
         self.assertFalse(user.userprofile.needs_password_change)
+
+    def test_forced_password_change_middleware_api(self):
+        # Create user with needs_password_change=True
+        user = User.objects.create_user(
+            username='tempuser_api',
+            email='temp_api@example.com',
+            password='TempPassword123'
+        )
+        user.userprofile.needs_password_change = True
+        user.userprofile.save()
+
+        # Login as tempuser_api
+        self.client.login(username='tempuser_api', password='TempPassword123')
+
+        # Non-exempt API endpoint should return 403 with error detail
+        response = self.client.get('/api/v2/userprofile/')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {'detail': 'Password change required.'})
+
+        # Another non-exempt endpoint
+        response = self.client.get('/api/v1/exercises/')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {'detail': 'Password change required.'})
+
+        # Schema endpoint is exempt
+        response = self.client.get('/api/v2/schema')
+        self.assertEqual(response.status_code, 200)
+
+        # Clear the flag (simulating password change)
+        user.userprofile.needs_password_change = False
+        user.userprofile.save()
+
+        response = self.client.get('/api/v2/userprofile/')
+        self.assertEqual(response.status_code, 200)
