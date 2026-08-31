@@ -32,6 +32,8 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.db import transaction
+from django.db import models as django_models
 from django.http import (
     HttpResponseForbidden,
     HttpResponseRedirect,
@@ -360,47 +362,48 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
         is_superset = request.POST.get('is_superset') == 'true'
         
         if exercise_ids:
-            from wger.exercises.models import Exercise
-            if is_superset and len(exercise_ids) > 1:
-                max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
-                slot = Slot.objects.create(
-                    day=day,
-                    order=(max_order or 0) + 1
-                )
-                
-                for idx, ex_id in enumerate(exercise_ids):
-                    exercise = get_object_or_404(Exercise, id=ex_id)
-                    
-                    slot_entry = SlotEntry.objects.create(
-                        slot=slot,
-                        exercise=exercise,
-                        order=idx + 1
-                    )
-                    
-                    SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-                    RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
-                    WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=Decimal('0'))
-            else:
-                for ex_id in exercise_ids:
+            with transaction.atomic():
+                from wger.exercises.models import Exercise
+                if is_superset and len(exercise_ids) > 1:
                     max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
                     slot = Slot.objects.create(
                         day=day,
                         order=(max_order or 0) + 1
                     )
-                    exercise = get_object_or_404(Exercise, id=ex_id)
                     
-                    slot_entry = SlotEntry.objects.create(
-                        slot=slot,
-                        exercise=exercise,
-                        order=1
-                    )
+                    for idx, ex_id in enumerate(exercise_ids):
+                        exercise = get_object_or_404(Exercise, id=ex_id)
+                        
+                        slot_entry = SlotEntry.objects.create(
+                            slot=slot,
+                            exercise=exercise,
+                            order=idx + 1
+                        )
+                        
+                        SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                        RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+                        WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=Decimal('0'))
+                else:
+                    for ex_id in exercise_ids:
+                        max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+                        slot = Slot.objects.create(
+                            day=day,
+                            order=(max_order or 0) + 1
+                        )
+                        exercise = get_object_or_404(Exercise, id=ex_id)
+                        
+                        slot_entry = SlotEntry.objects.create(
+                            slot=slot,
+                            exercise=exercise,
+                            order=1
+                        )
+                        
+                        SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                        RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+                        WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=Decimal('0'))
                     
-                    SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-                    RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
-                    WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=Decimal('0'))
-                
-            from wger.manager.helpers import reset_routine_cache
-            reset_routine_cache(day.routine)
+                from wger.manager.helpers import reset_routine_cache
+                reset_routine_cache(day.routine)
             
             if from_workout:
                 from django.urls import reverse
@@ -481,6 +484,15 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
             first_entry = slot.entries.first()
             if first_entry:
                 target_exercise = first_entry.exercise
+
+        if reps is not None and str(reps).strip() != '':
+            try:
+                clean_r = str(reps).strip().replace(',', '.')
+                reps_val = Decimal(clean_r)
+            except (decimal.DecimalException, ValueError, TypeError):
+                reps_val = Decimal('10')
+        else:
+            reps_val = Decimal('10')
                 
         if weight is None or str(weight).strip() == '':
             weight_val = Decimal('0')
@@ -491,7 +503,7 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
             except (decimal.DecimalException, ValueError, TypeError):
                 weight_val = Decimal('0')
 
-        if target_exercise and reps:
+        if target_exercise and reps_val is not None:
             max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
             slot_entry = SlotEntry.objects.create(
                 slot=slot,
@@ -500,7 +512,7 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
                 comment=comment
             )
             SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
+            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
             WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
             
             from wger.manager.helpers import reset_routine_cache
@@ -541,14 +553,20 @@ def update_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
         reps = request.POST.get('reps')
         weight = request.POST.get('weight')
         
-        if reps is not None:
+        if reps is not None and str(reps).strip() != '':
+            try:
+                clean_r = str(reps).strip().replace(',', '.')
+                reps_val = Decimal(clean_r)
+            except (decimal.DecimalException, ValueError, TypeError):
+                reps_val = Decimal('10')
+
             rep_config, created = RepetitionsConfig.objects.get_or_create(
                 slot_entry=entry,
                 iteration=1,
-                defaults={'value': reps}
+                defaults={'value': reps_val}
             )
             if not created:
-                rep_config.value = reps
+                rep_config.value = reps_val
                 rep_config.save()
                 
         if weight is not None:
@@ -578,6 +596,7 @@ def update_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
         response['HX-Redirect'] = slot.day.routine.get_absolute_url()
         return response
     return redirect('manager:routine:view', pk=routine_pk)
+
 
 
 @login_required
@@ -617,7 +636,17 @@ def update_notes_tailwind(request, routine_pk, day_pk, slot_pk):
     return redirect('manager:routine:view', pk=routine_pk)
 
 
+ALLOWED_SKILL_FAMILIES = {
+    'other', 'push_up', 'pull_up', 'handstand_pushup', 'front_lever',
+    'back_lever', 'l_sit', 'muscle_up', 'pistol_squat', 'planche',
+    'dip', 'squat', 'row', 'core'
+}
+
+
 def _async_push_to_baserow(name, instructions, skill_family, target_muscle, equipment_name):
+    if os.environ.get('ENABLE_CUSTOM_EXERCISE_BASEROW_SYNC', '').lower() != 'true':
+        return
+
     baserow_url = os.environ.get('BASEROW_URL', 'http://localhost:8080').rstrip('/')
     baserow_token = os.environ.get('BASEROW_TOKEN')
     baserow_table_id = os.environ.get('BASEROW_TABLE_ID', '322')
@@ -637,7 +666,7 @@ def _async_push_to_baserow(name, instructions, skill_family, target_muscle, equi
         "Skill Family": skill_family,
         "Target Muscle": target_muscle,
         "Equipment": equipment_name,
-        "Is Published": True,
+        "Is Published": False,
         "Discipline": "calisthenics",
         "Source Exercise ID": f"custom-{uuid.uuid4().hex[:8]}"
     }
@@ -658,168 +687,173 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
 
     name = request.POST.get('name', '').strip()
     instructions = request.POST.get('instructions', '').strip()
-    skill_family = request.POST.get('skill_family', 'other').strip()
-    target_muscle_name = request.POST.get('target_muscle', '').strip()
+    skill_family_raw = request.POST.get('skill_family', 'other').strip().lower()
+    skill_family = skill_family_raw if skill_family_raw in ALLOWED_SKILL_FAMILIES else 'other'
+    import re
+    target_muscle_name = re.sub(r'[^a-zA-Z0-9\s_-]', '', request.POST.get('target_muscle', '')).strip()[:50]
     weighted = request.POST.get('weighted') == 'on'
 
     if not name:
         return JsonResponse({'status': 'error', 'message': 'Name is required'}, status=400)
 
     try:
-        # Determine category & discipline based on weighted / skill_family
-        if weighted and skill_family == 'other':
-            category_name = 'Palestra'
-            discipline_name = 'gym'
-            is_calisthenics = False
-            equipment_name = 'free weight'
-            eq_name = 'Dumbbells'
-        else:
-            category_name = 'Calisthenics'
-            discipline_name = 'calisthenics'
-            is_calisthenics = True
-            equipment_name = 'weighted body weight' if weighted else 'body weight'
-            eq_name = 'Weighted' if weighted else 'Body weight'
-
-        instructions_list = [line.strip() for line in instructions.split('\n') if line.strip()]
-
-        existing_trans = Translation.objects.filter(name__iexact=name).first()
-        existing_cal = CalisthenicsExercise.objects.filter(name__iexact=name).first()
-
-        if existing_trans and existing_trans.exercise:
-            base_exercise = existing_trans.exercise
-        elif existing_cal:
-            base_exercise = Exercise.objects.filter(uuid=existing_cal.id).first()
-        else:
-            base_exercise = None
-
-        default_license = License.objects.first()
-        if not default_license:
-            default_license = License.objects.create(
-                short_name='CC-BY-SA 4.0',
-                full_name='Creative Commons Attribution Share Alike 4.0'
-            )
-
-        if not base_exercise:
-            # 1. Create CalisthenicsExercise locally
-            source_id = f"custom-{uuid.uuid4().hex[:8]}"
-            slug = f"{slugify(name)}-{source_id}"
-
-            cal_exercise = CalisthenicsExercise.objects.create(
-                source='custom',
-                source_exercise_id=source_id,
-                slug=slug,
-                name=name,
-                instructions=instructions_list,
-                target_muscle=target_muscle_name,
-                equipment=equipment_name,
-                skill_family=skill_family,
-                discipline=discipline_name,
-                is_published=True
-            )
-
-            # 2. Create native Exercise
-            category, _created = ExerciseCategory.objects.get_or_create(name=category_name)
-            
-            base_exercise = Exercise.objects.create(
-                uuid=cal_exercise.id,
-                category=category,
-                license=default_license
-            )
-
-            # 3. Associate equipment
-            equipment, _created = Equipment.objects.get_or_create(name=eq_name)
-            base_exercise.equipment.add(equipment)
-
-            # 4. Associate target muscle
-            if target_muscle_name:
-                muscle, _created = Muscle.objects.get_or_create(
-                    name=target_muscle_name.capitalize(),
-                    defaults={'name_en': target_muscle_name, 'is_front': True}
-                )
-                base_exercise.muscles.add(muscle)
-
-            # 5. Create Translation for BOTH 'it' (Italian) and 'en' (English)
-            lang_it = Language.objects.filter(short_name='it').first()
-            if not lang_it:
-                lang_it = Language.objects.create(short_name='it', full_name='Italiano')
-
-            lang_en = Language.objects.filter(short_name='en').first()
-            if not lang_en:
-                lang_en = Language.objects.create(short_name='en', full_name='English')
-
-            for lang in [lang_it, lang_en]:
-                Translation.objects.update_or_create(
-                    exercise=base_exercise,
-                    language=lang,
-                    defaults={
-                        'name': name,
-                        'description': "\n".join(instructions_list),
-                        'license': default_license
-                    }
-                )
-
-            # 6. Create initial tags
-            tags = ['custom']
-            if is_calisthenics:
-                tags.extend(['bodyweight', 'calisthenics'])
+        with transaction.atomic():
+            # Determine category & discipline based on weighted / skill_family
+            if weighted and skill_family == 'other':
+                category_name = 'Palestra'
+                discipline_name = 'gym'
+                is_calisthenics = False
+                equipment_name = 'free weight'
+                eq_name = 'Dumbbells'
             else:
-                tags.extend(['gym', 'weights'])
-            if weighted:
-                tags.append('weighted')
-            if skill_family != 'other':
-                tags.append(skill_family.replace('_', '-'))
-            for t in tags:
-                ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
+                category_name = 'Calisthenics'
+                discipline_name = 'calisthenics'
+                is_calisthenics = True
+                equipment_name = 'weighted body weight' if weighted else 'body weight'
+                eq_name = 'Weighted' if weighted else 'Body weight'
 
-            # 7. Start background thread to push to Baserow
-            threading.Thread(
-                target=_async_push_to_baserow,
-                args=(name, instructions, skill_family, target_muscle_name, equipment_name),
-                daemon=True
-            ).start()
-        else:
-            # Ensure both translations exist for existing base exercise
-            lang_it = Language.objects.filter(short_name='it').first()
-            if not lang_it:
-                lang_it = Language.objects.create(short_name='it', full_name='Italiano')
+            instructions_list = [line.strip() for line in instructions.split('\n') if line.strip()]
 
-            lang_en = Language.objects.filter(short_name='en').first()
-            if not lang_en:
-                lang_en = Language.objects.create(short_name='en', full_name='English')
+            existing_trans = Translation.objects.filter(name__iexact=name).first()
+            existing_cal = CalisthenicsExercise.objects.filter(name__iexact=name).first()
 
-            for lang in [lang_it, lang_en]:
-                Translation.objects.get_or_create(
-                    exercise=base_exercise,
-                    language=lang,
-                    defaults={
-                        'name': name,
-                        'description': "\n".join(instructions_list),
-                        'license': default_license
-                    }
+            if existing_trans and existing_trans.exercise:
+                base_exercise = existing_trans.exercise
+            elif existing_cal:
+                base_exercise = Exercise.objects.filter(uuid=existing_cal.id).first()
+            else:
+                base_exercise = None
+
+            default_license = License.objects.first()
+            if not default_license:
+                default_license = License.objects.create(
+                    short_name='CC-BY-SA 4.0',
+                    full_name='Creative Commons Attribution Share Alike 4.0'
                 )
 
-        # 8. Add exercise to the routine day
-        day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
-        max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
-        slot = Slot.objects.create(
-            day=day,
-            order=(max_order or 0) + 1,
-        )
-        slot_entry = SlotEntry.objects.create(
-            slot=slot,
-            exercise=base_exercise,
-            order=1,
-        )
-        SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-        RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
-        WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=Decimal('0'))
+            if not base_exercise:
+                # 1. Create CalisthenicsExercise locally (is_published=False by default for user custom exercises)
+                source_id = f"custom-{uuid.uuid4().hex[:8]}"
+                slug = f"{slugify(name)}-{source_id}"
 
-        from wger.manager.helpers import reset_routine_cache
-        reset_routine_cache(day.routine)
+                cal_exercise = CalisthenicsExercise.objects.create(
+                    source='custom',
+                    source_exercise_id=source_id,
+                    slug=slug,
+                    name=name,
+                    instructions=instructions_list,
+                    target_muscle=target_muscle_name,
+                    equipment=equipment_name,
+                    skill_family=skill_family,
+                    discipline=discipline_name,
+                    is_published=False
+                )
 
-        # Invalidate catalog cache so newly added exercise appears on refresh
-        from wger.manager.services.exercise_catalog import bump_catalog_version
-        bump_catalog_version()
+                # 2. Create native Exercise
+                category, _created = ExerciseCategory.objects.get_or_create(name=category_name)
+                
+                base_exercise = Exercise.objects.create(
+                    uuid=cal_exercise.id,
+                    category=category,
+                    license=default_license
+                )
+
+                # 3. Associate equipment
+                equipment, _created = Equipment.objects.get_or_create(name=eq_name)
+                base_exercise.equipment.add(equipment)
+
+                # 4. Associate target muscle
+                if target_muscle_name:
+                    muscle, _created = Muscle.objects.get_or_create(
+                        name=target_muscle_name.capitalize(),
+                        defaults={'name_en': target_muscle_name, 'is_front': True}
+                    )
+                    base_exercise.muscles.add(muscle)
+
+                # 5. Create Translation for BOTH 'it' (Italian) and 'en' (English)
+                lang_it = Language.objects.filter(short_name='it').first()
+                if not lang_it:
+                    lang_it = Language.objects.create(short_name='it', full_name='Italiano')
+
+                lang_en = Language.objects.filter(short_name='en').first()
+                if not lang_en:
+                    lang_en = Language.objects.create(short_name='en', full_name='English')
+
+                for lang in [lang_it, lang_en]:
+                    Translation.objects.update_or_create(
+                        exercise=base_exercise,
+                        language=lang,
+                        defaults={
+                            'name': name,
+                            'description': "\n".join(instructions_list),
+                            'license': default_license
+                        }
+                    )
+
+                # 6. Create initial tags
+                tags = ['custom']
+                if is_calisthenics:
+                    tags.extend(['bodyweight', 'calisthenics'])
+                else:
+                    tags.extend(['gym', 'weights'])
+                if weighted:
+                    tags.append('weighted')
+                if skill_family != 'other':
+                    tags.append(skill_family.replace('_', '-'))
+                for t in tags:
+                    ExerciseTag.objects.get_or_create(exercise=cal_exercise, tag=t)
+
+                # 7. Push to Baserow only if explicitly enabled
+                if os.environ.get('ENABLE_CUSTOM_EXERCISE_BASEROW_SYNC', '').lower() == 'true':
+                    threading.Thread(
+                        target=_async_push_to_baserow,
+                        args=(name, instructions, skill_family, target_muscle_name, equipment_name),
+                        daemon=True
+                    ).start()
+            else:
+                # Ensure both translations exist for existing base exercise
+                lang_it = Language.objects.filter(short_name='it').first()
+                if not lang_it:
+                    lang_it = Language.objects.create(short_name='it', full_name='Italiano')
+
+                lang_en = Language.objects.filter(short_name='en').first()
+                if not lang_en:
+                    lang_en = Language.objects.create(short_name='en', full_name='English')
+
+                for lang in [lang_it, lang_en]:
+                    Translation.objects.get_or_create(
+                        exercise=base_exercise,
+                        language=lang,
+                        defaults={
+                            'name': name,
+                            'description': "\n".join(instructions_list),
+                            'license': default_license
+                        }
+                    )
+
+            # 8. Add exercise to the routine day
+            day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
+            max_order = day.slots.aggregate(django_models.Max('order'))['order__max']
+            slot = Slot.objects.create(
+                day=day,
+                order=(max_order or 0) + 1,
+            )
+            slot_entry = SlotEntry.objects.create(
+                slot=slot,
+                exercise=base_exercise,
+                order=1,
+            )
+            SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=10)
+            WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=Decimal('0'))
+
+            from wger.manager.helpers import reset_routine_cache
+            reset_routine_cache(day.routine)
+
+            # Invalidate catalog cache so newly added exercise appears on refresh
+            from wger.manager.services.exercise_catalog import bump_catalog_version
+            bump_catalog_version()
+
 
         from_workout = request.POST.get('from') == 'workout' or 'from=workout' in request.META.get('HTTP_REFERER', '')
         if from_workout:
