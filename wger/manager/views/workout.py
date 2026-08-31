@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import decimal
+import json
 from decimal import Decimal, DecimalException
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -165,6 +166,7 @@ def log_tailwind(request, routine_pk, day_pk):
         return HttpResponseForbidden()
 
     if request.method == 'POST':
+        pr_event = None  # populated when a logged set is a new personal record
         action = request.POST.get('action')
         exercise_id = request.POST.get('exercise_id')
         slot_entry_id = request.POST.get('slot_entry_id')
@@ -594,6 +596,21 @@ def log_tailwind(request, routine_pk, day_pk):
                     if slot_entry:
                         slot = slot_entry.slot
 
+                pr_ctx = getattr(log_entry, '_pr_awarded', None)
+                if pr_ctx:
+                    ex_name = ''
+                    try:
+                        ex_name = log_entry.exercise.get_translation().name
+                    except Exception:
+                        pass
+                    pr_event = {
+                        'exercise': ex_name,
+                        'weight': pr_ctx.get('weight'),
+                        'reps': pr_ctx.get('repetitions'),
+                        'e1rm': round(pr_ctx['one_rep_max_estimate'], 1)
+                        if pr_ctx.get('one_rep_max_estimate') else None,
+                    }
+
         # Common rendering response for HTMX request
         if request.headers.get('HX-Request'):
             session_logged_set_ids = list(session.logs.values_list('slot_entry_id', flat=True))
@@ -609,7 +626,7 @@ def log_tailwind(request, routine_pk, day_pk):
 
             session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
 
-            return render(request, 'workout/includes/exercise_card.html', {
+            response = render(request, 'workout/includes/exercise_card.html', {
                 'slot': slot,
                 'logged_set_ids': session_logged_set_ids,
                 'completed_exercise_ids': completed_exercise_ids,
@@ -617,6 +634,9 @@ def log_tailwind(request, routine_pk, day_pk):
                 'day': day,
                 'session_logs_map': session_logs_map,
             })
+            if pr_event:
+                response['HX-Trigger'] = json.dumps({'onyx:pr': pr_event})
+            return response
 
         return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 

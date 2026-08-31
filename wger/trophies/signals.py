@@ -23,10 +23,12 @@ when workouts are logged, edited, or deleted.
 
 # Standard Library
 import logging
+import threading
 
 # Django
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models.signals import (
     post_delete,
     post_save,
@@ -61,23 +63,85 @@ def _deletion_originates_from_user(origin) -> bool:
     return isinstance(origin, User) or getattr(origin, 'model', None) is User
 
 
+_pending_eval = set()
+_pending_stats = set()
+_pending_lock = threading.Lock()
+
+
+def _run_stats_recalc(user_id: int):
+    try:
+        user = User.objects.get(id=user_id)
+        UserStatisticsService.update_statistics(user)
+    except User.DoesNotExist:
+        pass
+    except Exception as e:
+        logger.error(f'Error recalculating statistics for user {user_id}: {e}')
+    finally:
+        with _pending_lock:
+            _pending_stats.discard(user_id)
+
+
+def _schedule_stats_recalc(user_id: int):
+    """
+    Deferred, deduped full statistics recalculation (used for log edits).
+
+    An auto-save snapshot can update dozens of existing sets in one request;
+    without this each one would run a full recalculation inside the transaction.
+    """
+    with _pending_lock:
+        if user_id in _pending_stats:
+            return
+        _pending_stats.add(user_id)
+    transaction.on_commit(
+        lambda: threading.Thread(
+            target=_run_stats_recalc, args=(user_id,), daemon=True
+        ).start()
+    )
+
+
+def _run_trophy_evaluation(user_id: int):
+    try:
+        user = User.objects.get(id=user_id)
+        TrophyService.evaluate_all_trophies(user)
+    except User.DoesNotExist:
+        pass
+    except Exception as e:
+        logger.error(f'Error evaluating trophies for user {user_id}: {e}')
+    finally:
+        with _pending_lock:
+            _pending_eval.discard(user_id)
+
+
 def _trigger_trophy_evaluation(user_id: int):
     """
-    Trigger async trophy evaluation for a user.
+    Schedule a full trophy evaluation for a user, after the current DB
+    transaction commits and off the request thread.
 
-    Uses Celery if available, otherwise evaluates synchronously.
+    The full evaluation loops over every active trophy and each checker runs
+    its own aggregation queries, so it must never run inside the workout-logging
+    transaction (it would serialize SQLite writes for the whole request). It is
+    also deduped per user: many ``session.save()`` / log writes in one request
+    collapse into a single evaluation.
     """
+    with _pending_lock:
+        if user_id in _pending_eval:
+            return
+        _pending_eval.add(user_id)
+
     if settings.WGER_SETTINGS['USE_CELERY']:
-        evaluate_user_trophies_task.delay(user_id)
+        def _dispatch():
+            try:
+                evaluate_user_trophies_task.delay(user_id)
+            finally:
+                with _pending_lock:
+                    _pending_eval.discard(user_id)
+        transaction.on_commit(_dispatch)
     else:
-        # Celery not available or configured - evaluate synchronously
-        try:
-            user = User.objects.get(id=user_id)
-            TrophyService.evaluate_all_trophies(user)
-        except User.DoesNotExist:
-            pass
-        except Exception as e:
-            logger.error(f'Error evaluating trophies for user {user_id}: {e}')
+        transaction.on_commit(
+            lambda: threading.Thread(
+                target=_run_trophy_evaluation, args=(user_id,), daemon=True
+            ).start()
+        )
 
 
 @receiver(post_save, sender=WorkoutLog)
@@ -114,13 +178,17 @@ def workout_log_saved(sender, instance: WorkoutLog, created: bool, **kwargs):
                     TrophyService.award_trophy(
                         instance.user, trophy, progress=100.0, context_data=context
                     )
+                    # Expose the fresh PR to the request so the workout UI can
+                    # show a celebratory toast (see wger.manager.views.workout).
+                    instance._pr_awarded = context
 
         else:
-            # Edited log - full recalculation for accuracy
-            UserStatisticsService.update_statistics(instance.user)
+            # Edited log - full recalculation, deferred off the request/transaction
+            _schedule_stats_recalc(instance.user_id)
 
-        # Trigger trophy evaluation
-        _trigger_trophy_evaluation(instance.user_id)
+        # NOTE: the full trophy evaluation is intentionally NOT triggered here.
+        # It runs once per workout on session finish (workout_session_saved),
+        # off the request transaction. Per-set PRs are handled inline above.
     except User.DoesNotExist:
         pass
     except Exception as e:
@@ -165,21 +233,17 @@ def workout_session_saved(sender, instance: WorkoutSession, created: bool, **kwa
         return
 
     try:
-        if created:
-            # New session - incremental update for session data
-            UserStatisticsService.increment_workout(
-                user=instance.user,
-                session=instance,
-            )
-        else:
-            # Session updated (e.g., time_start changed) - update times
-            UserStatisticsService.increment_workout(
-                user=instance.user,
-                session=instance,
-            )
+        # New or updated session - keep session-level stats (times, counts) fresh
+        UserStatisticsService.increment_workout(
+            user=instance.user,
+            session=instance,
+        )
 
-        # Trigger trophy evaluation
-        _trigger_trophy_evaluation(instance.user_id)
+        # Full trophy evaluation only when a workout is actually completed.
+        # This is the single place per workout where every trophy is checked;
+        # per-set logging no longer triggers it (perf).
+        if getattr(instance, 'status', None) == 'finished':
+            _trigger_trophy_evaluation(instance.user_id)
     except User.DoesNotExist:
         pass
     except Exception as e:

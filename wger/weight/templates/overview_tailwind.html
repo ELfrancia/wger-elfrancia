@@ -54,6 +54,54 @@
     <div id="view-section-dati" class="space-y-6 transition-all duration-300">
         {% include 'weight/calendar_fragment.html' %}
 
+        {% if consistency %}
+        <!-- Consistency / Streak Card -->
+        <div class="bg-[#121316] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl">
+            <div class="flex items-center justify-between gap-4 mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 text-2xl">
+                        🔥
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Costanza" %}</h3>
+                        <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "Serie di allenamenti e presenze" %}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-black text-white font-display leading-none">{{ consistency.current_streak }}</div>
+                    <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mt-1">{% translate "streak" %}</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mb-5">
+                <div class="bg-[#16171a] border border-white/5 rounded-2xl p-3 text-center">
+                    <div class="text-xl font-black text-white font-display">{{ consistency.longest_streak }}</div>
+                    <div class="text-[10px] font-semibold text-zinc-400 mt-0.5">{% translate "Record streak" %}</div>
+                </div>
+                <div class="bg-[#16171a] border border-white/5 rounded-2xl p-3 text-center">
+                    <div class="text-xl font-black text-white font-display">{{ consistency.workouts_this_week }}<span class="text-sm text-zinc-500">/{{ consistency.goal }}</span></div>
+                    <div class="text-[10px] font-semibold text-zinc-400 mt-0.5">{% translate "Questa settimana" %}</div>
+                </div>
+                <div class="bg-[#16171a] border border-white/5 rounded-2xl p-3 text-center">
+                    <div class="text-xl font-black text-white font-display">{{ consistency.total_workouts }}</div>
+                    <div class="text-[10px] font-semibold text-zinc-400 mt-0.5">{% translate "Totali" %}</div>
+                </div>
+            </div>
+
+            <div class="flex gap-1 overflow-x-auto no-scrollbar pb-1">
+                {% for week in consistency.heatmap %}
+                <div class="flex flex-col gap-1 flex-shrink-0">
+                    {% for cell in week %}
+                    <div class="w-3.5 h-3.5 rounded-[3px] {% if cell.future %}bg-transparent{% elif cell.active %}bg-[#caf300]{% else %}bg-white/5{% endif %}"
+                         title="{{ cell.date }}"></div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <p class="text-[10px] text-zinc-500 mt-2">{% translate "Ultime 12 settimane" %}</p>
+        </div>
+        {% endif %}
+
         <!-- Stat Cards Grid (High contrast, clean legible metrics) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Completed Workouts -->
@@ -217,6 +265,66 @@
             </div>
             {% endif %}
         </div>
+        {% if recent_prs %}
+        <!-- Recent Personal Records -->
+        <div class="bg-[#121316] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-11 h-11 rounded-2xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-2xl">🏆</div>
+                <div>
+                    <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Record recenti" %}</h3>
+                    <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "I tuoi ultimi primati personali" %}</p>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                {% for pr in recent_prs %}
+                <div class="flex items-center justify-between gap-3 bg-[#16171a] border border-white/5 rounded-2xl p-3.5 {% if pr.exercise_id %}cursor-pointer hover:border-[#caf300]/40 transition-colors{% endif %}"
+                     {% if pr.exercise_id %}onclick="openExerciseOfficialPage(event, '{{ pr.exercise_id }}', '{{ pr.name|escapejs }}')"{% endif %}>
+                    <div class="min-w-0">
+                        <div class="text-sm font-black text-white truncate font-display">{{ pr.name }}</div>
+                        <div class="text-[11px] font-bold text-zinc-400 font-mono mt-0.5">
+                            {% if pr.weight %}{{ pr.weight }} kg{% endif %}{% if pr.weight and pr.reps %} × {% endif %}{% if pr.reps %}{{ pr.reps }}{% endif %}
+                            {% if pr.e1rm %}<span class="text-[#caf300]"> • 1RM ~{{ pr.e1rm }} kg</span>{% endif %}
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-zinc-500 flex-shrink-0">{{ pr.date }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- All Exercises — All-time records -->
+        <div class="bg-[#121316] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
+                        <span class="material-symbols-outlined text-2xl">database</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-white tracking-tight font-display">{% translate "Tutti gli esercizi" %}</h3>
+                        <p class="text-xs font-semibold text-zinc-400 mt-0.5">{% translate "Record di sempre di ogni esercizio allenato" %}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <select id="all-ex-sort" class="bg-[#0e0f12] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-zinc-200 appearance-none cursor-pointer focus:outline-none focus:border-[#caf300]">
+                        <option value="e1rm">{% translate "1RM stimato" %}</option>
+                        <option value="max_weight">{% translate "Peso max" %}</option>
+                        <option value="max_reps">{% translate "Rep max" %}</option>
+                        <option value="recent">{% translate "Più recenti" %}</option>
+                        <option value="name">{% translate "Nome" %}</option>
+                    </select>
+                </div>
+            </div>
+
+            <input type="text" id="all-ex-search" placeholder="{% translate 'Cerca esercizio...' %}"
+                   class="w-full bg-[#0e0f12] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 mb-4 focus:outline-none focus:border-[#caf300]">
+
+            <div id="all-ex-list" class="flex flex-col gap-2 max-h-[520px] overflow-y-auto no-scrollbar"></div>
+            <div id="all-ex-empty" class="hidden text-center py-10 text-zinc-400 text-xs font-semibold">
+                {% translate "Nessun esercizio registrato." %}
+            </div>
+        </div>
+
     </div> <!-- Close view-section-dati -->
 
     <!-- Grafici View (Charts View) -->
@@ -567,6 +675,59 @@
         });
     }
     window.filterTopExercises = filterTopExercises;
+
+    // ---- "Tutti gli esercizi" — all-time records list --------------------
+    (function() {
+        const allExData = JSON.parse('{{ all_exercises_records_json|escapejs }}');
+        const listEl = document.getElementById('all-ex-list');
+        const emptyEl = document.getElementById('all-ex-empty');
+        const searchEl = document.getElementById('all-ex-search');
+        const sortEl = document.getElementById('all-ex-sort');
+        if (!listEl) return;
+
+        const fmt = (n, d) => (n === null || n === undefined || isNaN(n))
+            ? '–' : Number(n).toLocaleString('it-IT', { maximumFractionDigits: d === undefined ? 1 : d });
+
+        function render() {
+            const q = (searchEl.value || '').trim().toLowerCase();
+            const sort = sortEl.value;
+            let rows = allExData.filter(r => !q || r.name.toLowerCase().includes(q) || (r.category || '').toLowerCase().includes(q));
+            rows.sort((a, b) => {
+                if (sort === 'name') return a.name.localeCompare(b.name);
+                if (sort === 'recent') return (b.last_date || '').localeCompare(a.last_date || '');
+                if (sort === 'max_reps') return (b.max_reps || 0) - (a.max_reps || 0);
+                if (sort === 'max_weight') return (b.max_weight || 0) - (a.max_weight || 0);
+                return (b.est_1rm || b.max_weight || 0) - (a.est_1rm || a.max_weight || 0);
+            });
+
+            emptyEl.classList.toggle('hidden', rows.length > 0);
+            listEl.innerHTML = rows.map(r => {
+                const dateStr = r.last_date ? new Date(r.last_date).toLocaleDateString('it-IT') : '–';
+                return `<div class="all-ex-row flex items-center justify-between gap-3 bg-[#16171a] border border-white/5 rounded-2xl p-3.5 cursor-pointer hover:border-[#caf300]/40 transition-colors"
+                     data-id="${r.id}" data-name="${(r.name || '').replace(/"/g, '&quot;')}">
+                    <div class="min-w-0 flex-1">
+                        <div class="text-sm font-black text-white truncate font-display">${r.name}</div>
+                        <div class="text-[11px] font-bold text-zinc-500 mt-0.5">${r.category || ''} · ${r.total_sets} serie · ${dateStr}</div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-sm font-black text-white font-display">${r.max_weight != null ? fmt(r.max_weight) + ' kg' : fmt(r.max_reps, 0) + ' rep'}</div>
+                        <div class="text-[10px] font-bold text-[#caf300]">${r.est_1rm != null ? '1RM ~' + fmt(r.est_1rm) + ' kg' : ''}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        listEl.addEventListener('click', (e) => {
+            const row = e.target.closest('.all-ex-row');
+            if (!row) return;
+            if (typeof openExerciseOfficialPage === 'function') {
+                openExerciseOfficialPage(e, row.dataset.id, row.dataset.name);
+            }
+        });
+        searchEl.addEventListener('input', render);
+        sortEl.addEventListener('change', render);
+        render();
+    })();
 </script>
 {% endblock %}
 

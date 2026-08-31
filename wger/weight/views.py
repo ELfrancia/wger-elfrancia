@@ -566,8 +566,139 @@ def weight_overview_tailwind(request):
         hourly_distribution[hour] += 1
     hourly_distribution_json = json.dumps(hourly_distribution)
 
+    # ------------------------------------------------------------------
+    # All-time records for every exercise the user has ever logged
+    # ------------------------------------------------------------------
+    record_rows = (
+        WorkoutLog.objects.filter(user=request.user)
+        .values('exercise')
+        .annotate(
+            rec_max_weight=Max('weight'),
+            rec_max_reps=Max('repetitions'),
+            rec_total_sets=Count('id'),
+            rec_last_date=Max('date'),
+        )
+    )
+    record_ex_ids = [r['exercise'] for r in record_rows if r['exercise']]
+    record_ex_map = {
+        e.pk: e
+        for e in Exercise.objects.filter(pk__in=record_ex_ids).select_related('category')
+    }
+
+    # Best estimated 1RM per exercise (Brzycki, matching the trophies PR checker)
+    est_1rm_by_ex = {}
+    for ex_id, w, reps in (
+        WorkoutLog.objects
+        .filter(user=request.user, exercise_id__in=record_ex_ids,
+                weight__isnull=False, repetitions__isnull=False)
+        .values_list('exercise_id', 'weight', 'repetitions')
+    ):
+        try:
+            w = float(w)
+            reps = float(reps)
+        except (TypeError, ValueError):
+            continue
+        if reps <= 0 or reps >= 37:
+            continue
+        e1rm = w * 36.0 / (37.0 - reps)
+        if e1rm > est_1rm_by_ex.get(ex_id, 0):
+            est_1rm_by_ex[ex_id] = e1rm
+
+    all_exercises_records = []
+    for r in record_rows:
+        ex_id = r['exercise']
+        if not ex_id:
+            continue
+        ex = record_ex_map.get(ex_id)
+        tr = ex.get_translation() if ex else None
+        mw = r['rec_max_weight']
+        all_exercises_records.append({
+            'id': ex_id,
+            'name': tr.name if tr else (str(ex) if ex else f'Exercise {ex_id}'),
+            'category': ex.category.name if ex and ex.category else '',
+            'max_weight': float(mw) if mw is not None else None,
+            'est_1rm': round(est_1rm_by_ex[ex_id], 1) if ex_id in est_1rm_by_ex else None,
+            'max_reps': float(r['rec_max_reps']) if r['rec_max_reps'] is not None else None,
+            'total_sets': r['rec_total_sets'],
+            'last_date': r['rec_last_date'].date().isoformat() if r['rec_last_date'] else None,
+        })
+    all_exercises_records.sort(
+        key=lambda x: (x['est_1rm'] or x['max_weight'] or 0), reverse=True
+    )
+    all_exercises_records_json = json.dumps(all_exercises_records)
+
+    # ------------------------------------------------------------------
+    # Recent personal records + consistency / streak (trophies app)
+    # ------------------------------------------------------------------
+    recent_prs = []
+    consistency = None
+    try:
+        from wger.trophies.models.user_trophy import UserTrophy
+        from wger.trophies.models.user_statistics import UserStatistics
+
+        pr_qs = list(
+            UserTrophy.objects
+            .filter(user=request.user, trophy__name='Personal Record')
+            .order_by('-earned_at')[:15]
+        )
+        pr_ex_ids = [
+            (t.context_data or {}).get('exercise_id') for t in pr_qs
+        ]
+        pr_ex_map = {
+            e.pk: e
+            for e in Exercise.objects.filter(pk__in=[i for i in pr_ex_ids if i])
+        }
+        for t in pr_qs:
+            cd = t.context_data or {}
+            ex = pr_ex_map.get(cd.get('exercise_id'))
+            tr = ex.get_translation() if ex else None
+            e1rm = cd.get('one_rep_max_estimate')
+            recent_prs.append({
+                'exercise_id': cd.get('exercise_id'),
+                'name': tr.name if tr else (str(ex) if ex else _('Exercise')),
+                'weight': cd.get('weight'),
+                'reps': cd.get('repetitions'),
+                'e1rm': round(e1rm, 1) if e1rm else None,
+                'date': t.earned_at.date().isoformat() if t.earned_at else cd.get('date'),
+            })
+
+        us, _created_us = UserStatistics.objects.get_or_create(user=request.user)
+        today = now.date()
+        grid_start = today - timedelta(days=today.weekday() + 7 * 11)
+        workout_days = set(
+            WorkoutSession.objects
+            .filter(user=request.user, date__gte=grid_start)
+            .values_list('date', flat=True)
+        )
+        heatmap = []
+        for wk in range(12):
+            week_start = grid_start + timedelta(days=7 * wk)
+            heatmap.append([
+                {
+                    'date': (week_start + timedelta(days=d)).isoformat(),
+                    'active': (week_start + timedelta(days=d)) in workout_days,
+                    'future': (week_start + timedelta(days=d)) > today,
+                }
+                for d in range(7)
+            ])
+        cur_week_start = today - timedelta(days=today.weekday())
+        consistency = {
+            'current_streak': us.current_streak,
+            'longest_streak': us.longest_streak,
+            'total_workouts': us.total_workouts,
+            'workouts_this_week': len({d for d in workout_days if d >= cur_week_start}),
+            'goal': 3,
+            'heatmap': heatmap,
+        }
+    except Exception:
+        logger.exception('Could not build records / consistency context')
+
     context = {
         'range': range_param,
+        'all_exercises_records': all_exercises_records,
+        'all_exercises_records_json': all_exercises_records_json,
+        'recent_prs': recent_prs,
+        'consistency': consistency,
         'workouts_completed': workouts_completed,
         'total_repetitions': total_repetitions,
         'total_volume': total_volume,

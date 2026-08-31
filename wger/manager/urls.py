@@ -191,8 +191,18 @@ patterns_routine = [
     ),
 ]
 
+# sub patterns for per-exercise data (personal history, ...)
+patterns_exercise = [
+    path(
+        '<int:exercise_pk>/history',
+        routine.exercise_history_stats,
+        name='history-stats',
+    ),
+]
+
 urlpatterns = [
     path('', include((patterns_routine, 'routine'), namespace='routine')),
     path('templates/', include((patterns_templates, 'template'), namespace='template')),
     path('<int:routine_pk>/day/', include((patterns_days, 'day'), namespace='day')),
+    path('exercise/', include((patterns_exercise, 'exercise'), namespace='exercise')),
 ]

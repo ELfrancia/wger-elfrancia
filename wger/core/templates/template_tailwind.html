@@ -614,14 +614,17 @@
 
             <!-- Segmented Tab Controls (UX Progressive Disclosure) -->
             <div class="bg-surface border border-outline rounded-2xl p-1 flex gap-1 shadow-sm">
-                <button onclick="switchDetailsTab('execution')" id="tab-btn-execution" class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 bg-primary text-on-primary font-display">
+                <button onclick="switchDetailsTab('execution')" id="tab-btn-execution" class="flex-1 text-center py-2.5 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200 bg-primary text-on-primary font-display">
                     ESECUZIONE
                 </button>
-                <button onclick="switchDetailsTab('muscles')" id="tab-btn-muscles" class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
+                <button onclick="switchDetailsTab('muscles')" id="tab-btn-muscles" class="flex-1 text-center py-2.5 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
                     ANATOMIA
                 </button>
-                <button onclick="switchDetailsTab('tips')" id="tab-btn-tips" class="flex-1 text-center py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
-                    CONSIGLI PRO
+                <button onclick="switchDetailsTab('tips')" id="tab-btn-tips" class="flex-1 text-center py-2.5 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
+                    CONSIGLI
+                </button>
+                <button onclick="switchDetailsTab('history')" id="tab-btn-history" class="flex-1 text-center py-2.5 rounded-xl text-[11px] font-bold tracking-wide transition-all duration-200 text-secondary hover:text-white font-display">
+                    STORICO
                 </button>
             </div>
 
@@ -746,6 +749,60 @@
                     <div class="flex flex-col gap-1">
                         <h4 class="text-xs font-bold text-white uppercase tracking-wider font-display">Consiglio d'Oro per la Crescita</h4>
                         <p class="text-xs text-zinc-400 leading-relaxed">Spremi attivamente i bicipiti nella parte superiore del movimento mantenendo la posizione per 1 secondo intero (contrazione di picco) prima di iniziare la discesa.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 4: STORICO PERSONALE (records + progression chart + past sessions) -->
+            <div id="tab-content-history" class="flex flex-col gap-4 hidden">
+
+                <!-- Loading skeleton -->
+                <div id="history-loading" class="bg-surface border border-outline rounded-3xl p-6 flex items-center justify-center gap-3 text-secondary text-xs font-semibold">
+                    <span class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
+                    Caricamento storico...
+                </div>
+
+                <!-- Empty state -->
+                <div id="history-empty" class="bg-surface border border-outline rounded-3xl p-8 hidden flex-col items-center text-center gap-2">
+                    <span class="material-symbols-outlined text-4xl text-zinc-600">history_toggle_off</span>
+                    <p class="text-sm text-white font-bold">Nessuno storico</p>
+                    <p class="text-xs text-secondary">Non hai ancora registrato serie per questo esercizio.</p>
+                </div>
+
+                <!-- Content -->
+                <div id="history-content" class="hidden flex-col gap-4">
+
+                    <!-- Progressive-overload coach -->
+                    <div id="history-suggestion" class="hidden items-center gap-3 bg-primary/5 border border-primary/25 rounded-2xl p-4">
+                        <span class="material-symbols-outlined text-primary text-xl">target</span>
+                        <div>
+                            <div class="text-[10px] font-extrabold uppercase text-primary font-display tracking-widest">Coach</div>
+                            <div id="history-suggestion-text" class="text-sm font-bold text-white"></div>
+                        </div>
+                    </div>
+
+                    <!-- Records grid -->
+                    <div class="grid grid-cols-2 gap-2.5" id="history-records-grid"></div>
+
+                    <!-- Progression chart -->
+                    <div class="bg-surface border border-outline rounded-3xl p-5 shadow-md flex flex-col gap-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-extrabold uppercase text-primary font-display tracking-widest">Progressione</span>
+                            <div class="bg-surface-card border border-outline rounded-lg p-0.5 flex gap-0.5 text-[10px] font-bold">
+                                <button type="button" data-metric="top_weight" class="history-metric-btn px-2 py-1 rounded-md bg-primary text-on-primary">PESO</button>
+                                <button type="button" data-metric="est_1rm" class="history-metric-btn px-2 py-1 rounded-md text-secondary">1RM</button>
+                                <button type="button" data-metric="volume" class="history-metric-btn px-2 py-1 rounded-md text-secondary">VOLUME</button>
+                            </div>
+                        </div>
+                        <div class="relative w-full" style="height: 190px;">
+                            <canvas id="official-exercise-history-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Past sessions -->
+                    <div class="bg-surface border border-outline rounded-3xl p-5 shadow-md flex flex-col gap-3">
+                        <span class="text-[10px] font-extrabold uppercase text-primary font-display tracking-widest">Sessioni passate</span>
+                        <div id="official-exercise-history-sessions" class="flex flex-col gap-2.5"></div>
                     </div>
                 </div>
             </div>
@@ -1026,6 +1083,9 @@
                 window.highlightMusclesInModal(primArray, secArray);
             }
 
+            // Load personal history for the STORICO tab (async, non-blocking)
+            loadExerciseHistory(id);
+
             // Default to 'execution' tab on opening
             switchDetailsTab('execution');
 
@@ -1037,12 +1097,178 @@
             overlay.classList.remove('translate-x-full', 'opacity-0');
         }
 
+        // ---- Exercise personal history (STORICO tab) --------------------------
+        const EXERCISE_HISTORY_URL = "{% url 'manager:exercise:history-stats' 0 %}";
+        const SESSION_DETAILS_URL = "{% url 'core:session-details' '00000000-0000-0000-0000-000000000000' %}";
+        let _exHistoryData = null;
+        let _exHistoryMetric = 'top_weight';
+
+        function _fmtNum(n, digits) {
+            if (n === null || n === undefined || isNaN(n)) return '–';
+            return Number(n).toLocaleString('it-IT', { maximumFractionDigits: digits === undefined ? 1 : digits });
+        }
+
+        function _historyRecordCard(label, value, sub) {
+            return `<div class="bg-surface border border-outline rounded-2xl p-3.5 flex flex-col gap-0.5">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-secondary font-display">${label}</span>
+                <span class="text-lg font-black text-white font-display leading-tight">${value}</span>
+                ${sub ? `<span class="text-[10px] text-secondary">${sub}</span>` : ''}
+            </div>`;
+        }
+
+        function renderExerciseHistoryChart() {
+            if (!_exHistoryData || !window.Chart) return;
+            const canvas = document.getElementById('official-exercise-history-chart');
+            if (!canvas) return;
+            const points = _exHistoryData.chart || [];
+            const labels = points.map(p => {
+                const d = new Date(p.date);
+                return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+            });
+            const data = points.map(p => p[_exHistoryMetric]);
+            const metricLabel = { top_weight: 'Peso max (kg)', est_1rm: '1RM stimato (kg)', volume: 'Volume (kg)' }[_exHistoryMetric];
+
+            if (window._exHistoryChart) window._exHistoryChart.destroy();
+            window._exHistoryChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: metricLabel,
+                        data,
+                        borderColor: '#caf300',
+                        backgroundColor: 'rgba(202,243,0,0.12)',
+                        borderWidth: 2,
+                        pointRadius: points.length > 30 ? 0 : 3,
+                        pointBackgroundColor: '#caf300',
+                        tension: 0.3,
+                        fill: true,
+                        spanGaps: true,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#222429' }, ticks: { color: '#94A3B8', maxTicksLimit: 6, font: { size: 10 } } },
+                        y: { grid: { color: '#222429' }, ticks: { color: '#94A3B8', font: { size: 10 } } },
+                    },
+                },
+            });
+        }
+
+        function renderExerciseHistory() {
+            const d = _exHistoryData;
+            const grid = document.getElementById('history-records-grid');
+            const sessionsBox = document.getElementById('official-exercise-history-sessions');
+            if (!d || !grid || !sessionsBox) return;
+            const s = d.stats || {};
+
+            const sugBox = document.getElementById('history-suggestion');
+            const sugText = document.getElementById('history-suggestion-text');
+            if (sugBox && sugText) {
+                if (d.suggestion && d.suggestion.text) {
+                    sugText.textContent = d.suggestion.text;
+                    sugBox.classList.remove('hidden');
+                    sugBox.classList.add('flex');
+                } else {
+                    sugBox.classList.add('hidden');
+                    sugBox.classList.remove('flex');
+                }
+            }
+
+            const cards = [];
+            if (s.is_bodyweight) {
+                cards.push(_historyRecordCard('Rep max', _fmtNum(s.max_reps, 0)));
+                cards.push(_historyRecordCard('Miglior serie', s.best_set_label || '–'));
+            } else {
+                cards.push(_historyRecordCard('Peso max', s.max_weight != null ? _fmtNum(s.max_weight) + ' kg' : '–', s.max_weight_date ? new Date(s.max_weight_date).toLocaleDateString('it-IT') : ''));
+                cards.push(_historyRecordCard('1RM stimato', s.est_1rm != null ? _fmtNum(s.est_1rm) + ' kg' : '–', 'Epley'));
+                cards.push(_historyRecordCard('Rep max', _fmtNum(s.max_reps, 0)));
+                cards.push(_historyRecordCard('Miglior serie', s.best_set_label || '–'));
+            }
+            cards.push(_historyRecordCard('Volume totale', _fmtNum(s.total_volume, 0) + ' kg'));
+            cards.push(_historyRecordCard('Volte eseguito', _fmtNum(s.sessions_count, 0), s.total_sets + ' serie totali'));
+            cards.push(_historyRecordCard('Ultima volta', s.last_performed ? new Date(s.last_performed).toLocaleDateString('it-IT') : '–'));
+            grid.innerHTML = cards.join('');
+
+            sessionsBox.innerHTML = (d.sessions || []).map(sess => {
+                const chips = sess.sets.map(set => {
+                    let txt;
+                    if (set.weight != null && set.reps != null) txt = `${_fmtNum(set.weight)}×${_fmtNum(set.reps, 0)}`;
+                    else if (set.weight != null) txt = `${_fmtNum(set.weight)} kg`;
+                    else if (set.reps != null) txt = `${_fmtNum(set.reps, 0)} rep`;
+                    else txt = '–';
+                    return `<span class="px-2 py-0.5 rounded-md bg-surface-card border border-outline text-[11px] font-bold text-white">${txt}</span>`;
+                }).join('');
+                const dateStr = new Date(sess.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+                const inner = `<div class="flex flex-col gap-1.5">
+                        <span class="text-[11px] font-bold text-secondary uppercase tracking-wide">${dateStr}</span>
+                        <div class="flex flex-wrap gap-1.5">${chips}</div>
+                    </div>`;
+                return sess.session_id
+                    ? `<a href="${SESSION_DETAILS_URL.replace('00000000-0000-0000-0000-000000000000', sess.session_id)}" class="block bg-[#0C0D0F] border border-outline rounded-2xl p-3 hover:border-primary/40 transition-colors">${inner}</a>`
+                    : `<div class="bg-[#0C0D0F] border border-outline rounded-2xl p-3">${inner}</div>`;
+            }).join('');
+
+            document.querySelectorAll('.history-metric-btn').forEach(btn => {
+                btn.classList.toggle('bg-primary', btn.dataset.metric === _exHistoryMetric);
+                btn.classList.toggle('text-on-primary', btn.dataset.metric === _exHistoryMetric);
+                btn.classList.toggle('text-secondary', btn.dataset.metric !== _exHistoryMetric);
+            });
+
+            renderExerciseHistoryChart();
+        }
+
+        function loadExerciseHistory(id) {
+            const loading = document.getElementById('history-loading');
+            const empty = document.getElementById('history-empty');
+            const content = document.getElementById('history-content');
+            if (!loading || !empty || !content) return;
+
+            _exHistoryData = null;
+            _exHistoryMetric = 'top_weight';
+            if (window._exHistoryChart) { window._exHistoryChart.destroy(); window._exHistoryChart = null; }
+            loading.classList.remove('hidden');
+            empty.classList.add('hidden'); empty.classList.remove('flex');
+            content.classList.add('hidden'); content.classList.remove('flex');
+
+            fetch(EXERCISE_HISTORY_URL.replace(/\/0\/history$/, '/' + id + '/history'), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            })
+                .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                .then(data => {
+                    loading.classList.add('hidden');
+                    _exHistoryData = data;
+                    if (!data.stats || !(data.chart || []).length) {
+                        empty.classList.remove('hidden'); empty.classList.add('flex');
+                        return;
+                    }
+                    content.classList.remove('hidden'); content.classList.add('flex');
+                    renderExerciseHistory();
+                })
+                .catch(() => {
+                    loading.classList.add('hidden');
+                    empty.classList.remove('hidden'); empty.classList.add('flex');
+                });
+        }
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest && e.target.closest('.history-metric-btn');
+            if (!btn) return;
+            _exHistoryMetric = btn.dataset.metric;
+            renderExerciseHistory();
+        });
+
         function closeExerciseOfficialPage() {
             const overlay = document.getElementById('exercise-official-screen');
             if (overlay) {
                 overlay.classList.add('translate-x-full', 'opacity-0');
                 setTimeout(() => {
                     overlay.classList.add('hidden');
+                    if (window._exHistoryChart) { window._exHistoryChart.destroy(); window._exHistoryChart = null; }
                     const mediaContainer = document.getElementById('official-exercise-media-container');
                     if (mediaContainer) {
                         const media = mediaContainer.querySelector('video, img#official-exercise-gif');
@@ -1058,38 +1284,20 @@
         }
 
         function switchDetailsTab(tabId) {
-            const tabExecution = document.getElementById('tab-content-execution');
-            const tabMuscles = document.getElementById('tab-content-muscles');
-            const tabTips = document.getElementById('tab-content-tips');
-
-            const btnExecution = document.getElementById('tab-btn-execution');
-            const btnMuscles = document.getElementById('tab-btn-muscles');
-            const btnTips = document.getElementById('tab-btn-tips');
-
-            if (tabExecution) tabExecution.classList.add('hidden');
-            if (tabMuscles) tabMuscles.classList.add('hidden');
-            if (tabTips) tabTips.classList.add('hidden');
-
+            const tabs = ['execution', 'muscles', 'tips', 'history'];
             const inactiveClass = 'text-secondary hover:text-white';
             const activeClass = 'bg-primary text-on-primary';
 
-            [btnExecution, btnMuscles, btnTips].forEach(btn => {
+            tabs.forEach(name => {
+                const panel = document.getElementById('tab-content-' + name);
+                const btn = document.getElementById('tab-btn-' + name);
+                const isActive = name === tabId;
+                if (panel) panel.classList.toggle('hidden', !isActive);
                 if (btn) {
                     btn.className = btn.className.replace(activeClass, '').replace(inactiveClass, '').trim();
-                    btn.className += ' ' + inactiveClass;
+                    btn.className += ' ' + (isActive ? activeClass : inactiveClass);
                 }
             });
-
-            if (tabId === 'execution') {
-                if (tabExecution) tabExecution.classList.remove('hidden');
-                if (btnExecution) btnExecution.className = btnExecution.className.replace(inactiveClass, activeClass);
-            } else if (tabId === 'muscles') {
-                if (tabMuscles) tabMuscles.classList.remove('hidden');
-                if (btnMuscles) btnMuscles.className = btnMuscles.className.replace(inactiveClass, activeClass);
-            } else if (tabId === 'tips') {
-                if (tabTips) tabTips.classList.remove('hidden');
-                if (btnTips) btnTips.className = btnTips.className.replace(inactiveClass, activeClass);
-            }
         }
     </script>
 

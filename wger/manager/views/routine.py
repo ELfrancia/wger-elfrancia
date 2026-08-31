@@ -864,3 +864,178 @@ def add_custom_exercise_tailwind(request, routine_pk, day_pk):
         messages.error(request, _(f"Errore durante la creazione dell'esercizio: {e}"))
         return redirect(reverse('manager:routine:view', kwargs={'pk': routine_pk}))
 
+
+@login_required
+def exercise_history_stats(request, exercise_pk):
+    """
+    Personal history for a single exercise for the current user.
+
+    Returns aggregate records, a chronological progression series (one point per
+    session/day) and the list of the most recent sessions with their sets.
+    Consumed by the "STORICO" tab of the exercise detail overlay
+    (wger/core/templates/template_tailwind.html).
+    """
+    from wger.manager.models import WorkoutLog
+
+    exercise = get_object_or_404(Exercise, pk=exercise_pk)
+
+    logs = list(
+        WorkoutLog.objects
+        .filter(user=request.user, exercise_id=exercise_pk)
+        .select_related('session')
+        .order_by('date')
+    )
+
+    def _f(value):
+        try:
+            return float(value) if value is not None else None
+        except (TypeError, ValueError, DecimalException):
+            return None
+
+    translation = exercise.get_translation()
+    payload = {
+        'exercise_id': exercise.pk,
+        'name': translation.name if translation else str(exercise),
+        'stats': None,
+        'chart': [],
+        'sessions': [],
+    }
+
+    if not logs:
+        return JsonResponse(payload)
+
+    # ---- Group by session (fallback: calendar day) -------------------------
+    groups = {}
+    order = []
+    for log in logs:
+        key = log.session_id or ('d', log.date.date())
+        if key not in groups:
+            groups[key] = {
+                'session_id': str(log.session_id) if log.session_id else None,
+                'date': log.date.date().isoformat(),
+                'sets': [],
+            }
+            order.append(key)
+        weight = _f(log.weight)
+        reps = _f(log.repetitions)
+        groups[key]['sets'].append({
+            'weight': weight,
+            'reps': reps,
+            'rir': _f(log.rir),
+        })
+
+    def _epley(weight, reps):
+        if weight is None or reps is None or reps <= 0:
+            return None
+        return weight * (1 + reps / 30.0)
+
+    chart = []
+    for key in order:
+        g = groups[key]
+        weights = [s['weight'] for s in g['sets'] if s['weight'] is not None]
+        volume = sum(
+            (s['weight'] or 0) * (s['reps'] or 0)
+            for s in g['sets']
+            if s['weight'] is not None and s['reps'] is not None
+        )
+        one_rms = [
+            v for v in (_epley(s['weight'], s['reps']) for s in g['sets'])
+            if v is not None
+        ]
+        chart.append({
+            'date': g['date'],
+            'top_weight': round(max(weights), 2) if weights else None,
+            'est_1rm': round(max(one_rms), 1) if one_rms else None,
+            'volume': round(volume, 1),
+        })
+
+    # ---- Aggregate records -----------------------------------------------
+    all_weights = [_f(l.weight) for l in logs if l.weight is not None]
+    all_reps = [_f(l.repetitions) for l in logs if l.repetitions is not None]
+    total_volume = sum(
+        (_f(l.weight) or 0) * (_f(l.repetitions) or 0)
+        for l in logs
+        if l.weight is not None and l.repetitions is not None
+    )
+
+    max_weight = max(all_weights) if all_weights else None
+    max_weight_date = None
+    if max_weight is not None:
+        max_weight_date = next(
+            (l.date.date().isoformat() for l in logs if _f(l.weight) == max_weight),
+            None,
+        )
+
+    best_est_1rm = None
+    best_set_label = None
+    best_set_score = -1
+    for l in logs:
+        w = _f(l.weight)
+        r = _f(l.repetitions)
+        one_rm = _epley(w, r)
+        if one_rm is not None and one_rm > (best_est_1rm or 0):
+            best_est_1rm = one_rm
+        # "best set": highest estimated 1RM, else highest weight, else most reps
+        score = one_rm if one_rm is not None else (w if w is not None else (r or 0) / 1000.0)
+        if score > best_set_score:
+            best_set_score = score
+            if w is not None and r is not None:
+                best_set_label = f'{w:g} kg × {r:g}'
+            elif w is not None:
+                best_set_label = f'{w:g} kg'
+            elif r is not None:
+                best_set_label = f'{r:g} rep'
+
+    payload['stats'] = {
+        'max_weight': round(max_weight, 2) if max_weight is not None else None,
+        'max_weight_date': max_weight_date,
+        'est_1rm': round(best_est_1rm, 1) if best_est_1rm is not None else None,
+        'max_reps': round(max(all_reps), 0) if all_reps else None,
+        'best_set_label': best_set_label,
+        'total_volume': round(total_volume, 1),
+        'total_sets': len(logs),
+        'sessions_count': len(order),
+        'last_performed': logs[-1].date.date().isoformat(),
+        'is_bodyweight': not all_weights,
+    }
+    payload['chart'] = chart
+    payload['sessions'] = [groups[key] for key in reversed(order)][:40]
+
+    # ---- Progressive-overload suggestion for the next session -------------
+    last_group = groups[order[-1]]
+    last_best = None
+    for s in last_group['sets']:
+        w = s['weight'] if s['weight'] is not None else -1
+        r = s['reps'] if s['reps'] is not None else -1
+        key_val = (w, r)
+        if last_best is None or key_val > last_best[0]:
+            last_best = (key_val, s)
+
+    suggestion = None
+    if last_best is not None:
+        w = last_best[1]['weight']
+        r = last_best[1]['reps']
+        recent_top = [c['top_weight'] for c in chart[-3:] if c['top_weight'] is not None]
+        stagnating = len(recent_top) == 3 and recent_top[0] >= recent_top[-1]
+
+        if payload['stats']['is_bodyweight'] or w is None:
+            reps = int(r) if r else 8
+            suggestion = {'type': 'reps', 'text': f'Prossima volta: {reps + 1} rep'}
+        else:
+            inc = 2.5 if w >= 40 else 1.25
+            if r is not None and r >= 12:
+                suggestion = {'type': 'weight',
+                              'text': f'Prossima volta: {w + inc:g} kg × 8'}
+            elif stagnating and r is not None and r <= 5:
+                suggestion = {'type': 'deload',
+                              'text': f'Fermo da 3 sessioni: prova {round(w * 0.9):g} kg × {int(r) + 3} e risali'}
+            elif r is not None and r >= 8:
+                suggestion = {'type': 'reps',
+                              'text': f'Prossima volta: {w:g} kg × {int(r) + 1}'}
+            else:
+                suggestion = {'type': 'weight',
+                              'text': f'Prossima volta: {w + inc:g} kg × {int(r) if r else 5}'}
+    payload['suggestion'] = suggestion
+
+    return JsonResponse(payload)
+

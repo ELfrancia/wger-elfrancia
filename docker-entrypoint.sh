@@ -37,8 +37,12 @@ except Exception as e:
     print(f'Nota cleanup sessioni: {e}')
 " || true
 
+echo "🎨 Compilazione CSS Sass..."
+npm run build:css:sass || true
+
 echo "📦 Raccolta file statici (collectstatic)..."
 python manage.py collectstatic --noinput || true
+
 
 echo "🚀 Avvio server di produzione (Gunicorn)..."
 if [ "$#" -gt 0 ]; then
