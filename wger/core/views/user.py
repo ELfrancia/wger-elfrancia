@@ -1007,17 +1007,41 @@ def profile_tailwind(request):
             except (ValueError, TypeError, InvalidOperation):
                 messages.error(request, _('Invalid value for water goal.'))
         if avatar_file:
-            ext = os.path.splitext(avatar_file.name)[1]
-            filename = f"avatar_{request.user.id}{ext}"
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
-            if fs.exists(filename):
-                fs.delete(filename)
-            saved_name = fs.save(filename, avatar_file)
-            profile.avatar_url = fs.url(saved_name)
-            updated = True
+            from django.core.exceptions import ValidationError
+            from wger.utils.images import validate_image_static_no_animation
+            from PIL import Image
+
+            try:
+                if avatar_file.size > 5 * 1024 * 1024:
+                    raise ValidationError(_('The maximum avatar file size is 5MB.'))
+                validate_image_static_no_animation(avatar_file)
+                avatar_file.open()
+                img = Image.open(avatar_file)
+                img_format = img.format.lower()
+                ext = '.jpg' if img_format == 'jpeg' else f".{img_format}"
+                filename = f"avatar_{request.user.id}{ext}"
+                fs = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+                if fs.exists(filename):
+                    fs.delete(filename)
+                saved_name = fs.save(filename, avatar_file)
+                profile.avatar_url = fs.url(saved_name)
+                updated = True
+            except ValidationError as e:
+                messages.error(request, e.message if hasattr(e, 'message') else str(e))
+            except Exception as e:
+                logger.error(f"Avatar upload failed for user {request.user.id}: {e}")
+                messages.error(request, _('Invalid avatar image file.'))
         elif avatar_url is not None:
-            profile.avatar_url = avatar_url.strip()
-            updated = True
+            clean_url = avatar_url.strip()
+            if clean_url:
+                if clean_url.startswith(('http://', 'https://')):
+                    profile.avatar_url = clean_url
+                    updated = True
+                else:
+                    messages.error(request, _('Avatar URL must start with http:// or https://'))
+            else:
+                profile.avatar_url = ''
+                updated = True
 
         if updated:
             if profile.gym_id:
