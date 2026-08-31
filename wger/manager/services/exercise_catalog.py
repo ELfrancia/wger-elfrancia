@@ -38,6 +38,42 @@ def bump_catalog_version():
     return new_version
 
 
+def _resolve_translation_prefetched(ex, language_code):
+    translations = list(ex.translations.all())
+    for t in translations:
+        if t.language and t.language.short_name == language_code:
+            return t
+    for t in translations:
+        if t.language and t.language.short_name == 'en':
+            return t
+    return translations[0] if translations else None
+
+
+def _resolve_media_url_prefetched(ex, cal):
+    if cal and cal.demo_media_url:
+        return cal.demo_media_url
+
+    videos = list(ex.exercisevideo_set.all())
+    videos.sort(key=lambda v: getattr(v, 'is_main', False), reverse=True)
+    for vid in videos:
+        if vid and vid.video:
+            try:
+                return vid.video.url
+            except Exception:
+                pass
+
+    images = list(ex.exerciseimage_set.all())
+    images.sort(key=lambda img: getattr(img, 'is_main', False), reverse=True)
+    for img in images:
+        if img and img.image:
+            try:
+                return img.image.url
+            except Exception:
+                pass
+
+    return ''
+
+
 def get_cached_exercise_catalog(language_code='it'):
     """
     Retrieve or build the compact exercise catalog DTO.
@@ -53,7 +89,8 @@ def get_cached_exercise_catalog(language_code='it'):
     # Build catalog with optimized DB query
     form = AddExerciseForm()
     exercise_qs = form.fields['exercise'].queryset.prefetch_related(
-        'muscles', 'translations', 'equipment', 'category'
+        'muscles', 'translations__language', 'equipment', 'category',
+        'exerciseimage_set', 'exercisevideo_set'
     )
     
     calisthenics_map = {
@@ -78,7 +115,7 @@ def get_cached_exercise_catalog(language_code='it'):
     seen_names = set()
 
     for ex in exercise_qs:
-        translation = ex.get_translation(language=language_code)
+        translation = _resolve_translation_prefetched(ex, language_code)
         cal = calisthenics_map.get(str(ex.uuid))
         is_calisthenics = bool(
             (cal and cal.discipline == 'calisthenics') or
@@ -103,7 +140,7 @@ def get_cached_exercise_catalog(language_code='it'):
             continue
         seen_names.add(name_key)
             
-        preview_url = cal.demo_media_url if (cal and cal.demo_media_url) else ex.demo_media_url
+        preview_url = _resolve_media_url_prefetched(ex, cal)
         skill_family = (cal.skill_family.replace('_', ' ').title() if (cal and cal.skill_family) else 'Other')
         
         muscles = [m.name for m in ex.muscles.all()]
