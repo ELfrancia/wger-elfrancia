@@ -104,14 +104,27 @@ L'applicazione sarà accessibile all'indirizzo:
 
 ---
 
-## 🌐 5. Configurazione per Reverse Proxy (Nginx Proxy Manager / Cloudflare Tunnel)
+## 🌐 5. Configurazione per Reverse Proxy & Variabili d'Ambiente
 
-Se accedi all'app tramite dominio esterno (es. `https://onyx.francescoadreani.dev`), aggiungi il dominio al file `docker-compose.yml` nella variabile `CSRF_TRUSTED_ORIGINS`:
+In produzione (es. dietro reverse proxy come Nginx Proxy Manager, Cloudflare Tunnel, Caddy), configura le variabili d'ambiente necessarie in `docker-compose.yml` o tramite file `.env`:
 
 ```yaml
 environment:
-  - CSRF_TRUSTED_ORIGINS=https://tuodominio.it,http://tuodominio.it
+  - DJANGO_SETTINGS_MODULE=settings.main
+  - DJANGO_DEBUG=False
+  - DJANGO_SECRET_KEY=genera-una-chiave-segreta-lunga-e-casuale-qui
+  - ALLOWED_HOSTS=onyx.francescoadreani.dev,localhost,127.0.0.1
+  - CSRF_TRUSTED_ORIGINS=https://onyx.francescoadreani.dev
+  - AXES_ENABLED=True
+  - X_FORWARDED_PROTO_HEADER_SET=True
+  - DJANGO_DB_DATABASE=/app/database.sqlite
 ```
+
+> ⚠️ **Sicurezza in Produzione:**
+> - `DJANGO_SECRET_KEY`: Imposta sempre una chiave casuale e robusta (mai lasciare il default).
+> - `ALLOWED_HOSTS`: Includi il tuo dominio pubblico per prevenire attacchi di Host Header poisoning.
+> - `CSRF_TRUSTED_ORIGINS`: Includi l'URL completo con schema (`https://...`).
+> - `DJANGO_DEBUG`: Lasciare impostato su `False`.
 
 E riavvia il container:
 ```bash

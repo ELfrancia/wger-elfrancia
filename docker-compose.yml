@@ -11,9 +11,12 @@ services:
       - .:/app
       - /app/node_modules
     environment:
-      - DJANGO_SETTINGS_MODULE=settings.local_dev
+      - DJANGO_SETTINGS_MODULE=settings.main
       - PYTHONUNBUFFERED=1
       - DJANGO_DB_DATABASE=/app/database.sqlite
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost:8000}
     entrypoint: ["sh", "/app/docker-entrypoint.sh"]
     command: gunicorn wger.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2
 

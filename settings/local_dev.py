@@ -8,22 +8,27 @@ import os
 # wger
 from .settings_global import *
 
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 't')
 
 # List of administrators
 ADMINS = ['"Your name" <your_email@example.com>']
 MANAGERS = ADMINS
 
-# Don't use this key in production!
-SECRET_KEY = 'wger-local-development-supersecret-key-1234567890!'
+# Secret key: read from environment if present, generate random key for local run
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', os.environ.get('SECRET_KEY', ''))
+if not SECRET_KEY:
+    import secrets
+    SECRET_KEY = secrets.token_urlsafe(50)
 
-# List of allowed hosts (Explicit LAN IP & localhost)
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '192.168.1.103',
-    '*',
-]
+# List of allowed hosts (env-driven with localhost defaults, no wildcard)
+_allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', os.environ.get('DJANGO_ALLOWED_HOSTS', ''))
+if _allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = [
+        'localhost',
+        '127.0.0.1',
+    ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -54,11 +59,6 @@ _csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
-    'http://192.168.1.103:8000',
-    'https://192.168.1.103:8000',
-    'http://192.168.1.103',
-    'https://onyx.francescoadreani.dev',
-    'http://onyx.francescoadreani.dev',
 ]
 if _csrf_origins_env:
     for origin in _csrf_origins_env.split(','):
@@ -70,7 +70,7 @@ if _csrf_origins_env:
 EXPOSE_PROMETHEUS_METRICS = True
 
 COMPRESS_ENABLED = False
-AXES_ENABLED = False
+AXES_ENABLED = os.environ.get('AXES_ENABLED', 'False').lower() in ('true', '1', 't')
 AXES_HANDLER = 'axes.handlers.database.AxesDatabaseHandler'
 
 

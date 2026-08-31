@@ -48,6 +48,20 @@ more detailed setup instructions take a look at the provided
 [docker compose file](https://github.com/wger-project/docker) and the
 [corresponding documentation](https://wger.readthedocs.io/en/latest/installation/docker.html).
 
+### Environment Variables
+
+When deploying in production, ensure the following environment variables are configured:
+
+| Variable | Description | Default |
+|---|---|---|
+| `DJANGO_SETTINGS_MODULE` | Settings module to use | `settings.main` |
+| `DJANGO_SECRET_KEY` | Secret key used for cryptographic signing | *Required in production* |
+| `DJANGO_DEBUG` | Enable/disable debug mode | `False` |
+| `ALLOWED_HOSTS` | Comma-separated list of valid host headers | `localhost,127.0.0.1` |
+| `CSRF_TRUSTED_ORIGINS` | Comma-separated list of trusted origins for CSRF | `http://127.0.0.1,http://localhost,https://localhost` |
+| `AXES_ENABLED` | Enable brute-force login rate limiting | `True` |
+| `DJANGO_DB_DATABASE` | SQLite DB file path or database name | `/app/database.sqlite` |
+
 ## Developing and contributing
 
 Our goal is to build an awesome and flexible fitness and nutrition manager,

@@ -93,14 +93,14 @@ TIME_ZONE = env.str('TIME_ZONE', 'Europe/Berlin')
 #
 
 # Django
-SECRET_KEY = env.str('SECRET_KEY', '')
+SECRET_KEY = env.str('DJANGO_SECRET_KEY', env.str('SECRET_KEY', ''))
 if not SECRET_KEY or (SECRET_KEY in _DEFAULT_KEYS and not DEBUG):
     SECRET_KEY = secrets.token_urlsafe(50)
     if not DEBUG:
         warnings.warn(
-            'SECRET_KEY is not set or uses the default value so '
+            'DJANGO_SECRET_KEY / SECRET_KEY is not set or uses the default value so '
             'a random key was generated, sessions will not persist across restarts. '
-            'Set SECRET_KEY in your environment for production use.',
+            'Set DJANGO_SECRET_KEY in your environment for production use.',
             stacklevel=1,
         )
 
@@ -149,10 +149,11 @@ STATIC_URL = env.str('STATIC_URL', '/static/')
 
 LOGIN_REDIRECT_URL = env.str('LOGIN_REDIRECT_URL', '/')
 
-# Allow all hosts to access the application. Change if used in production.
-ALLOWED_HOSTS = [
-    '*',
-]
+# Allowed hosts configuration for production
+ALLOWED_HOSTS = env.list(
+    'ALLOWED_HOSTS',
+    default=env.list('DJANGO_ALLOWED_HOSTS', default=['localhost', '127.0.0.1']),
+)
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 

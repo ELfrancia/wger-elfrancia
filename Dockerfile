@@ -50,7 +50,7 @@ RUN npm run build:css:sass
 EXPOSE 8000
 
 # Set default settings module
-ENV DJANGO_SETTINGS_MODULE=settings.local_dev
+ENV DJANGO_SETTINGS_MODULE=settings.main
 
 # Make entrypoint script executable
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
