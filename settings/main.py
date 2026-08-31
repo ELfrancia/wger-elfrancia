@@ -306,7 +306,7 @@ HEADLESS_JWT_REFRESH_TOKEN_EXPIRES_IN = REFRESH_TOKEN_LIFETIME_HOURS * 3600
 #
 CSRF_TRUSTED_ORIGINS = env.list(
     'CSRF_TRUSTED_ORIGINS',
-    default=['http://127.0.0.1', 'http://localhost', 'https://localhost', 'http://192.168.1.103:8000', 'http://192.168.1.103'],
+    default=['http://127.0.0.1', 'http://localhost', 'https://localhost'],
 )
 
 if SITE_URL and SITE_URL not in CSRF_TRUSTED_ORIGINS:
