@@ -2,8 +2,11 @@
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 from django.conf import settings
+from django.db import transaction
 import requests
 import os
+import re
+from wger.exercises.media_utils import safe_download_file, is_safe_path, sanitize_filename
 from wger.exercises.models import (
     CalisthenicsExercise, 
     ExerciseTag, 
@@ -104,6 +107,10 @@ class Command(BaseCommand):
 
             rows_url = data.get('next')
 
+        if not published_exercises:
+            self.stdout.write(self.style.WARNING("No published exercises found in Baserow. Aborting sync without modifying existing records."))
+            return
+
         self.stdout.write(f"Found {len(published_exercises)} published exercises in Baserow. Syncing to local SQLite and downloading media...")
 
         # Prepare local media directories
@@ -123,166 +130,171 @@ class Command(BaseCommand):
         english_lang = Language.objects.get(short_name='en')
 
         sync_count = 0
-        for row in published_exercises:
-            name = row.get('Nome') or row.get('Name') or row.get(primary_field_name)
-            source_id = row.get('Source Exercise ID')
-            if not name or not source_id:
-                continue
+        with transaction.atomic():
+            for row in published_exercises:
+                name = row.get('Nome') or row.get('Name') or row.get(primary_field_name)
+                source_id = row.get('Source Exercise ID')
+                if not name or not source_id:
+                    continue
 
-            slug = f"{slugify(name)}-{source_id}"
-            
-            # Download Demo Media URL locally if it is set and is an external URL
-            external_media_url = row.get('Demo Media URL')
-            local_media_url = ''
+                safe_source_id = sanitize_filename(source_id)
+                if not safe_source_id:
+                    continue
 
-            if external_media_url and external_media_url.startswith('http'):
-                ext = 'gif'
-                if '.' in external_media_url.split('/')[-1]:
-                    possible_ext = external_media_url.split('/')[-1].split('.')[-1].lower()
-                    if possible_ext in ['gif', 'mp4', 'png', 'jpg', 'jpeg']:
-                        ext = possible_ext
+                slug = f"{slugify(name)}-{safe_source_id}"
                 
-                filename = f"{source_id}.{ext}"
-                local_file_path = os.path.join(media_dir, filename)
-                local_media_url = f"{settings.MEDIA_URL}exercises/{filename}"
+                # Download Demo Media URL locally if it is set and is an external URL
+                external_media_url = row.get('Demo Media URL')
+                local_media_url = ''
 
-                # Download only if it doesn't already exist locally
-                if not os.path.exists(local_file_path):
-                    self.stdout.write(f"  Downloading GIF for '{name}'...")
-                    try:
-                        r = requests.get(external_media_url, timeout=20)
-                        r.raise_for_status()
-                        with open(local_file_path, 'wb') as f:
-                            f.write(r.content)
-                        self.stdout.write(self.style.SUCCESS(f"    Saved media locally to {local_media_url}"))
-                    except Exception as e:
-                        self.stdout.write(self.style.ERROR(f"    Failed to download GIF: {e}"))
-                        local_media_url = external_media_url
-            else:
-                local_media_url = external_media_url or ''
+                if external_media_url and external_media_url.startswith('http'):
+                    ext = 'gif'
+                    if '.' in external_media_url.split('/')[-1]:
+                        possible_ext = external_media_url.split('/')[-1].split('.')[-1].lower()
+                        if possible_ext in ['gif', 'mp4', 'png', 'jpg', 'jpeg']:
+                            ext = possible_ext
+                    
+                    filename = f"{safe_source_id}.{ext}"
+                    local_file_path = os.path.join(media_dir, filename)
+                    if not is_safe_path(media_dir, local_file_path):
+                        continue
+                    local_media_url = f"{settings.MEDIA_URL}exercises/{filename}"
 
-            instructions_raw = row.get('Instructions') or ''
-            instructions_list = [line.strip() for line in instructions_raw.split('\n') if line.strip()]
+                    # Download only if it doesn't already exist locally
+                    if not os.path.exists(local_file_path):
+                        self.stdout.write(f"  Downloading GIF for '{name}'...")
+                        if safe_download_file(external_media_url, local_file_path, base_dir=media_dir, timeout=20):
+                            self.stdout.write(self.style.SUCCESS(f"    Saved media locally to {local_media_url}"))
+                        else:
+                            self.stdout.write(self.style.ERROR(f"    Failed to download GIF (SSRF or download error)"))
+                            local_media_url = external_media_url
+                else:
+                    local_media_url = external_media_url or ''
 
-            secondary_raw = row.get('Secondary Muscles') or ''
-            secondary_list = [m.strip() for m in secondary_raw.split(',') if m.strip()]
+                instructions_raw = row.get('Instructions') or ''
+                instructions_list = [line.strip() for line in instructions_raw.split('\n') if line.strip()]
 
-            # 1. Update/Create CalisthenicsExercise record
-            exercise, created = CalisthenicsExercise.objects.update_or_create(
-                source='exercisedb',
-                source_exercise_id=source_id,
-                defaults={
-                    'slug': slug,
-                    'name': name,
-                    'description': row.get('Description'),
-                    'instructions': instructions_list,
-                    'body_part': row.get('Body Part'),
-                    'target_muscle': row.get('Target Muscle'),
-                    'secondary_muscles': secondary_list,
-                    'equipment': row.get('Equipment') or 'body weight',
-                    'difficulty': row.get('Difficulty'),
-                    'discipline': row.get('Discipline') or 'calisthenics',
-                    'skill_family': row.get('Skill Family') or 'other',
-                    'movement_pattern': row.get('Movement Pattern') or 'other',
-                    'is_static_hold': bool(row.get('Is Static Hold')),
-                    'is_unilateral': bool(row.get('Is Unilateral')),
-                    'is_compound': not bool(row.get('Is Static Hold')),
-                    'is_published': True,
-                    'demo_media_url': local_media_url
-                }
-            )
+                secondary_raw = row.get('Secondary Muscles') or ''
+                secondary_list = [m.strip() for m in secondary_raw.split(',') if m.strip()]
 
-            # 2. Update/Create wger native models for routine visibility
-            # Create/update base wger Exercise record linked by UUID
-            base_exercise, base_created = Exercise.objects.update_or_create(
-                uuid=exercise.id,
-                defaults={
-                    'category': category,
-                    'license': default_license,
-                }
-            )
-
-            # Associate native equipment
-            base_exercise.equipment.add(bodyweight_eq)
-
-            # Associate native muscles
-            if exercise.target_muscle:
-                muscle_name = exercise.target_muscle.strip().capitalize()
-                muscle, _ = Muscle.objects.get_or_create(
-                    name=muscle_name,
-                    defaults={'name_en': exercise.target_muscle.strip(), 'is_front': True}
+                # 1. Update/Create CalisthenicsExercise record
+                exercise, created = CalisthenicsExercise.objects.update_or_create(
+                    source='exercisedb',
+                    source_exercise_id=safe_source_id,
+                    defaults={
+                        'slug': slug,
+                        'name': name,
+                        'description': row.get('Description'),
+                        'instructions': instructions_list,
+                        'body_part': row.get('Body Part'),
+                        'target_muscle': row.get('Target Muscle'),
+                        'secondary_muscles': secondary_list,
+                        'equipment': row.get('Equipment') or 'body weight',
+                        'difficulty': row.get('Difficulty'),
+                        'discipline': row.get('Discipline') or 'calisthenics',
+                        'skill_family': row.get('Skill Family') or 'other',
+                        'movement_pattern': row.get('Movement Pattern') or 'other',
+                        'is_static_hold': bool(row.get('Is Static Hold')),
+                        'is_unilateral': bool(row.get('Is Unilateral')),
+                        'is_compound': not bool(row.get('Is Static Hold')),
+                        'is_published': True,
+                        'demo_media_url': local_media_url
+                    }
                 )
-                base_exercise.muscles.add(muscle)
 
-            for sm in secondary_list:
-                if sm.strip():
-                    muscle_sec_name = sm.strip().capitalize()
-                    muscle_sec, _ = Muscle.objects.get_or_create(
-                        name=muscle_sec_name,
-                        defaults={'name_en': sm.strip(), 'is_front': True}
+                # 2. Update/Create wger native models for routine visibility
+                # Create/update base wger Exercise record linked by UUID
+                base_exercise, base_created = Exercise.objects.update_or_create(
+                    uuid=exercise.id,
+                    defaults={
+                        'category': category,
+                        'license': default_license,
+                    }
+                )
+
+                # Associate native equipment
+                base_exercise.equipment.add(bodyweight_eq)
+
+                # Associate native muscles
+                if exercise.target_muscle:
+                    muscle_name = exercise.target_muscle.strip().capitalize()
+                    muscle, _ = Muscle.objects.get_or_create(
+                        name=muscle_name,
+                        defaults={'name_en': exercise.target_muscle.strip(), 'is_front': True}
                     )
-                    base_exercise.muscles_secondary.add(muscle_sec)
+                    base_exercise.muscles.add(muscle)
 
-            # Create/update Translation (English)
-            description_text = "\n".join(instructions_list)
-            Translation.objects.update_or_create(
-                exercise=base_exercise,
-                language=english_lang,
-                defaults={
-                    'name': name,
-                    'description': description_text,
-                    'license': default_license,
-                }
-            )
+                for sm in secondary_list:
+                    if sm.strip():
+                        muscle_sec_name = sm.strip().capitalize()
+                        muscle_sec, _ = Muscle.objects.get_or_create(
+                            name=muscle_sec_name,
+                            defaults={'name_en': sm.strip(), 'is_front': True}
+                        )
+                        base_exercise.muscles_secondary.add(muscle_sec)
 
-            # Associate native ExerciseImage for local GIF rendering in wger
-            if local_media_url and local_media_url.startswith(settings.MEDIA_URL):
-                relative_image_path = local_media_url.replace(settings.MEDIA_URL, '')
-                full_local_path = os.path.join(settings.MEDIA_ROOT, relative_image_path)
-                if os.path.exists(full_local_path):
-                    ExerciseImage.objects.update_or_create(
-                        exercise=base_exercise,
-                        image=relative_image_path,
-                        defaults={
-                            'is_main': True,
-                            'license': default_license,
-                        }
-                    )
+                # Create/update Translation (English)
+                description_text = "\n".join(instructions_list)
+                Translation.objects.update_or_create(
+                    exercise=base_exercise,
+                    language=english_lang,
+                    defaults={
+                        'name': name,
+                        'description': description_text,
+                        'license': default_license,
+                    }
+                )
 
-            # Re-generate tags based on Baserow values
-            ExerciseTag.objects.filter(exercise=exercise).delete()
-            tags = ['bodyweight', 'calisthenics']
-            
-            if row.get('Difficulty'):
-                tags.append(row.get('Difficulty'))
-            if row.get('Is Static Hold'):
-                tags.append('static-hold')
-            else:
-                tags.append('reps')
-            
-            sf = (row.get('Skill Family') or '').lower()
-            if sf in ['push_up', 'dip']:
-                tags.append('push')
-            elif sf == 'pull_up' or 'row' in name.lower():
-                tags.append('pull')
-            elif sf == 'squat':
-                tags.append('legs')
-            
-            pattern = (row.get('Movement Pattern') or '').lower()
-            if 'core' in pattern:
-                tags.append('core')
+                # Associate native ExerciseImage for local GIF rendering in wger
+                if local_media_url and local_media_url.startswith(settings.MEDIA_URL):
+                    relative_image_path = local_media_url.replace(settings.MEDIA_URL, '')
+                    full_local_path = os.path.join(settings.MEDIA_ROOT, relative_image_path)
+                    if is_safe_path(settings.MEDIA_ROOT, full_local_path) and os.path.exists(full_local_path):
+                        ExerciseImage.objects.update_or_create(
+                            exercise=base_exercise,
+                            image=relative_image_path,
+                            defaults={
+                                'is_main': True,
+                                'license': default_license,
+                            }
+                        )
 
-            for t in tags:
-                ExerciseTag.objects.get_or_create(exercise=exercise, tag=t)
+                # Re-generate tags based on Baserow values
+                ExerciseTag.objects.filter(exercise=exercise).delete()
+                tags = ['bodyweight', 'calisthenics']
+                
+                if row.get('Difficulty'):
+                    tags.append(row.get('Difficulty'))
+                if row.get('Is Static Hold'):
+                    tags.append('static-hold')
+                else:
+                    tags.append('reps')
+                
+                sf = (row.get('Skill Family') or '').lower()
+                if sf in ['push_up', 'dip']:
+                    tags.append('push')
+                elif sf == 'pull_up' or 'row' in name.lower():
+                    tags.append('pull')
+                elif sf == 'squat':
+                    tags.append('legs')
+                
+                pattern = (row.get('Movement Pattern') or '').lower()
+                if 'core' in pattern:
+                    tags.append('core')
 
-            sync_count += 1
-            self.stdout.write(f"- Curated and synced '{name}' (and synced natively to wger)")
+                for t in tags:
+                    ExerciseTag.objects.get_or_create(exercise=exercise, tag=t)
 
-        # Mark other exercises as unpublished
-        synced_source_ids = [row.get('Source Exercise ID') for row in published_exercises]
-        removed_count = CalisthenicsExercise.objects.exclude(source_exercise_id__in=synced_source_ids).update(is_published=False)
-        if removed_count:
-            self.stdout.write(self.style.WARNING(f"Marked {removed_count} local exercises as unpublished."))
+                sync_count += 1
+                self.stdout.write(f"- Curated and synced '{name}' (and synced natively to wger)")
+
+            # Mark other exercises as unpublished only when we have valid synced rows
+            synced_source_ids = [sanitize_filename(row.get('Source Exercise ID')) for row in published_exercises if row.get('Source Exercise ID')]
+            synced_source_ids = [sid for sid in synced_source_ids if sid]
+            if synced_source_ids:
+                removed_count = CalisthenicsExercise.objects.exclude(source_exercise_id__in=synced_source_ids).update(is_published=False)
+                if removed_count:
+                    self.stdout.write(self.style.WARNING(f"Marked {removed_count} local exercises as unpublished."))
 
         from wger.manager.services.exercise_catalog import bump_catalog_version
         new_ver = bump_catalog_version()

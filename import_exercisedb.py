@@ -1,6 +1,7 @@
 import os
 import sys
 import uuid
+import re
 import requests
 from django.utils.text import slugify
 
@@ -10,16 +11,18 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.local_dev')
 import django
 django.setup()
 
+from django.conf import settings
 from wger.exercises.models import CalisthenicsExercise, Exercise, Translation, ExerciseCategory, Muscle, Equipment
 from wger.core.models import Language
 from wger.core.models.license import License
+from wger.exercises.media_utils import safe_download_file, is_safe_path, sanitize_filename
 
 def import_all():
     headers = {'User-Agent': 'Mozilla/5.0'}
     url = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/data/exercises.json'
     print('Fetching ExerciseDB JSON dataset from GitHub...')
     
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, timeout=30)
     if resp.status_code != 200:
         print(f'Failed to fetch dataset: HTTP {resp.status_code}')
         return
@@ -27,7 +30,8 @@ def import_all():
     dataset = resp.json()
     print(f'Retrieved {len(dataset)} exercises from ExerciseDB!')
     
-    os.makedirs('media/exercises', exist_ok=True)
+    media_dir = os.path.join(settings.MEDIA_ROOT, 'exercises')
+    os.makedirs(media_dir, exist_ok=True)
     default_license = License.objects.first()
     lang_en, _ = Language.objects.get_or_create(short_name='en', defaults={'full_name': 'English', 'full_name_en': 'English'})
     lang_it, _ = Language.objects.get_or_create(short_name='it', defaults={'full_name': 'Italiano', 'full_name_en': 'Italian'})
@@ -37,7 +41,10 @@ def import_all():
     
     for idx, item in enumerate(dataset, 1):
         raw_id = str(item.get('id', str(idx)))
-        ex_string_id = f'edb-{raw_id}'
+        safe_raw_id = sanitize_filename(raw_id)
+        if not safe_raw_id:
+            safe_raw_id = str(idx)
+        ex_string_id = f'edb-{safe_raw_id}'
         ex_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, ex_string_id)
         
         name = item.get('name', 'Exercise').title()
@@ -48,19 +55,15 @@ def import_all():
         instructions = item.get('instructions') or []
         
         gif_filename = f'{ex_string_id}.gif'
-        gif_local_path = os.path.join('media', 'exercises', gif_filename)
-        gif_rel_url = f'/media/exercises/{gif_filename}'
+        gif_local_path = os.path.join(media_dir, gif_filename)
+        if not is_safe_path(media_dir, gif_local_path):
+            continue
+        gif_rel_url = f'{settings.MEDIA_URL}exercises/{gif_filename}'
         
         # Download GIF asset if not present locally
         if item.get('gif_url') and not os.path.exists(gif_local_path):
             remote_gif_url = f'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/{item["gif_url"]}'
-            try:
-                gif_resp = requests.get(remote_gif_url, headers=headers, timeout=10)
-                if gif_resp.status_code == 200 and len(gif_resp.content) > 0:
-                    with open(gif_local_path, 'wb') as f:
-                        f.write(gif_resp.content)
-            except Exception:
-                pass
+            safe_download_file(remote_gif_url, gif_local_path, base_dir=media_dir, timeout=10, headers=headers)
 
         # Unique slug per exercise
         slug_val = slugify(f'{name}-{raw_id}')[:50]

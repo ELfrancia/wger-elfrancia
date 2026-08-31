@@ -11,6 +11,7 @@ django.setup()
 
 from django.conf import settings
 from wger.exercises.models import Exercise, CalisthenicsExercise
+from wger.exercises.media_utils import safe_download_file, is_safe_path, sanitize_filename
 
 def clean(text):
     return re.sub(r'[^a-z0-9]', '', str(text or '').lower())
@@ -19,7 +20,7 @@ def run():
     headers = {'User-Agent': 'Mozilla/5.0'}
     url = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/data/exercises.json'
     print('Loading ExerciseDB dataset...')
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, timeout=30)
     if resp.status_code != 200:
         print('Failed to load ExerciseDB dataset!')
         return
@@ -40,7 +41,8 @@ def run():
             'gif_url': item.get('gif_url')
         })
 
-    os.makedirs('media/exercises', exist_ok=True)
+    media_dir = os.path.join(settings.MEDIA_ROOT, 'exercises')
+    os.makedirs(media_dir, exist_ok=True)
     existing_exercises = list(Exercise.objects.all())
     print(f'Matching ExerciseDB GIFs for {len(existing_exercises)} existing exercises...')
 
@@ -53,8 +55,8 @@ def run():
         main_v = ex.main_video
         if main_v and main_v.video:
             try:
-                v_path = os.path.join(settings.MEDIA_ROOT, str(main_v.video))
-                if os.path.exists(v_path) and os.path.getsize(v_path) > 0:
+                storage = main_v.video.storage
+                if hasattr(main_v.video, 'name') and main_v.video.name and storage.exists(main_v.video.name):
                     skipped_has_video += 1
                     continue
             except Exception:
@@ -82,20 +84,17 @@ def run():
         if best_match:
             gif_rel = best_match['gif_url']
             if gif_rel:
-                gif_filename = f'matched_{ex.id}.gif'
-                local_gif_path = os.path.join('media', 'exercises', gif_filename)
-                rel_url = f'/media/exercises/{gif_filename}'
+                safe_ex_id = sanitize_filename(str(ex.id))
+                gif_filename = f'matched_{safe_ex_id}.gif'
+                local_gif_path = os.path.join(media_dir, gif_filename)
+                if not is_safe_path(media_dir, local_gif_path):
+                    continue
+                rel_url = f'{settings.MEDIA_URL}exercises/{gif_filename}'
 
                 # Download GIF if missing
                 if not os.path.exists(local_gif_path):
                     remote_gif_url = f'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/{gif_rel}'
-                    try:
-                        r = requests.get(remote_gif_url, headers=headers, timeout=10)
-                        if r.status_code == 200 and len(r.content) > 0:
-                            with open(local_gif_path, 'wb') as f:
-                                f.write(r.content)
-                    except Exception:
-                        pass
+                    safe_download_file(remote_gif_url, local_gif_path, base_dir=media_dir, timeout=10, headers=headers)
 
                 if os.path.exists(local_gif_path):
                     cal, _ = CalisthenicsExercise.objects.update_or_create(

@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
+from django.conf import settings
 import requests
 import datetime
 import os
+import re
+from wger.exercises.media_utils import safe_download_file, is_safe_path, sanitize_filename
 from wger.exercises.models import ExerciseImportRaw, CalisthenicsExercise, ExerciseTag
 
 class Command(BaseCommand):
@@ -173,23 +176,22 @@ class Command(BaseCommand):
                     instructions_clean.append(inst)
 
             gif_url = item.get('gifUrl', '')
-            media_dir = os.path.join(os.getcwd(), 'media', 'exercises')
+            media_dir = os.path.join(settings.MEDIA_ROOT, 'exercises')
             os.makedirs(media_dir, exist_ok=True)
 
-            local_filename = f"{eid}.gif"
+            safe_eid = sanitize_filename(eid)
+            if not safe_eid:
+                continue
+
+            local_filename = f"{safe_eid}.gif"
             local_file_path = os.path.join(media_dir, local_filename)
 
-            if gif_url and not os.path.exists(local_file_path):
-                try:
-                    res = requests.get(gif_url, timeout=10)
-                    if res.status_code == 200 and len(res.content) > 1000:
-                        with open(local_file_path, 'wb') as f:
-                            f.write(res.content)
-                except Exception:
-                    pass
+            if is_safe_path(media_dir, local_file_path):
+                if gif_url and not os.path.exists(local_file_path):
+                    safe_download_file(gif_url, local_file_path, base_dir=media_dir, timeout=10)
 
             if os.path.exists(local_file_path):
-                demo_media_url = f'/media/exercises/{local_filename}'
+                demo_media_url = f'{settings.MEDIA_URL}exercises/{local_filename}'
             else:
                 fallback_map = {
                     'push_up': '/media/exercises/x6KpKpq.gif',
@@ -202,7 +204,7 @@ class Command(BaseCommand):
                 demo_media_url = fallback_map.get(skill_family, '/media/exercises/4GqRrAk.gif')
 
             processed_exercises.append({
-                'source_exercise_id': eid,
+                'source_exercise_id': safe_eid,
                 'name': item['name'],
                 'slug': slug,
                 'instructions': "\n".join(instructions_clean),

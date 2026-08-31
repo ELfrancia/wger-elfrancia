@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import subprocess
 import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from wger.exercises.models import CalisthenicsExercise, Exercise, ExerciseVideo
 from wger.core.models.license import License
+from wger.exercises.media_utils import safe_download_file, is_safe_path, sanitize_filename
 
 try:
     import imageio_ffmpeg
@@ -26,7 +28,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'🎬 Starting MP4 video generation using FFmpeg: {FFMPEG_EXE}'))
 
-        media_dir = os.path.join(os.getcwd(), 'media', 'exercises')
+        media_dir = os.path.join(settings.MEDIA_ROOT, 'exercises')
         os.makedirs(media_dir, exist_ok=True)
 
         default_license = License.objects.first()
@@ -45,8 +47,14 @@ class Command(BaseCommand):
 
         for idx, ex in enumerate(exercises, 1):
             demo_url = ex.demo_media_url or ''
-            mp4_filename = f"{ex.source_exercise_id}.mp4"
+            safe_source_id = sanitize_filename(ex.source_exercise_id or str(ex.id))
+            if not safe_source_id:
+                continue
+
+            mp4_filename = f"{safe_source_id}.mp4"
             mp4_path = os.path.join(media_dir, mp4_filename)
+            if not is_safe_path(media_dir, mp4_path):
+                continue
             relative_mp4_url = f"/media/exercises/{mp4_filename}"
 
             # If MP4 already exists, make sure URLs are set
@@ -60,24 +68,23 @@ class Command(BaseCommand):
             # Determine source GIF path or download remote URL
             gif_path = None
             filename = os.path.basename(demo_url) if demo_url else ""
+            safe_filename = sanitize_filename(filename.rsplit('.', 1)[0]) + ('.' + filename.rsplit('.', 1)[1] if '.' in filename else '')
             candidates = [
-                os.path.join(media_dir, filename),
-                os.path.join(media_dir, f"{ex.source_exercise_id}.gif"),
+                os.path.join(media_dir, safe_filename) if safe_filename else None,
+                os.path.join(media_dir, f"{safe_source_id}.gif"),
             ]
             for c in candidates:
-                if c and os.path.exists(c) and os.path.getsize(c) > 100:
+                if c and is_safe_path(media_dir, c) and os.path.exists(c) and os.path.getsize(c) > 100:
                     gif_path = c
                     break
 
             if not gif_path and demo_url.startswith('http'):
-                try:
-                    res = requests.get(demo_url, timeout=15)
-                    if res.status_code == 200:
-                        gif_path = os.path.join(media_dir, f"{ex.source_exercise_id}.gif")
-                        with open(gif_path, 'wb') as f:
-                            f.write(res.content)
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"[{idx}/{total}] Failed downloading media for '{ex.name}': {e}"))
+                gif_path_candidate = os.path.join(media_dir, f"{safe_source_id}.gif")
+                if is_safe_path(media_dir, gif_path_candidate):
+                    if safe_download_file(demo_url, gif_path_candidate, base_dir=media_dir, timeout=15):
+                        gif_path = gif_path_candidate
+                    else:
+                        self.stdout.write(self.style.WARNING(f"[{idx}/{total}] Failed downloading media for '{ex.name}' (SSRF or download error)"))
 
             if not gif_path or not os.path.exists(gif_path):
                 fallback_gif = os.path.join(media_dir, '4GqRrAk.gif')

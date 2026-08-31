@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from wger.exercises.models import CalisthenicsExercise, Exercise
+from wger.exercises.media_utils import is_safe_path, is_safe_url, sanitize_filename
 
 
 DATASET_URL = "https://raw.githubusercontent.com/Webbanditten/exercisedb-api/main/src/data/exercises.json"
@@ -115,21 +116,36 @@ class Command(BaseCommand):
         media_dir.mkdir(parents=True, exist_ok=True)
         saved = 0
         for exercise, (item, _score) in matches:
-            filename = f"exercisedb-{item['id']}.gif"
+            safe_item_id = sanitize_filename(item['id'])
+            if not safe_item_id:
+                continue
+            filename = f"exercisedb-{safe_item_id}.gif"
             path = media_dir / filename
+            if not is_safe_path(str(media_dir), str(path)):
+                continue
             if not path.exists():
-                media = requests.get(item["gif_url"], headers=MEDIA_HEADERS, timeout=60)
-                if media.status_code != 200 or not media.content.startswith((b"GIF87a", b"GIF89a")):
+                if not is_safe_url(item.get("gif_url")):
                     continue
-                path.write_bytes(media.content)
+                try:
+                    media = requests.get(item["gif_url"], headers=MEDIA_HEADERS, timeout=30, stream=True)
+                    if media.status_code != 200:
+                        continue
+                    content = media.content[:50 * 1024 * 1024]
+                    if not content.startswith((b"GIF87a", b"GIF89a")):
+                        continue
+                    path.write_bytes(content)
+                except Exception:
+                    continue
+            if not path.exists():
+                continue
             CalisthenicsExercise.objects.update_or_create(
                 id=exercise.uuid,
                 defaults={
-                    "name": exercise.get_translation().name,
+                    "name": exercise.get_translation().name if exercise.get_translation() else f"Exercise {exercise.id}",
                     "slug": f"gym-media-{exercise.id}",
                     "discipline": "gym",
                     "source": "ExerciseDB-verified-media",
-                    "source_exercise_id": item["id"],
+                    "source_exercise_id": safe_item_id,
                     "demo_media_url": f"{settings.MEDIA_URL}exercises/{filename}",
                 },
             )
