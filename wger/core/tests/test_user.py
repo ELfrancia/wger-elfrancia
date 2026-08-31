@@ -465,3 +465,48 @@ class UpdateLogAjaxTestCase(WgerTestCase):
             'message': 'An error occurred while updating the log.'
         })
         self.user_logout()
+
+
+class DailyActivityRaceTestCase(WgerTestCase):
+    def test_dashboard_handles_dailyactivity_integrity_error(self):
+        from unittest.mock import patch
+        from django.db import IntegrityError
+        from wger.core.models import DailyActivity
+
+        self.user_login('trainer1')
+        user = User.objects.get(username='trainer1')
+        import datetime
+        from django.utils import timezone
+        real_activity, _ = DailyActivity.objects.get_or_create(user=user, date=timezone.localdate())
+
+        orig_get_or_create = DailyActivity.objects.get_or_create
+        def mock_goc(*args, **kwargs):
+            raise IntegrityError('unique_together constraint')
+
+        with patch.object(DailyActivity.objects, 'get_or_create', side_effect=mock_goc):
+            response = self.client.get(reverse('core:dashboard'))
+            self.assertEqual(response.status_code, 200)
+
+        self.user_logout()
+
+    def test_log_daily_activity_handles_integrity_error(self):
+        from unittest.mock import patch
+        from django.db import IntegrityError
+        from wger.core.models import DailyActivity
+
+        self.user_login('trainer1')
+        user = User.objects.get(username='trainer1')
+        from django.utils import timezone
+        real_activity, _ = DailyActivity.objects.get_or_create(user=user, date=timezone.localdate())
+
+        def mock_goc(*args, **kwargs):
+            raise IntegrityError('unique_together constraint')
+
+        with patch.object(DailyActivity.objects, 'get_or_create', side_effect=mock_goc):
+            response = self.client.post(
+                reverse('core:user:log-daily-activity'),
+                {'activity_type': 'steps', 'value': '5000'}
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.user_logout()

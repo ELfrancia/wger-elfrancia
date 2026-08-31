@@ -22,6 +22,7 @@ from urllib.parse import quote
 # Django
 from django import forms
 from django.conf import settings
+from django.db import IntegrityError
 from django.contrib import messages
 from django.contrib.auth import (
     login as django_login,
@@ -932,7 +933,10 @@ def dashboard_tailwind(request):
         status='active',
     ).select_related('day', 'routine').order_by('-date', '-time_start', '-id').first()
 
-    activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
+    try:
+        activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=timezone.localdate())
+    except IntegrityError:
+        activity = DailyActivity.objects.get(user=request.user, date=timezone.localdate())
     profile = request.user.userprofile
     ten_days_ago = timezone.localdate() - datetime.timedelta(days=10)
     from django.db.models import Count
@@ -1042,10 +1046,13 @@ def log_daily_activity(request):
     from django.utils import timezone
     from wger.core.models import DailyActivity
 
-    activity, created_activity = DailyActivity.objects.get_or_create(
-        user=request.user,
-        date=timezone.localdate()
-    )
+    try:
+        activity, created_activity = DailyActivity.objects.get_or_create(
+            user=request.user,
+            date=timezone.localdate()
+        )
+    except IntegrityError:
+        activity = DailyActivity.objects.get(user=request.user, date=timezone.localdate())
 
     activity_type = request.POST.get('activity_type')
     amount = request.POST.get('amount')
