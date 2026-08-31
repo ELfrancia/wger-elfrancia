@@ -309,3 +309,22 @@ class WorkoutViewsTestCase(WgerTestCase):
         session_new.refresh_from_db()
         self.assertEqual(session_new.status, 'interrupted')
         self.assertEqual(session_new.logs.count(), 0)
+
+    def test_other_active_session_with_none_day_does_not_500(self):
+        """M3: Active session with day=None or routine=None should not trigger NoReverseMatch 500."""
+        import datetime
+        from django.utils import timezone
+
+        # Create active session with day=None
+        orphan_session = WorkoutSession.objects.create(
+            user=self.user,
+            routine=None,
+            day=None,
+            date=datetime.date.today(),
+            time_start=timezone.localtime(timezone.now()).time(),
+            status='active',
+        )
+
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)

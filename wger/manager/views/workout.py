@@ -84,6 +84,8 @@ def log_tailwind(request, routine_pk, day_pk):
     other_active = WorkoutSession.objects.filter(
         user=request.user,
         status='active',
+        day__isnull=False,
+        routine__isnull=False,
     ).exclude(day=day).order_by('-date', '-time_start', '-id').first()
 
     if other_active:
@@ -91,11 +93,12 @@ def log_tailwind(request, routine_pk, day_pk):
         if timezone.is_naive(o_dt):
             o_dt = timezone.make_aware(o_dt)
         if o_dt >= cutoff_24h and other_active.logs.exists():
-            messages.warning(
-                request,
-                _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
-            )
-            return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
+            if other_active.day_id and other_active.routine_id:
+                messages.warning(
+                    request,
+                    _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
+                )
+                return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
         else:
             WorkoutSession.objects.filter(id=other_active.id).update(status='interrupted')
 
