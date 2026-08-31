@@ -972,24 +972,36 @@ def profile_tailwind(request):
         if steps_goal is not None and steps_goal != '':
             try:
                 clean_steps = str(steps_goal).replace('.', '').replace(',', '').replace(' ', '')
-                profile.steps_goal = max(1, int(clean_steps))
-                updated = True
+                val = int(clean_steps)
+                if 0 <= val <= 1_000_000:
+                    profile.steps_goal = val
+                    updated = True
+                else:
+                    messages.error(request, _('Steps goal must be between 0 and 1,000,000.'))
             except (ValueError, TypeError):
-                pass
+                messages.error(request, _('Invalid value for steps goal.'))
         if calories_goal is not None and calories_goal != '':
             try:
                 clean_cals = str(calories_goal).replace('.', '').replace(',', '').replace(' ', '')
-                profile.calories_goal = max(1, int(clean_cals))
-                updated = True
+                val = int(clean_cals)
+                if 0 <= val <= 50_000:
+                    profile.calories_goal = val
+                    updated = True
+                else:
+                    messages.error(request, _('Calories goal must be between 0 and 50,000.'))
             except (ValueError, TypeError):
-                pass
+                messages.error(request, _('Invalid value for calories goal.'))
         if water_goal is not None and water_goal != '':
             try:
                 water_val_str = str(water_goal).replace(',', '.')
-                profile.water_goal = max(Decimal('0.1'), Decimal(water_val_str))
-                updated = True
+                val = Decimal(water_val_str)
+                if Decimal('0.0') <= val <= Decimal('50.0'):
+                    profile.water_goal = val
+                    updated = True
+                else:
+                    messages.error(request, _('Water goal must be between 0 and 50 liters.'))
             except (ValueError, TypeError, InvalidOperation):
-                pass
+                messages.error(request, _('Invalid value for water goal.'))
         if avatar_file:
             ext = os.path.splitext(avatar_file.name)[1]
             filename = f"avatar_{request.user.id}{ext}"
@@ -1008,9 +1020,13 @@ def profile_tailwind(request):
                 from wger.gym.models import Gym
                 if not Gym.objects.filter(id=profile.gym_id).exists():
                     profile.gym = None
-            profile.save()
-            messages.success(request, _('Profile settings successfully updated.'))
-            return redirect('core:profile_tailwind')
+            try:
+                profile.save()
+                messages.success(request, _('Profile settings successfully updated.'))
+                return redirect('core:profile_tailwind')
+            except Exception as e:
+                logger.error(f"Failed to save user profile {request.user.id}: {e}")
+                messages.error(request, _('Failed to update profile settings.'))
 
     return render(request, 'user/profile_tailwind.html', {
         'stats': stats,
@@ -1038,31 +1054,48 @@ def log_daily_activity(request):
     if activity_type == 'steps':
         try:
             if value is not None and value != '':
-                activity.steps = max(0, int(value))
+                val = int(value)
+                if 0 <= val <= 1_000_000:
+                    activity.steps = val
+                    activity.save()
             elif amount is not None and amount != '':
-                activity.steps = max(0, activity.steps + int(amount))
-            activity.save()
-        except (ValueError, TypeError):
+                amt = int(amount)
+                new_steps = activity.steps + amt
+                if 0 <= new_steps <= 1_000_000:
+                    activity.steps = new_steps
+                    activity.save()
+        except (ValueError, TypeError, Exception):
             pass
     elif activity_type == 'calories':
         try:
             if value is not None and value != '':
-                activity.calories = max(0, int(value))
+                val = int(value)
+                if 0 <= val <= 50_000:
+                    activity.calories = val
+                    activity.save()
             elif amount is not None and amount != '':
-                activity.calories = max(0, activity.calories + int(amount))
-            activity.save()
-        except (ValueError, TypeError):
+                amt = int(amount)
+                new_cals = activity.calories + amt
+                if 0 <= new_cals <= 50_000:
+                    activity.calories = new_cals
+                    activity.save()
+        except (ValueError, TypeError, Exception):
             pass
     elif activity_type == 'water':
         try:
             if value is not None and value != '':
                 val_str = str(value).replace(',', '.')
-                activity.water = max(Decimal('0.0'), Decimal(val_str))
+                val = Decimal(val_str)
+                if Decimal('0.0') <= val <= Decimal('50.0'):
+                    activity.water = val
+                    activity.save()
             elif amount is not None and amount != '':
                 amt_str = str(amount).replace(',', '.')
-                activity.water = max(Decimal('0.0'), activity.water + Decimal(amt_str))
-            activity.save()
-        except (ValueError, TypeError, decimal.InvalidOperation):
+                new_water = activity.water + Decimal(amt_str)
+                if Decimal('0.0') <= new_water <= Decimal('50.0'):
+                    activity.water = new_water
+                    activity.save()
+        except (ValueError, TypeError, decimal.InvalidOperation, Exception):
             pass
 
     profile = request.user.userprofile
