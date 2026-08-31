@@ -54,19 +54,28 @@
 
         <!-- Controls -->
         <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+            <!-- SWAP / REPLACE EXERCISE BUTTON -->
+            <a href="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}?from=workout&replace_slot={{ slot.id|unlocalize }}"
+               hx-boost="false"
+               onclick="event.stopPropagation();"
+               class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-primary hover:border-primary/40 hover:bg-primary/10 flex items-center justify-center transition-all duration-200 cursor-pointer flex-shrink-0"
+               title="{% translate 'Sostituisci esercizio' %}">
+                <span class="material-symbols-outlined text-sm">swap_horiz</span>
+            </a>
+
             <!-- DELETE EXERCISE BUTTON -->
             <form hx-post="{% url 'manager:day:overview' day.routine.pk day.pk %}"
                   hx-swap="outerHTML swap:200ms transition:true"
                   hx-target="#exercise-card-{{ slot.id|unlocalize }}"
-                  onsubmit="return confirm('{% translate "Vuoi davvero eliminare questo esercizio dal workout?" %}');"
+                  hx-confirm="{% translate 'Vuoi davvero eliminare questo esercizio dal workout?' %}"
                   class="flex-shrink-0 inline m-0 p-0"
                   onclick="event.stopPropagation();">
                 {% csrf_token %}
                 <input type="hidden" name="slot_id" value="{{ slot.id|unlocalize }}">
                 <input type="hidden" name="exercise_id" value="{{ exercise.id|unlocalize }}">
                 <input type="hidden" name="action" value="delete_exercise">
-                <button type="submit" 
-                        class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/10 flex items-center justify-center transition-all duration-200 cursor-pointer" 
+                <button type="submit"
+                        class="w-8 h-8 rounded-full bg-[#1F2024]/85 border border-zinc-800/80 text-zinc-400 hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/10 flex items-center justify-center transition-all duration-200 cursor-pointer"
                         title="{% translate 'Elimina esercizio dal workout' %}">
                     <span class="material-symbols-outlined text-sm">delete</span>
                 </button>

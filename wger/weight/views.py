@@ -161,6 +161,31 @@ def weight_overview_tailwind(request):
             except (ValueError, TypeError, decimal.InvalidOperation):
                 pass
 
+        elif request.POST.get('action') == 'rename':
+            # Rename a single day and/or the whole program straight from the
+            # workout-history card on this page.
+            from wger.manager.models import Day, Routine
+            from wger.manager.helpers import reset_routine_cache
+
+            routine_id = request.POST.get('routine_id')
+            routine_name = (request.POST.get('routine_name') or '').strip()[:25]
+            day_id = request.POST.get('day_id')
+            day_name = (request.POST.get('day_name') or '').strip()[:20]
+
+            if routine_id and routine_name:
+                routine = Routine.objects.filter(pk=routine_id, user=request.user).first()
+                if routine:
+                    routine.name = routine_name
+                    routine.save(update_fields=['name'])
+                    reset_routine_cache(routine)
+
+            if day_id and day_name:
+                day = Day.objects.filter(pk=day_id, routine__user=request.user).first()
+                if day:
+                    day.name = day_name
+                    day.save(update_fields=['name'])
+                    reset_routine_cache(day.routine)
+
     if range_param == 'weekly':
         start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=7), datetime.min.time()))
         monday_of_week = selected_date - timedelta(days=selected_date.weekday())
@@ -281,9 +306,13 @@ def weight_overview_tailwind(request):
     condition_photos = Image.objects.filter(user=request.user, date=selected_date)
     
     from django.db.models import Q
-    logs_for_date = WorkoutLog.objects.filter(
-        Q(user=request.user, session__in=selected_sessions) |
-        Q(user=request.user, date__date=selected_date)
+    # Only surface logs that belong to a finished session with logs (selected_sessions).
+    # Legacy session-less logs are still allowed, but the grouping below drops them
+    # unless a matching finished session exists for the day. Logs attached to an
+    # interrupted / discarded / still-active session must never appear here.
+    logs_for_date = WorkoutLog.objects.filter(user=request.user).filter(
+        Q(session__in=selected_sessions) |
+        Q(session__isnull=True, date__date=selected_date)
     ).select_related('exercise').distinct()
 
     # Group logs by exercise name under session_exercises
@@ -319,8 +348,12 @@ def weight_overview_tailwind(request):
     sessions = WorkoutSession.objects.filter(user=request.user, status='finished', date__gte=start_date.date()).annotate(num_logs=Count('logs')).filter(num_logs__gt=0)
     workouts_completed = sessions.count()
     
-    # Query WorkoutLog
-    logs = WorkoutLog.objects.filter(user=request.user, date__gte=start_date)
+    # Query WorkoutLog - only logs from finished sessions (plus legacy session-less
+    # logs) count towards the period stats; interrupted / discarded / active
+    # sessions must not inflate reps, volume or the hourly distribution.
+    logs = WorkoutLog.objects.filter(user=request.user, date__gte=start_date).filter(
+        Q(session__status='finished') | Q(session__isnull=True)
+    )
     
     # Total repetitions: logs.aggregate(total=Sum('repetitions'))['total'] or 0
     total_repetitions = logs.aggregate(total=Sum('repetitions'))['total'] or 0

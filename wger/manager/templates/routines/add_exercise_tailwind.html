@@ -25,7 +25,7 @@
         
         <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
             <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                {% translate "Add Exercise" %}
+                {% if replace_slot_id %}{% translate "Sostituisci esercizio" %}{% else %}{% translate "Add Exercise" %}{% endif %}
             </h1>
             <span class="text-xs font-bold text-zinc-400">
                 {{ exercises_list|length }} {% translate "Exercises available" %}
@@ -40,7 +40,10 @@
             {% if from_workout %}
                 <input type="hidden" name="from" value="workout">
             {% endif %}
-            
+            {% if replace_slot_id %}
+                <input type="hidden" name="replace_slot" value="{{ replace_slot_id }}">
+            {% endif %}
+
             <!-- Controls Section -->
             <div id="exercise-picker" class="flex flex-col gap-4">
                 
@@ -452,6 +455,7 @@
     let activeChipValue = '';
     let activeDiscipline = '';
     let selectedExercises = []; // Array of { id: int, name: string }
+    const REPLACE_MODE = {% if replace_slot_id %}true{% else %}false{% endif %};
     let currentFiltered = [];
     let renderOffset = 0;
     const BATCH_SIZE = 30;
@@ -911,6 +915,9 @@
         if (existingIndex !== -1) {
             // Toggle selection OFF
             selectedExercises.splice(existingIndex, 1);
+        } else if (REPLACE_MODE) {
+            // Replace mode: only a single exercise can be selected
+            selectedExercises = [{ id: id, name: name }];
         } else {
             // Toggle selection ON
             selectedExercises.push({ id: id, name: name });

@@ -111,6 +111,69 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(session.logs.filter(slot_entry_id=slot_entry.id).exists())
 
+    def test_log_tailwind_post_delete_exercise(self):
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        exercise_id = slot.obj.id
+        slot_entry = slot.entries.first()
+
+        # Log a set so there is something to clean up
+        self.client.post(url, {
+            'exercise_id': exercise_id,
+            'slot_entry_id': slot_entry.id,
+            'repetitions': 8,
+            'weight': 40,
+        }, HTTP_HX_REQUEST='true')
+        session = WorkoutSession.objects.get(user=self.user, routine=self.routine, day=self.day)
+        self.assertTrue(session.logs.exists())
+
+        response = self.client.post(url, {
+            'action': 'delete_exercise',
+            'slot_id': slot.id,
+            'exercise_id': exercise_id,
+        }, HTTP_HX_REQUEST='true')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b'')
+        self.assertFalse(Slot.objects.filter(id=slot.id).exists())
+        self.assertFalse(session.logs.filter(slot_entry__slot_id=slot.id).exists())
+
+    def test_replace_exercise_during_workout(self):
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        old_exercise_id = slot.obj.id
+        slot_entry = slot.entries.first()
+
+        # Log a set on the current exercise
+        self.client.post(url, {
+            'exercise_id': old_exercise_id,
+            'slot_entry_id': slot_entry.id,
+            'repetitions': 10,
+            'weight': 20,
+        }, HTTP_HX_REQUEST='true')
+        session = WorkoutSession.objects.get(user=self.user, routine=self.routine, day=self.day)
+        self.assertTrue(session.logs.exists())
+
+        new_exercise_id = (
+            SlotEntry.objects.exclude(exercise_id=old_exercise_id).first().exercise_id
+        )
+        replace_url = reverse(
+            'manager:routine:add-exercise',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk},
+        )
+        response = self.client.post(replace_url, {
+            'from': 'workout',
+            'replace_slot': slot.id,
+            'exercise': new_exercise_id,
+        }, HTTP_HX_REQUEST='true')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['HX-Redirect'], url)
+
+        slot.refresh_from_db()
+        self.assertTrue(slot.entries.exists())
+        self.assertTrue(all(e.exercise_id == new_exercise_id for e in slot.entries.all()))
+        # Sets logged against the swapped-out exercise are cleared
+        self.assertFalse(session.logs.filter(slot_entry__slot_id=slot.id).exists())
+
     def test_upload_condition_photo(self):
         import io
         from PIL import Image as PILImage
@@ -306,6 +369,7 @@ class WorkoutViewsTestCase(WgerTestCase):
 
         response = self.client.post(url, {'action': 'discard_workout'})
         self.assertEqual(response.status_code, 302)
-        session_new.refresh_from_db()
-        self.assertEqual(session_new.status, 'interrupted')
-        self.assertEqual(session_new.logs.count(), 0)
+        # A discarded workout is removed entirely (logs + session)
+        self.assertFalse(
+            WorkoutSession.objects.filter(pk=session_new.pk).exists()
+        )

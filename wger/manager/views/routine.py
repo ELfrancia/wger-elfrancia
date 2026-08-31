@@ -354,11 +354,41 @@ SKILL_KEYWORDS = {
 def add_exercise_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
     from_workout = (request.GET.get('from') == 'workout') or (request.POST.get('from') == 'workout')
+    replace_slot_id = request.GET.get('replace_slot') or request.POST.get('replace_slot')
 
     if request.method == 'POST':
         exercise_ids = request.POST.getlist('exercise')
         is_superset = request.POST.get('is_superset') == 'true'
-        
+
+        # Replace/swap the exercise of an existing slot (used during an active workout)
+        if replace_slot_id and exercise_ids:
+            from django.urls import reverse
+            from wger.exercises.models import Exercise
+            from wger.manager.models import WorkoutLog
+            from wger.manager.helpers import reset_routine_cache
+
+            slot = get_object_or_404(Slot, pk=replace_slot_id, day=day)
+            new_exercise = get_object_or_404(Exercise, id=exercise_ids[0])
+
+            # Drop any sets already logged for this slot in a non-finished session
+            WorkoutLog.objects.filter(
+                slot_entry__slot=slot,
+                session__user=request.user,
+            ).exclude(session__status='finished').delete()
+
+            slot.entries.update(exercise=new_exercise)
+            reset_routine_cache(day.routine)
+
+            redirect_url = reverse(
+                'manager:day:overview',
+                kwargs={'routine_pk': day.routine.pk, 'day_pk': day.pk},
+            )
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = redirect_url
+                return response
+            return HttpResponseRedirect(redirect_url)
+
         if exercise_ids:
             from wger.exercises.models import Exercise
             if is_superset and len(exercise_ids) > 1:
@@ -450,6 +480,7 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
         'categories_list': categories_list,
         'exercise_counts': exercise_counts,
         'from_workout': from_workout,
+        'replace_slot_id': replace_slot_id,
     })
 
 

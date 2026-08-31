@@ -556,9 +556,10 @@ def log_tailwind(request, routine_pk, day_pk):
                         ).delete()
                     slot.delete()
                     reset_routine_cache(day.routine)
-                    if request.headers.get('HX-Request'):
-                        return HttpResponse("")
-                    return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+                # Whether or not the slot still existed, the card must go away
+                if request.headers.get('HX-Request'):
+                    return HttpResponse("")
+                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
             elif action == 'delete_set_config':
                 slot_entry = get_object_or_404(SlotEntry, id=slot_entry_id, slot__day=day)
