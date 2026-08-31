@@ -119,3 +119,18 @@ class AdminUserCreationTestCase(WgerTestCase):
 
         response = self.client.get('/api/v2/userprofile/')
         self.assertEqual(response.status_code, 200)
+
+    def test_user_creation_password_validation(self):
+        self.user_login('admin')
+        post_data = {
+            'username': 'weakuser',
+            'email': 'weakuser@example.com',
+            'first_name': 'Weak',
+            'last_name': 'User',
+            'password': '123',
+        }
+        response = self.client.post(reverse('core:user:add-user'), post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].has_error('password'))
+        self.assertFalse(User.objects.filter(username='weakuser').exists())
+        self.user_logout()
