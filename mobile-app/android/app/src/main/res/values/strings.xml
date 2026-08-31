@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Onyx Workout</string>
+    <string name="title_activity_main">Onyx Workout</string>
+    <string name="package_name">com.onyx.workoutapp</string>
+    <string name="custom_url_scheme">com.onyx.workoutapp</string>
+</resources>

@@ -1,0 +1,21 @@
+{
+  "appId": "com.onyx.workoutapp",
+  "appName": "Onyx Workout",
+  "webDir": "www",
+  "server": {
+    "url": "https://onyx.francescoadreani.dev",
+    "cleartext": true,
+    "allowNavigation": [
+      "onyx.francescoadreani.dev",
+      "*.francescoadreani.dev",
+      "workout-app.tail5b9f7a.ts.net",
+      "*.ts.net",
+      "100.*",
+      "192.168.*"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

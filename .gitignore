@@ -100,3 +100,16 @@ venv-wger
 .DS_Store
 wger/core/views/user.py
 media.zip
+
+# Mobile app
+mobile-app/node_modules/
+mobile-app/android/.gradle/
+mobile-app/android/build/
+mobile-app/android/app/build/
+mobile-app/android/.idea/
+mobile-app/android/local.properties
+mobile-app/android/keystore.properties
+mobile-app/android/app/*.keystore
+mobile-app/dist/
+OnyxWorkout.apk
+
