@@ -31,6 +31,7 @@ from django.contrib.auth.models import (
     Group,
     User,
 )
+from django.core.exceptions import PermissionDenied
 from django.http.response import (
     HttpResponse,
     HttpResponseForbidden,
@@ -292,6 +293,8 @@ def reset_user_password(request, user_pk):
     password = password_generator()
     user.set_password(password)
     user.save()
+    user.userprofile.needs_password_change = True
+    user.userprofile.save()
 
     context = {'mod_user': user, 'password': password}
     return render(request, 'gym/reset_user_password.html', context)
@@ -422,6 +425,9 @@ class GymAddUserView(
         kwargs['available_roles'] = get_permission_list(self.request.user)
         if not self.request.user.is_superuser:
             kwargs['gym_pk'] = self.kwargs['gym_pk']
+            kwargs['is_superuser'] = False
+        else:
+            kwargs['is_superuser'] = True
         return kwargs
 
     def get_form(self, form_class=None):
@@ -453,6 +459,7 @@ class GymAddUserView(
             user.first_name = form.cleaned_data['first_name']
             user.last_name = form.cleaned_data['last_name']
             form.instance = user
+            self.object = user
 
             # Update profile
             user.userprofile.gym = gym
@@ -492,6 +499,19 @@ class GymAddUserView(
         else:
             # Gym manager/trainer assigning an existing user (created by admin) to gym
             user = form.cleaned_data['user']
+            if not self.request.user.is_superuser:
+                if (
+                    user.userprofile.gym_id is not None
+                    or user.is_superuser
+                    or user.is_staff
+                    or is_any_gym_admin(user)
+                ):
+                    raise PermissionDenied
+
+                assigned_roles = form.cleaned_data.get('role', [])
+                if any(r in ('admin', 'manager') for r in assigned_roles):
+                    raise PermissionDenied
+
             self.object = user
             user.userprofile.gym = gym
             user.userprofile.save()

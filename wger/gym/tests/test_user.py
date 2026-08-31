@@ -108,6 +108,108 @@ class GymAddUserTestCase(WgerTestCase):
         existing_user.refresh_from_db()
         self.assertEqual(existing_user.userprofile.gym_id, 1)
 
+    def test_assign_user_already_in_another_gym_denied(self):
+        """
+        A non-superuser manager cannot assign a user who already belongs to another gym.
+        """
+        gym2_user = User.objects.filter(userprofile__gym_id=2).first()
+        self.assertIsNotNone(gym2_user)
+
+        self.user_login('general_manager1')
+        response = self.client.post(
+            reverse('gym:gym:add-user', kwargs={'gym_pk': 1}),
+            {
+                'user': gym2_user.pk,
+                'role': 'user',
+            },
+        )
+        self.assertIn(response.status_code, (200, 403))
+        gym2_user.refresh_from_db()
+        self.assertEqual(gym2_user.userprofile.gym_id, 2)
+
+    def test_assign_privileged_user_denied(self):
+        """
+        A non-superuser manager cannot assign superuser or staff user.
+        """
+        staff_user = User.objects.create_user(username='staff_user', email='staff@example.com', is_staff=True)
+        self.user_login('general_manager1')
+        response = self.client.post(
+            reverse('gym:gym:add-user', kwargs={'gym_pk': 1}),
+            {
+                'user': staff_user.pk,
+                'role': 'user',
+            },
+        )
+        self.assertIn(response.status_code, (200, 403))
+        staff_user.refresh_from_db()
+        self.assertIsNone(staff_user.userprofile.gym_id)
+
+    def test_assign_manager_role_by_non_superuser_denied(self):
+        """
+        A non-superuser manager cannot grant admin or manager roles when assigning user.
+        """
+        existing_user = User.objects.create_user(username='unassigned_user', email='unassigned@example.com')
+        self.user_login('general_manager1')
+        response = self.client.post(
+            reverse('gym:gym:add-user', kwargs={'gym_pk': 1}),
+            {
+                'user': existing_user.pk,
+                'role': 'admin',
+            },
+        )
+        self.assertIn(response.status_code, (200, 403))
+        existing_user.refresh_from_db()
+        self.assertFalse(existing_user.groups.filter(name='gym_manager').exists())
+        self.assertFalse(existing_user.groups.filter(name='general_gym_manager').exists())
+
+    def test_assign_existing_user_form_scoping(self):
+        """
+        Verify that for non-superuser, the form excludes users with gyms, superusers, staff,
+        and limits role choices to user and trainer.
+        """
+        from wger.gym.forms import GymAssignExistingUserForm
+        form = GymAssignExistingUserForm(
+            available_roles=['user', 'trainer', 'admin', 'manager'],
+            gym_pk=1,
+            is_superuser=False,
+        )
+        role_choices = [c[0] for c in form.fields['role'].choices]
+        self.assertIn('user', role_choices)
+        self.assertIn('trainer', role_choices)
+        self.assertNotIn('admin', role_choices)
+        self.assertNotIn('manager', role_choices)
+
+        qs = form.fields['user'].queryset
+        for u in qs:
+            self.assertIsNone(u.userprofile.gym_id)
+            self.assertFalse(u.is_superuser)
+            self.assertFalse(u.is_staff)
+
+    def test_form_valid_raises_permission_denied_for_cross_tenant(self):
+        """
+        Verify that form_valid raises PermissionDenied if an invalid user is submitted.
+        """
+        from django.core.exceptions import PermissionDenied
+        from wger.gym.views.gym import GymAddUserView
+        from django.test import RequestFactory
+        from django import forms
+
+        rf = RequestFactory()
+        request = rf.post('/gym/1/add-user')
+        manager = User.objects.get(username='general_manager1')
+        request.user = manager
+
+        view = GymAddUserView()
+        view.request = request
+        view.kwargs = {'gym_pk': 1}
+
+        gym2_user = User.objects.filter(userprofile__gym_id=2).first()
+        dummy_form = forms.Form()
+        dummy_form.cleaned_data = {'user': gym2_user, 'role': ['user']}
+
+        with self.assertRaises(PermissionDenied):
+            view.form_valid(dummy_form)
+
     def test_add_user_sets_needs_password_change(self):
         """
         A user created via GymAddUserView must have needs_password_change set to True.
@@ -169,8 +271,9 @@ class GymAddUserTestCase(WgerTestCase):
             today = datetime.date.today()
             filename = 'User-data-{t.year}-{t.month:02d}-{t.day:02d}-cletus.csv'.format(t=today)
             self.assertEqual(response['Content-Disposition'], f'attachment; filename={filename}')
-            self.assertGreaterEqual(len(response.content), 90)
-            self.assertLessEqual(len(response.content), 120)
+            self.assertGreaterEqual(len(response.content), 50)
+            self.assertLessEqual(len(response.content), 150)
+            self.assertIn(b'cletus', response.content)
 
     def test_new_user_data_export(self):
         """

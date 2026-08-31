@@ -51,6 +51,8 @@ class GymUserPermissionForm(forms.ModelForm):
         """
         Custom logic to reduce the available permissions
         """
+        kwargs.pop('is_superuser', None)
+        kwargs.pop('gym_pk', None)
         super(GymUserPermissionForm, self).__init__(*args, **kwargs)
 
         if available_roles is None:
@@ -130,24 +132,32 @@ class GymAssignExistingUserForm(forms.Form):
         label=_('Role'),
     )
 
-    def __init__(self, available_roles=None, gym_pk=None, instance=None, *args, **kwargs):
+    def __init__(self, available_roles=None, gym_pk=None, instance=None, is_superuser=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.is_superuser = is_superuser
         if available_roles is None:
             available_roles = []
         field_choices = [(GymUserPermissionForm.USER, _('User'))]
         if 'trainer' in available_roles:
             field_choices.append((GymUserPermissionForm.TRAINER, _('Trainer')))
-        if 'admin' in available_roles:
+        if is_superuser and 'admin' in available_roles:
             field_choices.append((GymUserPermissionForm.GYM_ADMIN, _('Gym administrator')))
-        if 'manager' in available_roles:
+        if is_superuser and 'manager' in available_roles:
             field_choices.append((GymUserPermissionForm.MANAGER, _('General manager')))
 
         self.fields['role'].choices = field_choices
 
-        if gym_pk:
-            self.fields['user'].queryset = User.objects.exclude(userprofile__gym_id=gym_pk).order_by('username')
+        if is_superuser:
+            if gym_pk:
+                self.fields['user'].queryset = User.objects.exclude(userprofile__gym_id=gym_pk).order_by('username')
+            else:
+                self.fields['user'].queryset = User.objects.all().order_by('username')
         else:
-            self.fields['user'].queryset = User.objects.all().order_by('username')
+            self.fields['user'].queryset = User.objects.filter(
+                userprofile__gym__isnull=True,
+                is_superuser=False,
+                is_staff=False,
+            ).order_by('username')
 
         self.helper = FormHelper()
         self.helper.form_class = 'wger-form'

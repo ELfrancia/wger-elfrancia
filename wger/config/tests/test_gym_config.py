@@ -47,8 +47,8 @@ class GymConfigTestCase(WgerTestCase):
         # Register
         registration_data = {
             'username': 'myusername',
-            'password1': 'Aerieth4yuv5',
-            'password2': 'Aerieth4yuv5',
+            'password1': 'Aerieth4yuv5!',
+            'password2': 'Aerieth4yuv5!',
             'email': 'my.email@example.com',
             'g-recaptcha-response': 'PASSED',
         }
@@ -71,8 +71,8 @@ class GymConfigTestCase(WgerTestCase):
         # Register
         registration_data = {
             'username': 'myusername',
-            'password1': 'Iem2ahl1eizo',
-            'password2': 'Iem2ahl1eizo',
+            'password1': 'Iem2ahl1eizo!',
+            'password2': 'Iem2ahl1eizo!',
             'email': 'my.email@example.com',
             'g-recaptcha-response': 'PASSED',
         }
