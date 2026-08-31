@@ -80,85 +80,86 @@ def log_tailwind(request, routine_pk, day_pk):
     session = None
     cutoff_24h = timezone.now() - datetime.timedelta(hours=24)
 
-    # 0. Single Active Workout Restriction: Check if user has an active session for another day/routine
-    other_active = WorkoutSession.objects.filter(
-        user=request.user,
-        status='active',
-        day__isnull=False,
-        routine__isnull=False,
-    ).exclude(day=day).order_by('-date', '-time_start', '-id').first()
-
-    if other_active:
-        o_dt = datetime.datetime.combine(other_active.date, other_active.time_start or datetime.time.min)
-        if timezone.is_naive(o_dt):
-            o_dt = timezone.make_aware(o_dt)
-        if o_dt >= cutoff_24h and other_active.logs.exists():
-            if other_active.day_id and other_active.routine_id:
-                messages.warning(
-                    request,
-                    _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
-                )
-                return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
-        else:
-            WorkoutSession.objects.filter(id=other_active.id).update(status='interrupted')
-
-    # If ?start=true is passed, we explicitly want to start a brand new session
-    if request.GET.get('start') == 'true':
-        WorkoutSession.objects.filter(
+    with transaction.atomic():
+        # 0. Single Active Workout Restriction: Check if user has an active session for another day/routine
+        other_active = WorkoutSession.objects.select_for_update().filter(
             user=request.user,
-            status='active'
-        ).update(status='interrupted')
-
-        session = WorkoutSession.objects.create(
-            user=request.user,
-            routine_id=routine_pk,
-            day=day,
-            date=datetime.date.today(),
-            time_start=timezone.localtime(timezone.now()).time(),
             status='active',
-        )
+            day__isnull=False,
+            routine__isnull=False,
+        ).exclude(day=day).order_by('-date', '-time_start', '-id').first()
+
+        if other_active:
+            o_dt = datetime.datetime.combine(other_active.date, other_active.time_start or datetime.time.min)
+            if timezone.is_naive(o_dt):
+                o_dt = timezone.make_aware(o_dt)
+            if o_dt >= cutoff_24h and other_active.logs.exists():
+                if other_active.day_id and other_active.routine_id:
+                    messages.warning(
+                        request,
+                        _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
+                    )
+                    return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
+            else:
+                WorkoutSession.objects.filter(id=other_active.id).update(status='interrupted')
+
+        # If ?start=true is passed, we explicitly want to start a brand new session
+        if request.GET.get('start') == 'true':
+            WorkoutSession.objects.filter(
+                user=request.user,
+                status='active'
+            ).update(status='interrupted')
+
+            session = WorkoutSession.objects.create(
+                user=request.user,
+                routine_id=routine_pk,
+                day=day,
+                date=datetime.date.today(),
+                time_start=timezone.localtime(timezone.now()).time(),
+                status='active',
+            )
+            request.session[session_key] = str(session.id)
+            return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+        # 1. Try to load existing active session from session key
+        session_id = request.session.get(session_key)
+        if session_id:
+            s = WorkoutSession.objects.select_for_update().filter(id=session_id, user=request.user, status='active').first()
+            if s:
+                s_dt = datetime.datetime.combine(s.date, s.time_start or datetime.time.min)
+                if timezone.is_naive(s_dt):
+                    s_dt = timezone.make_aware(s_dt)
+                if s_dt >= cutoff_24h:
+                    session = s
+
+        # 2. Server-Side Draft Lookup: Any active WorkoutSession created in the last 24h for this day/user
+        if not session:
+            active_candidates = WorkoutSession.objects.select_for_update().filter(
+                user=request.user,
+                routine_id=routine_pk,
+                day=day,
+                status='active',
+            ).order_by('-date', '-time_start', '-id')
+
+            for candidate in active_candidates:
+                c_dt = datetime.datetime.combine(candidate.date, candidate.time_start or datetime.time.min)
+                if timezone.is_naive(c_dt):
+                    c_dt = timezone.make_aware(c_dt)
+                if c_dt >= cutoff_24h:
+                    session = candidate
+                    break
+
+        # 3. Create a new active session draft if none found within 24h
+        if not session:
+            session = WorkoutSession.objects.create(
+                user=request.user,
+                routine_id=routine_pk,
+                day=day,
+                date=datetime.date.today(),
+                time_start=timezone.localtime(timezone.now()).time(),
+                status='active',
+            )
         request.session[session_key] = str(session.id)
-        return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
-
-    # 1. Try to load existing active session from session key
-    session_id = request.session.get(session_key)
-    if session_id:
-        s = WorkoutSession.objects.filter(id=session_id, user=request.user, status='active').first()
-        if s:
-            s_dt = datetime.datetime.combine(s.date, s.time_start or datetime.time.min)
-            if timezone.is_naive(s_dt):
-                s_dt = timezone.make_aware(s_dt)
-            if s_dt >= cutoff_24h:
-                session = s
-
-    # 2. Server-Side Draft Lookup: Any active WorkoutSession created in the last 24h for this day/user
-    if not session:
-        active_candidates = WorkoutSession.objects.filter(
-            user=request.user,
-            routine_id=routine_pk,
-            day=day,
-            status='active',
-        ).order_by('-date', '-time_start', '-id')
-
-        for candidate in active_candidates:
-            c_dt = datetime.datetime.combine(candidate.date, candidate.time_start or datetime.time.min)
-            if timezone.is_naive(c_dt):
-                c_dt = timezone.make_aware(c_dt)
-            if c_dt >= cutoff_24h:
-                session = candidate
-                break
-
-    # 3. Create a new active session draft if none found within 24h
-    if not session:
-        session = WorkoutSession.objects.create(
-            user=request.user,
-            routine_id=routine_pk,
-            day=day,
-            date=datetime.date.today(),
-            time_start=timezone.localtime(timezone.now()).time(),
-            status='active',
-        )
-    request.session[session_key] = str(session.id)
 
     if session and not session.time_start:
         session.time_start = timezone.localtime(timezone.now()).time()

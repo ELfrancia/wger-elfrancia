@@ -328,3 +328,21 @@ class WorkoutViewsTestCase(WgerTestCase):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_session_find_or_create_atomic(self):
+        """M6: Session resolution within 24h reuses existing active draft without creating duplicates."""
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        response1 = self.client.get(url)
+        self.assertEqual(response1.status_code, 200)
+        session_id1 = response1.context['session'].id
+
+        # Second request without cookies/keys should find and reuse the same active session
+        client2 = self.client_class()
+        client2.force_login(self.user)
+        response2 = client2.get(url)
+        self.assertEqual(response2.status_code, 200)
+        session_id2 = response2.context['session'].id
+
+        self.assertEqual(session_id1, session_id2)
+        self.assertEqual(WorkoutSession.objects.filter(user=self.user, day=self.day, status='active').count(), 1)
+
