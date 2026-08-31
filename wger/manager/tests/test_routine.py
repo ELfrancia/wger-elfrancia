@@ -696,3 +696,87 @@ class AddExerciseCatalogFallbackTestCase(WgerTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Server exercise')
         self.assertContains(response, 'data-id="987"')
+
+
+class RoutineViewsSecurityRemediationTestCase(WgerTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = User.objects.get(username='test')
+        self.client.force_login(self.user)
+        self.routine = Routine.objects.create(
+            user=self.user,
+            name='Test Routine',
+            start=datetime.date.today(),
+            end=datetime.date.today() + datetime.timedelta(days=28),
+        )
+        self.day = Day.objects.create(routine=self.routine, name='Day 1', order=1)
+        from wger.exercises.models import Exercise
+        self.exercise = Exercise.objects.first()
+        from wger.manager.models import Slot, SlotEntry, WeightConfig, RepetitionsConfig, SetsConfig
+        self.slot = Slot.objects.create(day=self.day, order=1)
+        self.entry = SlotEntry.objects.create(slot=self.slot, exercise=self.exercise, order=1)
+        SetsConfig.objects.create(slot_entry=self.entry, iteration=1, value=1)
+        RepetitionsConfig.objects.create(slot_entry=self.entry, iteration=1, value=10)
+        WeightConfig.objects.create(slot_entry=self.entry, iteration=1, value=0)
+
+    def test_add_set_and_update_set_decimal_comma_normalization(self):
+        """M7: Comma decimal inputs are normalized to '.' and handled without 500."""
+        from decimal import Decimal
+        from wger.manager.models import SlotEntry, WeightConfig, RepetitionsConfig
+        # Test add_set with comma
+        add_url = reverse(
+            'manager:routine:add-set',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk, 'slot_pk': self.slot.pk}
+        )
+        response = self.client.post(add_url, {
+            'reps': '12,5',
+            'weight': '42,5',
+            'exercise_id': self.exercise.id,
+        })
+        self.assertEqual(response.status_code, 302)
+        new_entry = self.slot.entries.order_by('-order').first()
+        self.assertEqual(new_entry.repetitionsconfig_set.first().value, Decimal('12.5'))
+        self.assertEqual(new_entry.weightconfig_set.first().value, Decimal('42.5'))
+
+        # Test update_set with comma
+        update_url = reverse(
+            'manager:routine:update-set',
+            kwargs={
+                'routine_pk': self.routine.pk,
+                'day_pk': self.day.pk,
+                'slot_pk': self.slot.pk,
+                'entry_pk': new_entry.pk,
+            }
+        )
+        response2 = self.client.post(update_url, {
+            'reps': '15',
+            'weight': '45,75',
+        })
+        self.assertEqual(response2.status_code, 302)
+        new_entry.refresh_from_db()
+        self.assertEqual(new_entry.weightconfig_set.first().value, Decimal('45.75'))
+
+    def test_add_custom_exercise_tailwind_is_published_false_and_choices(self):
+        """H2: Custom exercise creation sets is_published=False and validates skill_family."""
+        from wger.exercises.models import CalisthenicsExercise, Exercise
+        url = reverse(
+            'manager:routine:add-custom-exercise',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk}
+        )
+        response = self.client.post(url, {
+            'name': 'Custom Safe Muscle Up',
+            'instructions': 'Step 1\nStep 2',
+            'skill_family': 'invalid_unknown_skill',
+            'target_muscle': 'Chest<script>',
+            'weighted': 'on',
+            'format': 'json',
+        })
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertEqual(data['skill_family'], 'other')  # Invalid fallback to other
+
+        cal_ex = CalisthenicsExercise.objects.get(name='Custom Safe Muscle Up')
+        self.assertFalse(cal_ex.is_published)
+        self.assertEqual(cal_ex.skill_family, 'other')
+        self.assertNotIn('<script>', cal_ex.target_muscle)
