@@ -443,3 +443,25 @@ class UserTrustworthinessTestCase(WgerTestCase):
 
         # User pass trustworthiness check
         self.assertTrue(user.userprofile.is_trustworthy)
+
+
+class UpdateLogAjaxTestCase(WgerTestCase):
+    def test_update_log_ajax_get_rejected(self):
+        self.user_login('trainer1')
+        response = self.client.get(reverse('core:update-log-ajax'))
+        self.assertEqual(response.status_code, 405)
+        self.user_logout()
+
+    def test_update_log_ajax_invalid_json_returns_generic_error(self):
+        self.user_login('trainer1')
+        response = self.client.post(
+            reverse('core:update-log-ajax'),
+            'invalid json',
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {
+            'status': 'error',
+            'message': 'An error occurred while updating the log.'
+        })
+        self.user_logout()

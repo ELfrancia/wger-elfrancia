@@ -1187,15 +1187,12 @@ def session_details_tailwind(request, session_id):
 
 
 @login_required
+@require_POST
 def update_log_ajax(request):
     import json
     from django.http import JsonResponse
-    from django.views.decorators.http import require_POST
     from django.shortcuts import get_object_or_404
     from wger.manager.models import WorkoutLog
-
-    if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
     try:
         data = json.loads(request.body)
@@ -1205,18 +1202,20 @@ def update_log_ajax(request):
         
         log = get_object_or_404(WorkoutLog, id=log_id)
         
-        # Check permissions: does this log belong to the user's session?
-        if log.session.user != request.user:
+        # Check permissions: does this log belong to the user?
+        user = log.session.user if log.session else log.user
+        if user != request.user:
             return JsonResponse({'status': 'error', 'message': 'Forbidden'}, status=403)
             
         if reps is not None:
-            log.repetitions = int(reps)
+            log.repetitions = max(0, int(reps))
         if weight is not None:
-            log.weight = float(weight)
+            log.weight = max(0.0, float(weight))
             
         log.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        logger.error(f"Error in update_log_ajax for user {request.user.id}: {e}")
+        return JsonResponse({'status': 'error', 'message': 'An error occurred while updating the log.'}, status=400)
 
 
