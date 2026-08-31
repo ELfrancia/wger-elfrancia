@@ -38,10 +38,21 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f'Info dummy-generator: {e}'))
 
         User = get_user_model()
-        if not User.objects.filter(username='admin').exists():
-            self.stdout.write(self.style.SUCCESS('🔐 [5/5] Creazione utente Admin predefinito (admin / admin123)...'))
-            User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+        username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
+        email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
+        password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
+
+        if not User.objects.filter(username=username).exists():
+            if not password:
+                import secrets
+                password = secrets.token_urlsafe(18)
+                self.stdout.write(self.style.WARNING(
+                    f"🔐 [5/5] No DJANGO_SUPERUSER_PASSWORD set. Generated random superuser password for '{username}': {password}"
+                ))
+            else:
+                self.stdout.write(self.style.SUCCESS(f"🔐 [5/5] Creazione superuser '{username}' da variabili d'ambiente..."))
+            User.objects.create_superuser(username, email, password)
         else:
-            self.stdout.write(self.style.SUCCESS('🔐 [5/5] Utente Admin già presente.'))
+            self.stdout.write(self.style.SUCCESS(f"🔐 [5/5] Utente '{username}' già presente."))
 
         self.stdout.write(self.style.SUCCESS('✨ Inizializzazione completata con successo!'))
