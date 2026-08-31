@@ -227,22 +227,28 @@ class Exercise(AbstractLicenseModel, AbstractHistoryMixin, models.Model):
         """
         Return the main image for the exercise or the first available image
         """
-        img = self.exerciseimage_set.filter(is_main=True).first()
-        if not img:
-            img = self.exerciseimage_set.first()
-        return img
+        imgs = self.exerciseimage_set.all().order_by('-is_main')
+        for img in imgs:
+            if img and img.image:
+                try:
+                    storage = img.image.storage
+                    if hasattr(img.image, 'name') and img.image.name and storage.exists(img.image.name):
+                        return img
+                except Exception:
+                    pass
+        return None
 
     @property
     def main_video(self):
         """
-        Return the main video for the exercise or the first available video that exists on disk
+        Return the main video for the exercise or the first available video that exists in storage
         """
-        import os
         vids = self.exercisevideo_set.all().order_by('-is_main')
         for vid in vids:
             if vid and vid.video:
                 try:
-                    if os.path.exists(vid.video.path) and os.path.getsize(vid.video.path) > 0:
+                    storage = vid.video.storage
+                    if hasattr(vid.video, 'name') and vid.video.name and storage.exists(vid.video.name):
                         return vid
                 except Exception:
                     pass
@@ -255,17 +261,15 @@ class Exercise(AbstractLicenseModel, AbstractHistoryMixin, models.Model):
         """
         import os
         from django.conf import settings
+        from wger.exercises.media_utils import is_safe_path
+
         vid = self.main_video
         if vid and vid.video:
             return vid.video.url
 
         img = self.main_image
         if img and img.image:
-            try:
-                if os.path.exists(img.image.path) and os.path.getsize(img.image.path) > 0:
-                    return img.image.url
-            except Exception:
-                pass
+            return img.image.url
 
         try:
             from wger.exercises.models import CalisthenicsExercise
@@ -274,8 +278,9 @@ class Exercise(AbstractLicenseModel, AbstractHistoryMixin, models.Model):
                 if cal.demo_media_url.startswith('http://') or cal.demo_media_url.startswith('https://'):
                     return cal.demo_media_url
                 rel_path = cal.demo_media_url.lstrip('/')
-                full_path = os.path.join(settings.BASE_DIR, rel_path)
-                if os.path.exists(full_path) or os.path.exists(os.path.join(settings.MEDIA_ROOT, rel_path)):
+                clean_rel_path = rel_path.replace('media/', '', 1) if rel_path.startswith('media/') else rel_path
+                full_media_path = os.path.realpath(os.path.join(settings.MEDIA_ROOT, clean_rel_path))
+                if is_safe_path(settings.MEDIA_ROOT, full_media_path) and os.path.exists(full_media_path):
                     return cal.demo_media_url
         except Exception:
             pass
