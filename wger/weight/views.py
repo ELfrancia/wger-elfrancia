@@ -122,9 +122,9 @@ def weight_overview_tailwind(request):
         selected_date = now.date()
 
     from wger.core.models import DailyActivity
-    activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
 
     if request.method == 'POST':
+        activity, created_activity = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
         activity_type = request.POST.get('activity_type')
         amount = request.POST.get('amount')
         value = request.POST.get('value')
@@ -160,6 +160,10 @@ def weight_overview_tailwind(request):
                 activity.save()
             except (ValueError, TypeError, decimal.InvalidOperation):
                 pass
+    else:
+        activity = DailyActivity.objects.filter(user=request.user, date=selected_date).first()
+        if not activity:
+            activity = DailyActivity(user=request.user, date=selected_date, steps=0, calories=0, water=0)
 
     if range_param == 'weekly':
         start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=7), datetime.min.time()))
@@ -627,9 +631,8 @@ def weight_activity_details(request):
         selected_date = timezone.localdate()
 
     # 2. Gestione POST per il logging delle attività per la data selezionata
-    activity, created = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
-    
     if request.method == 'POST':
+        activity, created = DailyActivity.objects.get_or_create(user=request.user, date=selected_date)
         activity_type = request.POST.get('activity_type')
         amount = request.POST.get('amount')
         value = request.POST.get('value')
@@ -663,6 +666,10 @@ def weight_activity_details(request):
                 activity.save()
             except (ValueError, TypeError, decimal.InvalidOperation):
                 pass
+    else:
+        activity = DailyActivity.objects.filter(user=request.user, date=selected_date).first()
+        if not activity:
+            activity = DailyActivity(user=request.user, date=selected_date, steps=0, calories=0, water=0)
 
     # 3. Calcolo dei giorni della settimana (da Lunedì a Domenica)
     # Lunedì è index 0, Domenica è index 6

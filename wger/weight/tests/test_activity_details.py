@@ -20,6 +20,7 @@ class ActivityDetailsTestCase(WgerTestCase):
         response = self.client.get(reverse('weight:activity-details'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Activity Calendar')
+        self.assertFalse(DailyActivity.objects.filter(user=self.user, date=timezone.localdate()).exists())
 
     def test_get_activity_details_specific_date(self):
         """Testa la GET con una data specifica"""
@@ -27,6 +28,14 @@ class ActivityDetailsTestCase(WgerTestCase):
         response = self.client.get(reverse('weight:activity-details'), {'date': selected_date})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, selected_date)
+        self.assertFalse(DailyActivity.objects.filter(user=self.user, date=selected_date).exists())
+
+    def test_get_weight_overview_does_not_create_activity(self):
+        """Testa che la GET su weight overview non crei DailyActivity su DB"""
+        selected_date = '2026-07-17'
+        response = self.client.get(reverse('weight:overview'), {'selected_date': selected_date})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(DailyActivity.objects.filter(user=self.user, date=selected_date).exists())
 
     def test_post_log_activity_steps(self):
         """Testa la POST per loggare i passi su una data specifica"""
