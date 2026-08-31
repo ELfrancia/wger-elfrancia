@@ -1177,9 +1177,31 @@
             });
         })();
 
-        // Onyx Offline-First Sync Engine
+        // Onyx Offline-First Sync Engine (H6, H7, M14, L16)
         const OnyxOfflineSync = {
             QUEUE_KEY: 'onyx_offline_sync_queue',
+            MAX_QUEUE_ITEMS: 100,
+            MAX_RETRIES: 5,
+            _syncing: false,
+
+            generateClientId() {
+                if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                    return crypto.randomUUID();
+                }
+                return 'cid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+            },
+
+            _pruneStaleStorage() {
+                try {
+                    const stalePrefixes = ['onyx_workout_start_', 'workout_draft_day_', 'onyx_active_workout_snapshot'];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && stalePrefixes.some(p => key.startsWith(p))) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                } catch(e) {}
+            },
 
             getQueue() {
                 try {
@@ -1190,59 +1212,197 @@
             },
 
             setQueue(queue) {
-                localStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+                try {
+                    const trimmed = Array.isArray(queue) ? queue.slice(-this.MAX_QUEUE_ITEMS) : [];
+                    localStorage.setItem(this.QUEUE_KEY, JSON.stringify(trimmed));
+                } catch(err) {
+                    if (err && (err.name === 'QuotaExceededError' || err.code === 22)) {
+                        this._pruneStaleStorage();
+                        try {
+                            const trimmed = Array.isArray(queue) ? queue.slice(-Math.floor(this.MAX_QUEUE_ITEMS / 2)) : [];
+                            localStorage.setItem(this.QUEUE_KEY, JSON.stringify(trimmed));
+                        } catch(e) {
+                            console.error('LocalStorage quota exceeded after prune:', e);
+                        }
+                    }
+                }
                 this.updateBadge();
+            },
+
+            removeItemFromQueue(itemId) {
+                const q = this.getQueue().filter(item => item.id !== itemId);
+                this.setQueue(q);
+            },
+
+            getActiveCsrfToken() {
+                const formToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                if (formToken) return formToken;
+                const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (metaToken) return metaToken;
+                const match = (document.cookie || '').match(/csrftoken=([\w-]+)/);
+                if (match && match[1]) return match[1];
+                return '';
+            },
+
+            async fetchFreshCsrfToken() {
+                try {
+                    const res = await fetch(window.location.pathname, {
+                        method: 'GET',
+                        headers: { 'HX-Request': 'true' },
+                        credentials: 'same-origin'
+                    });
+                    if (res.ok) {
+                        return this.getActiveCsrfToken();
+                    }
+                } catch(e) {}
+                return this.getActiveCsrfToken();
             },
 
             enqueue(entry) {
                 const queue = this.getQueue();
-                queue.push({
+                const clientId = entry.clientId || entry.data?.client_id || this.generateClientId();
+                const data = entry.data || {};
+                data.client_id = clientId;
+
+                const item = {
                     ...entry,
-                    id: 'sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    id: 'sync_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+                    clientId: clientId,
+                    data: data,
+                    retryCount: 0,
                     queuedAt: Date.now()
-                });
+                };
+                queue.push(item);
                 this.setQueue(queue);
                 this.showBanner('offline', `Offline • ${queue.length} serie salvata${queue.length > 1 ? 'e' : ''} in locale`);
+                return item;
             },
 
             async syncPending() {
-                if (!navigator.onLine) return;
+                if (this._syncing || !navigator.onLine) return;
                 const queue = this.getQueue();
                 if (queue.length === 0) return;
 
+                this._syncing = true;
                 this.showBanner('syncing', `Sincronizzazione di ${queue.length} elementi in corso...`);
-                const remaining = [];
+                let permanentFailures = 0;
 
-                for (const item of queue) {
-                    try {
-                        const formData = new FormData();
-                        for (const [k, v] of Object.entries(item.data || {})) {
-                            formData.append(k, v);
-                        }
-                        const res = await fetch(item.url, {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'X-CSRFToken': item.csrfToken || '',
-                                'HX-Request': 'true'
+                try {
+                    for (const item of queue) {
+                        item.retryCount = (item.retryCount || 0) + 1;
+                        let csrfToken = this.getActiveCsrfToken() || item.csrfToken || '';
+                        let success = false;
+
+                        for (let attempt = 0; attempt < 2; attempt++) {
+                            try {
+                                const formData = new FormData();
+                                for (const [k, v] of Object.entries(item.data || {})) {
+                                    formData.append(k, v);
+                                }
+                                if (!formData.has('client_id') && item.clientId) {
+                                    formData.append('client_id', item.clientId);
+                                }
+
+                                const res = await fetch(item.url, {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: {
+                                        'X-CSRFToken': csrfToken,
+                                        'HX-Request': 'true'
+                                    },
+                                    credentials: 'same-origin'
+                                });
+
+                                if (res.ok) {
+                                    success = true;
+                                    this.removeItemFromQueue(item.id);
+                                    this.reconcileSetUI(item, 'success');
+                                    break;
+                                } else if (res.status === 403 || res.status === 419) {
+                                    // CSRF token expired/invalid: obtain fresh token and retry once
+                                    if (attempt === 0) {
+                                        csrfToken = await this.fetchFreshCsrfToken();
+                                        continue;
+                                    }
+                                } else if (res.status >= 400 && res.status < 500) {
+                                    // Non-CSRF 4xx client error
+                                    if (item.retryCount >= this.MAX_RETRIES) {
+                                        this.removeItemFromQueue(item.id);
+                                        this.reconcileSetUI(item, 'error');
+                                        permanentFailures++;
+                                        break;
+                                    }
+                                }
+                            } catch(networkErr) {
+                                // Network dropped mid-sync, keep remaining items in queue
+                                break;
                             }
-                        });
-                        if (!res.ok && res.status < 500) {
-                            // Client error, discard
-                        } else if (!res.ok) {
-                            remaining.push(item);
                         }
-                    } catch(err) {
-                        remaining.push(item);
+
+                        if (!success) {
+                            if (item.retryCount >= this.MAX_RETRIES) {
+                                this.removeItemFromQueue(item.id);
+                                this.reconcileSetUI(item, 'error');
+                                permanentFailures++;
+                            } else {
+                                const currentQ = this.getQueue();
+                                const idx = currentQ.findIndex(i => i.id === item.id);
+                                if (idx !== -1) {
+                                    currentQ[idx] = item;
+                                    this.setQueue(currentQ);
+                                }
+                            }
+                        }
                     }
+                } finally {
+                    this._syncing = false;
                 }
 
-                this.setQueue(remaining);
-                if (remaining.length === 0) {
+                const remainingQ = this.getQueue();
+                if (remainingQ.length === 0 && permanentFailures === 0) {
                     this.showBanner('success', 'Tutti i dati sono sincronizzati con il server');
                     setTimeout(() => this.hideBanner(), 3500);
-                } else {
-                    this.showBanner('offline', `${remaining.length} elementi ancora in attesa di connessione`);
+                } else if (permanentFailures > 0) {
+                    this.showBanner('error', `Errore sync: ${permanentFailures} serie non salvata${permanentFailures > 1 ? 'e' : ''}. Riprova.`);
+                } else if (remainingQ.length > 0) {
+                    this.showBanner('offline', `${remainingQ.length} elementi ancora in attesa di connessione`);
+                }
+            },
+
+            reconcileSetUI(item, status) {
+                const slotEntryId = item.slotEntryId || item.data?.slot_entry_id;
+                if (!slotEntryId) return;
+                const setRow = document.getElementById('set-row-' + slotEntryId);
+                if (!setRow) return;
+
+                if (status === 'success') {
+                    setRow.classList.add('bg-[#caf300]/[0.05]', 'border-[#caf300]/25');
+                    setRow.classList.remove('border-amber-500/40', 'border-red-500/40', 'bg-amber-500/5', 'bg-red-500/5');
+                    const submitBtn = setRow.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-sm';
+                        submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm sm:text-base font-black">check</span>';
+                        submitBtn.title = 'Completato e sincronizzato';
+                    }
+                } else if (status === 'error') {
+                    setRow.classList.remove('bg-[#caf300]/[0.05]', 'border-[#caf300]/25');
+                    setRow.classList.add('border-red-500/50', 'bg-red-500/10');
+                    const submitBtn = setRow.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-red-500 text-white font-bold shadow-sm cursor-pointer';
+                        submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm sm:text-base font-black">sync_problem</span>';
+                        submitBtn.title = 'Sincronizzazione non riuscita. Clicca per riprovare.';
+                    }
+                } else if (status === 'queued') {
+                    setRow.classList.add('border-amber-500/40', 'bg-amber-500/10');
+                    setRow.classList.remove('border-[#caf300]/25', 'bg-[#caf300]/[0.05]');
+                    const submitBtn = setRow.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-amber-500/20 text-amber-300 font-bold shadow-sm border border-amber-500/40';
+                        submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm sm:text-base font-black animate-spin">sync</span>';
+                        submitBtn.title = 'In attesa di sincronizzazione offline';
+                    }
                 }
             },
 
@@ -1262,6 +1422,9 @@
                 } else if (status === 'success') {
                     badge.className = 'px-4 py-2 rounded-full backdrop-blur-xl border border-[#caf300]/40 bg-[#caf300]/15 text-[#caf300] flex items-center gap-2 shadow-2xl text-xs font-bold font-mono select-none';
                     dot.className = 'w-2 h-2 rounded-full bg-[#caf300]';
+                } else if (status === 'error') {
+                    badge.className = 'px-4 py-2 rounded-full backdrop-blur-xl border border-red-500/40 bg-red-500/15 text-red-300 flex items-center gap-2 shadow-2xl text-xs font-bold font-mono select-none';
+                    dot.className = 'w-2 h-2 rounded-full bg-red-400';
                 }
                 label.innerText = text;
                 banner.classList.remove('opacity-0', '-translate-y-6', 'pointer-events-none');
@@ -1298,21 +1461,19 @@
                 const data = {};
                 formData.forEach((value, key) => { data[key] = value; });
                 const url = form.getAttribute('action') || form.getAttribute('hx-post') || window.location.href;
-                const csrf = form.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                const csrf = form.querySelector('[name=csrfmiddlewaretoken]')?.value || OnyxOfflineSync.getActiveCsrfToken();
+                const slotEntryId = data.slot_entry_id || (form.closest('.set-row')?.id?.replace('set-row-', ''));
+                const clientId = data.client_id || OnyxOfflineSync.generateClientId();
+                data.client_id = clientId;
 
-                OnyxOfflineSync.enqueue({ url, data, csrfToken: csrf });
+                OnyxOfflineSync.enqueue({ url, data, csrfToken: csrf, slotEntryId, clientId });
 
-                // Optimistic UI: complete set row immediately
+                // Optimistic UI: mark set row as queued with visual feedback
                 const setRow = form.closest('.set-row');
                 if (setRow) {
-                    setRow.classList.add('is-completing', 'bg-[#caf300]/[0.05]', 'border-[#caf300]/25');
-                    setRow.classList.remove('border-outline', 'bg-[#121316]');
+                    setRow.classList.add('is-completing');
                     setRow.setAttribute('data-completed', 'true');
-                    const checkBtn = setRow.querySelector('button[type="submit"]');
-                    if (checkBtn) {
-                        checkBtn.className = 'w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 flex items-center justify-center bg-[#caf300] text-black font-bold shadow-sm';
-                        checkBtn.innerHTML = '<span class="material-symbols-outlined text-sm sm:text-base font-black">check</span>';
-                    }
+                    OnyxOfflineSync.reconcileSetUI({ slotEntryId }, 'queued');
                 }
             }
         });
