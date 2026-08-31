@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n l10n %}
 
 <div id="activity-calendar-container" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="flex flex-col gap-6 w-full">
     <!-- 1. Activity Calendar Section -->
@@ -488,7 +488,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {% for photo in condition_photos %}
                 <a href="{{ photo.image.url }}" target="_blank" class="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#caf300]/60 bg-[#16171b] shadow-md transition-all duration-200">
-                    <img src="{{ photo.image.url }}" alt="{{ photo.description }}" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ photo.image.url }}" alt="{{ photo.description }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=400&q=80';" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
                     <div class="absolute bottom-2 left-2.5 right-2.5">
                         <span class="text-[10px] font-bold text-white block truncate leading-tight">{{ photo.description|default:"Foto Condizione" }}</span>
@@ -509,19 +509,19 @@
             }
 
             const stepsVal = parseValue("{{ activity.steps|default:'0' }}");
-            const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000' }}") || 16000;
+            const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000'|unlocalize }}") || 16000;
             const stepsPct = Math.min(stepsVal / stepsGoal, 1);
             const ringSteps = document.getElementById('ring-detail-steps');
             if (ringSteps) ringSteps.setAttribute('stroke-dashoffset', 282.74 - (stepsPct * 282.74));
 
             const calVal = parseValue("{{ activity.calories|default:'0' }}");
-            const calGoal = parseValue("{{ profile.calories_goal|default:'680' }}") || 680;
+            const calGoal = parseValue("{{ profile.calories_goal|default:'680'|unlocalize }}") || 680;
             const calPct = Math.min(calVal / calGoal, 1);
             const ringCalories = document.getElementById('ring-detail-calories');
             if (ringCalories) ringCalories.setAttribute('stroke-dashoffset', 213.63 - (calPct * 213.63));
 
             const waterVal = parseValue("{{ activity.water|default:'0.0' }}");
-            const waterGoal = parseValue("{{ profile.water_goal|default:'2.5' }}") || 2.5;
+            const waterGoal = parseValue("{{ profile.water_goal|default:'2.5'|unlocalize }}") || 2.5;
             const waterPct = Math.min(waterVal / waterGoal, 1);
             const ringWater = document.getElementById('ring-detail-water');
             if (ringWater) ringWater.setAttribute('stroke-dashoffset', 144.51 - (waterPct * 144.51));

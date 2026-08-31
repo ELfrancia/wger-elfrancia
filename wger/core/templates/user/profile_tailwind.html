@@ -1,5 +1,5 @@
 {% extends 'template_tailwind.html' %}
-{% load i18n %}
+{% load i18n l10n %}
 
 {% block title %}ONYX - {% translate "Profilo Utente" %}{% endblock %}
 
@@ -16,7 +16,7 @@
             <!-- Avatar with ring and direct photo upload click trigger -->
             <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('id_avatar_file').click()" title="{% translate 'Clicca per cambiare la foto del profilo' %}">
                 <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-primary/90 bg-neutral-950 shadow-[0_0_25px_rgba(202,243,0,0.25)] transition-transform duration-300 group-hover:scale-105 relative shrink-0 aspect-square">
-                    <img id="main-avatar-img" src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80' }}" alt="Avatar" class="w-full h-full object-cover">
+                    <img id="main-avatar-img" src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80' }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80';" alt="Avatar" class="w-full h-full object-cover">
                     
                     <!-- Hover overlay for desktop/mobile feedback -->
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-[2px]">
@@ -210,7 +210,7 @@
                             </label>
                             <span class="text-[10px] text-neutral-500 font-bold">{% translate "passi/giorno" %}</span>
                         </div>
-                        <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal }}" class="bg-neutral-900 border border-neutral-800 focus:border-primary text-primary font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                        <input type="number" name="steps_goal" id="id_steps_goal" value="{{ profile.steps_goal|unlocalize }}" class="bg-neutral-900 border border-neutral-800 focus:border-primary text-primary font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
                         <!-- Quick presets -->
                         <div class="flex gap-1.5">
                             <button type="button" onclick="setGoal('id_steps_goal', 8000)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-primary/20 hover:text-primary text-[10px] font-bold text-neutral-400 transition-colors">8K</button>
@@ -229,7 +229,7 @@
                             </label>
                             <span class="text-[10px] text-neutral-500 font-bold">{% translate "kcal/giorno" %}</span>
                         </div>
-                        <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal }}" class="bg-neutral-900 border border-neutral-800 focus:border-red-400 text-red-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                        <input type="number" name="calories_goal" id="id_calories_goal" value="{{ profile.calories_goal|unlocalize }}" class="bg-neutral-900 border border-neutral-800 focus:border-red-400 text-red-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
                         <!-- Quick presets -->
                         <div class="flex gap-1.5">
                             <button type="button" onclick="setGoal('id_calories_goal', 400)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 hover:text-red-400 text-[10px] font-bold text-neutral-400 transition-colors">400</button>
@@ -248,7 +248,7 @@
                             </label>
                             <span class="text-[10px] text-neutral-500 font-bold">{% translate "Litri/giorno" %}</span>
                         </div>
-                        <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal }}" class="bg-neutral-900 border border-neutral-800 focus:border-sky-400 text-sky-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                        <input type="number" step="0.1" name="water_goal" id="id_water_goal" value="{{ profile.water_goal|unlocalize }}" class="bg-neutral-900 border border-neutral-800 focus:border-sky-400 text-sky-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
                         <!-- Quick presets -->
                         <div class="flex gap-1.5">
                             <button type="button" onclick="setGoal('id_water_goal', 2.0)" class="flex-1 py-1 rounded-lg bg-surface-container-high/60 hover:bg-sky-500/20 hover:text-sky-400 text-[10px] font-bold text-neutral-400 transition-colors">2.0L</button>

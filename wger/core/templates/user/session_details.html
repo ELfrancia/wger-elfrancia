@@ -1,20 +1,29 @@
 {% extends 'template_tailwind.html' %}
-{% load i18n %}
+{% load i18n l10n %}
 
 {% block title %}ONYX - Dettaglio Sessione{% endblock %}
 
 {% block content %}
 <main class="w-full max-w-5xl mx-auto px-4 sm:px-6 mt-2 flex flex-col gap-6 pb-28 text-white">
-    <!-- Header Bar (Back button + Title + Save as Routine Day button) -->
-    <header class="flex items-center justify-between mb-2">
-        <a href="{% url 'core:dashboard' %}" class="w-10 h-10 rounded-full bg-surface border border-outline text-secondary hover:text-white flex items-center justify-center active:scale-95 transition-all duration-200 shadow-md">
+    <!-- Header Bar (Back button + Title + Actions) -->
+    <header class="flex items-center justify-between mb-2 gap-2">
+        <a href="{% url 'core:dashboard' %}" class="w-10 h-10 rounded-full bg-surface border border-outline text-secondary hover:text-white flex items-center justify-center active:scale-95 transition-all duration-200 shadow-md shrink-0">
             <span class="material-symbols-outlined text-lg">arrow_back</span>
         </a>
-        <h1 class="text-xs font-black uppercase tracking-widest text-zinc-400 font-display">Resoconto Allenamento</h1>
-        <button type="button" onclick="openSaveSessionModal()" class="px-3.5 py-2 rounded-full bg-[#caf300]/10 border border-[#caf300]/30 text-[#caf300] hover:bg-[#caf300] hover:text-black font-extrabold text-[10px] uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 active:scale-95 shadow-sm cursor-pointer">
-            <span class="material-symbols-outlined text-sm">bookmark_add</span>
-            <span class="hidden sm:inline">{% translate "Salva come Giorno" %}</span>
-        </button>
+        <h1 class="text-xs font-black uppercase tracking-widest text-zinc-400 font-display truncate">Resoconto Allenamento</h1>
+        <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="openSaveSessionModal()" class="px-3 py-2 rounded-full bg-[#caf300]/10 border border-[#caf300]/30 text-[#caf300] hover:bg-[#caf300] hover:text-black font-extrabold text-[10px] uppercase tracking-wider transition-all duration-200 flex items-center gap-1.5 active:scale-95 shadow-sm cursor-pointer">
+                <span class="material-symbols-outlined text-sm">bookmark_add</span>
+                <span class="hidden sm:inline">{% translate "Salva come Giorno" %}</span>
+            </button>
+            <form method="POST" action="{% url 'core:session-details' session.id %}" onsubmit="return confirm('{% translate "Sei sicuro di voler eliminare definitivamente questo allenamento dal resoconto?" %}');" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_session">
+                <button type="submit" class="w-9 h-9 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer" title="{% translate 'Elimina Allenamento' %}">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+            </form>
+        </div>
     </header>
 
     <!-- Session Info Card -->
@@ -178,14 +187,14 @@
                                 {% for log in logs %}
                                     <div class="grid grid-cols-3 {% if not forloop.last %}border-b border-zinc-800/60{% endif %} py-3 set-row-container"
                                          data-log-id="{{ log.id }}"
-                                         data-reps="{{ log.repetitions|floatformat:"-2" }}"
-                                         data-weight="{% if log.weight is not None %}{{ log.weight|floatformat:"-2" }}{% else %}0{% endif %}">
+                                         data-reps="{{ log.repetitions|floatformat:"-2"|unlocalize }}"
+                                         data-weight="{% if log.weight is not None %}{{ log.weight|floatformat:"-2"|unlocalize }}{% else %}0{% endif %}">
                                         <div class="border-r border-zinc-800 text-zinc-400 text-xs flex items-center justify-center">#{{ forloop.counter }}</div>
                                         
                                         <!-- Reps Column -->
                                         <div class="border-r border-zinc-800 font-extrabold text-white text-base flex items-center justify-center">
                                             <span class="view-mode">{{ log.repetitions|floatformat:"-2" }}</span>
-                                            <input type="number" class="edit-mode hidden w-16 bg-zinc-900 border border-zinc-800 text-white font-mono text-center rounded py-0.5 focus:border-primary focus:outline-none" value="{{ log.repetitions|floatformat:"-2" }}" onchange="updateRowMetric(this, 'reps')">
+                                            <input type="number" class="edit-mode hidden w-16 bg-zinc-900 border border-zinc-800 text-white font-mono text-center rounded py-0.5 focus:border-primary focus:outline-none" value="{{ log.repetitions|floatformat:"-2"|unlocalize }}" onchange="updateRowMetric(this, 'reps')">
                                         </div>
                                         
                                         <!-- Weight Column -->
@@ -198,7 +207,7 @@
                                                 {% endif %}
                                             </div>
                                             <div class="edit-mode hidden flex items-center gap-1 justify-center">
-                                                <input type="number" step="0.5" class="w-16 bg-zinc-900 border border-zinc-800 text-white font-mono text-center rounded py-0.5 focus:border-primary focus:outline-none" value="{% if log.weight is not None %}{{ log.weight|floatformat:"-2" }}{% else %}0{% endif %}" onchange="updateRowMetric(this, 'weight')">
+                                                <input type="number" step="0.5" class="w-16 bg-zinc-900 border border-zinc-800 text-white font-mono text-center rounded py-0.5 focus:border-primary focus:outline-none" value="{% if log.weight is not None %}{{ log.weight|floatformat:"-2"|unlocalize }}{% else %}0{% endif %}" onchange="updateRowMetric(this, 'weight')">
                                                 <span class="text-[10px] text-zinc-500 font-bold uppercase font-sans">kg</span>
                                             </div>
                                         </div>

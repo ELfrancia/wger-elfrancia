@@ -22,6 +22,7 @@ from typing import Optional
 
 # Django
 from django.contrib.auth.models import User
+from django.db.models import Count
 
 # wger
 from wger.manager.consts import WEIGHT_UNIT_LB
@@ -86,8 +87,11 @@ class UserStatisticsService:
         total_weight = cls._calculate_total_weight(logs)
         stats.total_weight_lifted = total_weight
 
-        # Get all workout sessions
-        sessions = WorkoutSession.objects.filter(user=user).order_by('date')
+        # Get all completed workout sessions with logs
+        sessions = WorkoutSession.objects.filter(
+            user=user,
+            status='finished'
+        ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).order_by('date')
         stats.total_workouts = sessions.count()
 
         # Calculate streaks and other date-based stats
@@ -208,7 +212,10 @@ class UserStatisticsService:
                 stats.latest_workout_time = session.time_start
 
         # Count sessions for total workouts (recalculate to be accurate)
-        stats.total_workouts = WorkoutSession.objects.filter(user=user).count()
+        stats.total_workouts = WorkoutSession.objects.filter(
+            user=user,
+            status='finished'
+        ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).count()
 
         stats.save()
         return stats

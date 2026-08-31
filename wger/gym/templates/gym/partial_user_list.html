@@ -61,7 +61,7 @@
                     <div class="relative shrink-0">
                         <div class="w-12 h-12 rounded-full overflow-hidden border border-neutral-700 bg-neutral-950 text-primary font-bold flex items-center justify-center text-sm shadow-sm group-hover:border-primary/50 transition-colors">
                             {% if current_user.obj.userprofile.avatar_url %}
-                                <img src="{{ current_user.obj.userprofile.avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                                <img src="{{ current_user.obj.userprofile.avatar_url }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80';" alt="Avatar" class="w-full h-full object-cover">
                             {% else %}
                                 <span class="material-symbols-outlined text-2xl leading-none select-none">person</span>
                             {% endif %}
@@ -128,7 +128,7 @@
                             <div class="flex items-center gap-2.5">
                                 <div class="w-7 h-7 rounded-full bg-neutral-950 border border-neutral-800 text-primary font-bold flex items-center justify-center text-xs shrink-0">
                                     {% if current_user.obj.userprofile.avatar_url %}
-                                        <img src="{{ current_user.obj.userprofile.avatar_url }}" alt="Avatar" class="w-full h-full rounded-full object-cover">
+                                        <img src="{{ current_user.obj.userprofile.avatar_url }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80';" alt="Avatar" class="w-full h-full rounded-full object-cover">
                                     {% else %}
                                         <span class="material-symbols-outlined text-sm leading-none">person</span>
                                     {% endif %}

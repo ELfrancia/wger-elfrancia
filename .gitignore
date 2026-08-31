@@ -98,7 +98,6 @@ venv-wger
 
 # macOS
 .DS_Store
-wger/core/views/user.py
 media.zip
 
 # Mobile app

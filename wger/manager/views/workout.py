@@ -355,20 +355,22 @@ def log_tailwind(request, routine_pk, day_pk):
                 return make_overview_redirect(request)
 
             elif action == 'interrupt_workout':
-                session.status = 'interrupted'
-                session.time_end = timezone.localtime(timezone.now()).time()
-                session.save()
-                WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='interrupted')
+                if session.logs.exists():
+                    session.status = 'interrupted'
+                    session.time_end = timezone.localtime(timezone.now()).time()
+                    session.save()
+                    WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='interrupted')
+                else:
+                    session.delete()
+                    WorkoutSession.objects.filter(user=request.user, day=day, status='active').delete()
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)
 
             elif action == 'discard_workout':
                 session.logs.all().delete()
-                session.status = 'interrupted'
-                session.time_end = timezone.localtime(timezone.now()).time()
-                session.save()
-                WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='interrupted')
+                session.delete()
+                WorkoutSession.objects.filter(user=request.user, day=day, status='active').delete()
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)
@@ -544,6 +546,19 @@ def log_tailwind(request, routine_pk, day_pk):
                     RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
                     WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
                 reset_routine_cache(day.routine)
+
+            elif action in ('delete_exercise', 'delete_slot'):
+                if slot:
+                    if session:
+                        session.logs.filter(
+                            django_models.Q(slot_entry__slot=slot) |
+                            django_models.Q(exercise_id=exercise_id)
+                        ).delete()
+                    slot.delete()
+                    reset_routine_cache(day.routine)
+                    if request.headers.get('HX-Request'):
+                        return HttpResponse("")
+                    return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
             elif action == 'delete_set_config':
                 slot_entry = get_object_or_404(SlotEntry, id=slot_entry_id, slot__day=day)

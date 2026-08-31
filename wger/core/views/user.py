@@ -1077,19 +1077,26 @@ def session_details_tailwind(request, session_id):
     if session.user != request.user:
         return HttpResponseForbidden()
 
-    if request.method == 'POST' and request.POST.get('action') == 'save_as_routine_day':
-        target_routine_id = request.POST.get('target_routine_id')
-        new_routine_name = request.POST.get('new_routine_name')
-        routine_day_name = request.POST.get('routine_day_name')
-        created_day = create_day_from_session(
-            user=request.user,
-            session=session,
-            target_routine_id=target_routine_id,
-            new_routine_name=new_routine_name,
-            day_name=routine_day_name,
-        )
-        messages.success(request, _("Workout salvato come giorno di routine con successo!"))
-        return redirect('manager:routine:view', pk=created_day.routine.pk)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'save_as_routine_day':
+            target_routine_id = request.POST.get('target_routine_id')
+            new_routine_name = request.POST.get('new_routine_name')
+            routine_day_name = request.POST.get('routine_day_name')
+            created_day = create_day_from_session(
+                user=request.user,
+                session=session,
+                target_routine_id=target_routine_id,
+                new_routine_name=new_routine_name,
+                day_name=routine_day_name,
+            )
+            messages.success(request, _("Workout salvato come giorno di routine con successo!"))
+            return redirect('manager:routine:view', pk=created_day.routine.pk)
+        elif action == 'delete_session':
+            session.logs.all().delete()
+            session.delete()
+            messages.success(request, _("Sessione di allenamento eliminata con successo."))
+            return redirect('core:dashboard')
 
     from django.utils import timezone
     time_start_local = None

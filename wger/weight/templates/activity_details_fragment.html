@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n l10n %}
 
 <div id="activity-details-container" class="flex flex-col gap-5 w-full">
     <!-- 1. Activity Calendar Section -->
@@ -185,19 +185,19 @@
             }
 
             const stepsVal = parseValue("{{ activity.steps|default:'0' }}");
-            const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000' }}") || 16000;
+            const stepsGoal = parseValue("{{ profile.steps_goal|default:'16000'|unlocalize }}") || 16000;
             const stepsPct = Math.min(stepsVal / stepsGoal, 1);
             const ringSteps = document.getElementById('ring-detail-steps');
             if (ringSteps) ringSteps.setAttribute('stroke-dashoffset', 282.74 - (stepsPct * 282.74));
 
             const calVal = parseValue("{{ activity.calories|default:'0' }}");
-            const calGoal = parseValue("{{ profile.calories_goal|default:'680' }}") || 680;
+            const calGoal = parseValue("{{ profile.calories_goal|default:'680'|unlocalize }}") || 680;
             const calPct = Math.min(calVal / calGoal, 1);
             const ringCalories = document.getElementById('ring-detail-calories');
             if (ringCalories) ringCalories.setAttribute('stroke-dashoffset', 213.63 - (calPct * 213.63));
 
             const waterVal = parseValue("{{ activity.water|default:'0.0' }}");
-            const waterGoal = parseValue("{{ profile.water_goal|default:'2.5' }}") || 2.5;
+            const waterGoal = parseValue("{{ profile.water_goal|default:'2.5'|unlocalize }}") || 2.5;
             const waterPct = Math.min(waterVal / waterGoal, 1);
             const ringWater = document.getElementById('ring-detail-water');
             if (ringWater) ringWater.setAttribute('stroke-dashoffset', 144.51 - (waterPct * 144.51));

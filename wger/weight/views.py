@@ -174,8 +174,9 @@ def weight_overview_tailwind(request):
         sessions_dates = set(
             WorkoutSession.objects.filter(
                 user=request.user,
+                status='finished',
                 date__range=[period_start, period_end]
-            ).values_list('date', flat=True)
+            ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).values_list('date', flat=True)
         )
 
         calendar_items = []
@@ -215,8 +216,9 @@ def weight_overview_tailwind(request):
         sessions_dates = set(
             WorkoutSession.objects.filter(
                 user=request.user,
+                status='finished',
                 date__range=[period_start, period_end]
-            ).values_list('date', flat=True)
+            ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).values_list('date', flat=True)
         )
 
         calendar_items = []
@@ -251,8 +253,9 @@ def weight_overview_tailwind(request):
         sessions_months = set(
             WorkoutSession.objects.filter(
                 user=request.user,
+                status='finished',
                 date__range=[period_start, period_end]
-            ).values_list('date__month', flat=True)
+            ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).values_list('date__month', flat=True)
         )
 
         calendar_items = []
@@ -269,9 +272,12 @@ def weight_overview_tailwind(request):
 
     selected_date_display = date_format(selected_date, 'd F Y')
 
-    # Retrieve all completed WorkoutSessions and WorkoutLogs for that selected date
-    # Retrieve all completed WorkoutSessions and WorkoutLogs for that selected date
-    selected_sessions = WorkoutSession.objects.filter(user=request.user, date=selected_date).select_related('routine', 'day', 'condition_photo')
+    # Retrieve only completed WorkoutSessions with actual logs for the selected date
+    selected_sessions = WorkoutSession.objects.filter(
+        user=request.user,
+        date=selected_date,
+        status='finished'
+    ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).select_related('routine', 'day', 'condition_photo')
     condition_photos = Image.objects.filter(user=request.user, date=selected_date)
     
     from django.db.models import Q
@@ -309,8 +315,8 @@ def weight_overview_tailwind(request):
             'logs': logs
         })
 
-    # Query WorkoutSession
-    sessions = WorkoutSession.objects.filter(user=request.user, date__gte=start_date.date())
+    # Query WorkoutSession (only finished with completed logs)
+    sessions = WorkoutSession.objects.filter(user=request.user, status='finished', date__gte=start_date.date()).annotate(num_logs=Count('logs')).filter(num_logs__gt=0)
     workouts_completed = sessions.count()
     
     # Query WorkoutLog
@@ -667,7 +673,8 @@ def weight_overview_tailwind(request):
         grid_start = today - timedelta(days=today.weekday() + 7 * 11)
         workout_days = set(
             WorkoutSession.objects
-            .filter(user=request.user, date__gte=grid_start)
+            .filter(user=request.user, status='finished', date__gte=grid_start)
+            .annotate(num_logs=Count('logs')).filter(num_logs__gt=0)
             .values_list('date', flat=True)
         )
         heatmap = []
