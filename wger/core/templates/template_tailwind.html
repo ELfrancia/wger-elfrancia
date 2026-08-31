@@ -30,13 +30,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
       // Clear any legacy broken cache stores from previous SW versions
       if ('caches' in window) {
         caches.keys().then(function(names) {
           names.forEach(function(name) {
-            if (name !== 'onyx-cache-v8') {
+            if (name !== 'onyx-cache-v9') {
               caches.delete(name);
             }
           });
@@ -53,7 +53,7 @@
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=8').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=9').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {
@@ -772,29 +772,6 @@
 
     <!-- Modal Interaction Script -->
     <script>
-        async function translateToItalian(text) {
-            if (!text || !/[a-zA-Z]/.test(text)) return text;
-            
-            // Basic heuristics to check if it's already in Italian
-            const italianIndicators = [' di ', ' il ', ' la ', ' e ', ' con ', ' per ', ' un ', ' da ', ' in ', ' del ', ' della ', ' alle '];
-            const lowerText = text.toLowerCase();
-            if (italianIndicators.some(word => lowerText.includes(word)) && !lowerText.includes(' the ') && !lowerText.includes(' and ')) {
-                return text;
-            }
-            
-            try {
-                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=it&dt=t&q=${encodeURIComponent(text)}`;
-                const res = await fetch(url);
-                const json = await res.json();
-                if (json && json[0]) {
-                    return json[0].map(part => part[0]).join('');
-                }
-            } catch (e) {
-                console.error("Translation error: ", e);
-            }
-            return text;
-        }
-
         function generateDynamicTips(exerciseName, categoryName) {
             const name = (exerciseName || '').toLowerCase();
             const cat = (categoryName || '').toLowerCase();
@@ -844,7 +821,8 @@
             if (event) event.stopPropagation();
 
             // Populate overlay elements
-            document.getElementById('official-exercise-name').innerText = name || '';
+            const nameEl = document.getElementById('official-exercise-name');
+            if (nameEl) nameEl.textContent = name || '';
             let safeMedia = (gif || '').trim();
             if (safeMedia.includes('404') || safeMedia.includes('4GqRrAk.gif')) {
                 safeMedia = '';
@@ -921,72 +899,80 @@
                 gearStr = String(gear || '');
             }
 
-            document.getElementById('official-muscle-primary-name').innerText = primStr;
-            document.getElementById('official-muscle-secondary-name').innerText = secStr;
-            document.getElementById('official-exercise-gear').innerText = gearStr;
+            const primEl = document.getElementById('official-muscle-primary-name');
+            if (primEl) primEl.textContent = primStr;
+            const secEl = document.getElementById('official-muscle-secondary-name');
+            if (secEl) secEl.textContent = secStr;
+            const gearEl = document.getElementById('official-exercise-gear');
+            if (gearEl) gearEl.textContent = gearStr;
 
             // Generate timeline execution steps dynamically
             const timelineContainer = document.getElementById('official-exercise-steps-timeline');
-            timelineContainer.innerHTML = '';
-            
-            let rawText = instructions || '';
-            
-            // Clean HTML tags and normalize content transitions
-            if (rawText.includes('<') && rawText.includes('>')) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = rawText;
-                tempDiv.querySelectorAll('p, li, br, h1, h2, h3, h4, h5, h6').forEach(el => {
-                    el.after(' | ');
-                });
-                rawText = tempDiv.innerText || tempDiv.textContent || '';
-            }
-            
-            // Split by period, newline, or pipe symbol
-            const steps = rawText
-                .split(/(?:\.|\n|\|)\s*/)
-                .map(step => step.trim())
-                .filter(step => step.length > 3);
-            
-            if (steps.length === 0) {
-                timelineContainer.innerHTML = `
-                    <div class="text-xs text-secondary py-2 italic">
-                        Nessuna istruzione dettagliata disponibile per questo esercizio.
-                    </div>
-                `;
-            } else {
-                steps.forEach((stepText, index) => {
-                    const stepRow = document.createElement('div');
-                    stepRow.className = 'flex gap-4 relative';
-                    
-                    let lineConnector = '';
-                    if (index < steps.length - 1) {
-                        lineConnector = `<div class="absolute left-4 top-8 bottom-[-16px] w-0.5 bg-outline"></div>`;
-                    }
-
-                    // Format step text nicely
-                    let formattedText = stepText;
-                    if (!formattedText.endsWith('.') && !formattedText.endsWith('!') && !formattedText.endsWith('?')) {
-                        formattedText += '.';
-                    }
-
-                    stepRow.innerHTML = `
-                        ${lineConnector}
-                        <div class="w-8 h-8 rounded-full bg-surface-card border border-outline text-xs font-bold text-primary flex items-center justify-center flex-shrink-0 z-10 select-none glow-primary-sm">
-                            ${index + 1}
-                        </div>
-                        <div class="flex-1 pb-4">
-                            <h4 class="text-xs font-bold text-white uppercase tracking-wide">Fase ${index + 1}</h4>
-                            <p class="step-text-para text-xs text-secondary mt-1 leading-relaxed">${formattedText}</p>
-                        </div>
-                    `;
-                    timelineContainer.appendChild(stepRow);
-
-                    // Translate to Italian
-                    translateToItalian(formattedText).then(translated => {
-                        const para = stepRow.querySelector('.step-text-para');
-                        if (para) para.innerText = translated;
+            if (timelineContainer) {
+                timelineContainer.textContent = '';
+                
+                let rawText = instructions || '';
+                
+                // Clean HTML tags and normalize content transitions
+                if (rawText.includes('<') && rawText.includes('>')) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = rawText;
+                    tempDiv.querySelectorAll('p, li, br, h1, h2, h3, h4, h5, h6').forEach(el => {
+                        el.after(' | ');
                     });
-                });
+                    rawText = tempDiv.innerText || tempDiv.textContent || '';
+                }
+                
+                // Split by period, newline, or pipe symbol
+                const steps = rawText
+                    .split(/(?:\.|\n|\|)\s*/)
+                    .map(step => step.trim())
+                    .filter(step => step.length > 3);
+                
+                if (steps.length === 0) {
+                    const emptyNotice = document.createElement('div');
+                    emptyNotice.className = 'text-xs text-secondary py-2 italic';
+                    emptyNotice.textContent = 'Nessuna istruzione dettagliata disponibile per questo esercizio.';
+                    timelineContainer.appendChild(emptyNotice);
+                } else {
+                    steps.forEach((stepText, index) => {
+                        const stepRow = document.createElement('div');
+                        stepRow.className = 'flex gap-4 relative';
+                        
+                        if (index < steps.length - 1) {
+                            const lineConnector = document.createElement('div');
+                            lineConnector.className = 'absolute left-4 top-8 bottom-[-16px] w-0.5 bg-outline';
+                            stepRow.appendChild(lineConnector);
+                        }
+
+                        // Format step text nicely
+                        let formattedText = stepText;
+                        if (!formattedText.endsWith('.') && !formattedText.endsWith('!') && !formattedText.endsWith('?')) {
+                            formattedText += '.';
+                        }
+
+                        const badge = document.createElement('div');
+                        badge.className = 'w-8 h-8 rounded-full bg-surface-card border border-outline text-xs font-bold text-primary flex items-center justify-center flex-shrink-0 z-10 select-none glow-primary-sm';
+                        badge.textContent = String(index + 1);
+                        stepRow.appendChild(badge);
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'flex-1 pb-4';
+                        
+                        const heading = document.createElement('h4');
+                        heading.className = 'text-xs font-bold text-white uppercase tracking-wide';
+                        heading.textContent = `Fase ${index + 1}`;
+                        contentDiv.appendChild(heading);
+
+                        const para = document.createElement('p');
+                        para.className = 'step-text-para text-xs text-secondary mt-1 leading-relaxed';
+                        para.textContent = formattedText;
+                        contentDiv.appendChild(para);
+
+                        stepRow.appendChild(contentDiv);
+                        timelineContainer.appendChild(stepRow);
+                    });
+                }
             }
 
             // Generate dynamic tips based on exercise details
@@ -995,33 +981,36 @@
             // Populate Pro Tip Box
             const proTipPara = document.querySelector('#tab-content-tips p');
             if (proTipPara) {
-                proTipPara.innerText = tipsData.proTip;
+                proTipPara.textContent = tipsData.proTip;
             }
             
             // Populate Warnings Box
             const mistakesList = document.querySelector('#tab-content-tips ul');
             if (mistakesList) {
-                mistakesList.innerHTML = '';
+                mistakesList.textContent = '';
                 tipsData.mistakes.forEach(mistake => {
                     const li = document.createElement('li');
                     li.className = 'flex items-start gap-2.5';
                     
-                    let contentHTML = ``;
+                    const bullet = document.createElement('span');
+                    bullet.className = 'text-red-400 font-black text-lg leading-none';
+                    bullet.textContent = '\u2022';
+                    li.appendChild(bullet);
+
+                    const textSpan = document.createElement('span');
                     if (mistake.includes(':')) {
                         const parts = mistake.split(':');
                         const boldTitle = parts[0].trim();
                         const descText = parts.slice(1).join(':').trim();
-                        contentHTML = `
-                            <span class="text-red-400 font-black text-lg leading-none">&bull;</span>
-                            <span><strong>${boldTitle}</strong>: ${descText}</span>
-                        `;
+
+                        const strongEl = document.createElement('strong');
+                        strongEl.textContent = boldTitle;
+                        textSpan.appendChild(strongEl);
+                        textSpan.appendChild(document.createTextNode(`: ${descText}`));
                     } else {
-                        contentHTML = `
-                            <span class="text-red-400 font-black text-lg leading-none">&bull;</span>
-                            <span>${mistake}</span>
-                        `;
+                        textSpan.textContent = mistake;
                     }
-                    li.innerHTML = contentHTML;
+                    li.appendChild(textSpan);
                     mistakesList.appendChild(li);
                 });
             }
