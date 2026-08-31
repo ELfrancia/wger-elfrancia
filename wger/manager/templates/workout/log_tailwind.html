@@ -691,74 +691,29 @@
         </div>
     </div>
 </div>
-
-<!-- Custom Timer Input Modal -->
-<div id="custom-timer-modal" onclick="closeCustomTimerModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true" aria-labelledby="custom-timer-modal-title">
-    <div id="custom-timer-modal-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
-        <!-- Modal Header -->
-        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A]">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
-                    <span class="material-symbols-outlined text-xl">timer_10</span>
-                </div>
-                <div>
-                    <h3 id="custom-timer-modal-title" class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Minutaggio Personalizzato" %}</h3>
-                    <p class="text-[10px] text-zinc-400 font-medium">{% translate "Imposta la durata del timer di recupero" %}</p>
-                </div>
-            </div>
-            <button type="button" onclick="closeCustomTimerModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors" aria-label="{% translate 'Chiudi' %}">
-                <span class="material-symbols-outlined text-lg">close</span>
-            </button>
-        </div>
-
-        <!-- Modal Body: Minutes & Seconds Input -->
-        <div class="p-6 flex flex-col gap-4 bg-[#121316]">
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Minutes -->
-                <div class="flex flex-col gap-1.5">
-                    <label for="custom-timer-minutes" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{% translate "Minuti" %}</label>
-                    <input type="number" id="custom-timer-minutes" min="0" max="60" value="1" placeholder="0" class="w-full bg-[#1A1B1E] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-center text-xl font-bold font-mono text-white focus:outline-none focus:ring-1 focus:ring-[#caf300] transition-all">
-                </div>
-
-                <!-- Seconds -->
-                <div class="flex flex-col gap-1.5">
-                    <label for="custom-timer-seconds" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{% translate "Secondi" %}</label>
-                    <input type="number" id="custom-timer-seconds" min="0" max="59" step="5" value="30" placeholder="0" class="w-full bg-[#1A1B1E] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-center text-xl font-bold font-mono text-white focus:outline-none focus:ring-1 focus:ring-[#caf300] transition-all">
-                </div>
-            </div>
-
-            <!-- Quick duration preset chips -->
-            <div class="flex items-center justify-center gap-2 pt-1">
-                <button type="button" onclick="setCustomTimerValues(0, 45)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">45s</button>
-                <button type="button" onclick="setCustomTimerValues(1, 30)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">1m 30s</button>
-                <button type="button" onclick="setCustomTimerValues(2, 30)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">2m 30s</button>
-                <button type="button" onclick="setCustomTimerValues(3, 0)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">3m 00s</button>
-            </div>
-        </div>
-
-        <!-- Modal Footer Actions -->
-        <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex gap-3">
-            <button type="button" onclick="closeCustomTimerModal()" class="flex-1 py-3 rounded-full border border-white/10 hover:bg-white/5 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
-                {% translate "Annulla" %}
-            </button>
-            <button type="button" onclick="applyCustomTimer()" class="flex-1 py-3 rounded-full bg-[#caf300] hover:bg-[#b8dc00] text-black font-black text-xs uppercase tracking-wider shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                <span class="material-symbols-outlined text-base">check</span>
-                {% translate "Avvia Timer" %}
-            </button>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_body %}
 <script>
+(function() {
+    'use strict';
+
+    // Teardown any previously active workout instance (H8)
+    if (typeof window._onyxWorkoutTeardown === 'function') {
+        try { window._onyxWorkoutTeardown(); } catch(e) {}
+    }
+
     let defaultDuration = 45; // seconds
     let durationSeconds = defaultDuration;
     let remainingMs = durationSeconds * 1000;
     let startedAt = null; // Timestamp (ms) when timer started or resumed
     let isRunning = false;
     let timerInterval = null;
+    let totalTimerInterval = null;
+    let autoSaveInterval = null;
+    let timerObserver = null;
     let hasNotifiedZero = false;
+    window._workoutFinished = false;
 
     const timerDisplay = document.getElementById('timer-display');
     const overlay = document.getElementById('rest-timer-overlay');
@@ -841,9 +796,6 @@
         updateMiniTimerVisibility();
     }
 
-    window.openOverlay = openOverlay;
-    window.closeOverlay = closeOverlay;
-
     function clearExpiringStyles() {
         try {
             if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
@@ -890,7 +842,6 @@
         if (overlayTimerDisplay) overlayTimerDisplay.innerText = timeStr;
 
         if (msLeft <= 0 && (isRunning || hasNotifiedZero)) {
-            // Expired state: Turn screen yellow-green, make text black, show TEMPO SCADUTO
             if (overlay) {
                 overlay.classList.remove('bg-[#08090A]');
                 overlay.classList.add('bg-[#caf300]');
@@ -983,13 +934,6 @@
         } catch (e) {
             console.error('Error restoring timer from localStorage:', e);
         }
-    }
-
-    // Auto-restore active timer state on page load & auto-open overlay if requested from navigation
-    restoreTimerFromStorage();
-    if (sessionStorage.getItem('open_timer_overlay') === 'true' || window.location.search.includes('open_timer=true') || window.location.hash.includes('rest-timer')) {
-        sessionStorage.removeItem('open_timer_overlay');
-        openOverlay();
     }
 
     function updateMiniTimerVisibility() {
@@ -1150,11 +1094,6 @@
         }
     }
 
-    window.stopTimer = stopTimer;
-    window.resetTimer = resetTimer;
-    window.adjustTimer = adjustTimer;
-    window.setTimerPreset = setTimerPreset;
-
     function resetTimer() {
         stopTimer();
     }
@@ -1266,17 +1205,9 @@
         closeCustomTimerModal();
     }
 
-    window.openCustomTimerModal = openCustomTimerModal;
-    window.closeCustomTimerModal = closeCustomTimerModal;
-    window.adjustCustomField = adjustCustomField;
-    window.setCustomTimerValues = setCustomTimerValues;
-    window.applyCustomTimer = applyCustomTimer;
-
     // -------------------------------------------------------------
     // TIMER SOUND SELECTOR & WEB AUDIO SYNTHESIZER
     // -------------------------------------------------------------
-    let currentTimerSound = localStorage.getItem('onyx_timer_sound') || 'gong';
-
     function getSelectedTimerSound() {
         return localStorage.getItem('onyx_timer_sound') || 'gong';
     }
@@ -1331,7 +1262,6 @@
     }
 
     function selectTimerSound(soundId, label) {
-        currentTimerSound = soundId;
         try {
             localStorage.setItem('onyx_timer_sound', soundId);
         } catch(e) {}
@@ -1359,7 +1289,6 @@
             const now = ctx.currentTime;
 
             if (soundId === 'boxing') {
-                // Boxing double bell: 880Hz strike x 2
                 [0, 0.28].forEach(offset => {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
@@ -1373,7 +1302,6 @@
                     osc.stop(now + offset + 0.5);
                 });
             } else if (soundId === 'beep') {
-                // Tri-beep
                 [0, 0.16, 0.32].forEach(offset => {
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
@@ -1387,7 +1315,6 @@
                     osc.stop(now + offset + 0.1);
                 });
             } else if (soundId === 'whistle') {
-                // Whistle
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
@@ -1401,7 +1328,6 @@
                 osc.start(now);
                 osc.stop(now + 0.6);
             } else {
-                // Default: Rich Gym Gong
                 const freqs = [160, 320, 480];
                 freqs.forEach((freq, idx) => {
                     const osc = ctx.createOscillator();
@@ -1429,12 +1355,6 @@
         const chosen = getSelectedTimerSound();
         playSynthesizedSound(chosen);
     }
-
-    window.openTimerSoundModal = openTimerSoundModal;
-    window.closeTimerSoundModal = closeTimerSoundModal;
-    window.selectTimerSound = selectTimerSound;
-    window.previewSound = previewSound;
-    window.getSelectedTimerSound = getSelectedTimerSound;
 
     function updateProgressBar() {
         const totalSets = document.querySelectorAll('.set-row').length;
@@ -1483,6 +1403,18 @@
     function handleSetSubmit(form) {
         const row = form.closest('.set-row');
 
+        // Ensure client_id is present for idempotency (H7)
+        let clientIdInput = form.querySelector('input[name="client_id"]');
+        if (!clientIdInput) {
+            clientIdInput = document.createElement('input');
+            clientIdInput.type = 'hidden';
+            clientIdInput.name = 'client_id';
+            form.appendChild(clientIdInput);
+        }
+        if (!clientIdInput.value) {
+            clientIdInput.value = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('cid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10));
+        }
+
         // 1. Trigger GPU-accelerated smooth glow transition
         if (row) {
             row.classList.add('is-completing');
@@ -1509,7 +1441,6 @@
                 badge.classList.add('bg-[#caf300]/20', 'border-[#caf300]/40', 'text-[#caf300]');
             }
 
-            // Defer input/button disabling to allow HTMX to serialize form parameters first
             setTimeout(() => {
                 row.querySelectorAll('input:not([type="hidden"])').forEach(input => {
                     input.disabled = true;
@@ -1517,7 +1448,6 @@
                     input.classList.add('text-zinc-400');
                 });
                 
-                // Set checkmark button to active completed state
                 const submitBtn = form.querySelector('button[type="submit"]');
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -1526,7 +1456,6 @@
                 }
             }, 0);
 
-            // Check if all sets in the same exercise group are completed
             const card = row.closest('.exercise-group');
             if (card) {
                 const rows = card.querySelectorAll('.set-row');
@@ -1543,7 +1472,6 @@
             }
         }
         
-        // Update progress bar instantly
         updateProgressBar();
     }
 
@@ -1576,7 +1504,6 @@
                 submitBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-pulse">hourglass_empty</span>';
             }
 
-            // Uncheck the main exercise check button since at least one set is not completed
             const card = row.closest('.exercise-group');
             if (card) {
                 const mainBtn = card.querySelector('.exercise-check-btn');
@@ -1589,7 +1516,6 @@
             }
         }
         
-        // Update progress bar instantly
         updateProgressBar();
     }
 
@@ -1603,7 +1529,6 @@
         const rows = card.querySelectorAll('.set-row');
         
         if (isCompleted) {
-            // Optimistically uncheck all sets
             btn.classList.remove('bg-primary', 'border-primary');
             btn.classList.add('border-zinc-700', 'hover:border-primary');
             const svg = btn.querySelector('svg');
@@ -1620,7 +1545,6 @@
                 });
             });
         } else {
-            // Optimistically check all sets
             btn.classList.add('bg-primary', 'border-primary');
             btn.classList.remove('border-zinc-700', 'hover:border-primary');
             const svg = btn.querySelector('svg');
@@ -1638,11 +1562,10 @@
             });
         }
         
-        // Update progress bar instantly
         updateProgressBar();
     }
 
-    // Requirement 2: Local Temporary Draft Caching (localStorage)
+    // Local Draft Caching (localStorage)
     const DRAFT_KEY = 'workout_draft_day_{{ day.id|unlocalize }}';
 
     function getLocalDrafts() {
@@ -1716,7 +1639,6 @@
         });
     }
 
-    // Auto-save input changes for unsubmitted set input fields
     document.body.addEventListener('input', function(e) {
         const target = e.target;
         if (!target) return;
@@ -1794,19 +1716,33 @@
     }
 
     function onFinishWorkoutSubmitted() {
+        window._workoutFinished = true;
+        teardown();
         try {
+            const payload = collectWorkoutPayload();
+            const finishForm = document.getElementById('finish-workout-review-form') || document.querySelector('form input[value="finish_workout"]')?.closest('form');
+            if (finishForm) {
+                let hidden = finishForm.querySelector('input[name="full_payload"]');
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'full_payload';
+                    finishForm.appendChild(hidden);
+                }
+                hidden.value = JSON.stringify(payload);
+            }
+
+            localStorage.removeItem('onyx_active_workout_snapshot');
             localStorage.removeItem('onyx_active_rest_timer');
             localStorage.removeItem('onyx_active_rest_timer_paused');
             if (typeof sessionId !== 'undefined' && sessionId) {
                 localStorage.removeItem(`onyx_workout_start_${sessionId}`);
             }
-            try {
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('onyx_workout_start_') || key.startsWith('onyx_rest_timer')) {
-                        localStorage.removeItem(key);
-                    }
-                });
-            } catch(e) {}
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('onyx_workout_start_') || key.startsWith('onyx_rest_timer')) {
+                    localStorage.removeItem(key);
+                }
+            });
         } catch(e) {}
         if (typeof updateGlobalMiniTimer === 'function') {
             updateGlobalMiniTimer();
@@ -1831,7 +1767,6 @@
         if (evt.detail.xhr && evt.detail.xhr.status === 200) {
             setTimeout(updateProgressBar, 50);
 
-            // Only trigger rest timer if the triggered element was a single set log form
             const triggeredForm = evt.detail.elt;
             if (triggeredForm && triggeredForm.classList.contains('set-log-form')) {
                 const entryIdInput = triggeredForm.querySelector('input[name="slot_entry_id"]');
@@ -1894,12 +1829,11 @@
         }
     }
 
-    setInterval(updateTotalTimer, 500);
+    totalTimerInterval = setInterval(updateTotalTimer, 500);
 
     window.addEventListener('pagehide', () => saveTimerStateToStorage());
     window.addEventListener('beforeunload', () => saveTimerStateToStorage());
 
-    // Synchronize rest timer and total workout timer on visibility, pageshow, and focus
     function syncTimersOnResume() {
         if (isRunning && startedAt) {
             const msLeft = getRemainingTimeMs();
@@ -1929,7 +1863,7 @@
 
     // IntersectionObserver for Floating Mini-Timer Overlay
     if (timerDisplay && 'IntersectionObserver' in window) {
-        const timerObserver = new IntersectionObserver((entries) => {
+        timerObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 isInlineTimerVisible = entry.isIntersecting;
                 updateMiniTimerVisibility();
@@ -2020,11 +1954,6 @@
         });
     }
 
-    /**
-     * Client-side HTML5 Canvas image compressor
-     * Resizes image to fit maxDim while maintaining aspect ratio, preserves EXIF orientation,
-     * converts to WebP (with JPEG fallback), and iteratively compresses under 500KB.
-     */
     function compressAndConvertImage(file, maxDim = 1920, quality = 0.85) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -2057,7 +1986,6 @@
                     let currentQuality = quality;
                     let blob = await getBlob(mimeType, currentQuality);
 
-                    // Fallback to JPEG if WebP blob is not generated or unsupported
                     if (!blob || blob.type !== 'image/webp') {
                         mimeType = 'image/jpeg';
                         blob = await getBlob(mimeType, currentQuality);
@@ -2190,11 +2118,9 @@
             card.classList.add('mode-time');
             card.classList.remove('mode-reps');
 
-            // Hide the 'x' multiplication sign and weight container in Time mode
             card.querySelectorAll('.unit-multi-x').forEach(el => el.classList.add('hidden'));
             card.querySelectorAll('.weight-input-container').forEach(el => el.classList.add('hidden'));
 
-            // Update unit badges and timer buttons
             card.querySelectorAll('.unit-badge-sec').forEach(el => el.classList.remove('hidden'));
             card.querySelectorAll('.btn-start-set-timer').forEach(el => el.classList.remove('hidden'));
             card.querySelectorAll('.draft-unit-reps').forEach(el => el.classList.add('hidden'));
@@ -2212,11 +2138,9 @@
             card.classList.add('mode-reps');
             card.classList.remove('mode-time');
 
-            // Show the 'x' multiplication sign and weight container in Reps mode
             card.querySelectorAll('.unit-multi-x').forEach(el => el.classList.remove('hidden'));
             card.querySelectorAll('.weight-input-container').forEach(el => el.classList.remove('hidden'));
 
-            // Revert unit badges and timer buttons
             card.querySelectorAll('.unit-badge-sec').forEach(el => el.classList.add('hidden'));
             card.querySelectorAll('.btn-start-set-timer').forEach(el => el.classList.add('hidden'));
             card.querySelectorAll('.draft-unit-reps').forEach(el => el.classList.remove('hidden'));
@@ -2232,9 +2156,19 @@
     }
 
     // -------------------------------------------------------------
-    // LIVE HOLD STOPWATCH (START / STOP) FOR BODYWEIGHT / TIMED SETS
+    // LIVE HOLD STOPWATCH (START / STOP) FOR BODYWEIGHT / TIMED SETS (M15)
     // -------------------------------------------------------------
     const activeSetStopwatches = {};
+
+    function cleanupActiveStopwatches() {
+        Object.keys(activeSetStopwatches).forEach(slotEntryId => {
+            const row = document.getElementById('set-row-' + slotEntryId);
+            if (!row && activeSetStopwatches[slotEntryId]) {
+                clearInterval(activeSetStopwatches[slotEntryId].interval);
+                delete activeSetStopwatches[slotEntryId];
+            }
+        });
+    }
 
     function toggleSetStopwatch(btn, evt, slotEntryId, exerciseName) {
         if (evt) evt.stopPropagation();
@@ -2246,13 +2180,11 @@
         const iconEl = btn.querySelector('.stopwatch-icon');
 
         if (activeSetStopwatches[slotEntryId]) {
-            // STOP THE STOPWATCH!
             const sw = activeSetStopwatches[slotEntryId];
             clearInterval(sw.interval);
             const elapsedSeconds = Math.max(1, Math.floor((Date.now() - sw.startTime) / 1000));
             delete activeSetStopwatches[slotEntryId];
 
-            // Save measured seconds directly into the set inputs
             if (input) {
                 input.value = elapsedSeconds;
                 input.classList.add('ring-2', 'ring-[#caf300]', 'text-[#caf300]');
@@ -2262,21 +2194,17 @@
                 hiddenInput.value = elapsedSeconds;
             }
 
-            // Play completion chime & vibrate
             playSynthesizedSound(getSelectedTimerSound());
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-            // Revert button UI
             btn.className = "btn-start-set-timer h-7 px-2.5 rounded-lg bg-[#caf300]/10 border border-[#caf300]/30 hover:bg-[#caf300] hover:text-black text-[#caf300] flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black";
             if (iconEl) iconEl.innerText = "replay";
             if (labelEl) labelEl.innerText = elapsedSeconds + "s";
 
         } else {
-            // START THE STOPWATCH!
             unlockAudioContext();
             const startTime = Date.now();
             
-            // Transform button to pulsing active STOP button
             btn.className = "btn-start-set-timer h-7 px-2.5 rounded-lg bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500 hover:text-white flex items-center gap-1 transition-all cursor-pointer mr-0.5 shrink-0 text-[10px] font-black animate-pulse shadow-sm shadow-red-500/30";
             if (iconEl) iconEl.innerText = "stop";
             if (labelEl) labelEl.innerText = "0s STOP";
@@ -2303,7 +2231,6 @@
             const isWeighted = card.getAttribute('data-is-weighted') === 'true';
             
             if (isWeighted) {
-                // Strictly Reps mode for weighted exercises
                 setExerciseMode(slotId, 'reps');
                 return;
             }
@@ -2325,6 +2252,7 @@
         });
     }
 
+    // Fix startSetCountdown signature and duration assignment (L15)
     function startSetCountdown(btn, evt, exerciseName) {
         if (evt) evt.stopPropagation();
         const row = btn.closest('.set-row');
@@ -2332,36 +2260,8 @@
         const input = row.querySelector('.input-set-value');
         const seconds = parseInt(input ? input.value : 30, 10) || 30;
 
-        startCountdown(seconds, (exerciseName ? exerciseName + ' (Tenuta)' : 'Esercizio a Tempo'));
+        setTimerPreset(seconds);
         openOverlay();
-    }
-
-    window.setExerciseMode = setExerciseMode;
-    window.initExerciseModes = initExerciseModes;
-    window.startSetCountdown = startSetCountdown;
-    window.toggleSetStopwatch = toggleSetStopwatch;
-
-    document.addEventListener('DOMContentLoaded', initExerciseModes);
-    document.addEventListener('htmx:afterSwap', initExerciseModes);
-    document.addEventListener('htmx:afterOnLoad', initExerciseModes);
-
-    restoreTimerFromStorage();
-    saveTimerStateToStorage();
-    updateDisplay();
-    updateProgressBar();
-    updateTotalTimer();
-    initExerciseModes();
-
-    if (sessionStorage.getItem('open_timer_overlay') === 'true' || window.location.hash === '#rest-timer' || window.location.search.includes('open_timer=true')) {
-        sessionStorage.removeItem('open_timer_overlay');
-        openOverlay();
-    } else if (window.location.hash === '#active-exercises-heading') {
-        setTimeout(() => {
-            const target = document.getElementById('active-exercises-heading');
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 120);
     }
 
     function toggleSaveAsRoutineDayFields(checked) {
@@ -2437,7 +2337,7 @@
         }
     });
 
-    // Auto-Commit Snapshot & Full Final Commit Engine
+    // Auto-Commit Snapshot & Full Final Commit Engine (M13, H9)
     function collectWorkoutPayload() {
         const completedSets = [];
         document.querySelectorAll('.set-row').forEach(row => {
@@ -2447,18 +2347,31 @@
             const card = row.closest('.exercise-group');
             const exerciseId = card ? card.getAttribute('data-id') : null;
             const slotEntryId = row.id ? row.id.replace('set-row-', '') : null;
+            const isTimeMode = card && card.classList.contains('mode-time');
             const repsInput = row.querySelector('.input-set-value');
             const weightInput = row.querySelector('input[name="weight"]') || row.querySelector('.weight-input-container input');
 
-            const reps = repsInput ? parseFloat(String(repsInput.value).replace(',', '.')) || 10 : 10;
-            const weight = weightInput ? parseFloat(String(weightInput.value).replace(',', '.')) || 0 : 0;
+            const rawReps = repsInput ? String(repsInput.value).trim().replace(',', '.') : '';
+            const parsedVal = rawReps !== '' ? parseFloat(rawReps) : NaN;
+
+            const rawWeight = weightInput ? String(weightInput.value).trim().replace(',', '.') : '';
+            const parsedWeight = rawWeight !== '' ? parseFloat(rawWeight) : (isTimeMode ? 0 : NaN);
+
+            // Strictly validate numerical input; do not fabricate default 10 reps or 0 weight
+            if (!Number.isFinite(parsedVal) || parsedVal <= 0) {
+                return;
+            }
+
+            const validWeight = Number.isFinite(parsedWeight) && parsedWeight >= 0 ? parsedWeight : 0;
 
             if (exerciseId && slotEntryId) {
                 completedSets.push({
                     exercise_id: parseInt(exerciseId, 10),
                     slot_entry_id: parseInt(slotEntryId, 10),
-                    repetitions: reps,
-                    weight: weight,
+                    mode: isTimeMode ? 'time' : 'reps',
+                    repetitions: parsedVal,
+                    time_seconds: isTimeMode ? parsedVal : null,
+                    weight: validWeight,
                     is_completed: true
                 });
             }
@@ -2468,7 +2381,7 @@
         const totalTimerText = document.getElementById('total-workout-timer')?.innerText || '00:00:00';
         const parts = totalTimerText.split(':').map(Number);
         if (parts.length === 3) {
-            elapsedSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            elapsedSec = (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
         }
 
         return {
@@ -2479,7 +2392,11 @@
     }
 
     async function autoSaveWorkoutSnapshot() {
+        if (window._workoutFinished) return;
         try {
+            const rows = document.querySelectorAll('.set-row');
+            if (rows.length === 0) return;
+
             const payload = collectWorkoutPayload();
             localStorage.setItem('onyx_active_workout_snapshot', JSON.stringify(payload));
 
@@ -2502,27 +2419,118 @@
     }
 
     // Auto-save interval every 30 seconds
-    setInterval(autoSaveWorkoutSnapshot, 30000);
-    document.addEventListener('htmx:afterSwap', () => { setTimeout(autoSaveWorkoutSnapshot, 500); });
+    autoSaveInterval = setInterval(autoSaveWorkoutSnapshot, 30000);
 
-    // Full Final Commit handler
-    window.onFinishWorkoutSubmitted = function() {
-        const payload = collectWorkoutPayload();
-        const finishForm = document.getElementById('finish-workout-review-form') || document.querySelector('form input[value="finish_workout"]')?.closest('form');
-        if (finishForm) {
-            let hidden = finishForm.querySelector('input[name="full_payload"]');
-            if (!hidden) {
-                hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'full_payload';
-                finishForm.appendChild(hidden);
-            }
-            hidden.value = JSON.stringify(payload);
+    // Lifecycle Teardown Management (H8, M15)
+    function teardown() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
         }
+        if (totalTimerInterval) {
+            clearInterval(totalTimerInterval);
+            totalTimerInterval = null;
+        }
+        if (autoSaveInterval) {
+            clearInterval(autoSaveInterval);
+            autoSaveInterval = null;
+        }
+        Object.keys(activeSetStopwatches).forEach(id => {
+            if (activeSetStopwatches[id]) {
+                clearInterval(activeSetStopwatches[id].interval);
+                delete activeSetStopwatches[id];
+            }
+        });
+        if (timerObserver) {
+            timerObserver.disconnect();
+            timerObserver = null;
+        }
+    }
 
-        // Clean local active session keys upon completion
-        localStorage.removeItem('onyx_active_workout_snapshot');
-        localStorage.removeItem('onyx_active_rest_timer');
+    window._onyxWorkoutTeardown = teardown;
+    document.addEventListener('htmx:beforeSwap', teardown);
+    window.addEventListener('beforeunload', teardown);
+    window.addEventListener('pagehide', teardown);
+
+    document.addEventListener('htmx:afterSwap', function() {
+        cleanupActiveStopwatches();
+        initExerciseModes();
+        setTimeout(autoSaveWorkoutSnapshot, 500);
+    });
+    document.addEventListener('htmx:afterOnLoad', initExerciseModes);
+    document.addEventListener('DOMContentLoaded', initExerciseModes);
+
+    // Initial state hydration
+    restoreTimerFromStorage();
+    saveTimerStateToStorage();
+    updateDisplay();
+    updateProgressBar();
+    updateTotalTimer();
+    initExerciseModes();
+
+    if (sessionStorage.getItem('open_timer_overlay') === 'true' || window.location.hash === '#rest-timer' || window.location.search.includes('open_timer=true')) {
+        sessionStorage.removeItem('open_timer_overlay');
+        openOverlay();
+    } else if (window.location.hash === '#active-exercises-heading') {
+        setTimeout(() => {
+            const target = document.getElementById('active-exercises-heading');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 120);
+    }
+
+    // Public API Attachment for inline HTML handlers & components
+    const OnyxWorkout = {
+        openOverlay,
+        closeOverlay,
+        toggleTimer,
+        stopTimer,
+        resetTimer,
+        adjustTimer,
+        setTimerPreset,
+        openCustomTimerModal,
+        closeCustomTimerModal,
+        adjustCustomField,
+        setCustomTimerValues,
+        applyCustomTimer,
+        openTimerSoundModal,
+        closeTimerSoundModal,
+        selectTimerSound,
+        previewSound,
+        getSelectedTimerSound,
+        toggleCollapse,
+        toggleAddSetForm,
+        handleSetSubmit,
+        handleSetUncheck,
+        handleExerciseCheck,
+        openExitModal,
+        closeExitModal,
+        openFinishWorkoutReviewModal,
+        closeFinishWorkoutReviewModal,
+        onFinishWorkoutSubmitted,
+        openConditionPhotoModal,
+        closeConditionPhotoModal,
+        handlePhotoSelect,
+        clearSelectedPhoto,
+        submitConditionPhoto,
+        setExerciseMode,
+        initExerciseModes,
+        startSetCountdown,
+        toggleSetStopwatch,
+        toggleSaveAsRoutineDayFields,
+        toggleLogRoutineCustomDropdown,
+        closeLogRoutineCustomDropdown,
+        onSelectLogRoutineClick,
+        selectLogRoutineOption,
+        collectWorkoutPayload,
+        autoSaveWorkoutSnapshot,
+        teardown
     };
+
+    window.OnyxWorkout = OnyxWorkout;
+    Object.assign(window, OnyxWorkout);
+
+})();
 </script>
 {% endblock %}

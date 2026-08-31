@@ -234,6 +234,14 @@
             return serverActiveUrl;
         }
 
+        const raw = localStorage.getItem('onyx_active_rest_timer');
+        if (raw) {
+            try {
+                const state = JSON.parse(raw);
+                if (state && state.workoutUrl) return state.workoutUrl;
+            } catch(e) {}
+        }
+
         return "{% url 'manager:routine:overview' %}";
     }
 
@@ -413,28 +421,24 @@
                         const elapsed = Date.now() - state.startedAt;
                         msLeft = Math.max(0, state.remainingMs - elapsed);
                     }
-                    if (state.isRunning || (msLeft > 0 && !state.hasNotifiedZero)) {
+                    if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
                         hasActiveRestTimer = true;
-                    } else if (state.hasNotifiedZero && state.isRunning) {
-                        hasActiveRestTimer = true;
-                    } else {
-                        // Stale timer: clean up localStorage so bubble does not linger
-                        localStorage.removeItem('onyx_active_rest_timer');
-                        hasActiveRestTimer = false;
                     }
                 }
             } catch(e) {}
         }
 
-        // Hide bubble if no active rest timer
-        if (!hasActiveRestTimer) {
+        const serverActiveUrl = "{{ active_session_url|default:'' }}";
+        const hasActiveWorkout = Boolean(serverActiveUrl);
+
+        if (!hasActiveRestTimer && !hasActiveWorkout) {
             bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
             bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             return;
         }
 
-        bubble.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
         bubble.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        bubble.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
 
         if (hasActiveRestTimer) {
             const secLeft = Math.ceil(msLeft / 1000);
