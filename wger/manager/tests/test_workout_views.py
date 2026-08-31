@@ -346,3 +346,162 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertEqual(session_id1, session_id2)
         self.assertEqual(WorkoutSession.objects.filter(user=self.user, day=self.day, status='active').count(), 1)
 
+    def test_auto_save_snapshot_creates_and_updates_workout_logs(self):
+        """C3: POST auto_save_snapshot with valid snapshot_payload creates WorkoutLogs without NameError/JSONDecodeError."""
+        import json
+        import uuid
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        slot_entry = slot.entries.first()
+        client_log_id = str(uuid.uuid4())
+
+        payload = {
+            'elapsed_seconds': 120,
+            'notes': 'Autosaved workout notes',
+            'completed_sets': [
+                {
+                    'slot_entry_id': slot_entry.id,
+                    'exercise_id': slot_entry.exercise.id,
+                    'repetitions': '12',
+                    'weight': '25.5',
+                    'client_id': client_log_id,
+                }
+            ]
+        }
+
+        response = self.client.post(url, {
+            'action': 'auto_save_snapshot',
+            'snapshot_payload': json.dumps(payload),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'ok')
+
+        session = WorkoutSession.objects.get(user=self.user, day=self.day, status='active')
+        self.assertEqual(session.notes, 'Autosaved workout notes')
+        log = WorkoutLog.objects.get(session=session, slot_entry=slot_entry)
+        self.assertEqual(float(log.repetitions), 12.0)
+        self.assertEqual(float(log.weight), 25.5)
+
+        # Updating via snapshot with same client_id / slot_entry upserts
+        payload['completed_sets'][0]['repetitions'] = '15'
+        payload['completed_sets'][0]['weight'] = '30.0'
+        response2 = self.client.post(url, {
+            'action': 'auto_save_snapshot',
+            'snapshot_payload': json.dumps(payload),
+        })
+        self.assertEqual(response2.status_code, 200)
+        log.refresh_from_db()
+        self.assertEqual(float(log.repetitions), 15.0)
+        self.assertEqual(float(log.weight), 30.0)
+        self.assertEqual(WorkoutLog.objects.filter(session=session, slot_entry=slot_entry).count(), 1)
+
+    def test_finish_workout_with_full_payload_creates_logs(self):
+        """C3: POST finish_workout with full_payload commits sets and marks session finished."""
+        import json
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        slot_entry = slot.entries.first()
+
+        full_payload = {
+            'completed_sets': [
+                {
+                    'slot_entry_id': slot_entry.id,
+                    'exercise_id': slot_entry.exercise.id,
+                    'repetitions': 8,
+                    'weight': 60.0,
+                }
+            ]
+        }
+
+        response = self.client.post(url, {
+            'action': 'finish_workout',
+            'notes': 'Finished notes',
+            'full_payload': json.dumps(full_payload),
+        })
+        self.assertEqual(response.status_code, 302)
+
+        session = WorkoutSession.objects.filter(user=self.user, day=self.day).order_by('-id').first()
+        self.assertEqual(session.status, 'finished')
+        self.assertEqual(session.notes, 'Finished notes')
+        log = WorkoutLog.objects.filter(session=session, slot_entry=slot_entry).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(float(log.repetitions), 8.0)
+        self.assertEqual(float(log.weight), 60.0)
+
+    def test_client_id_idempotency_in_set_logging(self):
+        """C3 / H7: Support client_id UUID for idempotent set logging."""
+        import uuid
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        slot_entry = slot.entries.first()
+        client_id = str(uuid.uuid4())
+
+        # First POST
+        response1 = self.client.post(url, {
+            'exercise_id': slot_entry.exercise.id,
+            'slot_entry_id': slot_entry.id,
+            'repetitions': '10',
+            'weight': '20',
+            'client_id': client_id,
+        }, HTTP_HX_REQUEST='true')
+        self.assertEqual(response1.status_code, 200)
+
+        log1 = WorkoutLog.objects.get(id=client_id)
+        self.assertEqual(float(log1.repetitions), 10.0)
+
+        # Second POST with same client_id but updated weight/reps (offline sync replay)
+        response2 = self.client.post(url, {
+            'exercise_id': slot_entry.exercise.id,
+            'slot_entry_id': slot_entry.id,
+            'repetitions': '12',
+            'weight': '22.5',
+            'client_id': client_id,
+        }, HTTP_HX_REQUEST='true')
+        self.assertEqual(response2.status_code, 200)
+
+        log1.refresh_from_db()
+        self.assertEqual(float(log1.repetitions), 12.0)
+        self.assertEqual(float(log1.weight), 22.5)
+        self.assertEqual(WorkoutLog.objects.filter(id=client_id).count(), 1)
+
+    def test_decimal_comma_normalization_and_invalid_inputs(self):
+        """M7: Decimal comma ',' normalized to '.' and invalid values handled gracefully."""
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        slot_entry = slot.entries.first()
+
+        response = self.client.post(url, {
+            'exercise_id': slot_entry.exercise.id,
+            'slot_entry_id': slot_entry.id,
+            'repetitions': '12',
+            'weight': '37,5',
+            'rir': '2,5',
+        }, HTTP_HX_REQUEST='true')
+        self.assertEqual(response.status_code, 200)
+
+        session = WorkoutSession.objects.filter(user=self.user, day=self.day, status='active').first()
+        log = session.logs.filter(slot_entry=slot_entry).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(float(log.weight), 37.5)
+        self.assertEqual(float(log.rir), 2.5)
+
+    def test_workout_log_date_alignment_with_session(self):
+        """L19: WorkoutLog.date is aligned with session.date and aware."""
+        from django.utils import timezone
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        slot_entry = slot.entries.first()
+
+        response = self.client.post(url, {
+            'exercise_id': slot_entry.exercise.id,
+            'slot_entry_id': slot_entry.id,
+            'repetitions': '10',
+            'weight': '50',
+        }, HTTP_HX_REQUEST='true')
+        self.assertEqual(response.status_code, 200)
+
+        session = WorkoutSession.objects.filter(user=self.user, day=self.day, status='active').first()
+        log = session.logs.filter(slot_entry=slot_entry).first()
+        self.assertTrue(timezone.is_aware(log.date))
+        self.assertEqual(log.date.date(), session.date)
+

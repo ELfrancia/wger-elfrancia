@@ -2,6 +2,11 @@
 import datetime
 import decimal
 from decimal import Decimal, DecimalException
+import json
+import logging
+import re
+import uuid
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import models as django_models
@@ -25,9 +30,7 @@ from wger.manager.helpers import reset_routine_cache, create_day_from_session
 from wger.gallery.models.image import Image
 from wger.gallery.forms import ImageForm
 
-
-from django.contrib import messages
-import re
+logger = logging.getLogger(__name__)
 
 def parse_duration_minutes(val_str):
     if not val_str:
@@ -243,43 +246,82 @@ def log_tailwind(request, routine_pk, day_pk):
                 if payload_str:
                     try:
                         data = json.loads(payload_str)
-                        elapsed = int(data.get('elapsed_seconds', 0))
-                        if elapsed > 0:
-                            now_dt = timezone.localtime(timezone.now())
-                            session.time_end = now_dt.time()
-                            start_dt = now_dt - datetime.timedelta(seconds=elapsed)
-                            session.time_start = start_dt.time()
-                        notes = data.get('notes')
-                        if notes:
-                            session.notes = notes.strip()
-                        session.save()
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Invalid JSON in snapshot_payload: {e}")
+                        data = None
 
-                        # Batch sync any completed sets in payload
-                        completed_sets = data.get('completed_sets', [])
-                        for cs in completed_sets:
-                            s_entry_id = cs.get('slot_entry_id')
-                            ex_id = cs.get('exercise_id')
-                            if s_entry_id and ex_id:
-                                try:
-                                    s_entry = SlotEntry.objects.get(id=s_entry_id)
-                                    reps_val = float(cs.get('repetitions', 10))
-                                    wt_val = float(cs.get('weight', 0))
-                                    # Update or create log
-                                    WorkoutLog.objects.update_or_create(
-                                        session=session,
-                                        exercise_id=ex_id,
-                                        slot_entry=s_entry,
-                                        defaults={
-                                            'user': request.user,
-                                            'repetitions': reps_val,
-                                            'weight': wt_val,
-                                            'date': session.date
-                                        }
-                                    )
-                                except Exception:
-                                    pass
-                    except Exception:
-                        pass
+                    if data and isinstance(data, dict):
+                        try:
+                            elapsed = int(data.get('elapsed_seconds', 0))
+                            if elapsed > 0:
+                                now_dt = timezone.localtime(timezone.now())
+                                session.time_end = now_dt.time()
+                                start_dt = now_dt - datetime.timedelta(seconds=elapsed)
+                                session.time_start = start_dt.time()
+                            notes = data.get('notes')
+                            if notes:
+                                session.notes = notes.strip()
+                            session.save()
+
+                            # Batch sync any completed sets in payload
+                            completed_sets = data.get('completed_sets', [])
+                            for cs in completed_sets:
+                                s_entry_id = cs.get('slot_entry_id')
+                                ex_id = cs.get('exercise_id')
+                                client_id = cs.get('client_id') or cs.get('clientId') or cs.get('id')
+                                log_uuid = None
+                                if client_id:
+                                    try:
+                                        log_uuid = uuid.UUID(str(client_id))
+                                    except (ValueError, TypeError):
+                                        log_uuid = None
+
+                                if s_entry_id and ex_id:
+                                    try:
+                                        s_entry = SlotEntry.objects.filter(id=s_entry_id, slot__day=day).first()
+                                        if not s_entry:
+                                            continue
+                                        try:
+                                            clean_r = str(cs.get('repetitions', 10)).strip().replace(',', '.')
+                                            reps_val = Decimal(clean_r)
+                                        except (decimal.DecimalException, ValueError, TypeError):
+                                            reps_val = Decimal('10')
+                                        try:
+                                            clean_w = str(cs.get('weight', 0)).strip().replace(',', '.')
+                                            wt_val = Decimal(clean_w)
+                                        except (decimal.DecimalException, ValueError, TypeError):
+                                            wt_val = Decimal('0')
+
+                                        log_datetime = datetime.datetime.combine(session.date, timezone.localtime(timezone.now()).time())
+                                        if timezone.is_naive(log_datetime):
+                                            log_datetime = timezone.make_aware(log_datetime)
+
+                                        if log_uuid and WorkoutLog.objects.filter(id=log_uuid).exists():
+                                            log_obj = WorkoutLog.objects.get(id=log_uuid)
+                                            log_obj.repetitions = reps_val
+                                            log_obj.weight = wt_val
+                                            log_obj.session = session
+                                            log_obj.save()
+                                        else:
+                                            defaults = {
+                                                'user': request.user,
+                                                'routine_id': session.routine_id,
+                                                'repetitions': reps_val,
+                                                'weight': wt_val,
+                                                'date': log_datetime,
+                                            }
+                                            if log_uuid:
+                                                defaults['id'] = log_uuid
+                                            WorkoutLog.objects.update_or_create(
+                                                session=session,
+                                                slot_entry=s_entry,
+                                                exercise_id=ex_id,
+                                                defaults=defaults,
+                                            )
+                                    except Exception as e:
+                                        logger.error(f"Error syncing set in auto_save_snapshot: {e}")
+                        except Exception as e:
+                            logger.error(f"Error processing auto_save_snapshot: {e}")
                 return JsonResponse({'status': 'ok', 'saved_at': timezone.now().isoformat()})
 
             elif action == 'finish_workout':
@@ -308,30 +350,70 @@ def log_tailwind(request, routine_pk, day_pk):
                 if full_payload_str:
                     try:
                         data = json.loads(full_payload_str)
-                        completed_sets = data.get('completed_sets', [])
-                        for cs in completed_sets:
-                            s_entry_id = cs.get('slot_entry_id')
-                            ex_id = cs.get('exercise_id')
-                            if s_entry_id and ex_id:
-                                try:
-                                    s_entry = SlotEntry.objects.get(id=s_entry_id)
-                                    reps_val = float(cs.get('repetitions', 10))
-                                    wt_val = float(cs.get('weight', 0))
-                                    WorkoutLog.objects.update_or_create(
-                                        session=session,
-                                        exercise_id=ex_id,
-                                        slot_entry=s_entry,
-                                        defaults={
-                                            'user': request.user,
-                                            'repetitions': reps_val,
-                                            'weight': wt_val,
-                                            'date': session.date
-                                        }
-                                    )
-                                except Exception:
-                                    pass
-                    except Exception:
-                        pass
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Invalid JSON in full_payload: {e}")
+                        data = None
+
+                    if data and isinstance(data, dict):
+                        try:
+                            completed_sets = data.get('completed_sets', [])
+                            for cs in completed_sets:
+                                s_entry_id = cs.get('slot_entry_id')
+                                ex_id = cs.get('exercise_id')
+                                client_id = cs.get('client_id') or cs.get('clientId') or cs.get('id')
+                                log_uuid = None
+                                if client_id:
+                                    try:
+                                        log_uuid = uuid.UUID(str(client_id))
+                                    except (ValueError, TypeError):
+                                        log_uuid = None
+
+                                if s_entry_id and ex_id:
+                                    try:
+                                        s_entry = SlotEntry.objects.filter(id=s_entry_id, slot__day=day).first()
+                                        if not s_entry:
+                                            continue
+                                        try:
+                                            clean_r = str(cs.get('repetitions', 10)).strip().replace(',', '.')
+                                            reps_val = Decimal(clean_r)
+                                        except (decimal.DecimalException, ValueError, TypeError):
+                                            reps_val = Decimal('10')
+                                        try:
+                                            clean_w = str(cs.get('weight', 0)).strip().replace(',', '.')
+                                            wt_val = Decimal(clean_w)
+                                        except (decimal.DecimalException, ValueError, TypeError):
+                                            wt_val = Decimal('0')
+
+                                        log_datetime = datetime.datetime.combine(session.date, timezone.localtime(timezone.now()).time())
+                                        if timezone.is_naive(log_datetime):
+                                            log_datetime = timezone.make_aware(log_datetime)
+
+                                        if log_uuid and WorkoutLog.objects.filter(id=log_uuid).exists():
+                                            log_obj = WorkoutLog.objects.get(id=log_uuid)
+                                            log_obj.repetitions = reps_val
+                                            log_obj.weight = wt_val
+                                            log_obj.session = session
+                                            log_obj.save()
+                                        else:
+                                            defaults = {
+                                                'user': request.user,
+                                                'routine_id': session.routine_id,
+                                                'repetitions': reps_val,
+                                                'weight': wt_val,
+                                                'date': log_datetime,
+                                            }
+                                            if log_uuid:
+                                                defaults['id'] = log_uuid
+                                            WorkoutLog.objects.update_or_create(
+                                                session=session,
+                                                slot_entry=s_entry,
+                                                exercise_id=ex_id,
+                                                defaults=defaults,
+                                            )
+                                    except Exception as e:
+                                        logger.error(f"Error syncing set in finish_workout: {e}")
+                        except Exception as e:
+                            logger.error(f"Error processing finish_workout payload: {e}")
 
                 session.status = 'finished'
                 if not session.time_end:
@@ -402,8 +484,9 @@ def log_tailwind(request, routine_pk, day_pk):
 
                                 if post_reps is not None and str(post_reps).strip() != '':
                                     try:
-                                        reps = int(Decimal(str(post_reps)))
-                                    except (TypeError, ValueError):
+                                        clean_r = str(post_reps).strip().replace(',', '.')
+                                        reps = int(Decimal(clean_r))
+                                    except (decimal.DecimalException, TypeError, ValueError):
                                         reps = None
 
                                 if post_weight is not None and str(post_weight).strip() != '':
@@ -440,6 +523,10 @@ def log_tailwind(request, routine_pk, day_pk):
                                 if weight is None:
                                     weight = Decimal('0')
 
+                                log_datetime = datetime.datetime.combine(session.date, timezone.localtime(timezone.now()).time())
+                                if timezone.is_naive(log_datetime):
+                                    log_datetime = timezone.make_aware(log_datetime)
+
                                 WorkoutLog.objects.create(
                                     user=request.user,
                                     session=session,
@@ -448,7 +535,7 @@ def log_tailwind(request, routine_pk, day_pk):
                                     slot_entry_id=slot_entry.id,
                                     repetitions=reps,
                                     weight=weight,
-                                    date=timezone.now(),
+                                    date=log_datetime,
                                 )
 
             elif action == 'delete_set':
@@ -479,8 +566,12 @@ def log_tailwind(request, routine_pk, day_pk):
                         req_reps = request.POST.get('repetitions') or request.POST.get('reps')
                         req_weight = request.POST.get('weight')
 
-                        if req_reps is not None and str(req_reps).isdigit():
-                            reps_val = int(req_reps)
+                        if req_reps is not None and str(req_reps).strip() != '':
+                            try:
+                                clean_r = str(req_reps).strip().replace(',', '.')
+                                reps_val = int(Decimal(clean_r))
+                            except (decimal.DecimalException, ValueError, TypeError):
+                                reps_val = 10
                         else:
                             last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
                             if (
@@ -522,8 +613,9 @@ def log_tailwind(request, routine_pk, day_pk):
 
                 req_reps = request.POST.get('repetitions') or request.POST.get('reps')
                 try:
-                    reps_val = int(req_reps) if req_reps else 10
-                except (TypeError, ValueError):
+                    clean_r = str(req_reps).strip().replace(',', '.') if req_reps else ''
+                    reps_val = int(Decimal(clean_r)) if clean_r else 10
+                except (decimal.DecimalException, TypeError, ValueError):
                     reps_val = 10
 
                 req_weight = request.POST.get('weight')
@@ -566,10 +658,18 @@ def log_tailwind(request, routine_pk, day_pk):
                 repetitions = request.POST.get('repetitions')
                 weight = request.POST.get('weight')
                 rir = request.POST.get('rir') or None
+                client_id_val = request.POST.get('client_id')
+                log_uuid = None
+                if client_id_val:
+                    try:
+                        log_uuid = uuid.UUID(str(client_id_val))
+                    except (ValueError, TypeError):
+                        log_uuid = None
 
                 try:
-                    repetitions = int(repetitions)
-                except (TypeError, ValueError):
+                    clean_r = str(repetitions).strip().replace(',', '.') if repetitions is not None else ''
+                    repetitions = int(Decimal(clean_r)) if clean_r != '' else 0
+                except (decimal.DecimalException, TypeError, ValueError):
                     repetitions = 0
 
                 if weight is None or str(weight).strip() in ('', '0'):
@@ -581,18 +681,42 @@ def log_tailwind(request, routine_pk, day_pk):
                     except (decimal.DecimalException, ValueError, TypeError):
                         weight = Decimal('0')
 
-                # Create WorkoutLog entry
-                log_entry = WorkoutLog.objects.create(
-                    user=request.user,
-                    session=session,
-                    exercise_id=exercise_id,
-                    routine_id=routine_pk,
-                    slot_entry_id=slot_entry_id,
-                    repetitions=repetitions,
-                    weight=weight,
-                    rir=rir,
-                    date=timezone.now(),
-                )
+                if rir is not None and str(rir).strip() != '':
+                    try:
+                        clean_rir = str(rir).strip().replace(',', '.')
+                        rir = Decimal(clean_rir)
+                    except (decimal.DecimalException, ValueError, TypeError):
+                        rir = None
+                else:
+                    rir = None
+
+                log_datetime = datetime.datetime.combine(session.date, timezone.localtime(timezone.now()).time())
+                if timezone.is_naive(log_datetime):
+                    log_datetime = timezone.make_aware(log_datetime)
+
+                if log_uuid and WorkoutLog.objects.filter(id=log_uuid).exists():
+                    log_entry = WorkoutLog.objects.get(id=log_uuid)
+                    log_entry.repetitions = repetitions
+                    log_entry.weight = weight
+                    log_entry.rir = rir
+                    log_entry.session = session
+                    log_entry.save()
+                else:
+                    create_kwargs = {
+                        'user': request.user,
+                        'session': session,
+                        'exercise_id': exercise_id,
+                        'routine_id': routine_pk,
+                        'slot_entry_id': slot_entry_id,
+                        'repetitions': repetitions,
+                        'weight': weight,
+                        'rir': rir,
+                        'date': log_datetime,
+                    }
+                    if log_uuid:
+                        create_kwargs['id'] = log_uuid
+                    log_entry = WorkoutLog.objects.create(**create_kwargs)
+
                 if not slot and slot_entry_id:
                     slot_entry = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
                     if slot_entry:
@@ -600,11 +724,13 @@ def log_tailwind(request, routine_pk, day_pk):
 
         # Common rendering response for HTMX request
         if request.headers.get('HX-Request'):
-            session_logged_set_ids = list(session.logs.values_list('slot_entry_id', flat=True))
+            session_logs = list(session.logs.all())
+            session_logged_set_ids = [log.slot_entry_id for log in session_logs if log.slot_entry_id is not None]
             logged_set_ids_set = set(session_logged_set_ids)
             completed_exercise_ids = []
             completed_slot_ids = []
-            for s in day.slots.all():
+            day_slots = day.slots.prefetch_related('entries__exercise', 'entries__repetitionsconfig_set', 'entries__weightconfig_set').all()
+            for s in day_slots:
                 all_set_ids = [entry.id for entry in s.entries.all()]
                 if all_set_ids and all(sid in logged_set_ids_set for sid in all_set_ids):
                     completed_slot_ids.append(s.id)
@@ -625,8 +751,17 @@ def log_tailwind(request, routine_pk, day_pk):
         return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
     # Calculate initial progress percentage
-    total_sets = sum(slot.entries.count() for slot in day.slots.all())
-    logged_set_ids = list(session.logs.values_list('slot_entry_id', flat=True))
+    day_slots = day.slots.prefetch_related(
+        'entries__exercise',
+        'entries__repetitionsconfig_set',
+        'entries__weightconfig_set',
+        'entries__rirconfig_set',
+        'entries__restconfig_set',
+        'entries__setsconfig_set',
+    ).all()
+    session_logs = list(session.logs.all())
+    logged_set_ids = [log.slot_entry_id for log in session_logs if log.slot_entry_id is not None]
+    total_sets = sum(slot.entries.count() for slot in day_slots)
     completed_sets = len(logged_set_ids)
     progress_percentage = int((completed_sets / total_sets) * 100) if total_sets > 0 else 0
 
@@ -642,14 +777,14 @@ def log_tailwind(request, routine_pk, day_pk):
     logged_set_ids_set = set(logged_set_ids)
     completed_exercise_ids = []
     completed_slot_ids = []
-    for s in day.slots.all():
+    for s in day_slots:
         all_set_ids = [entry.id for entry in s.entries.all()]
         if all_set_ids and all(sid in logged_set_ids_set for sid in all_set_ids):
             completed_slot_ids.append(s.id)
             if s.obj:
                 completed_exercise_ids.append(s.obj.id)
 
-    session_logs_map = {log.slot_entry_id: log for log in session.logs.filter(slot_entry_id__isnull=False)}
+    session_logs_map = {log.slot_entry_id: log for log in session_logs if log.slot_entry_id is not None}
     session_photos_count = 1 if session.condition_photo else 0
     user_routines = Routine.objects.filter(user=request.user)
 
@@ -665,5 +800,6 @@ def log_tailwind(request, routine_pk, day_pk):
         'today_photos_count': session_photos_count,
         'user_routines': user_routines,
     })
+
 
 
