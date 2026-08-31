@@ -14,14 +14,4 @@ class Migration(migrations.Migration):
             model_name='workoutsession',
             name='impression',
         ),
-        migrations.AddField(
-            model_name='routine',
-            name='current_week',
-            field=models.IntegerField(default=1, verbose_name='Current week'),
-        ),
-        migrations.AddField(
-            model_name='routine',
-            name='total_weeks',
-            field=models.IntegerField(default=4, verbose_name='Total weeks'),
-        ),
     ]
