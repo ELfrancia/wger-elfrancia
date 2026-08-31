@@ -713,19 +713,25 @@ class UserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return user.is_authenticated and (
             user.is_superuser
             or user.is_staff
-            or user.has_perm('gym.manage_gym')
             or user.has_perm('gym.manage_gyms')
-            or user.has_perm('gym.gym_trainer')
-            or user.has_perm('auth.view_user')
         )
 
     def get_queryset(self):
         """
         Return a list with the users, not really a queryset.
         """
+        user = self.request.user
         out = {'admins': [], 'members': []}
 
-        for u in User.objects.select_related('usercache', 'userprofile__gym').all():
+        qs = User.objects.select_related('usercache', 'userprofile__gym')
+        if not (user.is_superuser or user.is_staff or user.has_perm('gym.manage_gyms')):
+            gym = getattr(getattr(user, 'userprofile', None), 'gym', None)
+            if gym:
+                qs = qs.filter(userprofile__gym=gym)
+            else:
+                qs = qs.none()
+
+        for u in qs.all():
             out['members'].append({'obj': u, 'last_log': None})  # u.usercache.last_activity
 
         return out

@@ -316,6 +316,17 @@ class UserListTestCase(WgerAccessTestCase):
         'trainer4',
     )
 
+    def test_user_list_queryset_scoping(self):
+        """
+        Ensure general managers see users across gyms while non-permitted users
+        are blocked.
+        """
+        self.user_login('general_manager1')
+        response = self.client.get(reverse('core:user:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['object_list']['members']) > 0)
+        self.user_logout()
+
 
 class UserDetailPageTestCase(WgerAccessTestCase):
     """
