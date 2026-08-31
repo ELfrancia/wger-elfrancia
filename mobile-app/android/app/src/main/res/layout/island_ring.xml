@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="2dp">
+
+    <ProgressBar
+        android:id="@+id/island_ring_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center"
+        android:indeterminate="false"
+        android:max="1000"
+        android:progress="0"
+        android:progressDrawable="@drawable/island_ring_progress" />
+
+    <TextView
+        android:id="@+id/island_ring_center_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textColor="#CAF300"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+</FrameLayout>

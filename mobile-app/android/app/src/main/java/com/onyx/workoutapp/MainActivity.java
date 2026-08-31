@@ -29,17 +29,54 @@ public class MainActivity extends BridgeActivity {
     public class AndroidTimerBridge {
         @JavascriptInterface
         public void startWorkout(String title, long startTimestampMs) {
-            // No-op: Notch/background workout session tracking removed
+            Log.d(TAG, "AndroidTimer.startWorkout called: " + title);
+            try {
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_WORKOUT_START);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_TITLE, (title != null && !title.isEmpty()) ? title : "Sessione di Allenamento");
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_STARTED_AT, startTimestampMs > 0 ? startTimestampMs : System.currentTimeMillis());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent);
+                } else {
+                    startService(serviceIntent);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error starting workout in OnyxLiveService: " + e.getMessage(), e);
+            }
         }
 
         @JavascriptInterface
         public void stopWorkout() {
-            // No-op
+            Log.d(TAG, "AndroidTimer.stopWorkout called");
+            try {
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_WORKOUT_STOP);
+                startService(serviceIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "Error stopping workout in OnyxLiveService: " + e.getMessage(), e);
+            }
         }
 
         @JavascriptInterface
         public void updateProgress(int completed, int total, int remaining) {
-            // No-op
+            updateProgressWithExercise(completed, total, remaining, null);
+        }
+
+        @JavascriptInterface
+        public void updateProgressWithExercise(int completed, int total, int remaining, String currentExercise) {
+            Log.d(TAG, "AndroidTimer.updateProgress: completed=" + completed + ", total=" + total + ", ex=" + currentExercise);
+            try {
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_WORKOUT_UPDATE);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_COMPLETED_SETS, completed);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_TOTAL_SETS, total);
+                if (currentExercise != null && !currentExercise.isEmpty()) {
+                    serviceIntent.putExtra(OnyxLiveService.EXTRA_CURRENT_EXERCISE, currentExercise);
+                }
+                startService(serviceIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating workout progress in OnyxLiveService: " + e.getMessage(), e);
+            }
         }
 
         @JavascriptInterface
@@ -51,21 +88,21 @@ public class MainActivity extends BridgeActivity {
         public void startTimerWithSound(int durationSeconds, String title, String soundUri) {
             Log.d(TAG, "AndroidTimer.startTimer called: duration=" + durationSeconds + "s, title=" + title + ", soundUri=" + soundUri);
             try {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-                serviceIntent.setAction(TimerService.ACTION_START);
-                serviceIntent.putExtra(TimerService.EXTRA_DURATION, durationSeconds);
-                serviceIntent.putExtra(TimerService.EXTRA_TITLE, (title != null && !title.isEmpty()) ? title : "Recupero in corso");
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_START);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_DURATION, durationSeconds);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_TITLE, (title != null && !title.isEmpty()) ? title : "Recupero in corso");
                 if (soundUri != null && !soundUri.isEmpty()) {
-                    serviceIntent.putExtra(TimerService.EXTRA_SOUND_URI, soundUri);
+                    serviceIntent.putExtra(OnyxLiveService.EXTRA_SOUND_URI, soundUri);
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(serviceIntent);
                 } else {
                     startService(serviceIntent);
                 }
-                Log.d(TAG, "TimerService started/updated successfully");
+                Log.d(TAG, "OnyxLiveService started/updated successfully");
             } catch (Exception e) {
-                Log.e(TAG, "Error starting/updating TimerService: " + e.getMessage(), e);
+                Log.e(TAG, "Error starting/updating OnyxLiveService: " + e.getMessage(), e);
             }
         }
 
@@ -73,11 +110,11 @@ public class MainActivity extends BridgeActivity {
         public void pauseTimer() {
             Log.d(TAG, "AndroidTimer.pauseTimer called");
             try {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-                serviceIntent.setAction(TimerService.ACTION_PAUSE);
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_PAUSE);
                 startService(serviceIntent);
             } catch (Exception e) {
-                Log.e(TAG, "Error pausing TimerService: " + e.getMessage(), e);
+                Log.e(TAG, "Error pausing OnyxLiveService: " + e.getMessage(), e);
             }
         }
 
@@ -85,11 +122,11 @@ public class MainActivity extends BridgeActivity {
         public void resumeTimer() {
             Log.d(TAG, "AndroidTimer.resumeTimer called");
             try {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-                serviceIntent.setAction(TimerService.ACTION_RESUME);
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_RESUME);
                 startService(serviceIntent);
             } catch (Exception e) {
-                Log.e(TAG, "Error resuming TimerService: " + e.getMessage(), e);
+                Log.e(TAG, "Error resuming OnyxLiveService: " + e.getMessage(), e);
             }
         }
 
@@ -97,11 +134,12 @@ public class MainActivity extends BridgeActivity {
         public void addSeconds(int seconds) {
             Log.d(TAG, "AndroidTimer.addSeconds called: " + seconds);
             try {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-                serviceIntent.setAction(TimerService.ACTION_ADD_TIME);
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_ADD_TIME);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_DURATION, seconds);
                 startService(serviceIntent);
             } catch (Exception e) {
-                Log.e(TAG, "Error adding seconds to TimerService: " + e.getMessage(), e);
+                Log.e(TAG, "Error adding seconds to OnyxLiveService: " + e.getMessage(), e);
             }
         }
 
@@ -109,11 +147,11 @@ public class MainActivity extends BridgeActivity {
         public void stopTimer() {
             Log.d(TAG, "AndroidTimer.stopTimer called");
             try {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-                serviceIntent.setAction(TimerService.ACTION_STOP);
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_STOP);
                 startService(serviceIntent);
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping TimerService: " + e.getMessage(), e);
+                Log.e(TAG, "Error stopping OnyxLiveService: " + e.getMessage(), e);
             }
         }
 
@@ -121,8 +159,8 @@ public class MainActivity extends BridgeActivity {
         public void stopAlarm() {
             Log.d(TAG, "AndroidTimer.stopAlarm called");
             try {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-                serviceIntent.setAction(TimerService.ACTION_STOP_ALARM);
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_STOP_ALARM);
                 startService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error stopping alarm: " + e.getMessage(), e);
@@ -154,6 +192,11 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public boolean canPostPromotedNotifications() {
+            return DeviceCapabilities.canPromoteOngoing(MainActivity.this);
+        }
+
+        @JavascriptInterface
         public void testNotification() {
             Log.d(TAG, "AndroidTimer.testNotification called (5 sec test)");
             startTimer(5, "Test Timer 5s");
@@ -162,7 +205,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(WorkoutTimerPlugin.class);
+        registerPlugin(OnyxLivePlugin.class);
         super.onCreate(savedInstanceState);
 
         // Enable Chrome DevTools remote debugging (chrome://inspect on PC)
@@ -185,8 +228,9 @@ public class MainActivity extends BridgeActivity {
         // Register direct JavaScriptInterface and inject bridge watcher
         setupWebViewBridge();
 
-        // Handle open_timer notification intent
+        // Handle open_timer and open_workout notification intents
         handleOpenTimerIntent(getIntent());
+        handleOpenWorkoutIntent(getIntent());
     }
 
     @Override
@@ -194,6 +238,31 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleOpenTimerIntent(intent);
+        handleOpenWorkoutIntent(intent);
+    }
+
+    private void handleOpenWorkoutIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("open_workout", false)) {
+            Log.d(TAG, "handleOpenWorkoutIntent: open_workout flag detected");
+            try {
+                WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+                if (webView != null) {
+                    String js = "(function() {" +
+                                "  try {" +
+                                "    console.log('[OnyxWorkout] Deep-link to active workout received');" +
+                                "    if (typeof window.focusActiveWorkoutSession === 'function') {" +
+                                "      window.focusActiveWorkoutSession();" +
+                                "    } else if (window.location.hash.includes('rest-timer')) {" +
+                                "      if (typeof window.closeRestTimerOverlay === 'function') window.closeRestTimerOverlay();" +
+                                "    }" +
+                                "  } catch(e) { console.error('[OnyxWorkout] Open workout error:', e); }" +
+                                "})();";
+                    webView.post(() -> webView.evaluateJavascript(js, null));
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error handling open_workout intent: " + e.getMessage(), e);
+            }
+        }
     }
 
     private void handleOpenTimerIntent(Intent intent) {

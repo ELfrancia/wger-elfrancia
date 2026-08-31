@@ -1,9 +1,7 @@
 package com.onyx.workoutapp;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +17,6 @@ import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -28,9 +25,8 @@ import android.os.Vibrator;
 import android.os.VibratorManager;
 import android.util.Log;
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 
-public class TimerService extends Service {
+public class OnyxLiveService extends Service {
 
     private static final String TAG = "OnyxDebug";
 
@@ -41,14 +37,18 @@ public class TimerService extends Service {
     public static final String ACTION_ADD_TIME = "com.onyx.workoutapp.ACTION_ADD_TIME";
     public static final String ACTION_STOP_ALARM = "com.onyx.workoutapp.ACTION_STOP_ALARM";
 
+    public static final String ACTION_WORKOUT_START = "com.onyx.workoutapp.ACTION_WORKOUT_START";
+    public static final String ACTION_WORKOUT_UPDATE = "com.onyx.workoutapp.ACTION_WORKOUT_UPDATE";
+    public static final String ACTION_WORKOUT_STOP = "com.onyx.workoutapp.ACTION_WORKOUT_STOP";
+
     public static final String EXTRA_DURATION = "extra_duration_seconds";
     public static final String EXTRA_TITLE = "extra_title";
     public static final String EXTRA_SOUND_URI = "extra_sound_uri";
-
-    private static final String CHANNEL_TIMER = "onyx_timer_live_channel";
-    private static final String CHANNEL_ALARM = "onyx_timer_alarm_channel";
-    private static final int NOTIFICATION_ID_TIMER = 1001;
-    private static final int NOTIFICATION_ID_ALARM = 1002;
+    public static final String EXTRA_COMPLETED_SETS = "extra_completed_sets";
+    public static final String EXTRA_TOTAL_SETS = "extra_total_sets";
+    public static final String EXTRA_CURRENT_EXERCISE = "extra_current_exercise";
+    public static final String EXTRA_STARTED_AT = "extra_started_at";
+    public static final String EXTRA_SLOT_BOUNDARIES = "extra_slot_boundaries";
 
     private NotificationManager notificationManager;
     private CountDownTimer countDownTimer;
@@ -57,14 +57,27 @@ public class TimerService extends Service {
     private AudioManager audioManager;
     private AudioFocusRequest audioFocusRequest;
     private PowerManager.WakeLock wakeLock;
+    private AudioTrack synthesizedAudioTrack;
 
+    // Rest timer state
     private boolean isAlarmPlaying = false;
     private boolean isTimerRunning = false;
     private boolean isPaused = false;
     private long remainingTimeMs = 0;
     private long targetEndTimeMs = 0;
+    private long totalDurationMs = 0;
     private String currentTitle = "Recupero in corso";
     private String customSoundUri = null;
+
+    // Workout session state
+    private boolean isWorkoutActive = false;
+    private String workoutTitle = "Sessione di Allenamento";
+    private String currentExerciseName = "";
+    private int completedSets = 0;
+    private int totalSets = 0;
+    private int[] slotBoundaries = null;
+    private long workoutStartedAt = 0;
+
     private Bitmap appIconBitmap;
 
     @Override
@@ -88,37 +101,7 @@ public class TimerService extends Service {
             Log.e(TAG, "Error loading app icon bitmap: " + e.getMessage());
         }
 
-        createNotificationChannels();
-    }
-
-    private void createNotificationChannels() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Live countdown channel
-            NotificationChannel timerChannel = new NotificationChannel(
-                    CHANNEL_TIMER,
-                    "Timer Recupero Live",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            timerChannel.setDescription("Mostra il countdown di recupero in corso nella barra di stato");
-            timerChannel.setSound(null, null);
-            timerChannel.enableVibration(false);
-            timerChannel.setShowBadge(true);
-            timerChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-            notificationManager.createNotificationChannel(timerChannel);
-
-            // Alarm channel (High importance with custom vibration, sound managed directly)
-            NotificationChannel alarmChannel = new NotificationChannel(
-                    CHANNEL_ALARM,
-                    "Allarme Timer Esaurito",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            alarmChannel.setDescription("Allarme sonoro a ciclo continuo al termine del recupero");
-            alarmChannel.setSound(null, null);
-            alarmChannel.enableVibration(true);
-            alarmChannel.setShowBadge(true);
-            alarmChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-            notificationManager.createNotificationChannel(alarmChannel);
-        }
+        IslandNotificationFactory.createNotificationChannels(notificationManager);
     }
 
     @Override
@@ -128,54 +111,91 @@ public class TimerService extends Service {
         }
 
         String action = intent.getAction();
-        Log.d(TAG, "TimerService onStartCommand: action=" + action);
+        Log.d(TAG, "OnyxLiveService onStartCommand: action=" + action);
 
-        if (ACTION_START.equals(action)) {
-            int durationSeconds = intent.getIntExtra(EXTRA_DURATION, 45);
-            String title = intent.getStringExtra(EXTRA_TITLE);
-            String soundUri = intent.getStringExtra(EXTRA_SOUND_URI);
-            if (title == null || title.isEmpty()) {
-                title = "Recupero in corso";
+        switch (action) {
+            case ACTION_START: {
+                int durationSeconds = intent.getIntExtra(EXTRA_DURATION, 45);
+                String title = intent.getStringExtra(EXTRA_TITLE);
+                String soundUri = intent.getStringExtra(EXTRA_SOUND_URI);
+                if (title == null || title.isEmpty()) {
+                    title = "Recupero in corso";
+                }
+                this.customSoundUri = soundUri;
+                startTimerCountdown(durationSeconds, title);
+                break;
             }
-            this.customSoundUri = soundUri;
-            startTimerCountdown(durationSeconds, title);
-        } else if (ACTION_PAUSE.equals(action)) {
-            pauseTimer();
-        } else if (ACTION_RESUME.equals(action)) {
-            resumeTimer();
-        } else if (ACTION_ADD_TIME.equals(action)) {
-            addSecondsToTimer(30);
-        } else if (ACTION_STOP.equals(action)) {
-            stopRestTimer();
-        } else if (ACTION_STOP_ALARM.equals(action)) {
-            stopAlarmOnly();
-            if (!isTimerRunning) {
-                stopTimerAndService();
+            case ACTION_PAUSE:
+                pauseTimer();
+                break;
+            case ACTION_RESUME:
+                resumeTimer();
+                break;
+            case ACTION_ADD_TIME:
+                addSecondsToTimer(30);
+                break;
+            case ACTION_STOP:
+                stopRestTimer();
+                break;
+            case ACTION_STOP_ALARM:
+                stopAlarmOnly();
+                if (!isTimerRunning && !isWorkoutActive) {
+                    stopAllAndService();
+                } else {
+                    updateForegroundState();
+                }
+                break;
+            case ACTION_WORKOUT_START: {
+                String title = intent.getStringExtra(EXTRA_TITLE);
+                this.workoutTitle = (title != null && !title.isEmpty()) ? title : "Sessione di Allenamento";
+                this.totalSets = intent.getIntExtra(EXTRA_TOTAL_SETS, 0);
+                this.completedSets = intent.getIntExtra(EXTRA_COMPLETED_SETS, 0);
+                this.currentExerciseName = intent.getStringExtra(EXTRA_CURRENT_EXERCISE);
+                this.workoutStartedAt = intent.getLongExtra(EXTRA_STARTED_AT, System.currentTimeMillis());
+                this.slotBoundaries = intent.getIntArrayExtra(EXTRA_SLOT_BOUNDARIES);
+                this.isWorkoutActive = true;
+                acquireWakeLock();
+                updateForegroundState();
+                break;
+            }
+            case ACTION_WORKOUT_UPDATE: {
+                this.totalSets = intent.getIntExtra(EXTRA_TOTAL_SETS, this.totalSets);
+                this.completedSets = intent.getIntExtra(EXTRA_COMPLETED_SETS, this.completedSets);
+                String exercise = intent.getStringExtra(EXTRA_CURRENT_EXERCISE);
+                if (exercise != null) {
+                    this.currentExerciseName = exercise;
+                }
+                this.isWorkoutActive = true;
+                updateForegroundState();
+                break;
+            }
+            case ACTION_WORKOUT_STOP: {
+                this.isWorkoutActive = false;
+                if (notificationManager != null) {
+                    try {
+                        notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT);
+                    } catch (Exception ignored) {}
+                }
+                if (!isTimerRunning && !isAlarmPlaying) {
+                    stopAllAndService();
+                } else {
+                    updateForegroundState();
+                }
+                break;
             }
         }
 
         return START_NOT_STICKY;
     }
 
-    private synchronized void stopRestTimer() {
-        Log.d(TAG, "TimerService: Stopping rest countdown");
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-            countDownTimer = null;
-        }
-        isTimerRunning = false;
-        isPaused = false;
-        remainingTimeMs = 0;
-        stopAlarmOnly();
-        stopTimerAndService();
-    }
-
     private synchronized void startTimerCountdown(int durationSeconds, String title) {
-        Log.d(TAG, "TimerService: Starting/Updating countdown for " + durationSeconds + " seconds (title=" + title + ")");
+        Log.d(TAG, "OnyxLiveService: Starting/Updating countdown for " + durationSeconds + "s (" + title + ")");
         
         stopAlarmOnly();
         if (notificationManager != null) {
-            notificationManager.cancel(NOTIFICATION_ID_ALARM);
+            try {
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
+            } catch (Exception ignored) {}
         }
 
         if (countDownTimer != null) {
@@ -184,13 +204,14 @@ public class TimerService extends Service {
         }
 
         this.currentTitle = title;
-        this.remainingTimeMs = durationSeconds * 1000L;
+        this.totalDurationMs = durationSeconds * 1000L;
+        this.remainingTimeMs = totalDurationMs;
         this.targetEndTimeMs = System.currentTimeMillis() + remainingTimeMs;
         this.isTimerRunning = true;
         this.isPaused = false;
 
         acquireWakeLock();
-        updateNotificationAndForeground();
+        updateForegroundState();
 
         startInternalCountDown(remainingTimeMs);
     }
@@ -203,24 +224,50 @@ public class TimerService extends Service {
         }
         remainingTimeMs = Math.max(0, targetEndTimeMs - System.currentTimeMillis());
         isPaused = true;
-        updateNotificationAndForeground();
-        WorkoutTimerPlugin.notifyTimerPaused();
+        updateForegroundState();
+        OnyxLivePlugin.notifyTimerPaused();
     }
 
     private synchronized void resumeTimer() {
         if (!isTimerRunning || !isPaused) return;
         targetEndTimeMs = System.currentTimeMillis() + remainingTimeMs;
         isPaused = false;
-        updateNotificationAndForeground();
+        updateForegroundState();
         startInternalCountDown(remainingTimeMs);
-        WorkoutTimerPlugin.notifyTimerResumed();
+        OnyxLivePlugin.notifyTimerResumed();
     }
 
     private synchronized void addSecondsToTimer(int extraSeconds) {
         if (!isTimerRunning) return;
         long currentLeft = isPaused ? remainingTimeMs : Math.max(0, targetEndTimeMs - System.currentTimeMillis());
         long newTotalMs = currentLeft + (extraSeconds * 1000L);
+        totalDurationMs += (extraSeconds * 1000L);
         startTimerCountdown((int) (newTotalMs / 1000), currentTitle);
+    }
+
+    private synchronized void stopRestTimer() {
+        Log.d(TAG, "OnyxLiveService: Stopping rest countdown");
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+            countDownTimer = null;
+        }
+        isTimerRunning = false;
+        isPaused = false;
+        remainingTimeMs = 0;
+        stopAlarmOnly();
+
+        if (notificationManager != null) {
+            try {
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
+            } catch (Exception ignored) {}
+        }
+
+        if (!isWorkoutActive) {
+            stopAllAndService();
+        } else {
+            updateForegroundState();
+        }
+        OnyxLivePlugin.notifyTimerStopped();
     }
 
     private void startInternalCountDown(long durationMs) {
@@ -232,7 +279,7 @@ public class TimerService extends Service {
 
             @Override
             public void onFinish() {
-                Log.d(TAG, "TimerService: CountDown finished! Triggering alarm now.");
+                Log.d(TAG, "OnyxLiveService: CountDown finished! Triggering alarm.");
                 isTimerRunning = false;
                 isPaused = false;
                 remainingTimeMs = 0;
@@ -241,114 +288,57 @@ public class TimerService extends Service {
         }.start();
     }
 
-    private void updateNotificationAndForeground() {
-        Notification notification = buildLiveTimerNotification(targetEndTimeMs, currentTitle);
+    /**
+     * Centralized Foreground Service Anchor management:
+     * - Workout active -> 1003 is FGS anchor; 1001 / 1002 posted as secondary.
+     * - No workout, Timer active -> 1001 is FGS anchor.
+     * - No workout, Alarm active -> 1002 is FGS anchor.
+     */
+    private synchronized void updateForegroundState() {
+        if (notificationManager == null) return;
+
         try {
-            if (Build.VERSION.SDK_INT >= 34) {
-                startForeground(NOTIFICATION_ID_TIMER, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIFICATION_ID_TIMER, notification, 0);
-            } else {
-                startForeground(NOTIFICATION_ID_TIMER, notification);
-            }
-            if (notificationManager != null) {
-                notificationManager.notify(NOTIFICATION_ID_TIMER, notification);
+            if (isWorkoutActive) {
+                Notification workoutNotification = IslandNotificationFactory.buildWorkoutNotification(
+                        this, workoutTitle, currentExerciseName, completedSets, totalSets, slotBoundaries, workoutStartedAt, appIconBitmap
+                );
+                postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT, workoutNotification);
+
+                if (isTimerRunning) {
+                    Notification timerNotification = IslandNotificationFactory.buildRestNotification(
+                            this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
+                    );
+                    notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
+                }
+            } else if (isTimerRunning) {
+                Notification timerNotification = IslandNotificationFactory.buildRestNotification(
+                        this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
+                );
+                postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
+            } else if (isAlarmPlaying) {
+                Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
+                postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error posting foreground notification: " + e.getMessage(), e);
+            Log.e(TAG, "Error updating foreground notifications: " + e.getMessage(), e);
         }
     }
 
-    private Notification buildLiveTimerNotification(long targetEndTime, String title) {
-        Intent appIntent = new Intent(this, MainActivity.class);
-        appIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        appIntent.putExtra("open_timer", true);
-        PendingIntent contentPendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                appIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_TIMER)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(contentPendingIntent)
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setDefaults(0)
-                .setSilent(true);
-
-        if (appIconBitmap != null) {
-            builder.setLargeIcon(appIconBitmap);
-        }
-
-        if (isTimerRunning) {
-            // MODE 1: Rest countdown is active
-            builder.setContentTitle(title != null && !title.isEmpty() ? title : "Recupero in corso");
-            
-            // Action 1: Play / Pause
-            Intent playPauseIntent = new Intent(this, TimerService.class);
-            playPauseIntent.setAction(isPaused ? ACTION_RESUME : ACTION_PAUSE);
-            PendingIntent playPausePendingIntent = PendingIntent.getService(
-                    this,
-                    10,
-                    playPauseIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-            int playPauseIcon = isPaused ? android.R.drawable.ic_media_play : android.R.drawable.ic_media_pause;
-            String playPauseText = isPaused ? "Riprendi" : "Pausa";
-
-            // Action 2: +30s
-            Intent addTimeIntent = new Intent(this, TimerService.class);
-            addTimeIntent.setAction(ACTION_ADD_TIME);
-            PendingIntent addTimePendingIntent = PendingIntent.getService(
-                    this,
-                    11,
-                    addTimeIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-
-            // Action 3: Stop / Termina Recupero
-            Intent stopIntent = new Intent(this, TimerService.class);
-            stopIntent.setAction(ACTION_STOP);
-            PendingIntent stopPendingIntent = PendingIntent.getService(
-                    this,
-                    12,
-                    stopIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-
-            if (!isPaused) {
-                long now = System.currentTimeMillis();
-                if (targetEndTime > now) {
-                    builder.setContentText("Tocca per aprire")
-                           .setUsesChronometer(true)
-                           .setChronometerCountDown(true)
-                           .setWhen(targetEndTime)
-                           .setShowWhen(true);
-                } else {
-                    builder.setContentText("Tempo Scaduto! • Tocca per aprire")
-                           .setUsesChronometer(false)
-                           .setShowWhen(false);
-                }
+    private void postAsForegroundAnchor(int id, Notification notification) {
+        try {
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(id, notification, 0);
             } else {
-                builder.setUsesChronometer(false);
-                builder.setShowWhen(false);
-                long secLeft = (long) Math.max(0, Math.ceil(remainingTimeMs / 1000.0));
-                long m = secLeft / 60;
-                long s = secLeft % 60;
-                builder.setContentText(String.format("In Pausa (%02d:%02d)", m, s));
+                startForeground(id, notification);
             }
-
-            builder.addAction(playPauseIcon, playPauseText, playPausePendingIntent);
-            builder.addAction(android.R.drawable.ic_input_add, "+30s", addTimePendingIntent);
-            builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
+            if (notificationManager != null) {
+                notificationManager.notify(id, notification);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error posting foreground anchor notification (" + id + "): " + e.getMessage(), e);
         }
-
-        return builder.build();
     }
 
     private synchronized void triggerTimerFinishedAlarm() {
@@ -360,68 +350,26 @@ public class TimerService extends Service {
         isPaused = false;
 
         if (notificationManager != null) {
-            notificationManager.cancel(NOTIFICATION_ID_TIMER);
+            try {
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
+            } catch (Exception ignored) {}
         }
 
         requestExclusiveAudioFocus();
         playLoopingAlarmSound();
         startAlarmVibration();
 
-        Intent appIntent = new Intent(this, MainActivity.class);
-        appIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        appIntent.putExtra("open_timer", true);
-        PendingIntent contentPendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                appIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        Intent stopAlarmIntent = new Intent(this, TimerService.class);
-        stopAlarmIntent.setAction(ACTION_STOP_ALARM);
-        PendingIntent stopAlarmPendingIntent = PendingIntent.getService(
-                this,
-                2,
-                stopAlarmIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        NotificationCompat.Builder alarmBuilder = new NotificationCompat.Builder(this, CHANNEL_ALARM)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("TEMPO SCADUTO! 🏋️")
-                .setContentText("Il recupero è terminato. Tocca per disattivare l'allarme.")
-                .setContentIntent(contentPendingIntent)
-                .setFullScreenIntent(contentPendingIntent, true)
-                .setOngoing(true)
-                .setUsesChronometer(false)
-                .setShowWhen(false)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .addAction(android.R.drawable.ic_lock_power_off, "DISATTIVA ALLARME", stopAlarmPendingIntent);
-
-        if (appIconBitmap != null) {
-            alarmBuilder.setLargeIcon(appIconBitmap);
-        }
-
-        Notification alarmNotification = alarmBuilder.build();
-
-        try {
-            if (Build.VERSION.SDK_INT >= 34) {
-                startForeground(NOTIFICATION_ID_ALARM, alarmNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIFICATION_ID_ALARM, alarmNotification, 0);
-            } else {
-                startForeground(NOTIFICATION_ID_ALARM, alarmNotification);
-            }
+        Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
+        if (isWorkoutActive) {
+            // Keep workout as anchor, notify alarm
             if (notificationManager != null) {
-                notificationManager.notify(NOTIFICATION_ID_ALARM, alarmNotification);
+                notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Error posting alarm foreground notification: " + e.getMessage(), e);
+        } else {
+            postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
         }
 
-        WorkoutTimerPlugin.notifyTimerExpired();
+        OnyxLivePlugin.notifyTimerExpired();
     }
 
     private void requestExclusiveAudioFocus() {
@@ -460,8 +408,6 @@ public class TimerService extends Service {
             Log.e(TAG, "Error releasing audio focus: " + e.getMessage(), e);
         }
     }
-
-    private AudioTrack synthesizedAudioTrack = null;
 
     private void playLoopingAlarmSound() {
         try {
@@ -661,14 +607,16 @@ public class TimerService extends Service {
         releaseAudioFocus();
         if (notificationManager != null) {
             try {
-                notificationManager.cancel(NOTIFICATION_ID_ALARM);
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
             } catch (Exception ignored) {}
         }
     }
 
-    private synchronized void stopTimerAndService() {
+    private synchronized void stopAllAndService() {
         isTimerRunning = false;
         isPaused = false;
+        isWorkoutActive = false;
+
         if (countDownTimer != null) {
             countDownTimer.cancel();
             countDownTimer = null;
@@ -687,11 +635,13 @@ public class TimerService extends Service {
         }
 
         if (notificationManager != null) {
-            notificationManager.cancel(NOTIFICATION_ID_TIMER);
-            notificationManager.cancel(NOTIFICATION_ID_ALARM);
+            try {
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT);
+            } catch (Exception ignored) {}
         }
         stopSelf();
-        WorkoutTimerPlugin.notifyTimerStopped();
     }
 
     private void acquireWakeLock() {
@@ -699,7 +649,7 @@ public class TimerService extends Service {
             if (wakeLock == null) {
                 PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
                 if (powerManager != null) {
-                    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "OnyxWorkout::TimerWakeLock");
+                    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "OnyxWorkout::LiveServiceWakeLock");
                     wakeLock.setReferenceCounted(false);
                 }
             }
@@ -723,7 +673,7 @@ public class TimerService extends Service {
 
     @Override
     public void onDestroy() {
-        stopTimerAndService();
+        stopAllAndService();
         super.onDestroy();
     }
 
