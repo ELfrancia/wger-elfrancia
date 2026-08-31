@@ -1127,15 +1127,22 @@ def session_details_tailwind(request, session_id):
         target_routine_id = request.POST.get('target_routine_id')
         new_routine_name = request.POST.get('new_routine_name')
         routine_day_name = request.POST.get('routine_day_name')
-        created_day = create_day_from_session(
-            user=request.user,
-            session=session,
-            target_routine_id=target_routine_id,
-            new_routine_name=new_routine_name,
-            day_name=routine_day_name,
-        )
-        messages.success(request, _("Workout salvato come giorno di routine con successo!"))
-        return redirect('manager:routine:view', pk=created_day.routine.pk)
+        try:
+            created_day = create_day_from_session(
+                user=request.user,
+                session=session,
+                target_routine_id=target_routine_id,
+                new_routine_name=new_routine_name,
+                day_name=routine_day_name,
+            )
+            if created_day:
+                messages.success(request, _("Workout salvato come giorno di routine con successo!"))
+                return redirect('manager:routine:view', pk=created_day.routine.pk)
+            else:
+                messages.error(request, _('Impossibile salvare il giorno di routine: routine di destinazione non valida o non trovata.'))
+        except Exception as e:
+            logger.error(f"Failed to create day from session {session_id} for user {request.user.id}: {e}")
+            messages.error(request, _('Impossibile salvare il giorno di routine.'))
 
     from django.utils import timezone
     time_start_local = None

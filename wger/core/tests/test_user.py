@@ -510,3 +510,27 @@ class DailyActivityRaceTestCase(WgerTestCase):
             self.assertEqual(response.status_code, 200)
 
         self.user_logout()
+
+
+class SessionDetailsTailwindTestCase(WgerTestCase):
+    def test_save_as_routine_day_invalid_target_routine_handles_error(self):
+        import datetime
+        from wger.manager.models import WorkoutSession
+
+        self.user_login('trainer1')
+        user = User.objects.get(username='trainer1')
+        session = WorkoutSession.objects.create(
+            user=user,
+            date=datetime.date.today(),
+            status='finished'
+        )
+
+        response = self.client.post(
+            reverse('core:session-details', kwargs={'session_id': session.id}),
+            {
+                'action': 'save_as_routine_day',
+                'target_routine_id': '999999',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_logout()
