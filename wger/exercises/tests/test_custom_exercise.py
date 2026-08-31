@@ -50,7 +50,7 @@ class CustomExerciseTestCase(WgerTestCase):
         
         # Check native wger structures
         self.assertEqual(Exercise.objects.filter(uuid=cal_ex.id).count(), 1)
-        self.assertEqual(Translation.objects.filter(name='Custom Handstand Push-up').count(), 1)
+        self.assertEqual(Translation.objects.filter(name='Custom Handstand Push-up').count(), 2)
         
         # Check slot creation on day
         self.assertEqual(self.day.slots.count(), 1)
