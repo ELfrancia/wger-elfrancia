@@ -20,6 +20,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
+from django.db import transaction
 
 # Third Party
 import requests
@@ -77,96 +78,119 @@ def sync_exercises(
 
     url = make_uri(EXERCISE_ENDPOINT, server_url=remote_url, query={'limit': 100})
     for data in get_paginated(url, headers=wger_headers()):
-        uuid = data['uuid']
-        created = data['created']
-        license_id = data['license']['id']
-        if not License.objects.filter(pk=license_id).exists():
-            short_name = data['license'].get('short_name') or f'lic_{license_id}'
-            lic = License.objects.filter(short_name=short_name).first()
+        with transaction.atomic():
+            uuid = data['uuid']
+            created = data['created']
+            license_id = data['license']['id']
+            lic = License.objects.filter(pk=license_id).first()
             if not lic:
-                License.objects.create(
-                    pk=license_id,
-                    short_name=short_name,
-                    full_name=data['license'].get('full_name', f'License {license_id}'),
-                    url=data['license'].get('url', '')
-                )
-            else:
-                license_id = lic.pk
-        category_id = data['category']['id']
-        license_author = data['license_author']
-        equipment = [Equipment.objects.get(pk=i['id']) for i in data['equipment']]
-        muscles = [Muscle.objects.get(pk=i['id']) for i in data['muscles']]
-        muscles_sec = [Muscle.objects.get(pk=i['id']) for i in data['muscles_secondary']]
+                short_name = data['license'].get('short_name')
+                if short_name:
+                    lic = License.objects.filter(short_name=short_name).first()
+                if not lic:
+                    lic = License.objects.create(
+                        pk=license_id,
+                        short_name=short_name or str(license_id),
+                        full_name=data['license'].get('full_name', f'License {license_id}'),
+                        url=data['license'].get('url', '')
+                    )
+            license_id = lic.pk
+            category_id = data['category']['id']
+            license_author = data['license_author']
+            equipment = [Equipment.objects.get(pk=i['id']) for i in data['equipment']]
+            muscles = [Muscle.objects.get(pk=i['id']) for i in data['muscles']]
+            muscles_sec = [Muscle.objects.get(pk=i['id']) for i in data['muscles_secondary']]
 
-        exercise, exercise_created = Exercise.objects.update_or_create(
-            uuid=uuid,
-            defaults={
-                'category_id': category_id,
-                'created': created,
-                'variation_group': data.get('variation_group'),
-            },
-        )
-        print_fn(f'{"created" if exercise_created else "updated"} exercise {uuid}')
-
-        exercise.muscles.set(muscles)
-        exercise.muscles_secondary.set(muscles_sec)
-        exercise.equipment.set(equipment)
-        exercise.save()
-
-        for translation_data in data['translations']:
-            trans_uuid = translation_data['uuid']
-            name = translation_data['name']
-            description = translation_data['description']
-            description_source = translation_data['description_source']
-            language_id = translation_data['language']
-            if not Language.objects.filter(pk=language_id).exists():
-                Language.objects.create(
-                    pk=language_id,
-                    short_name=f'lang_{language_id}',
-                    full_name=f'Language {language_id}',
-                    full_name_en=f'Language {language_id}',
-                )
-
-            translation, translation_created = Translation.objects.update_or_create(
-                exercise=exercise,
-                language_id=language_id,
+            exercise, exercise_created = Exercise.objects.update_or_create(
+                uuid=uuid,
                 defaults={
-                    'uuid': trans_uuid,
-                    'name': name,
-                    'description': description,
-                    'description_source': description_source,
-                    'license_id': license_id,
-                    'license_author': license_author,
+                    'category_id': category_id,
+                    'created': created,
+                    'variation_group': data.get('variation_group'),
                 },
             )
-            out = (
-                f'- {"created" if translation_created else "updated"} translation '
-                f'{translation.language.short_name} {trans_uuid} - {name}'
-            )
-            print_fn(out)
+            print_fn(f'{"created" if exercise_created else "updated"} exercise {uuid}')
 
-            for note in translation_data['notes']:
-                ExerciseComment.objects.update_or_create(
-                    uuid=note['uuid'],
-                    defaults={
-                        'uuid': note['uuid'],
-                        'translation': translation,
-                        'comment': note['comment'],
-                    },
+            exercise.muscles.set(muscles)
+            exercise.muscles_secondary.set(muscles_sec)
+            exercise.equipment.set(equipment)
+            exercise.save()
+
+            for translation_data in data['translations']:
+                trans_uuid = translation_data['uuid']
+                name = translation_data['name']
+                description = translation_data['description']
+                description_source = translation_data['description_source']
+                language_id = translation_data['language']
+                if not Language.objects.filter(pk=language_id).exists():
+                    lang = Language.objects.filter(short_name='en').first() or Language.objects.first()
+                    if lang:
+                        language_id = lang.pk
+
+                # M11 fix: Search by uuid first to avoid UNIQUE constraint collisions on uuid
+                translation = Translation.objects.filter(uuid=trans_uuid).first()
+                if translation:
+                    translation.exercise = exercise
+                    translation.language_id = language_id
+                    translation.name = name
+                    translation.description = description
+                    translation.description_source = description_source
+                    translation.license_id = license_id
+                    translation.license_author = license_author
+                    translation.save()
+                    translation_created = False
+                else:
+                    translation = Translation.objects.filter(exercise=exercise, language_id=language_id).first()
+                    if translation:
+                        translation.uuid = trans_uuid
+                        translation.name = name
+                        translation.description = description
+                        translation.description_source = description_source
+                        translation.license_id = license_id
+                        translation.license_author = license_author
+                        translation.save()
+                        translation_created = False
+                    else:
+                        translation = Translation.objects.create(
+                            uuid=trans_uuid,
+                            exercise=exercise,
+                            language_id=language_id,
+                            name=name,
+                            description=description,
+                            description_source=description_source,
+                            license_id=license_id,
+                            license_author=license_author,
+                        )
+                        translation_created = True
+
+                out = (
+                    f'- {"created" if translation_created else "updated"} translation '
+                    f'{translation.language.short_name} {trans_uuid} - {name}'
                 )
+                print_fn(out)
 
-            Alias.objects.filter(translation=translation).delete()
-            for alias in translation_data['aliases']:
-                Alias.objects.update_or_create(
-                    uuid=alias['uuid'],
-                    defaults={
-                        'uuid': alias['uuid'],
-                        'translation': translation,
-                        'alias': alias['alias'],
-                    },
-                )
+                for note in translation_data['notes']:
+                    ExerciseComment.objects.update_or_create(
+                        uuid=note['uuid'],
+                        defaults={
+                            'uuid': note['uuid'],
+                            'translation': translation,
+                            'comment': note['comment'],
+                        },
+                    )
 
-        print_fn('')
+                Alias.objects.filter(translation=translation).delete()
+                for alias in translation_data['aliases']:
+                    Alias.objects.update_or_create(
+                        uuid=alias['uuid'],
+                        defaults={
+                            'uuid': alias['uuid'],
+                            'translation': translation,
+                            'alias': alias['alias'],
+                        },
+                    )
+
+            print_fn('')
 
     print_fn(style_fn('done!\n'))
 
@@ -182,14 +206,21 @@ def sync_languages(
     url = make_uri(LANGUAGE_ENDPOINT, server_url=remote_url)
 
     for data in get_all_paginated(url, headers=headers):
+        lang_id = data.get('id')
         short_name = data['short_name']
         full_name = data['full_name']
         full_name_en = data['full_name_en']
 
-        language, created = Language.objects.update_or_create(
-            short_name=short_name,
-            defaults={'full_name': full_name, 'full_name_en': full_name_en},
-        )
+        if lang_id is not None:
+            language, created = Language.objects.update_or_create(
+                pk=lang_id,
+                defaults={'short_name': short_name, 'full_name': full_name, 'full_name_en': full_name_en},
+            )
+        else:
+            language, created = Language.objects.update_or_create(
+                short_name=short_name,
+                defaults={'full_name': full_name, 'full_name_en': full_name_en},
+            )
 
         if created:
             print_fn(f'Saved new language {full_name}')
@@ -207,14 +238,21 @@ def sync_licenses(
     url = make_uri(LICENSE_ENDPOINT, server_url=remote_url)
 
     for data in get_all_paginated(url, headers=wger_headers()):
+        license_id = data.get('id')
         short_name = data['short_name']
         full_name = data['full_name']
         license_url = data['url']
 
-        language, created = License.objects.update_or_create(
-            short_name=short_name,
-            defaults={'full_name': full_name, 'url': license_url},
-        )
+        if license_id is not None:
+            license_obj, created = License.objects.update_or_create(
+                pk=license_id,
+                defaults={'short_name': short_name, 'full_name': full_name, 'url': license_url},
+            )
+        else:
+            license_obj, created = License.objects.update_or_create(
+                short_name=short_name,
+                defaults={'full_name': full_name, 'url': license_url},
+            )
 
         if created:
             print_fn(f'Saved new license {full_name}')
