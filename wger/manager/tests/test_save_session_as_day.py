@@ -65,6 +65,29 @@ class SaveSessionAsDayTestCase(WgerTestCase):
         self.assertEqual(entry.repetitionsconfig_set.first().value, 12)
         self.assertEqual(entry.weightconfig_set.first().value, 50)
 
+        # M5: Pure copy - original historical session and workout logs must NOT be mutated
+        self.session.refresh_from_db()
+        self.assertEqual(self.session.routine, self.routine)
+        self.assertEqual(self.session.day, self.day)
+        for log in WorkoutLog.objects.filter(session=self.session):
+            self.assertEqual(log.routine, self.routine)
+
+    def test_create_day_from_session_unauthorized_target_routine(self):
+        """M5: create_day_from_session rejects target_routine_id belonging to another user."""
+        start_date = datetime.date.today()
+        end_date = start_date + datetime.timedelta(days=28)
+        other_user = User.objects.create_user(username='other_user', password='password')
+        other_routine = Routine.objects.create(user=other_user, name="Other User Routine", start=start_date, end=end_date)
+
+        res = create_day_from_session(
+            user=self.user,
+            session=self.session,
+            target_routine_id=other_routine.id,
+            day_name="Hacked Day"
+        )
+        self.assertIsNone(res)
+        self.assertFalse(Day.objects.filter(routine=other_routine).exists())
+
     def test_finish_workout_with_save_as_routine_day(self):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
         response = self.client.post(url, {

@@ -231,8 +231,13 @@ def create_day_from_session(user, session, target_routine_id=None, new_routine_n
 
     with transaction.atomic():
         routine = None
-        if target_routine_id and str(target_routine_id).isdigit():
-            routine = Routine.objects.filter(id=int(target_routine_id), user=user).first()
+        if target_routine_id and str(target_routine_id).strip() not in ('new', '', 'None'):
+            if str(target_routine_id).isdigit():
+                routine = Routine.objects.filter(id=int(target_routine_id), user=user).first()
+                if not routine:
+                    return None
+            else:
+                return None
 
         import datetime
         start_date = datetime.date.today()
@@ -246,7 +251,7 @@ def create_day_from_session(user, session, target_routine_id=None, new_routine_n
                 end=end_date,
             )
         elif not routine:
-            if session.routine:
+            if session.routine and session.routine.user == user:
                 routine = session.routine
             else:
                 routine = Routine.objects.create(
@@ -315,11 +320,7 @@ def create_day_from_session(user, session, target_routine_id=None, new_routine_n
             RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
             WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight)
 
-        session.routine = routine
-        session.day = day
-        session.save()
-        WorkoutLog.objects.filter(session=session).update(routine=routine)
-
         reset_routine_cache(routine)
         return day
+
 
