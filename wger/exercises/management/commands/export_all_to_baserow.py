@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils.text import slugify
 from django.conf import settings
 import requests
@@ -12,9 +12,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         baserow_url = os.environ.get('BASEROW_URL', 'http://localhost:8080').rstrip('/')
-        baserow_email = os.environ.get('BASEROW_EMAIL', 'francesco.adreani@gmail.com')
-        baserow_password = os.environ.get('BASEROW_PASSWORD', 'Cali2003!')
-        table_id = os.environ.get('BASEROW_TABLE_ID', '322')
+        baserow_email = os.environ.get('BASEROW_EMAIL')
+        baserow_password = os.environ.get('BASEROW_PASSWORD')
+        table_id = os.environ.get('BASEROW_TABLE_ID')
+
+        if not baserow_email or not baserow_password:
+            raise CommandError("BASEROW_EMAIL and BASEROW_PASSWORD environment variables must be set.")
+        if not table_id:
+            raise CommandError("BASEROW_TABLE_ID environment variable must be set.")
 
         self.stdout.write(f"Authenticating with local Baserow at {baserow_url} as {baserow_email}...")
         
