@@ -752,6 +752,169 @@
 
 {% block extra_body %}
 <script>
+    const onyxNative = {
+        get available() {
+            return Boolean(window.AndroidTimer || (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer));
+        },
+        _caps: null,
+        async getCapabilities() {
+            if (this._caps) return this._caps;
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.getCapabilities === 'function') {
+                try {
+                    this._caps = await window.Capacitor.Plugins.WorkoutTimer.getCapabilities();
+                    return this._caps;
+                } catch(e) {}
+            }
+            if (window.AndroidTimer && typeof window.AndroidTimer.canPostPromotedNotifications === 'function') {
+                try {
+                    const canPromote = window.AndroidTimer.canPostPromotedNotifications();
+                    this._caps = {
+                        platform: 'android',
+                        promotedOngoing: canPromote,
+                        notificationsEnabled: window.AndroidTimer.areNotificationsEnabled ? window.AndroidTimer.areNotificationsEnabled() : true
+                    };
+                    return this._caps;
+                } catch(e) {}
+            }
+            this._caps = { platform: 'web', promotedOngoing: false, notificationsEnabled: false };
+            return this._caps;
+        },
+        restStart(durationSeconds, title, soundUri) {
+            try {
+                if (window.AndroidTimer && typeof window.AndroidTimer.startTimerWithSound === 'function') {
+                    window.AndroidTimer.startTimerWithSound(durationSeconds, title || 'Recupero in corso', soundUri || null);
+                } else if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
+                    window.AndroidTimer.startTimer(durationSeconds, title || 'Recupero in corso');
+                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                    window.Capacitor.Plugins.WorkoutTimer.startTimer({
+                        durationSeconds: durationSeconds,
+                        title: title || 'Recupero in corso',
+                        soundUri: soundUri || null
+                    });
+                }
+            } catch(e) {}
+        },
+        restPause() {
+            try {
+                if (window.AndroidTimer && typeof window.AndroidTimer.pauseTimer === 'function') {
+                    window.AndroidTimer.pauseTimer();
+                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                    window.Capacitor.Plugins.WorkoutTimer.pauseTimer();
+                }
+            } catch(e) {}
+        },
+        restResume() {
+            try {
+                if (window.AndroidTimer && typeof window.AndroidTimer.resumeTimer === 'function') {
+                    window.AndroidTimer.resumeTimer();
+                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                    window.Capacitor.Plugins.WorkoutTimer.resumeTimer();
+                }
+            } catch(e) {}
+        },
+        restAddSeconds(sec = 30) {
+            try {
+                if (window.AndroidTimer && typeof window.AndroidTimer.addSeconds === 'function') {
+                    window.AndroidTimer.addSeconds(sec);
+                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                    window.Capacitor.Plugins.WorkoutTimer.addSeconds({ seconds: sec });
+                }
+            } catch(e) {}
+        },
+        restStop() {
+            try {
+                if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
+                    window.AndroidTimer.stopTimer();
+                    window.AndroidTimer.stopAlarm();
+                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                    window.Capacitor.Plugins.WorkoutTimer.stopTimer();
+                    window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+                }
+            } catch(e) {}
+        },
+        workoutStart(title, totalSets, completedSets, currentExerciseName, startedAt, slotBoundaries) {
+            try {
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland === 'function') {
+                    window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland({
+                        title: title,
+                        totalSets: totalSets,
+                        completedSets: completedSets,
+                        currentExerciseName: currentExerciseName,
+                        startedAt: startedAt,
+                        slotBoundaries: slotBoundaries || null
+                    });
+                } else if (window.AndroidTimer && typeof window.AndroidTimer.startWorkout === 'function') {
+                    window.AndroidTimer.startWorkout(title, startedAt);
+                }
+            } catch(e) {}
+        },
+        workoutUpdate(completedSets, totalSets, currentExerciseName) {
+            try {
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland === 'function') {
+                    window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland({
+                        completedSets: completedSets,
+                        totalSets: totalSets,
+                        currentExerciseName: currentExerciseName
+                    });
+                } else if (window.AndroidTimer && typeof window.AndroidTimer.updateProgressWithExercise === 'function') {
+                    window.AndroidTimer.updateProgressWithExercise(completedSets, totalSets, Math.max(0, totalSets - completedSets), currentExerciseName);
+                } else if (window.AndroidTimer && typeof window.AndroidTimer.updateProgress === 'function') {
+                    window.AndroidTimer.updateProgress(completedSets, totalSets, Math.max(0, totalSets - completedSets));
+                }
+            } catch(e) {}
+        },
+        workoutStop() {
+            try {
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland === 'function') {
+                    window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland();
+                } else if (window.AndroidTimer && typeof window.AndroidTimer.stopWorkout === 'function') {
+                    window.AndroidTimer.stopWorkout();
+                }
+            } catch(e) {}
+        }
+    };
+    window.onyxNative = onyxNative;
+
+    function computeWorkoutProgress() {
+        const setRows = document.querySelectorAll('.set-row');
+        const totalSets = setRows.length;
+        let completedSets = 0;
+        let currentExerciseName = "";
+
+        const exerciseGroups = document.querySelectorAll('.exercise-group');
+        for (const group of exerciseGroups) {
+            const uncompletedInGroup = group.querySelectorAll('.set-row[data-completed="false"]');
+            if (uncompletedInGroup.length > 0) {
+                const titleEl = group.querySelector('.exercise-title, h3, h4');
+                if (titleEl) {
+                    currentExerciseName = titleEl.innerText.trim();
+                }
+                break;
+            }
+        }
+        if (!currentExerciseName && exerciseGroups.length > 0) {
+            const lastTitleEl = exerciseGroups[exerciseGroups.length - 1].querySelector('.exercise-title, h3, h4');
+            if (lastTitleEl) currentExerciseName = lastTitleEl.innerText.trim();
+        }
+
+        setRows.forEach(row => {
+            if (row.getAttribute('data-completed') === 'true') {
+                completedSets++;
+            }
+        });
+
+        const percentage = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+        const remainingSets = Math.max(0, totalSets - completedSets);
+
+        return {
+            totalSets: totalSets,
+            completedSets: completedSets,
+            remainingSets: remainingSets,
+            percentage: percentage,
+            currentExerciseName: currentExerciseName
+        };
+    }
+
     let defaultDuration = 45; // seconds
     let durationSeconds = defaultDuration;
     let remainingMs = durationSeconds * 1000;
@@ -1023,14 +1186,7 @@
 
         try {
             const sec = Math.ceil(remainingMs / 1000);
-            if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
-                window.AndroidTimer.startTimer(sec, "Recupero in corso");
-            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                window.Capacitor.Plugins.WorkoutTimer.startTimer({
-                    durationSeconds: sec,
-                    title: "Recupero in corso"
-                });
-            }
+            onyxNative.restStart(sec, "Recupero in corso", getSelectedTimerSound());
         } catch(e) {}
 
         if (textPlay) textPlay.innerText = "{% translate 'Pause' %}";
@@ -1083,11 +1239,7 @@
         }
 
         try {
-            if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
-                window.AndroidTimer.stopTimer();
-            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                window.Capacitor.Plugins.WorkoutTimer.pauseTimer();
-            }
+            onyxNative.restPause();
         } catch(e) {}
 
         resetTimerControls();
@@ -1129,13 +1281,7 @@
         hasNotifiedZero = false;
 
         try {
-            if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
-                window.AndroidTimer.stopTimer();
-                window.AndroidTimer.stopAlarm();
-            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                window.Capacitor.Plugins.WorkoutTimer.stopTimer();
-                window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
-            }
+            onyxNative.restStop();
         } catch(e) {}
 
         clearExpiringStyles();
@@ -1172,14 +1318,7 @@
             startedAt = Date.now();
             try {
                 const sec = Math.ceil(remainingMs / 1000);
-                if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
-                    window.AndroidTimer.startTimer(sec, "Recupero in corso");
-                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                    window.Capacitor.Plugins.WorkoutTimer.startTimer({
-                        durationSeconds: sec,
-                        title: "Recupero in corso"
-                    });
-                }
+                onyxNative.restStart(sec, "Recupero in corso", getSelectedTimerSound());
             } catch(e) {}
         }
         hasNotifiedZero = false;
@@ -1437,15 +1576,41 @@
     window.getSelectedTimerSound = getSelectedTimerSound;
 
     function updateProgressBar() {
-        const totalSets = document.querySelectorAll('.set-row').length;
-        const completedSets = document.querySelectorAll('.set-row[data-completed="true"]').length;
-        const percentage = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+        const progress = computeWorkoutProgress();
         
         const progressBar = document.getElementById('workout-progress-bar');
         const progressText = document.getElementById('workout-progress-text');
         
-        if (progressBar) progressBar.style.width = `${percentage}%`;
-        if (progressText) progressText.innerText = `${percentage}%`;
+        if (progressBar) progressBar.style.width = `${progress.percentage}%`;
+        if (progressText) progressText.innerText = `${progress.percentage}%`;
+
+        // Update localStorage progress object
+        try {
+            const exerciseCards = document.querySelectorAll('.exercise-group');
+            const totalExercises = exerciseCards.length;
+            let completedExercises = 0;
+            exerciseCards.forEach(card => {
+                const uncompletedSets = card.querySelectorAll('.set-row[data-completed="false"]');
+                if (uncompletedSets.length === 0 && card.querySelectorAll('.set-row').length > 0) {
+                    completedExercises++;
+                }
+            });
+            const progressData = {
+                total: totalExercises,
+                completed: completedExercises,
+                remaining: Math.max(0, totalExercises - completedExercises),
+                totalSets: progress.totalSets,
+                completedSets: progress.completedSets,
+                currentExerciseName: progress.currentExerciseName
+            };
+            localStorage.setItem('onyx_workout_progress', JSON.stringify(progressData));
+        } catch(e) {}
+
+        // Notify native island & update fallback notch
+        onyxNative.workoutUpdate(progress.completedSets, progress.totalSets, progress.currentExerciseName);
+        if (typeof updateDynamicNotch === 'function') {
+            updateDynamicNotch();
+        }
     }
 
     function toggleCollapse(exerciseId) {
@@ -2501,6 +2666,21 @@
         } catch(e) {}
     }
 
+    function initOnyxWorkoutIsland() {
+        const progress = computeWorkoutProgress();
+        const workoutTitle = document.querySelector('h1')?.innerText?.trim() || "{{ day.description|default:'Allenamento'|escapejs }}";
+        const startedAt = Date.now();
+        onyxNative.workoutStart(workoutTitle, progress.totalSets, progress.completedSets, progress.currentExerciseName, startedAt);
+        updateProgressBar();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initOnyxWorkoutIsland, 300);
+    });
+    document.addEventListener('htmx:afterSwap', () => {
+        setTimeout(updateProgressBar, 100);
+    });
+
     // Auto-save interval every 30 seconds
     setInterval(autoSaveWorkoutSnapshot, 30000);
     document.addEventListener('htmx:afterSwap', () => { setTimeout(autoSaveWorkoutSnapshot, 500); });
@@ -2520,9 +2700,13 @@
             hidden.value = JSON.stringify(payload);
         }
 
-        // Clean local active session keys upon completion
-        localStorage.removeItem('onyx_active_workout_snapshot');
-        localStorage.removeItem('onyx_active_rest_timer');
+        // Clean local active session keys upon completion and stop native live activity
+        onyxNative.workoutStop();
+        try {
+            localStorage.removeItem('onyx_workout_progress');
+            localStorage.removeItem('onyx_active_workout_snapshot');
+            localStorage.removeItem('onyx_active_rest_timer');
+        } catch(e) {}
     };
 </script>
 {% endblock %}

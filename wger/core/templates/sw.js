@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onyx-cache-v8';
+const CACHE_NAME = 'onyx-cache-v9';
 const STATIC_ASSETS = [
   '/static/images/logos/logo-192.png',
   '/static/images/logos/logo-512.png',

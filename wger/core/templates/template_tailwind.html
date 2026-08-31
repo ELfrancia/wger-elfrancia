@@ -43,17 +43,10 @@
         });
       }
 
-      // Force remove any leftover notch element and clean localStorage
-      try {
-        localStorage.removeItem('onyx_workout_progress');
-        const leftoverNotch = document.getElementById('onyx-dynamic-notch');
-        if (leftoverNotch) leftoverNotch.remove();
-      } catch(e) {}
-
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=8').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=9').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {
@@ -1329,24 +1322,47 @@
         });
 
         // Check and prompt native permissions on launch
-        function checkAndPromptPermissions() {
-            if (window.AndroidTimer && typeof window.AndroidTimer.areNotificationsEnabled === 'function') {
+        // Check and prompt native permissions on launch
+        async function checkAndPromptPermissions() {
+            let enabled = true;
+            let canPromote = true;
+
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.getCapabilities === 'function') {
                 try {
-                    const enabled = window.AndroidTimer.areNotificationsEnabled();
-                    const dismissed = sessionStorage.getItem('onyx_permission_prompt_dismissed');
-                    if (!enabled && !dismissed) {
-                        const modal = document.getElementById('onyx-permission-prompt-modal');
-                        if (modal) {
-                            modal.classList.remove('hidden');
-                            setTimeout(() => modal.classList.remove('opacity-0'), 50);
-                        }
+                    const caps = await window.Capacitor.Plugins.WorkoutTimer.getCapabilities();
+                    enabled = Boolean(caps.notificationsEnabled);
+                    canPromote = Boolean(caps.promotedOngoing);
+                } catch(e) {}
+            } else if (window.AndroidTimer && typeof window.AndroidTimer.areNotificationsEnabled === 'function') {
+                try {
+                    enabled = window.AndroidTimer.areNotificationsEnabled();
+                    if (typeof window.AndroidTimer.canPostPromotedNotifications === 'function') {
+                        canPromote = window.AndroidTimer.canPostPromotedNotifications();
                     }
                 } catch(e) {}
+            }
+
+            const dismissed = sessionStorage.getItem('onyx_permission_prompt_dismissed');
+            if ((!enabled || !canPromote) && !dismissed && (window.AndroidTimer || (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer))) {
+                const modal = document.getElementById('onyx-permission-prompt-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    setTimeout(() => modal.classList.remove('opacity-0'), 50);
+                }
             }
         }
 
         window.enablePermissionsNow = function() {
-            if (window.AndroidTimer) {
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                try {
+                    if (typeof window.Capacitor.Plugins.WorkoutTimer.requestAllPermissions === 'function') {
+                        window.Capacitor.Plugins.WorkoutTimer.requestAllPermissions();
+                    }
+                    if (typeof window.Capacitor.Plugins.WorkoutTimer.openNotificationSettings === 'function') {
+                        window.Capacitor.Plugins.WorkoutTimer.openNotificationSettings();
+                    }
+                } catch(e) {}
+            } else if (window.AndroidTimer) {
                 if (typeof window.AndroidTimer.requestAllPermissions === 'function') {
                     window.AndroidTimer.requestAllPermissions();
                 }
@@ -1376,8 +1392,8 @@
                 <span class="material-symbols-outlined text-3xl">notifications_active</span>
             </div>
             <div class="flex flex-col gap-1.5">
-                <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">Attiva Notifiche & Dynamic Island</h3>
-                <p class="text-xs text-zinc-400">Consenti le notifiche e la comparsa nella barra di stato per visualizzare il timer e l'allenamento in tempo reale nella capsula in alto.</p>
+                <h3 class="text-sm font-black uppercase tracking-wider text-white font-display">Attiva Super Island & Notifiche Live</h3>
+                <p class="text-xs text-zinc-400">Consenti le notifiche e gli aggiornamenti live per visualizzare il progresso degli esercizi e il timer di recupero nella capsula di stato (Super Island HyperOS & Live Updates Android 16).</p>
             </div>
             <div class="w-full flex flex-col gap-2 pt-2">
                 <button type="button" onclick="enablePermissionsNow()" class="w-full py-3.5 rounded-full bg-[#caf300] text-black font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform">
