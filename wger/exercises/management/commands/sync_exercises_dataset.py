@@ -15,6 +15,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from wger.exercises.media_utils import is_safe_path, is_safe_url, safe_download_file, sanitize_filename
 from wger.exercises.models import (
     CalisthenicsExercise,
     Exercise,
@@ -78,9 +79,9 @@ class Command(BaseCommand):
         updated_media_count = 0
         updated_trans_count = 0
 
-        cal_to_create = []
-        cal_to_update = []
-        trans_to_update = []
+        cal_to_create_map = {}
+        cal_to_update_map = {}
+        trans_to_update_map = {}
 
         self.stdout.write(self.style.NOTICE("Matching exercises and assigning video animations..."))
 
@@ -89,6 +90,19 @@ class Command(BaseCommand):
             item_id = str(item.get("id") or "")
             gif_filename = item.get("gif_url") or f"{item_id}.gif"
             video_url = f"{BASE_MEDIA_URL}{gif_filename}" if not gif_filename.startswith("http") else gif_filename
+
+            if download and video_url.startswith("http"):
+                safe_id = sanitize_filename(item_id) or "media"
+                ext = "gif"
+                if "." in video_url.split("/")[-1]:
+                    ext = video_url.split("/")[-1].split(".")[-1].lower()
+                local_filename = f"exdataset-{safe_id}.{ext}"
+                local_file_path = os.path.join(media_dir, local_filename)
+                if is_safe_path(media_dir, local_file_path):
+                    if not os.path.exists(local_file_path):
+                        safe_download_file(video_url, local_file_path, base_dir=media_dir, timeout=15)
+                    if os.path.exists(local_file_path):
+                        video_url = f"{settings.MEDIA_URL}exercises/{local_filename}"
 
             instructions_it = ""
             if isinstance(item.get("instructions"), dict):
@@ -111,7 +125,7 @@ class Command(BaseCommand):
                     best_score = 100
                     break
 
-                overlap = len(ex_tokens & item_tokens) if 'ex_tokens' in locals() else len(t_tokens & item_tokens)
+                overlap = len(t_tokens & item_tokens)
                 if overlap > 0:
                     score = (2.0 * overlap) / (len(t_tokens) + len(item_tokens)) * 100
                     if score > best_score and score >= 75:
@@ -131,7 +145,7 @@ class Command(BaseCommand):
                         cal_obj.demo_media_url = video_url
                         if instructions_it and not cal_obj.description:
                             cal_obj.description = instructions_it
-                        cal_to_update.append(cal_obj)
+                        cal_to_update_map[ex_uuid_str] = cal_obj
                         updated_media_count += 1
                 else:
                     new_cal = CalisthenicsExercise(
@@ -142,7 +156,7 @@ class Command(BaseCommand):
                         description=instructions_it,
                         is_published=True,
                     )
-                    cal_to_create.append(new_cal)
+                    cal_to_create_map[ex_uuid_str] = new_cal
                     cal_by_uuid[ex_uuid_str] = new_cal
                     updated_media_count += 1
 
@@ -150,8 +164,12 @@ class Command(BaseCommand):
                 if instructions_it and matched_trans_info:
                     t_pk, t_desc = matched_trans_info
                     if not t_desc or len(t_desc) < 30:
-                        trans_to_update.append(Translation(id=t_pk, description=instructions_it))
+                        trans_to_update_map[t_pk] = Translation(id=t_pk, description=instructions_it)
                         updated_trans_count += 1
+
+        cal_to_create = list(cal_to_create_map.values())
+        cal_to_update = list(cal_to_update_map.values())
+        trans_to_update = list(trans_to_update_map.values())
 
         if not dry_run:
             with transaction.atomic():
