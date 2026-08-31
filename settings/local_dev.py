@@ -14,13 +14,10 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 't')
 ADMINS = ['"Your name" <your_email@example.com>']
 MANAGERS = ADMINS
 
-# Secret key: read from environment if present, generate random key for local run
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', os.environ.get('SECRET_KEY', ''))
-if not SECRET_KEY:
-    import secrets
-    SECRET_KEY = secrets.token_urlsafe(50)
+# Secret key: read from environment if present, fallback to local dev key
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', os.environ.get('SECRET_KEY', 'wger-local-development-supersecret-key-1234567890!'))
 
-# List of allowed hosts (env-driven with localhost defaults, no wildcard)
+# List of allowed hosts (env-driven with local/LAN/domain defaults)
 _allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', os.environ.get('DJANGO_ALLOWED_HOSTS', ''))
 if _allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
@@ -28,6 +25,9 @@ else:
     ALLOWED_HOSTS = [
         'localhost',
         '127.0.0.1',
+        '192.168.1.103',
+        'onyx.francescoadreani.dev',
+        '*',
     ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
