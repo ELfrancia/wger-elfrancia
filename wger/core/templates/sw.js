@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onyx-cache-v9';
+const CACHE_NAME = 'onyx-cache-v10';
 const STATIC_ASSETS = [
   '/static/images/logos/logo-192.png',
   '/static/images/logos/logo-512.png',
@@ -63,10 +63,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 1. Static Assets (Fonts, CDN Scripts, Audio, Images) -> Cache-First
-  const isStatic = STATIC_ASSETS.includes(req.url) || 
-                   reqUrl.pathname.startsWith('/static/') || 
-                   reqUrl.pathname.startsWith('/media/') ||
+  // 1. Immutable static assets (Fonts, CDN scripts, audio, Django /static/) -> Cache-First
+  const isStatic = STATIC_ASSETS.includes(req.url) ||
+                   reqUrl.pathname.startsWith('/static/') ||
                    reqUrl.hostname.includes('fonts.gstatic.com') ||
                    reqUrl.hostname.includes('raw.githubusercontent.com');
 
@@ -88,26 +87,33 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. HTML Navigation Documents -> Stale-While-Revalidate (Instant 0ms Load + Background Update)
+  // 2. User media (avatars, condition photos) -> Network-First (they change / get deleted)
+  if (reqUrl.pathname.startsWith('/media/')) {
+    event.respondWith(
+      fetch(req).then(res => {
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        }
+        return res;
+      }).catch(() => caches.match(req).then(c => c || new Response('', { status: 504 })))
+    );
+    return;
+  }
+
+  // 3. HTML navigation documents -> Network-First (deployed fixes must land immediately)
   const isHtml = req.mode === 'navigate' || (req.headers.get('accept') && req.headers.get('accept').includes('text/html'));
   if (isHtml) {
     event.respondWith(
-      caches.open(CACHE_NAME).then(async cache => {
-        const cachedResponse = await cache.match(req);
-
-        const networkFetchPromise = fetch(req).then(networkResponse => {
-          if (networkResponse && networkResponse.ok) {
-            cache.put(req, networkResponse.clone());
-          }
-          return networkResponse;
-        }).catch(err => {
-          // If offline and have cache, return cache
-          if (cachedResponse) return cachedResponse;
-          return new Response('Network offline', { status: 503, statusText: 'Offline' });
-        });
-
-        // Return cached immediately if available, otherwise wait for network
-        return cachedResponse || networkFetchPromise;
+      fetch(req).then(networkResponse => {
+        if (networkResponse && networkResponse.ok) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        }
+        return networkResponse;
+      }).catch(async () => {
+        const cached = await caches.match(req);
+        return cached || new Response('Network offline', { status: 503, statusText: 'Offline' });
       })
     );
   }

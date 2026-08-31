@@ -10,7 +10,7 @@
         <div class="flex items-center gap-3">
             <div class="relative w-12 h-12 rounded-full overflow-hidden border border-outline bg-surface-card shadow-md">
                 <!-- Dynamic profile image -->
-                <img src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' }}" alt="Avatar" class="w-full h-full object-cover">
+                <img src="{{ profile.avatar_url|default:'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80' }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&h=120&q=80';" alt="Avatar" class="w-full h-full object-cover">
                 <!-- Status active dot -->
                 <div class="absolute bottom-0 right-0 w-3 h-3 bg-primary border border-background rounded-full"></div>
             </div>

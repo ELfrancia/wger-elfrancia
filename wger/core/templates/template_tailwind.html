@@ -41,21 +41,14 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      // Clear any legacy broken cache stores from previous SW versions
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          names.forEach(function(name) {
-            if (name !== 'onyx-cache-v8') {
-              caches.delete(name);
-            }
-          });
-        });
-      }
+      // Cache lifecycle is owned entirely by sw.js (activate handler). Do NOT
+      // delete caches from here — a stale version string would wipe the SW's
+      // live cache on every page load.
 
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=9').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=10').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {
@@ -534,7 +527,7 @@
     <title>{% block title %}Onyx Tracker{% endblock %}</title>
     {% block header %}{% endblock %}
 </head>
-<body class="bg-background text-[#e5e2e1] font-sans antialiased pb-24 min-h-screen" hx-boost="true">
+<body class="bg-background text-[#e5e2e1] font-sans antialiased pb-24 min-h-screen">
     <!-- Page Loader Overlay (Nascosto di default, visibile solo all'avvio allenamento o con data-show-loader) -->
     <div id="page-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#08090A] fade-out">
         <div class="relative w-28 h-28 flex items-center justify-center">
