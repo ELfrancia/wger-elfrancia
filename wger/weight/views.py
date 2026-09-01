@@ -186,6 +186,9 @@ def weight_overview_tailwind(request):
                     day.save(update_fields=['name'])
                     reset_routine_cache(day.routine)
 
+    # Per-month day breakdown, only populated for the yearly range.
+    calendar_months = []
+
     if range_param == 'weekly':
         start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=7), datetime.min.time()))
         monday_of_week = selected_date - timedelta(days=selected_date.weekday())
@@ -259,6 +262,7 @@ def weight_overview_tailwind(request):
             })
 
     else: # yearly
+        import calendar as _calendar
         start_date = timezone.make_aware(datetime.combine(selected_date - timedelta(days=365), datetime.min.time()))
         period_start = selected_date.replace(month=1, day=1)
         period_end = selected_date.replace(month=12, day=31)
@@ -275,24 +279,40 @@ def weight_overview_tailwind(request):
 
         period_title = str(selected_date.year)
 
-        sessions_months = set(
+        year = selected_date.year
+        workout_dates = set(
             WorkoutSession.objects.filter(
                 user=request.user,
                 status='finished',
                 date__range=[period_start, period_end]
-            ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).values_list('date__month', flat=True)
+            ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).values_list('date', flat=True)
         )
 
         calendar_items = []
         for m in range(1, 13):
-            month_date = selected_date.replace(month=m, day=1)
-            calendar_items.append({
-                'date': month_date,
-                'day_num': m,
-                'day_name': date_format(month_date, 'b').upper(),
-                'is_selected': month_date.month == selected_date.month,
-                'has_workout': m in sessions_months,
-                'is_month': True,
+            month_start = date(year, m, 1)
+            num_days = _calendar.monthrange(year, m)[1]
+            # Leading blank cells so the 1st lands under the right weekday (Mon-first).
+            days = [{'blank': True} for _ in range(month_start.weekday())]
+            month_workout_days = 0
+            for d in range(1, num_days + 1):
+                day_date = date(year, m, d)
+                has_workout = day_date in workout_dates
+                if has_workout:
+                    month_workout_days += 1
+                days.append({
+                    'blank': False,
+                    'date': day_date,
+                    'day_num': d,
+                    'has_workout': has_workout,
+                    'is_selected': day_date == selected_date,
+                    'is_today': day_date == now.date(),
+                })
+            calendar_months.append({
+                'name': date_format(month_start, 'b').upper(),
+                'days': days,
+                'workout_days': month_workout_days,
+                'is_current': m == selected_date.month,
             })
 
     selected_date_display = date_format(selected_date, 'd F Y')
@@ -756,6 +776,7 @@ def weight_overview_tailwind(request):
         'selected_date_display': selected_date_display,
         'period_title': period_title,
         'calendar_items': calendar_items,
+        'calendar_months': calendar_months,
         'prev_period_date': prev_period_date,
         'next_period_date': next_period_date,
         'selected_sessions': selected_sessions,

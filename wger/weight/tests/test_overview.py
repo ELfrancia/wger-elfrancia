@@ -87,6 +87,52 @@ class WeightOverviewTestCase(WgerTestCase):
         self.assertIn(finished.id, session_ids)
         self.assertNotIn(interrupted.id, session_ids)
 
+    def test_yearly_range_marks_workout_days_per_month(self):
+        """
+        The yearly range must expose a per-month day breakdown that flags the
+        days on which a finished session with logs took place.
+        """
+        import datetime
+
+        from django.contrib.auth.models import User
+
+        from wger.manager.models import Day, WorkoutSession, WorkoutLog
+
+        user = User.objects.get(username='test')
+        self.client.force_login(user)
+
+        day = Day.objects.get(pk=1)
+        routine = day.routine
+        routine.user = user
+        routine.save()
+        slot = day.slots.first()
+        slot_entry = slot.entries.first()
+
+        workout_day = datetime.date(datetime.date.today().year, 3, 12)
+        session = WorkoutSession.objects.create(
+            user=user, routine=routine, day=day, date=workout_day,
+            time_start=datetime.time(10, 0), time_end=datetime.time(11, 0),
+            status='finished',
+        )
+        WorkoutLog.objects.create(
+            user=user, session=session, routine=routine, exercise=slot.obj,
+            slot_entry=slot_entry, repetitions=10, weight=50, date=workout_day,
+        )
+
+        response = self.client.get(
+            reverse('weight:overview'),
+            {'range': 'yearly', 'selected_date': workout_day.strftime('%Y-%m-%d')},
+        )
+        self.assertEqual(response.status_code, 200)
+        months = response.context['calendar_months']
+        self.assertEqual(len(months), 12)
+        march = months[2]
+        self.assertEqual(march['workout_days'], 1)
+        marked = [c['day_num'] for c in march['days'] if not c['blank'] and c['has_workout']]
+        self.assertEqual(marked, [12])
+        # A month with no sessions stays empty.
+        self.assertEqual(months[0]['workout_days'], 0)
+
     def test_weight_overview_loged_in(self):
         """
         Test the weight overview page by a logged in user

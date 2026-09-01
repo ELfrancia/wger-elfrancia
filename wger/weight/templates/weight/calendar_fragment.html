@@ -26,8 +26,37 @@
             </div>
         </div>
         
-        <!-- Days / Months Grid -->
-        <div class="grid {% if range == 'monthly' %}grid-cols-7 sm:grid-cols-10{% elif range == 'yearly' %}grid-cols-4 sm:grid-cols-6{% else %}grid-cols-7{% endif %} gap-1.5 sm:gap-2 w-full">
+        {% if range == 'yearly' %}
+        <!-- Year overview: one mini-calendar per month, workout days highlighted -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 w-full">
+            {% for month in calendar_months %}
+                <div class="rounded-2xl border p-2.5 sm:p-3 flex flex-col gap-2 {% if month.is_current %}bg-[#caf300]/[0.06] border-[#caf300]/30{% else %}bg-[#16171b] border-white/[0.05]{% endif %}">
+                    <div class="flex items-center justify-between px-0.5">
+                        <span class="text-[10px] font-black uppercase tracking-wider font-display {% if month.is_current %}text-[#caf300]{% else %}text-neutral-300{% endif %}">{{ month.name }}</span>
+                        <span class="text-[9px] font-bold font-mono {% if month.workout_days %}text-[#caf300]{% else %}text-neutral-600{% endif %}">{{ month.workout_days }}</span>
+                    </div>
+                    <div class="grid grid-cols-7 gap-[3px]">
+                        {% for cell in month.days %}
+                            {% if cell.blank %}
+                                <span class="aspect-square"></span>
+                            {% else %}
+                                <button hx-get="{% url 'weight:overview' %}?range=yearly&selected_date={{ cell.date|date:'Y-m-d' }}"
+                                        hx-target="#activity-calendar-container"
+                                        hx-swap="outerHTML"
+                                        title="{{ cell.date|date:'d/m/Y' }}"
+                                        class="aspect-square rounded-[5px] flex items-center justify-center text-[8px] font-bold leading-none transition-all
+                                        {% if cell.has_workout %}bg-[#caf300] text-[#090a0c] shadow-[0_0_5px_rgba(202,243,0,0.5)]{% elif cell.is_selected %}bg-white/15 text-white ring-1 ring-[#caf300]{% elif cell.is_today %}bg-white/[0.06] text-neutral-300 ring-1 ring-white/20{% else %}bg-white/[0.03] text-neutral-600 hover:bg-white/10 hover:text-neutral-300{% endif %}">
+                                    {{ cell.day_num }}
+                                </button>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Days Grid -->
+        <div class="grid {% if range == 'monthly' %}grid-cols-7 sm:grid-cols-10{% else %}grid-cols-7{% endif %} gap-1.5 sm:gap-2 w-full">
             {% for item in calendar_items %}
                 <button hx-get="{% url 'weight:overview' %}?range={{ range }}&selected_date={{ item.date|date:'Y-m-d' }}" 
                         hx-target="#activity-calendar-container" 
@@ -45,6 +74,7 @@
                 </button>
             {% endfor %}
         </div>
+        {% endif %}
     </div>
 
     <!-- 2. Concentric Progress Rings and Logs Card -->
