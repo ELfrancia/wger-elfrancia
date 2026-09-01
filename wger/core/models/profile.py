@@ -335,6 +335,40 @@ class UserProfile(models.Model):
         null=False,
     )
 
+    weight_goal = models.DecimalField(
+        verbose_name=_('Target body weight'),
+        max_digits=6,
+        decimal_places=2,
+        blank=True,
+        null=True,
+    )
+    """The user's target body weight, expressed in the user's preferred weight unit"""
+
+    activity_level = models.CharField(
+        verbose_name=_('Physical activity level'),
+        max_length=12,
+        blank=True,
+        choices=[
+            ('beginner', _('1-2 times/week')),
+            ('intermediate', _('3-4 times/week')),
+            ('advanced', _('5+ times/week')),
+        ],
+    )
+    """How often the user trains, collected during onboarding"""
+
+    onboarding_completed = models.BooleanField(
+        verbose_name=_('Onboarding completed'),
+        default=True,
+    )
+    """
+    Whether the user has completed the first-login onboarding wizard.
+
+    Defaults to True so that existing accounts and users created
+    programmatically (fixtures, admin, tests) are never forced through the
+    wizard. Genuine sign-ups are set to False in
+    ``WgerAccountAdapter.save_user()``.
+    """
+
     avatar_url = models.CharField(
         max_length=500,
         verbose_name=_('Avatar URL'),

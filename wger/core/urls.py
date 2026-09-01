@@ -28,6 +28,7 @@ from wger.core.views import (
     languages,
     license,
     misc,
+    onboarding,
     repetition_units,
     user,
     weight_units,
@@ -196,6 +197,7 @@ urlpatterns = [
     # The landing page
     path('', misc.index, name='index'),
     path('dashboard', user.dashboard_tailwind, name='dashboard'),
+    path('onboarding', onboarding.onboarding, name='onboarding'),
     path('profile', user.profile_tailwind, name='profile_tailwind'),
     path('session/<uuid:session_id>/details', user.session_details_tailwind, name='session-details'),
     path('session/log/update', user.update_log_ajax, name='update-log-ajax'),

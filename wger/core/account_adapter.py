@@ -52,6 +52,9 @@ class WgerAccountAdapter(DefaultAccountAdapter):
         profile = user.userprofile
         profile.notification_language = load_language(translation.get_language())
 
+        # Genuine sign-ups go through the first-login onboarding wizard
+        profile.onboarding_completed = False
+
         gym_config = GymConfig.objects.get(pk=1)
         if gym_config.default_gym:
             profile.gym = gym_config.default_gym

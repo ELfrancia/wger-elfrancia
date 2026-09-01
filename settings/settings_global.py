@@ -162,6 +162,7 @@ MIDDLEWARE = [
     'wger.utils.middleware.RobotsExclusionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'wger.core.middleware.ForcePasswordChangeMiddleware',
+    'wger.core.middleware.OnboardingRequiredMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 

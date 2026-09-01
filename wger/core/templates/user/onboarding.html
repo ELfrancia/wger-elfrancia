@@ -1,0 +1,173 @@
+{% extends 'template_tailwind.html' %}
+{% load i18n l10n %}
+
+{% block title %}ONYX - {% translate "Completa il tuo profilo" %}{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-md mx-auto px-4 pt-2 pb-28 flex flex-col min-h-[80vh]">
+
+    <!-- Header: progress + skip -->
+    <div class="flex items-center justify-between mb-4">
+        <span id="ob-step-label" class="text-[11px] font-black uppercase tracking-widest text-secondary font-display">
+            {% translate "Passo" %} 1 / 4
+        </span>
+        <a href="{% url 'core:onboarding' %}?skip=1"
+           class="text-[11px] font-bold uppercase tracking-wider text-secondary hover:text-white transition-colors">
+            {% translate "Salta" %}
+        </a>
+    </div>
+    <div class="w-full flex gap-1.5 h-1 mb-8">
+        <div data-bar="1" class="ob-bar flex-1 rounded-full bg-primary transition-colors"></div>
+        <div data-bar="2" class="ob-bar flex-1 rounded-full bg-surface-container-high transition-colors"></div>
+        <div data-bar="3" class="ob-bar flex-1 rounded-full bg-surface-container-high transition-colors"></div>
+        <div data-bar="4" class="ob-bar flex-1 rounded-full bg-surface-container-high transition-colors"></div>
+    </div>
+
+    <form method="post" action="{% url 'core:onboarding' %}" class="flex-1 flex flex-col">
+        {% csrf_token %}
+
+        <!-- STEP 1 — WEIGHT -->
+        <section data-step="1" class="ob-panel flex-1 flex flex-col">
+            <h1 class="font-display font-black text-2xl text-white mb-2">{% translate "Qual è il tuo peso?" %}</h1>
+            <p class="text-sm text-neutral-400 mb-8">{% translate "Peso in kg. Puoi sempre modificarlo più avanti." %}</p>
+            <div class="flex-1 flex flex-col items-center justify-center gap-4">
+                <div class="flex items-baseline gap-2">
+                    <input type="number" name="weight" step="0.1" min="30" max="300" inputmode="decimal"
+                           value="{% if profile.weight %}{{ profile.weight|unlocalize }}{% endif %}"
+                           placeholder="75"
+                           class="w-40 bg-transparent text-center font-display font-black text-6xl text-primary clean-input">
+                    <span class="font-display font-bold text-lg text-neutral-400 uppercase">kg</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2 — HEIGHT -->
+        <section data-step="2" class="ob-panel hidden flex-1 flex-col">
+            <h1 class="font-display font-black text-2xl text-white mb-2">{% translate "Qual è la tua altezza?" %}</h1>
+            <p class="text-sm text-neutral-400 mb-8">{% translate "Altezza in cm. Serve per personalizzare le tue metriche." %}</p>
+            <div class="flex-1 flex flex-col items-center justify-center gap-4">
+                <div class="flex items-baseline gap-2">
+                    <input type="number" name="height" step="1" min="100" max="250" inputmode="numeric"
+                           value="{% if profile.height %}{{ profile.height|unlocalize }}{% endif %}"
+                           placeholder="175"
+                           class="w-40 bg-transparent text-center font-display font-black text-6xl text-primary clean-input">
+                    <span class="font-display font-bold text-lg text-neutral-400 uppercase">cm</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3 — ACTIVITY LEVEL -->
+        <section data-step="3" class="ob-panel hidden flex-1 flex-col">
+            <h1 class="font-display font-black text-2xl text-white mb-2">{% translate "Livello di attività fisica" %}</h1>
+            <p class="text-sm text-neutral-400 mb-8">{% translate "Con quale frequenza ti alleni di solito?" %}</p>
+            <div class="flex flex-col gap-3">
+                <label class="relative flex flex-col p-5 bg-surface-card border border-surface-container-high rounded-2xl cursor-pointer transition-colors has-[:checked]:border-primary">
+                    <input type="radio" name="activity_level" value="beginner" class="sr-only peer" {% if profile.activity_level == 'beginner' %}checked{% endif %}>
+                    <div class="flex justify-between items-center">
+                        <span class="font-display font-bold text-base text-white">{% translate "Principiante" %}</span>
+                        <span class="w-5 h-5 rounded-full border-2 border-surface-container-highest peer-checked:border-primary peer-checked:bg-primary shrink-0"></span>
+                    </div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-secondary mt-1">{% translate "1-2 volte a settimana" %}</span>
+                </label>
+                <label class="relative flex flex-col p-5 bg-surface-card border border-surface-container-high rounded-2xl cursor-pointer transition-colors has-[:checked]:border-primary">
+                    <input type="radio" name="activity_level" value="intermediate" class="sr-only peer" {% if profile.activity_level == 'intermediate' %}checked{% endif %}>
+                    <div class="flex justify-between items-center">
+                        <span class="font-display font-bold text-base text-white">{% translate "Intermedio" %}</span>
+                        <span class="w-5 h-5 rounded-full border-2 border-surface-container-highest peer-checked:border-primary peer-checked:bg-primary shrink-0"></span>
+                    </div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-secondary mt-1">{% translate "3-4 volte a settimana" %}</span>
+                </label>
+                <label class="relative flex flex-col p-5 bg-surface-card border border-surface-container-high rounded-2xl cursor-pointer transition-colors has-[:checked]:border-primary">
+                    <input type="radio" name="activity_level" value="advanced" class="sr-only peer" {% if profile.activity_level == 'advanced' %}checked{% endif %}>
+                    <div class="flex justify-between items-center">
+                        <span class="font-display font-bold text-base text-white">{% translate "Avanzato" %}</span>
+                        <span class="w-5 h-5 rounded-full border-2 border-surface-container-highest peer-checked:border-primary peer-checked:bg-primary shrink-0"></span>
+                    </div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-secondary mt-1">{% translate "5+ volte a settimana" %}</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- STEP 4 — PROFILE -->
+        <section data-step="4" class="ob-panel hidden flex-1 flex-col">
+            <h1 class="font-display font-black text-2xl text-white mb-2">{% translate "Completa il profilo" %}</h1>
+            <p class="text-sm text-neutral-400 mb-8">{% translate "Puoi saltare o modificare questi dati in seguito." %}</p>
+            <div class="flex flex-col gap-4">
+                <label class="flex flex-col gap-1.5">
+                    <span class="text-[11px] font-black uppercase tracking-widest text-secondary">{% translate "Nome" %}</span>
+                    <input type="text" name="first_name" value="{{ user.first_name }}"
+                           class="w-full bg-surface-card border border-surface-container-high rounded-xl px-4 py-3 text-white font-bold focus:border-primary clean-input">
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="text-[11px] font-black uppercase tracking-widest text-secondary">{% translate "Cognome" %}</span>
+                    <input type="text" name="last_name" value="{{ user.last_name }}"
+                           class="w-full bg-surface-card border border-surface-container-high rounded-xl px-4 py-3 text-white font-bold focus:border-primary clean-input">
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <span class="text-[11px] font-black uppercase tracking-widest text-secondary">{% translate "Email" %}</span>
+                    <input type="email" name="email" value="{{ user.email }}" placeholder="nome@esempio.com"
+                           class="w-full bg-surface-card border border-surface-container-high rounded-xl px-4 py-3 text-white font-bold focus:border-primary clean-input">
+                </label>
+            </div>
+        </section>
+
+        <!-- NAV BUTTONS -->
+        <div class="mt-8 flex flex-col gap-3">
+            <button type="button" id="ob-next"
+                    class="w-full bg-primary text-black font-display font-black text-sm uppercase tracking-wider py-4 rounded-full glow-btn active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                <span id="ob-next-label">{% translate "Continua" %}</span>
+                <span class="material-symbols-outlined text-xl leading-none">arrow_forward</span>
+            </button>
+            <button type="button" id="ob-back"
+                    class="w-full bg-transparent border border-surface-container-high text-secondary font-display font-bold text-sm uppercase tracking-wider py-4 rounded-full hover:text-white transition-all hidden">
+                {% translate "Indietro" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    var step = 1;
+    var TOTAL = 4;
+    var panels = document.querySelectorAll('.ob-panel');
+    var bars = document.querySelectorAll('.ob-bar');
+    var label = document.getElementById('ob-step-label');
+    var nextBtn = document.getElementById('ob-next');
+    var nextLabel = document.getElementById('ob-next-label');
+    var backBtn = document.getElementById('ob-back');
+    var form = nextBtn.closest('form');
+
+    function render() {
+        panels.forEach(function (p) {
+            var s = parseInt(p.getAttribute('data-step'), 10);
+            p.classList.toggle('hidden', s !== step);
+            p.classList.toggle('flex', s === step);
+        });
+        bars.forEach(function (b) {
+            var s = parseInt(b.getAttribute('data-bar'), 10);
+            b.classList.toggle('bg-primary', s <= step);
+            b.classList.toggle('bg-surface-container-high', s > step);
+        });
+        label.textContent = '{% translate "Passo" %} ' + step + ' / ' + TOTAL;
+        backBtn.classList.toggle('hidden', step === 1);
+        nextLabel.textContent = step === TOTAL ? '{% translate "Inizia" %}' : '{% translate "Continua" %}';
+    }
+
+    nextBtn.addEventListener('click', function () {
+        if (step < TOTAL) {
+            step++;
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            form.submit();
+        }
+    });
+    backBtn.addEventListener('click', function () {
+        if (step > 1) { step--; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+
+    render();
+})();
+</script>
+{% endblock %}

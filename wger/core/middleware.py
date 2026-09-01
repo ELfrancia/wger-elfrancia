@@ -25,7 +25,10 @@ from django.contrib.auth import (
     logout,
 )
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import (
+    NoReverseMatch,
+    reverse,
+)
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
@@ -199,3 +202,49 @@ class ForcePasswordChangeMiddleware(MiddlewareMixin):
             except UserProfile.DoesNotExist:
                 pass
         return None
+
+
+class OnboardingRequiredMiddleware(MiddlewareMixin):
+    """
+    Middleware to force authenticated users through the first-login onboarding
+    wizard until their UserProfile's onboarding_completed flag is True.
+    """
+    def process_request(self, request):
+        if not request.user.is_authenticated:
+            return None
+
+        try:
+            profile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return None
+
+        if profile.is_temporary or profile.onboarding_completed:
+            return None
+
+        path_info = remove_language_code(request.path_info)
+
+        # Never redirect API calls
+        if path_info.startswith('/api/'):
+            return None
+
+        try:
+            onboarding_path = remove_language_code(reverse('core:onboarding'))
+        except NoReverseMatch:
+            # Onboarding views not wired up yet: don't brick the site
+            return None
+
+        allowed_paths = {
+            onboarding_path,
+            remove_language_code(reverse('core:user:logout')),
+            remove_language_code(reverse('core:user:change-password')),
+        }
+        if path_info in allowed_paths or path_info.startswith(onboarding_path):
+            return None
+
+        from urllib.parse import urlparse
+        static_path = urlparse(settings.STATIC_URL).path or '/static/'
+        media_path = urlparse(settings.MEDIA_URL).path or '/media/'
+        if request.path.startswith(static_path) or request.path.startswith(media_path):
+            return None
+
+        return redirect('core:onboarding')

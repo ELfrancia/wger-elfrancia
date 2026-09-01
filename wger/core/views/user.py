@@ -988,6 +988,47 @@ def profile_tailwind(request):
                 updated = True
             except (ValueError, TypeError, InvalidOperation):
                 pass
+        # Personal data: current weight, height, weight goal
+        weight_val = request.POST.get('weight')
+        height_val = request.POST.get('height')
+        weight_goal_val = request.POST.get('weight_goal')
+
+        if weight_val is not None and weight_val != '':
+            try:
+                from wger.weight.models import WeightEntry
+                from django.utils import timezone
+                clean_weight = Decimal(str(weight_val).replace(',', '.'))
+                if clean_weight > 0:
+                    WeightEntry.objects.update_or_create(
+                        user=request.user,
+                        date=timezone.localdate(),
+                        defaults={'weight': clean_weight},
+                    )
+                    updated = True
+            except (ValueError, TypeError, InvalidOperation):
+                pass
+        if height_val is not None and height_val != '':
+            try:
+                clean_height = int(str(height_val).replace(',', '.').split('.')[0])
+                if 100 <= clean_height <= 250:
+                    profile.height = clean_height
+                    updated = True
+            except (ValueError, TypeError):
+                pass
+        if weight_goal_val is not None:
+            if weight_goal_val == '':
+                if profile.weight_goal is not None:
+                    profile.weight_goal = None
+                    updated = True
+            else:
+                try:
+                    clean_goal = Decimal(str(weight_goal_val).replace(',', '.'))
+                    if clean_goal > 0:
+                        profile.weight_goal = clean_goal
+                        updated = True
+                except (ValueError, TypeError, InvalidOperation):
+                    pass
+
         if avatar_file:
             ext = os.path.splitext(avatar_file.name)[1]
             filename = f"avatar_{request.user.id}{ext}"
@@ -1010,9 +1051,18 @@ def profile_tailwind(request):
             messages.success(request, _('Profile settings successfully updated.'))
             return redirect('core:profile_tailwind')
 
+    weight_goal_delta = None
+    try:
+        current_weight = profile.weight
+        if current_weight and profile.weight_goal:
+            weight_goal_delta = (profile.weight_goal - Decimal(str(current_weight))).quantize(Decimal('0.1'))
+    except (InvalidOperation, TypeError):
+        weight_goal_delta = None
+
     return render(request, 'user/profile_tailwind.html', {
         'stats': stats,
         'profile': profile,
+        'weight_goal_delta': weight_goal_delta,
     })
 
 

@@ -83,6 +83,73 @@
         </div>
     </div>
 
+    <!-- DATI PERSONALI -->
+    <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] p-6 sm:p-8 shadow-xl w-full">
+        <div class="flex items-center gap-3.5 mb-6 border-b border-surface-container-high/50 pb-4">
+            <div class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 aspect-square">
+                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">straighten</span>
+            </div>
+            <div>
+                <h3 class="font-display font-bold text-lg text-white">{% translate "Dati Personali" %}</h3>
+                <p class="text-xs text-neutral-400">{% translate "Peso attuale, altezza e obiettivo di peso" %}</p>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'core:profile_tailwind' %}" enctype="multipart/form-data" class="flex flex-col gap-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                <!-- Peso attuale -->
+                <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <label for="id_pd_weight" class="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-primary leading-none select-none shrink-0">monitor_weight</span>
+                            {% translate "Peso attuale" %}
+                        </label>
+                        <span class="text-[10px] text-neutral-500 font-bold">{{ profile.weight_unit }}</span>
+                    </div>
+                    <input type="number" step="0.1" name="weight" id="id_pd_weight" value="{% if profile.weight %}{{ profile.weight|unlocalize }}{% endif %}" placeholder="--" class="bg-neutral-900 border border-neutral-800 focus:border-primary text-primary font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                </div>
+
+                <!-- Altezza -->
+                <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <label for="id_pd_height" class="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-primary leading-none select-none shrink-0">height</span>
+                            {% translate "Altezza" %}
+                        </label>
+                        <span class="text-[10px] text-neutral-500 font-bold">cm</span>
+                    </div>
+                    <input type="number" name="height" id="id_pd_height" value="{{ profile.height|default_if_none:''|unlocalize }}" placeholder="--" class="bg-neutral-900 border border-neutral-800 focus:border-primary text-primary font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                </div>
+
+                <!-- Obiettivo di peso -->
+                <div class="bg-surface-container-low/80 border border-surface-container-high/60 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <label for="id_weight_goal" class="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-amber-400 leading-none select-none shrink-0">flag</span>
+                            {% translate "Obiettivo di peso" %}
+                        </label>
+                        <span class="text-[10px] text-neutral-500 font-bold">{{ profile.weight_unit }}</span>
+                    </div>
+                    <input type="number" step="0.1" name="weight_goal" id="id_weight_goal" value="{{ profile.weight_goal|default_if_none:''|unlocalize }}" placeholder="--" class="bg-neutral-900 border border-neutral-800 focus:border-amber-400 text-amber-400 font-display font-bold text-lg rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                    {% if weight_goal_delta is not None %}
+                    <div class="flex items-center gap-1.5 text-[11px] font-bold {% if weight_goal_delta < 0 %}text-primary{% else %}text-sky-400{% endif %}">
+                        <span class="material-symbols-outlined text-sm leading-none select-none shrink-0">{% if weight_goal_delta < 0 %}trending_down{% elif weight_goal_delta > 0 %}trending_up{% else %}check_circle{% endif %}</span>
+                        <span>{{ profile.weight|unlocalize }} &rarr; {{ profile.weight_goal|unlocalize }} {{ profile.weight_unit }}
+                            {% if weight_goal_delta != 0 %}({{ weight_goal_delta|unlocalize }} {{ profile.weight_unit }} {% translate "all'obiettivo" %}){% else %}&middot; {% translate "obiettivo raggiunto" %}{% endif %}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="bg-primary hover:bg-[#b5d900] text-black font-display font-black text-sm uppercase tracking-wider py-4 rounded-2xl shadow-[0_4px_20px_rgba(202,243,0,0.25)] hover:shadow-[0_6px_24px_rgba(202,243,0,0.35)] active:scale-[0.99] transition-all flex items-center justify-center gap-2 w-full">
+                <span class="material-symbols-outlined text-xl leading-none select-none shrink-0">save</span>
+                {% translate "SALVA MODIFICHE" %}
+            </button>
+        </form>
+    </div>
+
     <!-- SINGLE UNIFIED METRICS DASHBOARD SECTION -->
     <div class="bg-surface-card border border-surface-container-high/80 rounded-[32px] overflow-hidden p-6 sm:p-7 shadow-xl w-full flex flex-col gap-5">
         <!-- Section Header -->
