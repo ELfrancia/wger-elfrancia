@@ -15,6 +15,9 @@ class SaveSessionAsDayTestCase(WgerTestCase):
         super().setUp()
         self.user = User.objects.get(username='test')
         self.client.force_login(self.user)
+        profile = self.user.userprofile
+        profile.onboarding_completed = True
+        profile.save()
         self.exercise = Exercise.objects.first()
 
         # Create a finished session with logs
@@ -67,6 +70,21 @@ class SaveSessionAsDayTestCase(WgerTestCase):
 
     def test_finish_workout_with_save_as_routine_day(self):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+
+        # Start an active session and give it a logged set (empty finishes are discarded)
+        self.client.get(url + '?start=true')
+        active = WorkoutSession.objects.filter(
+            user=self.user, routine=self.routine, day=self.day, status='active'
+        ).order_by('-id').first()
+        WorkoutLog.objects.create(
+            user=self.user,
+            session=active,
+            exercise=self.exercise,
+            routine=self.routine,
+            repetitions=10,
+            weight=30,
+        )
+
         response = self.client.post(url, {
             'action': 'finish_workout',
             'save_as_routine_day': 'true',

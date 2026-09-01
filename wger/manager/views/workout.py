@@ -6,6 +6,7 @@ from decimal import Decimal, DecimalException
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import models as django_models
+from django.db.models import Count
 from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -146,8 +147,10 @@ def log_tailwind(request, routine_pk, day_pk):
                 session = candidate
                 break
 
-    # 3. Create a new active session draft if none found within 24h
-    if not session:
+    # 3. Create a new active session draft if none found within 24h.
+    #    Only persist a draft on an explicit start action; a plain GET must not
+    #    pollute the DB with empty sessions.
+    if not session and (request.method == 'POST' or request.GET.get('start') == 'true'):
         session = WorkoutSession.objects.create(
             user=request.user,
             routine_id=routine_pk,
@@ -156,16 +159,43 @@ def log_tailwind(request, routine_pk, day_pk):
             time_start=timezone.localtime(timezone.now()).time(),
             status='active',
         )
-    request.session[session_key] = str(session.id)
 
-    if session and not session.time_start:
-        session.time_start = timezone.localtime(timezone.now()).time()
-        session.save()
+    # Plain GET with no existing draft: use a transient, unsaved instance so the
+    # template can render without creating a row.
+    transient_session = False
+    if not session:
+        session = WorkoutSession(
+            user=request.user,
+            routine_id=routine_pk,
+            day=day,
+            date=datetime.date.today(),
+        )
+        transient_session = True
+
+    if not transient_session:
+        request.session[session_key] = str(session.id)
+
+        if not session.time_start:
+            session.time_start = timezone.localtime(timezone.now()).time()
+            session.save()
 
     if session.user != request.user:
         return HttpResponseForbidden()
 
     if request.method == 'POST':
+        # Ensure a real, persisted session exists before processing any action
+        if transient_session:
+            session = WorkoutSession.objects.create(
+                user=request.user,
+                routine_id=routine_pk,
+                day=day,
+                date=datetime.date.today(),
+                time_start=timezone.localtime(timezone.now()).time(),
+                status='active',
+            )
+            request.session[session_key] = str(session.id)
+            transient_session = False
+
         pr_event = None  # populated when a logged set is a new personal record
         action = request.POST.get('action')
         exercise_id = request.POST.get('exercise_id')
@@ -221,10 +251,26 @@ def log_tailwind(request, routine_pk, day_pk):
                     session.save()
 
                 if finish_after:
+                    # Nothing logged: treat finish as a discard, don't persist an empty session
+                    if not session.logs.exists():
+                        WorkoutSession.objects.filter(
+                            user=request.user, day=day, status='active'
+                        ).exclude(id=session.id).annotate(
+                            _num_logs=Count('logs')
+                        ).filter(_num_logs=0).delete()
+                        session.delete()
+                        if session_key in request.session:
+                            del request.session[session_key]
+                        return make_overview_redirect(request)
+
                     session.status = 'finished'
                     session.time_end = timezone.localtime(timezone.now()).time()
                     session.save()
-                    WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='finished')
+                    siblings = WorkoutSession.objects.filter(
+                        user=request.user, day=day, status='active'
+                    ).exclude(id=session.id).annotate(_num_logs=Count('logs'))
+                    siblings.filter(_num_logs__gt=0).update(status='finished')
+                    siblings.filter(_num_logs=0).delete()
                     if session_key in request.session:
                         del request.session[session_key]
                     return make_overview_redirect(request)
@@ -331,11 +377,27 @@ def log_tailwind(request, routine_pk, day_pk):
                     except Exception:
                         pass
 
+                # Nothing logged: treat finish as a discard, don't persist an empty session
+                if not session.logs.exists():
+                    WorkoutSession.objects.filter(
+                        user=request.user, day=day, status='active'
+                    ).exclude(id=session.id).annotate(
+                        _num_logs=Count('logs')
+                    ).filter(_num_logs=0).delete()
+                    session.delete()
+                    if session_key in request.session:
+                        del request.session[session_key]
+                    return make_overview_redirect(request)
+
                 session.status = 'finished'
                 if not session.time_end:
                     session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
-                WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='finished')
+                siblings = WorkoutSession.objects.filter(
+                    user=request.user, day=day, status='active'
+                ).exclude(id=session.id).annotate(_num_logs=Count('logs'))
+                siblings.filter(_num_logs__gt=0).update(status='finished')
+                siblings.filter(_num_logs=0).delete()
 
                 if request.POST.get('save_as_routine_day') == 'true':
                     target_routine_id = request.POST.get('target_routine_id')
@@ -566,12 +628,16 @@ def log_tailwind(request, routine_pk, day_pk):
                 slot = slot_entry.slot
 
                 if slot.entries.count() <= 1:
+                    if session and session.pk:
+                        session.logs.filter(slot_entry__slot=slot).delete()
                     slot.delete()
                     reset_routine_cache(day.routine)
                     if request.headers.get('HX-Request'):
                         return HttpResponse("")
                     return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
                 else:
+                    if session and session.pk:
+                        session.logs.filter(slot_entry_id=slot_entry_id).delete()
                     slot_entry.delete()
                     reset_routine_cache(day.routine)
 

@@ -918,8 +918,12 @@ def dashboard_tailwind(request):
     from wger.manager.models import WorkoutSession
     from django.utils import timezone
     import datetime
+    from django.db.models import Count
     stats, created_stats = UserStatistics.objects.get_or_create(user=request.user)
-    latest_session = WorkoutSession.objects.filter(user=request.user).order_by('-date', '-time_start').first()
+    latest_session = WorkoutSession.objects.filter(
+        user=request.user,
+        status='finished',
+    ).annotate(num_logs=Count('logs')).filter(num_logs__gt=0).order_by('-date', '-time_start').first()
 
     active_draft_session = WorkoutSession.objects.filter(
         user=request.user,
@@ -1076,6 +1080,11 @@ def session_details_tailwind(request, session_id):
     session = get_object_or_404(WorkoutSession, id=session_id)
     if session.user != request.user:
         return HttpResponseForbidden()
+
+    # Only finished sessions with at least one logged set are viewable; redirect
+    # the owner away from empty/non-finished sessions instead of rendering them.
+    if session.status != 'finished' or not session.logs.exists():
+        return redirect('weight:overview')
 
     if request.method == 'POST':
         action = request.POST.get('action')

@@ -68,6 +68,9 @@ class WorkoutSessionLifecycleTestCase(WgerTestCase):
         self.routine = self.day.routine
         self.routine.user = self.user
         self.routine.save()
+        profile = self.user.userprofile
+        profile.onboarding_completed = True
+        profile.save()
 
     def test_session_lifecycle(self):
         """
@@ -75,12 +78,23 @@ class WorkoutSessionLifecycleTestCase(WgerTestCase):
         """
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
 
-        # GET request initializes an active session
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        # Explicit start initializes an active session (plain GET no longer does)
+        response = self.client.get(url + '?start=true')
+        self.assertEqual(response.status_code, 302)
         session = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day, status='active').order_by('-id').first()
         self.assertIsNotNone(session)
         self.assertEqual(session.status, 'active')
+
+        # Log a set so the session has content
+        slot = self.day.slots.first()
+        entry = slot.entries.first()
+        self.client.post(url, {
+            'action': 'log_set',
+            'exercise_id': slot.obj.id,
+            'slot_entry_id': entry.id,
+            'repetitions': 10,
+            'weight': 40,
+        })
 
         # Finish workout
         response = self.client.post(url, {'action': 'finish_workout'})
@@ -96,7 +110,16 @@ class WorkoutSessionLifecycleTestCase(WgerTestCase):
         self.assertIsNotNone(new_session)
         self.assertNotEqual(new_session.id, session.id)
 
-        # Interrupt workout
+        # Log a set, then interrupt workout
+        slot = self.day.slots.first()
+        entry = slot.entries.first()
+        self.client.post(url, {
+            'action': 'log_set',
+            'exercise_id': slot.obj.id,
+            'slot_entry_id': entry.id,
+            'repetitions': 10,
+            'weight': 40,
+        })
         response = self.client.post(url, {'action': 'interrupt_workout'})
         self.assertEqual(response.status_code, 302)
         new_session.refresh_from_db()
@@ -104,7 +127,7 @@ class WorkoutSessionLifecycleTestCase(WgerTestCase):
         self.assertIsNotNone(new_session.time_end)
 
         # Restart workout on an active session
-        self.client.get(url)  # create or retrieve active session
+        self.client.get(url + '?start=true')  # create active session
         session_to_restart = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day, status='active').order_by('-id').first()
         response = self.client.post(url, {'action': 'restart_workout'})
         self.assertEqual(response.status_code, 302)
@@ -248,7 +271,7 @@ class WorkoutSessionLifecycleTestCase(WgerTestCase):
         Verify that uploading a condition photo creates Image and links it to WorkoutSession.condition_photo.
         """
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
-        self.client.get(url)
+        self.client.get(url + '?start=true')
         session = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day).order_by('-id').first()
         self.assertIsNotNone(session)
 

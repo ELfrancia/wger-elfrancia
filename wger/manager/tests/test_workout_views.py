@@ -14,6 +14,10 @@ class WorkoutViewsTestCase(WgerTestCase):
         # Ensure routine belongs to the logged in user
         self.routine.user = self.user
         self.routine.save()
+        # Skip the first-login onboarding wizard redirect for view tests
+        profile = self.user.userprofile
+        profile.onboarding_completed = True
+        profile.save()
 
     def test_log_tailwind_get(self):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
@@ -350,10 +354,21 @@ class WorkoutViewsTestCase(WgerTestCase):
     def test_finish_and_discard_workout_actions(self):
         url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
 
-        # Start/Load session
-        self.client.get(url)
+        # Start session explicitly (plain GET no longer creates a draft)
+        self.client.get(url, {'start': 'true'})
         session = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day, status='active').first()
         self.assertIsNotNone(session)
+
+        # Log a set so the session has content, then finish
+        slot = self.day.slots.first()
+        entry = slot.entries.first()
+        self.client.post(url, {
+            'action': 'log_set',
+            'exercise_id': slot.obj.id,
+            'slot_entry_id': entry.id,
+            'repetitions': 10,
+            'weight': 50,
+        })
 
         # Test finish workout action
         response = self.client.post(url, {'action': 'finish_workout'})
@@ -363,7 +378,13 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertIsNotNone(session.time_end)
 
         # Create new active session and test discard workout action
-        self.client.get(url)
+        self.client.post(url, {
+            'action': 'log_set',
+            'exercise_id': slot.obj.id,
+            'slot_entry_id': entry.id,
+            'repetitions': 10,
+            'weight': 50,
+        })
         session_new = WorkoutSession.objects.filter(user=self.user, routine=self.routine, day=self.day, status='active').first()
         self.assertIsNotNone(session_new)
 
@@ -372,4 +393,38 @@ class WorkoutViewsTestCase(WgerTestCase):
         # A discarded workout is removed entirely (logs + session)
         self.assertFalse(
             WorkoutSession.objects.filter(pk=session_new.pk).exists()
+        )
+
+    def test_plain_get_does_not_create_session_draft(self):
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        before = WorkoutSession.objects.count()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # Plain GET must not persist any new (draft) session
+        self.assertEqual(WorkoutSession.objects.count(), before)
+        self.assertFalse(
+            WorkoutSession.objects.filter(user=self.user, day=self.day, status='active').exists()
+        )
+
+    def test_finish_workout_with_no_logged_sets_is_discarded(self):
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+
+        # Start a session explicitly
+        self.client.get(url, {'start': 'true'})
+        self.assertTrue(
+            WorkoutSession.objects.filter(user=self.user, day=self.day, status='active').exists()
+        )
+
+        # Finish with nothing logged -> treated as a discard
+        response = self.client.post(url, {'action': 'finish_workout'})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('weight:overview'), response['Location'])
+
+        # No session row left behind, and definitely no finished empty session
+        self.assertEqual(
+            WorkoutSession.objects.filter(user=self.user, day=self.day).count(), 0
+        )
+        self.assertFalse(
+            WorkoutSession.objects.filter(user=self.user, status='finished').exists()
         )
