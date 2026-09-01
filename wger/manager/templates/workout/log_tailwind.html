@@ -780,6 +780,7 @@
             return this._caps;
         },
         restStart(durationSeconds, title, soundUri) {
+            if (window._suppressNativeTimerCall) return;
             try {
                 if (window.AndroidTimer && typeof window.AndroidTimer.startTimerWithSound === 'function') {
                     window.AndroidTimer.startTimerWithSound(durationSeconds, title || 'Recupero in corso', soundUri || null);
@@ -795,6 +796,7 @@
             } catch(e) {}
         },
         restPause() {
+            if (window._suppressNativeTimerCall) return;
             try {
                 if (window.AndroidTimer && typeof window.AndroidTimer.pauseTimer === 'function') {
                     window.AndroidTimer.pauseTimer();
@@ -804,6 +806,7 @@
             } catch(e) {}
         },
         restResume() {
+            if (window._suppressNativeTimerCall) return;
             try {
                 if (window.AndroidTimer && typeof window.AndroidTimer.resumeTimer === 'function') {
                     window.AndroidTimer.resumeTimer();
@@ -822,6 +825,7 @@
             } catch(e) {}
         },
         restStop() {
+            if (window._suppressNativeTimerCall) return;
             try {
                 if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
                     window.AndroidTimer.stopTimer();
@@ -1214,7 +1218,9 @@
                 window._timerExpiredAt = Date.now();
                 if (!hasNotifiedZero) {
                     hasNotifiedZero = true;
-                    playBeepAndVibrate();
+                    // Inside the native shell the foreground-service plays the
+                    // looping alarm; a second web beep here causes the desync.
+                    if (!onyxNative.available) playBeepAndVibrate();
                 }
                 resetTimerControls();
                 updateDisplay();
@@ -1343,6 +1349,59 @@
         saveTimerStateToStorage();
         startCountdown();
     }
+
+    // ---------------------------------------------------------------
+    // NATIVE TIMER EVENT BRIDGE (Capacitor plugin -> web)
+    // Inside the Android shell the foreground-service owns the countdown
+    // and the alarm sound. These listeners keep the in-page overlay in
+    // sync with actions taken from the notification (Stop / Pause /
+    // Resume) and with the native "timer expired" alarm, so the web
+    // timer can no longer keep running after the user stops it natively.
+    // ---------------------------------------------------------------
+    (function registerNativeTimerBridge() {
+        const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer;
+        if (!plugin || typeof plugin.addListener !== 'function') return;
+        if (window._onyxLogTimerBridgeRegistered) return;
+        window._onyxLogTimerBridgeRegistered = true;
+
+        // Tell navigation_tailwind.html to stop mutating the shared timer state.
+        window._onyxTimerNativeHandled = true;
+
+        const withSuppressedNativeCall = (fn) => {
+            window._suppressNativeTimerCall = true;
+            try { fn(); }
+            catch (e) { console.error('[OnyxTimerBridge]', e); }
+            finally { window._suppressNativeTimerCall = false; }
+        };
+
+        plugin.addListener('onTimerStopped', () => {
+            withSuppressedNativeCall(() => { stopTimer(); });
+            if (overlay && !overlay.classList.contains('hidden')) closeOverlay();
+        });
+
+        plugin.addListener('onTimerExpired', () => {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            isRunning = false;
+            remainingMs = 0;
+            hasNotifiedZero = true;
+            window._timerExpiredAt = Date.now();
+            resetTimerControls();
+            updateDisplay();
+            saveTimerStateToStorage(window._timerExpiredAt);
+            // Native shell already plays its own looping alarm.
+            if (!onyxNative.available) playBeepAndVibrate();
+        });
+
+        plugin.addListener('onTimerPaused', () => {
+            withSuppressedNativeCall(() => { if (isRunning) pauseCountdown(); });
+        });
+
+        plugin.addListener('onTimerResumed', () => {
+            withSuppressedNativeCall(() => {
+                if (!isRunning && remainingMs > 0) startCountdown(true, true);
+            });
+        });
+    })();
 
     function openCustomTimerModal() {
         const modal = document.getElementById('custom-timer-modal');
@@ -2104,6 +2163,16 @@
 
     // Synchronize rest timer and total workout timer on visibility, pageshow, and focus
     function syncTimersOnResume() {
+        // An alarm dismissed from the Android notification while backgrounded
+        // must not re-fire on resume: trust the persisted hasNotifiedZero flag.
+        try {
+            const raw = localStorage.getItem('onyx_active_rest_timer');
+            if (raw) {
+                const s = JSON.parse(raw);
+                if (s && s.hasNotifiedZero) hasNotifiedZero = true;
+            }
+        } catch (e) {}
+
         if (isRunning && startedAt) {
             const msLeft = getRemainingTimeMs();
             if (msLeft <= 0) {
@@ -2113,7 +2182,7 @@
                 remainingMs = 0;
                 if (!hasNotifiedZero) {
                     hasNotifiedZero = true;
-                    playBeepAndVibrate();
+                    if (!onyxNative.available) playBeepAndVibrate();
                 }
                 resetTimerControls();
             }

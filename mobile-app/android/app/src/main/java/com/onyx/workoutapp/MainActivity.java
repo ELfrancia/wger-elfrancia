@@ -8,16 +8,20 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
 import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
 import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
@@ -25,6 +29,8 @@ public class MainActivity extends BridgeActivity {
     private static final String TAG = "OnyxDebug";
     private static final int PERMISSION_REQUEST_CODE = 1001;
     private boolean isWebViewListenerRegistered = false;
+    private boolean isBridgeInterfaceBound = false;
+    private boolean isRenderCrashClientInstalled = false;
 
     public class AndroidTimerBridge {
         @JavascriptInterface
@@ -440,12 +446,26 @@ public class MainActivity extends BridgeActivity {
         try {
             if (getBridge() == null) return;
             WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                webView.addJavascriptInterface(new AndroidTimerBridge(), "AndroidTimer");
-                Log.d(TAG, "AndroidTimer JavaScriptInterface bound to WebView");
+            if (webView == null) return;
 
-                injectBridgeScript(webView);
+            // Bind the @JavascriptInterface object EXACTLY once, on the UI thread. Re-adding it
+            // on every resume / page load leaked bridge objects and, if a WebViewListener
+            // callback ever ran off the UI thread, could crash with
+            // "Calling View methods on another thread".
+            if (!isBridgeInterfaceBound) {
+                runOnUiThread(() -> {
+                    try {
+                        webView.addJavascriptInterface(new AndroidTimerBridge(), "AndroidTimer");
+                        isBridgeInterfaceBound = true;
+                        Log.d(TAG, "AndroidTimer JavaScriptInterface bound to WebView (once)");
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error binding AndroidTimer interface: " + e.getMessage(), e);
+                    }
+                });
             }
+
+            installRenderCrashClient();
+            injectBridgeScript(webView);
 
             if (!isWebViewListenerRegistered) {
                 getBridge().addWebViewListener(new WebViewListener() {
@@ -454,17 +474,9 @@ public class MainActivity extends BridgeActivity {
                         super.onPageLoaded(view);
                         Log.d(TAG, "WebViewListener.onPageLoaded: re-injecting bridge script");
                         if (view != null) {
-                            view.addJavascriptInterface(new AndroidTimerBridge(), "AndroidTimer");
+                            // Interface object survives navigations; only the injected helper
+                            // script needs re-running after a full page load.
                             injectBridgeScript(view);
-                        }
-                    }
-
-                    @Override
-                    public void onPageStarted(WebView view) {
-                        super.onPageStarted(view);
-                        Log.d(TAG, "WebViewListener.onPageStarted: re-binding JavascriptInterface");
-                        if (view != null) {
-                            view.addJavascriptInterface(new AndroidTimerBridge(), "AndroidTimer");
                         }
                     }
                 });
@@ -473,6 +485,46 @@ public class MainActivity extends BridgeActivity {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error in setupWebViewBridge: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Recover from WebView renderer crashes (common on low-RAM Xiaomi / HyperOS devices)
+     * instead of letting the Activity die and the app "close by itself".
+     */
+    private void installRenderCrashClient() {
+        if (isRenderCrashClientInstalled || getBridge() == null) return;
+        try {
+            getBridge().setWebViewClient(new BridgeWebViewClient(getBridge()) {
+                @RequiresApi(Build.VERSION_CODES.O)
+                @Override
+                public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                    boolean didCrash = detail != null && detail.didCrash();
+                    Log.e(TAG, "WebView render process gone (didCrash=" + didCrash + "). Rebuilding activity.");
+                    try {
+                        if (view != null) {
+                            ViewGroup parent = (ViewGroup) view.getParent();
+                            if (parent != null) parent.removeView(view);
+                            view.destroy();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error tearing down dead WebView: " + e.getMessage(), e);
+                    }
+                    isBridgeInterfaceBound = false;
+                    runOnUiThread(() -> {
+                        try {
+                            recreate();
+                        } catch (Exception e) {
+                            Log.e(TAG, "recreate() after render crash failed: " + e.getMessage(), e);
+                        }
+                    });
+                    return true;
+                }
+            });
+            isRenderCrashClientInstalled = true;
+            Log.d(TAG, "Render-crash WebViewClient installed");
+        } catch (Exception e) {
+            Log.e(TAG, "Could not install render-crash WebViewClient: " + e.getMessage(), e);
         }
     }
 
@@ -554,42 +606,10 @@ public class MainActivity extends BridgeActivity {
             "    window.addEventListener('popstate', function() { setTimeout(bindTimerHooks, 100); });" +
             "    window.addEventListener('hashchange', function() { setTimeout(bindTimerHooks, 100); });" +
             "  }" +
-            "  " +
-            "  /* Periodic storage watcher */" +
-            "  if (!window._onyxWatcherStarted) {" +
-            "    window._onyxWatcherStarted = true;" +
-            "    var lastKnownIsRunning = false;" +
-            "    var lastKnownRemainingSec = -1;" +
-            "    setInterval(function() {" +
-            "      try {" +
-            "        bindTimerHooks();" +
-            "        var raw = localStorage.getItem('onyx_active_rest_timer');" +
-            "        if (raw) {" +
-            "          var s = JSON.parse(raw);" +
-            "          if (s.isRunning && window.AndroidTimer) {" +
-            "            var elapsed = s.startedAt ? (Date.now() - s.startedAt) : 0;" +
-            "            var leftMs = Math.max(0, (s.remainingMs || 45000) - elapsed);" +
-            "            var sec = Math.ceil(leftMs / 1000);" +
-            "            if (!lastKnownIsRunning || Math.abs(sec - lastKnownRemainingSec) > 3) {" +
-            "              if (sec > 0) {" +
-            "                console.log('[OnyxBridge] Watcher detected active timer: ' + sec + 's');" +
-            "                window.AndroidTimer.startTimer(sec, 'Recupero in corso');" +
-            "                lastKnownRemainingSec = sec;" +
-            "              }" +
-            "            }" +
-            "          }" +
-            "          lastKnownIsRunning = !!s.isRunning;" +
-            "        } else {" +
-            "          if (lastKnownIsRunning && window.AndroidTimer) {" +
-            "            window.AndroidTimer.stopTimer();" +
-            "            window.AndroidTimer.stopAlarm();" +
-            "          }" +
-            "          lastKnownIsRunning = false;" +
-            "          lastKnownRemainingSec = -1;" +
-            "        }" +
-            "      } catch(e) {}" +
-            "    }, 1000);" +
-            "  }" +
+            /* The old 1-second "storage watcher" that re-issued AndroidTimer.startTimer() on
+               >3s drift was removed: it fought the web countdown and caused start/stop
+               ping-pong plus notification chronometer jumps. Native timer state is now driven
+               only by explicit user actions via onyxNative + native->web events. */
             "})();";
 
         webView.post(() -> webView.evaluateJavascript(injectionScript, null));

@@ -798,23 +798,29 @@
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
         try {
             window.Capacitor.Plugins.WorkoutTimer.addListener('onTimerExpired', () => {
-                const raw = localStorage.getItem('onyx_active_rest_timer');
-                if (raw) {
-                    try {
-                        const s = JSON.parse(raw);
-                        s.remainingMs = 0;
-                        s.isRunning = false;
-                        s.hasNotifiedZero = true;
-                        localStorage.setItem('onyx_active_rest_timer', JSON.stringify(s));
-                    } catch(e) {}
+                // When the active-workout page is loaded it owns the timer state and
+                // reconciles localStorage itself; the nav only refreshes its widgets.
+                if (!window._onyxTimerNativeHandled) {
+                    const raw = localStorage.getItem('onyx_active_rest_timer');
+                    if (raw) {
+                        try {
+                            const s = JSON.parse(raw);
+                            s.remainingMs = 0;
+                            s.isRunning = false;
+                            s.hasNotifiedZero = true;
+                            localStorage.setItem('onyx_active_rest_timer', JSON.stringify(s));
+                        } catch(e) {}
+                    }
                 }
                 updateGlobalMiniTimer();
                 updateDynamicNotch();
             });
             window.Capacitor.Plugins.WorkoutTimer.addListener('onTimerStopped', () => {
-                try {
-                    localStorage.removeItem('onyx_active_rest_timer');
-                } catch(e) {}
+                if (!window._onyxTimerNativeHandled) {
+                    try {
+                        localStorage.removeItem('onyx_active_rest_timer');
+                    } catch(e) {}
+                }
                 updateGlobalMiniTimer();
                 updateDynamicNotch();
             });

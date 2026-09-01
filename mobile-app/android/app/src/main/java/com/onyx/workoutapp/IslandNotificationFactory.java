@@ -69,6 +69,21 @@ public class IslandNotificationFactory {
         notificationManager.createNotificationChannel(workoutChannel);
     }
 
+    /**
+     * Builds a PendingIntent that targets OnyxLiveService. On API >= 26 we must use
+     * getForegroundService(), otherwise tapping a notification action after the OS has
+     * reclaimed the service delivers a plain background startService() which is either
+     * blocked (ForegroundServiceStartNotAllowedException) or killed 5s later
+     * (ForegroundServiceDidNotStartInTimeException).
+     */
+    private static PendingIntent serviceActionPendingIntent(Context context, int requestCode, Intent intent) {
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return PendingIntent.getForegroundService(context, requestCode, intent, flags);
+        }
+        return PendingIntent.getService(context, requestCode, intent, flags);
+    }
+
     private static void setPromotedOngoingIfSupported(NotificationCompat.Builder builder, Context context) {
         if (builder == null || context == null) return;
         try {
@@ -127,34 +142,19 @@ public class IslandNotificationFactory {
         // Action 1: Play / Pause
         Intent playPauseIntent = new Intent(context, OnyxLiveService.class);
         playPauseIntent.setAction(isPaused ? OnyxLiveService.ACTION_RESUME : OnyxLiveService.ACTION_PAUSE);
-        PendingIntent playPausePendingIntent = PendingIntent.getService(
-                context,
-                10,
-                playPauseIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent playPausePendingIntent = serviceActionPendingIntent(context, 10, playPauseIntent);
         int playPauseIcon = isPaused ? android.R.drawable.ic_media_play : android.R.drawable.ic_media_pause;
         String playPauseText = isPaused ? "Riprendi" : "Pausa";
 
         // Action 2: +30s
         Intent addTimeIntent = new Intent(context, OnyxLiveService.class);
         addTimeIntent.setAction(OnyxLiveService.ACTION_ADD_TIME);
-        PendingIntent addTimePendingIntent = PendingIntent.getService(
-                context,
-                11,
-                addTimeIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent addTimePendingIntent = serviceActionPendingIntent(context, 11, addTimeIntent);
 
         // Action 3: Stop
         Intent stopIntent = new Intent(context, OnyxLiveService.class);
         stopIntent.setAction(OnyxLiveService.ACTION_STOP);
-        PendingIntent stopPendingIntent = PendingIntent.getService(
-                context,
-                12,
-                stopIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent stopPendingIntent = serviceActionPendingIntent(context, 12, stopIntent);
 
         float ratio = totalDurationMs > 0 ? (float) remainingMs / (float) totalDurationMs : 0f;
         ratio = Math.max(0.0f, Math.min(1.0f, ratio));
@@ -257,6 +257,23 @@ public class IslandNotificationFactory {
         return builder.build();
     }
 
+    /**
+     * Bare-bones silent notification used only to satisfy the startForeground()
+     * obligation when a cold-recreated service is handed an action (PAUSE / RESUME /
+     * +30s / STOP_ALARM) but has no live state left to display. The caller posts it
+     * and then immediately tears the service down.
+     */
+    public static Notification buildMinimalAnchor(Context context) {
+        return new NotificationCompat.Builder(context, CHANNEL_WORKOUT)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("Onyx")
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setSilent(true)
+                .setOngoing(false)
+                .build();
+    }
+
     public static Notification buildAlarmNotification(
             Context context,
             Bitmap appIconBitmap
@@ -273,12 +290,7 @@ public class IslandNotificationFactory {
 
         Intent stopAlarmIntent = new Intent(context, OnyxLiveService.class);
         stopAlarmIntent.setAction(OnyxLiveService.ACTION_STOP_ALARM);
-        PendingIntent stopAlarmPendingIntent = PendingIntent.getService(
-                context,
-                2,
-                stopAlarmIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent stopAlarmPendingIntent = serviceActionPendingIntent(context, 2, stopAlarmIntent);
 
         NotificationCompat.Builder alarmBuilder = new NotificationCompat.Builder(context, CHANNEL_ALARM)
                 .setSmallIcon(R.mipmap.ic_launcher)

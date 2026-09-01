@@ -2,6 +2,7 @@
 {% load l10n %}
 {% load wger_extras %}
 {% with exercise=slot.obj %}
+{% if exercise %}
 {% with eq_names=exercise.equipment.all|join:" "|lower %}
 <div class="exercise-group bg-surface-card border border-outline rounded-2xl overflow-hidden transition-all duration-300" data-id="{{ exercise.id|unlocalize }}" data-is-weighted="{% if 'barbell' in eq_names or 'dumbbell' in eq_names or 'kettlebell' in eq_names or 'sz-bar' in eq_names or 'incline bench' in eq_names %}true{% else %}false{% endif %}" id="exercise-card-{{ slot.id|unlocalize }}" style="view-transition-name: exercise-card-{{ slot.id|unlocalize }};">
     <!-- Card Header -->
@@ -30,7 +31,7 @@
             </div>
             
             <div class="min-w-0 flex-1">
-                <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{{ exercise.get_translation.name }}</h3>
+                <h3 class="text-sm font-bold text-white transition-colors duration-200 truncate">{% translate "Esercizio" as fallback_name %}{{ exercise.get_translation.name|default:fallback_name }}</h3>
                 <div class="flex items-center gap-2 mt-0.5">
                     <span class="text-xs text-secondary inline-block">
                         {% with entries_count=slot.entries.all|length %}
@@ -85,8 +86,8 @@
             <button type="button" 
                     onclick="openExerciseOfficialPage(
                         event,
-                        '{{ exercise.id|unlocalize }}', 
-                        '{{ exercise.get_translation.name|escapejs }}', 
+                        '{{ exercise.id|unlocalize }}',
+                        '{{ exercise.get_translation.name|default:fallback_name|escapejs }}',
                         '{% if exercise.main_video %}{{ exercise.main_video.video.url|escapejs }}{% elif exercise.main_image %}{{ exercise.main_image.image.url|escapejs }}{% elif exercise.demo_media_url %}{{ exercise.demo_media_url|escapejs }}{% endif %}', 
                         '{{ exercise.category.name|escapejs }}', 
                         [{% for m in exercise.muscles.all %}{'id': {{ m.id }}, 'name': '{{ m.name_en|default:m.name|escapejs }}', 'is_front': {% if m.is_front %}true{% else %}false{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}], 
@@ -292,4 +293,21 @@
     </div>
 </div>
 {% endwith %}
+{% elif slot %}
+<!-- Empty slot: no exercise attached yet (or its exercise/translation was removed) -->
+<div class="exercise-group bg-surface-card border border-dashed border-outline rounded-2xl overflow-hidden transition-all duration-300" id="exercise-card-{{ slot.id|unlocalize }}" style="view-transition-name: exercise-card-{{ slot.id|unlocalize }};">
+    <a href="{% url 'manager:routine:add-exercise' day.routine.pk day.pk %}?from=workout&replace_slot={{ slot.id|unlocalize }}"
+       hx-boost="false"
+       class="flex w-full items-center gap-3 p-3.5 text-zinc-400 hover:text-primary transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-dashed border-outline flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-lg">add</span>
+        </div>
+        <div class="min-w-0 flex-1">
+            <h3 class="text-sm font-bold">{% translate "Slot vuoto" %}</h3>
+            <span class="text-xs text-secondary">{% translate "Tocca per aggiungere un esercizio" %}</span>
+        </div>
+        <span class="material-symbols-outlined text-sm flex-shrink-0">chevron_right</span>
+    </a>
+</div>
+{% endif %}
 {% endwith %}

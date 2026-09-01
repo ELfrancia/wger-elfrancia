@@ -50,6 +50,9 @@ public class OnyxLiveService extends Service {
     public static final String EXTRA_STARTED_AT = "extra_started_at";
     public static final String EXTRA_SLOT_BOUNDARIES = "extra_slot_boundaries";
 
+    /** Throwaway foreground anchor used when a cold-recreated service has no live state. */
+    private static final int NOTIFICATION_ID_ANCHOR = 1000;
+
     private NotificationManager notificationManager;
     private CountDownTimer countDownTimer;
     private MediaPlayer mediaPlayer;
@@ -58,6 +61,9 @@ public class OnyxLiveService extends Service {
     private AudioFocusRequest audioFocusRequest;
     private PowerManager.WakeLock wakeLock;
     private AudioTrack synthesizedAudioTrack;
+
+    /** Serializes all AudioTrack lifecycle calls (worker thread build/play vs main-thread stop). */
+    private final Object audioLock = new Object();
 
     // Rest timer state
     private boolean isAlarmPlaying = false;
@@ -107,12 +113,48 @@ public class OnyxLiveService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null || intent.getAction() == null) {
+            // Cold restart with no action: never sit foreground-less, just tear down.
+            stopAllAndService();
             return START_NOT_STICKY;
         }
 
         String action = intent.getAction();
         Log.d(TAG, "OnyxLiveService onStartCommand: action=" + action);
 
+        // Satisfy the startForeground() obligation IMMEDIATELY, before any work or early
+        // return. A cold-recreated service handed a notification action (PAUSE / RESUME /
+        // +30s / STOP_ALARM) has all state fields at defaults, so the action handlers below
+        // may early-return without ever calling startForeground() -> the OS would kill us
+        // with ForegroundServiceDidNotStartInTimeException.
+        ensureForegroundAnchor();
+
+        try {
+            handleAction(action, intent);
+        } catch (Exception e) {
+            Log.e(TAG, "onStartCommand handler crashed for action " + action + ": " + e.getMessage(), e);
+        }
+
+        // If the action left nothing live to display, drop the (possibly minimal) anchor.
+        if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
+            stopAllAndService();
+        }
+
+        return START_NOT_STICKY;
+    }
+
+    private void ensureForegroundAnchor() {
+        try {
+            if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
+                updateForegroundState();
+            } else {
+                postAsForegroundAnchor(NOTIFICATION_ID_ANCHOR, IslandNotificationFactory.buildMinimalAnchor(this));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "ensureForegroundAnchor failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void handleAction(String action, Intent intent) {
         switch (action) {
             case ACTION_START: {
                 int durationSeconds = intent.getIntExtra(EXTRA_DURATION, 45);
@@ -184,8 +226,6 @@ public class OnyxLiveService extends Service {
                 break;
             }
         }
-
-        return START_NOT_STICKY;
     }
 
     private synchronized void startTimerCountdown(int durationSeconds, String title) {
@@ -335,6 +375,12 @@ public class OnyxLiveService extends Service {
             }
             if (notificationManager != null) {
                 notificationManager.notify(id, notification);
+                // Once a real anchor is live, drop the throwaway one.
+                if (id != NOTIFICATION_ID_ANCHOR) {
+                    try {
+                        notificationManager.cancel(NOTIFICATION_ID_ANCHOR);
+                    } catch (Exception ignored) {}
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Error posting foreground anchor notification (" + id + "): " + e.getMessage(), e);
@@ -520,24 +566,30 @@ public class OnyxLiveService extends Service {
                     return;
                 }
 
-                stopSynthesizedAudioTrack();
-                synthesizedAudioTrack = new AudioTrack.Builder()
-                        .setAudioAttributes(new AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_ALARM)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                .build())
-                        .setAudioFormat(new AudioFormat.Builder()
-                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                                .setSampleRate(sampleRate)
-                                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                                .build())
-                        .setBufferSizeInBytes(generatedSnd.length)
-                        .setTransferMode(AudioTrack.MODE_STATIC)
-                        .build();
+                synchronized (audioLock) {
+                    if (!isAlarmPlaying) {
+                        return;
+                    }
+                    stopSynthesizedAudioTrack();
+                    synthesizedAudioTrack = new AudioTrack.Builder()
+                            .setAudioAttributes(new AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_ALARM)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                    .build())
+                            .setAudioFormat(new AudioFormat.Builder()
+                                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                                    .setSampleRate(sampleRate)
+                                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                                    .build())
+                            .setBufferSizeInBytes(generatedSnd.length)
+                            .setTransferMode(AudioTrack.MODE_STATIC)
+                            .build();
 
-                synthesizedAudioTrack.write(generatedSnd, 0, generatedSnd.length);
-                if (isAlarmPlaying) {
-                    synthesizedAudioTrack.play();
+                    synthesizedAudioTrack.write(generatedSnd, 0, generatedSnd.length);
+                    if (isAlarmPlaying && synthesizedAudioTrack != null
+                            && synthesizedAudioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
+                        synthesizedAudioTrack.play();
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error playing synthesized tone: " + e.getMessage(), e);
@@ -546,16 +598,18 @@ public class OnyxLiveService extends Service {
     }
 
     private void stopSynthesizedAudioTrack() {
-        if (synthesizedAudioTrack != null) {
-            try {
-                synthesizedAudioTrack.pause();
-                synthesizedAudioTrack.flush();
-                synthesizedAudioTrack.stop();
-            } catch (Exception ignored) {}
-            try {
-                synthesizedAudioTrack.release();
-            } catch (Exception ignored) {}
-            synthesizedAudioTrack = null;
+        synchronized (audioLock) {
+            if (synthesizedAudioTrack != null) {
+                try {
+                    synthesizedAudioTrack.pause();
+                    synthesizedAudioTrack.flush();
+                    synthesizedAudioTrack.stop();
+                } catch (Exception ignored) {}
+                try {
+                    synthesizedAudioTrack.release();
+                } catch (Exception ignored) {}
+                synthesizedAudioTrack = null;
+            }
         }
     }
 
@@ -636,6 +690,7 @@ public class OnyxLiveService extends Service {
 
         if (notificationManager != null) {
             try {
+                notificationManager.cancel(NOTIFICATION_ID_ANCHOR);
                 notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
                 notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
                 notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT);
