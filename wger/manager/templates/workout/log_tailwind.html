@@ -50,7 +50,7 @@
     }
 </style>
 <!-- Full-Screen Rest Timer Overlay -->
-<div id="rest-timer-overlay" class="fixed inset-0 z-[100] bg-[#08090A] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
+<div id="rest-timer-overlay" style="background-color:#08090A;" class="fixed inset-0 z-[100] bg-[#08090A] flex flex-col items-center justify-between py-16 px-6 transition-all duration-300 hidden">
     <!-- Top header label -->
     <div class="text-center">
         <span id="overlay-header-label" class="text-[10px] text-gray-500 uppercase tracking-widest font-black transition-colors">{% translate "Tempo di recupero" %}</span>
@@ -1960,6 +1960,7 @@
 
     function onFinishWorkoutSubmitted() {
         try {
+            localStorage.removeItem('onyx_workout_progress');
             localStorage.removeItem('onyx_active_rest_timer');
             localStorage.removeItem('onyx_active_rest_timer_paused');
             if (typeof sessionId !== 'undefined' && sessionId) {

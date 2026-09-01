@@ -101,7 +101,7 @@
 </style>
 
 <!-- Top Floating Dynamic Island / Notch Pill (Web Fallback) -->
-<div id="onyx-dynamic-notch" onclick="handleNotchClick(event)" class="fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform -translate-y-16 opacity-0 pointer-events-none select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95">
+<div id="onyx-dynamic-notch" onclick="handleNotchClick(event)" style="background-color:rgba(0,0,0,0.95);" class="fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform -translate-y-16 opacity-0 pointer-events-none select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95">
     <!-- Left: Notch Brand Icon / Logo -->
     <div class="flex items-center gap-1.5 shrink-0">
         <div class="w-5 h-5 rounded-full bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center">
@@ -123,7 +123,7 @@
         <div id="notch-workout-progress-container" class="relative w-6 h-6 flex items-center justify-center">
             <svg class="w-6 h-6 -rotate-90 transform" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="#22251a" stroke-width="3.5" />
-                <circle id="notch-workout-progress-circle" cx="18" cy="18" r="14" fill="none" stroke="#8da815" stroke-width="3.5" stroke-dasharray="88" stroke-dashoffset="25" stroke-linecap="round" class="transition-all duration-500" />
+                <circle id="notch-workout-progress-circle" cx="18" cy="18" r="14" fill="none" stroke="#8da815" stroke-width="3.5" stroke-dasharray="88" stroke-dashoffset="88" stroke-linecap="round" class="transition-all duration-500" />
             </svg>
             <span id="notch-exercises-remaining-count" class="absolute text-[8px] font-black font-mono text-[#caf300]">0</span>
         </div>
@@ -154,8 +154,8 @@
 </div>
 
 <!-- Global Timer Navigation Options Modal -->
-<div id="global-timer-options-modal" onclick="closeGlobalTimerOptionsModal()" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
-    <div id="global-timer-options-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
+<div id="global-timer-options-modal" onclick="closeGlobalTimerOptionsModal()" style="background-color:rgba(0,0,0,0.8);" class="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true">
+    <div id="global-timer-options-card" onclick="event.stopPropagation()" style="background-color:#121316;" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
         <!-- Header -->
         <div class="flex justify-between items-center px-5 py-4 border-b border-white/10 bg-[#16171A]">
             <div class="flex items-center gap-2.5">
@@ -488,10 +488,16 @@
                 }
             });
             const remainingCount = Math.max(0, totalCount - completedCount);
+            const setRows = document.querySelectorAll('.set-row');
+            const totalSets = setRows.length;
+            let completedSets = 0;
+            setRows.forEach(r => { if (r.getAttribute('data-completed') === 'true') completedSets++; });
             workoutData = {
                 total: totalCount,
                 completed: completedCount,
-                remaining: remainingCount
+                remaining: remainingCount,
+                totalSets: totalSets,
+                completedSets: completedSets
             };
             try {
                 localStorage.setItem('onyx_workout_progress', JSON.stringify(workoutData));
@@ -539,6 +545,7 @@
             if (msLeft <= 0) {
                 // EXPIRED: Illumination yellow state
                 notch.className = "fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-[#caf300] text-black border-2 border-white rounded-full px-4 py-1.5 flex items-center justify-between gap-3 shadow-[0_0_25px_rgba(202,243,0,0.85)] backdrop-blur-xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto select-none min-h-[38px] max-w-[280px] cursor-pointer animate-pulse scale-105";
+                notch.style.backgroundColor = "#caf300";
                 if (statusText) {
                     statusText.innerText = "{% translate 'TEMPO SCADUTO!' %}";
                     statusText.className = "text-[10px] font-black uppercase tracking-wider text-black font-display";
@@ -553,6 +560,7 @@
             } else {
                 // COUNTING DOWN: Standard sleek black notch
                 notch.className = "fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95";
+                notch.style.backgroundColor = "rgba(0,0,0,0.95)";
                 if (statusText) {
                     statusText.innerText = timeStr;
                     statusText.className = "text-[11px] font-black font-mono text-[#caf300] tracking-tight tabular-nums";
@@ -569,24 +577,26 @@
         } else if (hasActiveWorkout) {
             // MODE B: Workout in progress (no rest timer)
             notch.className = "fixed top-[max(env(safe-area-inset-top),8px)] left-1/2 -translate-x-1/2 z-[100] bg-black/95 border border-[#222429] rounded-full px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto select-none min-h-[38px] max-w-[280px] cursor-pointer hover:scale-105 active:scale-95";
+            notch.style.backgroundColor = "rgba(0,0,0,0.95)";
             if (workoutProgContainer) workoutProgContainer.classList.remove('hidden');
             if (restProgContainer) restProgContainer.classList.add('hidden');
 
             const total = (workoutData && workoutData.total) || 1;
             const completed = (workoutData && workoutData.completed) || 0;
-            const remaining = (workoutData && workoutData.remaining !== undefined) ? workoutData.remaining : Math.max(0, total - completed);
+            const totalSets = (workoutData && workoutData.totalSets) || total;
+            const completedSets = (workoutData && workoutData.completedSets != null) ? workoutData.completedSets : completed;
+            const ratio = totalSets > 0 ? Math.max(0, Math.min(1, completedSets / totalSets)) : 0;
+            const remainingSets = Math.max(0, totalSets - completedSets);
 
             if (remainingCountEl) {
-                remainingCountEl.innerText = remaining;
+                remainingCountEl.innerText = remainingSets;
             }
             if (statusText) {
-                statusText.innerText = remaining > 0 ? `${remaining} {% translate 'RIMANENTI' %}` : "{% translate 'COMPLETATO' %}";
+                statusText.innerText = remainingSets > 0 ? `${remainingSets} {% translate 'SERIE' %}` : "{% translate 'COMPLETATO' %}";
                 statusText.className = "text-[10px] font-black uppercase tracking-wider text-zinc-300 font-display";
             }
             if (workoutCircle) {
-                const ratio = Math.max(0, Math.min(1, completed / total));
-                const dashoffset = 88 * (1 - ratio);
-                workoutCircle.style.strokeDashoffset = dashoffset;
+                workoutCircle.style.strokeDashoffset = 88 * (1 - ratio);
             }
         }
     }
@@ -603,7 +613,23 @@
                 }
             } catch(e) {}
         }
-        if (typeof openOverlay === 'function') {
+        // Only open the full-screen rest overlay when there is an ACTIVE rest countdown.
+        let hasActiveRest = false;
+        if (rawTimer) {
+            try {
+                const s = JSON.parse(rawTimer);
+                if (s) {
+                    let msLeft = s.remainingMs || 0;
+                    if (s.isRunning && s.startedAt) {
+                        msLeft = Math.max(0, s.remainingMs - (Date.now() - s.startedAt));
+                    }
+                    if ((s.isRunning || msLeft > 0) && !s.hasNotifiedZero) {
+                        hasActiveRest = true;
+                    }
+                }
+            } catch(e) {}
+        }
+        if (hasActiveRest && typeof openOverlay === 'function') {
             openOverlay();
         } else {
             openGlobalTimerOptionsModal();
