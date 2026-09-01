@@ -60,6 +60,20 @@ def parse_duration_minutes(val_str):
     return total_mins if total_mins > 0 else None
 
 
+def _purge_empty_active_sessions(user):
+    """
+    Delete every one of the user's active workout sessions that has no logs.
+
+    An empty ``active`` session is always junk: it was created for a workout
+    that was opened but never actually logged (or one that has just been
+    discarded and a stray autosave request slipped in right after).
+    """
+    WorkoutSession.objects.filter(
+        user=user,
+        status='active',
+    ).annotate(_num_logs=Count('logs')).filter(_num_logs=0).delete()
+
+
 def make_overview_redirect(request):
     redirect_url = reverse('weight:overview')
     if request.headers.get('HX-Request'):
@@ -82,6 +96,15 @@ def log_tailwind(request, routine_pk, day_pk):
     session = None
     cutoff_24h = timezone.now() - datetime.timedelta(hours=24)
 
+    # Housekeeping: drop the user's abandoned *empty* active sessions from
+    # earlier days. An empty active session left over from a scrapped "test"
+    # workout must never survive to be surfaced or bulk-promoted later.
+    WorkoutSession.objects.filter(
+        user=request.user,
+        status='active',
+        date__lt=cutoff_24h.date(),
+    ).annotate(_num_logs=Count('logs')).filter(_num_logs=0).delete()
+
     # 0. Single Active Workout Restriction: Check if user has an active session for another day/routine
     other_active = WorkoutSession.objects.filter(
         user=request.user,
@@ -98,15 +121,19 @@ def log_tailwind(request, routine_pk, day_pk):
                 _("Hai già un allenamento in corso! Completa o interrompi la sessione corrente prima di avviarne un'altra.")
             )
             return redirect('manager:day:overview', routine_pk=other_active.routine_id, day_pk=other_active.day_id)
-        else:
+        elif other_active.logs.exists():
             WorkoutSession.objects.filter(id=other_active.id).update(status='interrupted')
+        else:
+            WorkoutSession.objects.filter(id=other_active.id).delete()
 
     # If ?start=true is passed, we explicitly want to start a brand new session
     if request.GET.get('start') == 'true':
-        WorkoutSession.objects.filter(
+        stale_active = WorkoutSession.objects.filter(
             user=request.user,
-            status='active'
-        ).update(status='interrupted')
+            status='active',
+        ).annotate(_num_logs=Count('logs'))
+        stale_active.filter(_num_logs__gt=0).update(status='interrupted')
+        stale_active.filter(_num_logs=0).delete()
 
         session = WorkoutSession.objects.create(
             user=request.user,
@@ -147,10 +174,11 @@ def log_tailwind(request, routine_pk, day_pk):
                 session = candidate
                 break
 
-    # 3. Create a new active session draft if none found within 24h.
-    #    Only persist a draft on an explicit start action; a plain GET must not
-    #    pollute the DB with empty sessions.
-    if not session and (request.method == 'POST' or request.GET.get('start') == 'true'):
+    # 3. Create a new active session draft only on an explicit start action.
+    #    Neither a plain GET nor a POST may pollute the DB with an empty
+    #    session; POST actions that genuinely need persistence materialise it
+    #    lazily further down (see materialize_session).
+    if not session and request.GET.get('start') == 'true':
         session = WorkoutSession.objects.create(
             user=request.user,
             routine_id=routine_pk,
@@ -183,21 +211,36 @@ def log_tailwind(request, routine_pk, day_pk):
         return HttpResponseForbidden()
 
     if request.method == 'POST':
-        # Ensure a real, persisted session exists before processing any action
-        if transient_session:
-            session = WorkoutSession.objects.create(
-                user=request.user,
-                routine_id=routine_pk,
-                day=day,
-                date=datetime.date.today(),
-                time_start=timezone.localtime(timezone.now()).time(),
-                status='active',
-            )
-            request.session[session_key] = str(session.id)
-            transient_session = False
-
         pr_event = None  # populated when a logged set is a new personal record
         action = request.POST.get('action')
+
+        # Actions that must never bring an empty session into existence.
+        _EPHEMERAL_ACTIONS = {
+            'auto_save_snapshot',
+            'discard_workout',
+            'interrupt_workout',
+            'finish_workout',
+        }
+
+        def materialize_session():
+            """Persist the transient draft the first time an action needs it."""
+            nonlocal session, transient_session
+            if transient_session:
+                session = WorkoutSession.objects.create(
+                    user=request.user,
+                    routine_id=routine_pk,
+                    day=day,
+                    date=datetime.date.today(),
+                    time_start=timezone.localtime(timezone.now()).time(),
+                    status='active',
+                )
+                request.session[session_key] = str(session.id)
+                transient_session = False
+            return session
+
+        if action not in _EPHEMERAL_ACTIONS:
+            materialize_session()
+
         exercise_id = request.POST.get('exercise_id')
         slot_entry_id = request.POST.get('slot_entry_id')
         slot_id = request.POST.get('slot_id')
@@ -269,7 +312,7 @@ def log_tailwind(request, routine_pk, day_pk):
                     siblings = WorkoutSession.objects.filter(
                         user=request.user, day=day, status='active'
                     ).exclude(id=session.id).annotate(_num_logs=Count('logs'))
-                    siblings.filter(_num_logs__gt=0).update(status='finished')
+                    siblings.filter(_num_logs__gt=0).update(status='interrupted')
                     siblings.filter(_num_logs=0).delete()
                     if session_key in request.session:
                         del request.session[session_key]
@@ -283,6 +326,12 @@ def log_tailwind(request, routine_pk, day_pk):
                         'photos_count': session_photos_count,
                     })
             elif action == 'auto_save_snapshot':
+                # Crash-safety convenience only. It must never create a session
+                # or fabricate logs: the client keeps the real snapshot in
+                # localStorage. Here we only refresh timing / notes on a session
+                # that is *already* persisted because real sets were logged.
+                if transient_session:
+                    return JsonResponse({'status': 'ok', 'saved_at': timezone.now().isoformat()})
                 payload_str = request.POST.get('snapshot_payload')
                 if payload_str:
                     try:
@@ -297,36 +346,19 @@ def log_tailwind(request, routine_pk, day_pk):
                         if notes:
                             session.notes = notes.strip()
                         session.save()
-
-                        # Batch sync any completed sets in payload
-                        completed_sets = data.get('completed_sets', [])
-                        for cs in completed_sets:
-                            s_entry_id = cs.get('slot_entry_id')
-                            ex_id = cs.get('exercise_id')
-                            if s_entry_id and ex_id:
-                                try:
-                                    s_entry = SlotEntry.objects.get(id=s_entry_id)
-                                    reps_val = float(cs.get('repetitions', 10))
-                                    wt_val = float(cs.get('weight', 0))
-                                    # Update or create log
-                                    WorkoutLog.objects.update_or_create(
-                                        session=session,
-                                        exercise_id=ex_id,
-                                        slot_entry=s_entry,
-                                        defaults={
-                                            'user': request.user,
-                                            'repetitions': reps_val,
-                                            'weight': wt_val,
-                                            'date': session.date
-                                        }
-                                    )
-                                except Exception:
-                                    pass
                     except Exception:
                         pass
                 return JsonResponse({'status': 'ok', 'saved_at': timezone.now().isoformat()})
 
             elif action == 'finish_workout':
+                if transient_session:
+                    # No session was ever persisted -> nothing was logged.
+                    # Finishing an empty workout is a discard.
+                    _purge_empty_active_sessions(request.user)
+                    if session_key in request.session:
+                        del request.session[session_key]
+                    return make_overview_redirect(request)
+
                 custom_date_str = request.POST.get('custom_date')
                 custom_duration_str = request.POST.get('custom_duration')
                 notes_str = request.POST.get('notes')
@@ -393,10 +425,13 @@ def log_tailwind(request, routine_pk, day_pk):
                 if not session.time_end:
                     session.time_end = timezone.localtime(timezone.now()).time()
                 session.save()
+                # Other still-open sessions for this day were NOT the one the
+                # user just finished: interrupt the ones with logs, drop the
+                # empty ones. Never bulk-promote them to 'finished'.
                 siblings = WorkoutSession.objects.filter(
                     user=request.user, day=day, status='active'
                 ).exclude(id=session.id).annotate(_num_logs=Count('logs'))
-                siblings.filter(_num_logs__gt=0).update(status='finished')
+                siblings.filter(_num_logs__gt=0).update(status='interrupted')
                 siblings.filter(_num_logs=0).delete()
 
                 if request.POST.get('save_as_routine_day') == 'true':
@@ -417,22 +452,34 @@ def log_tailwind(request, routine_pk, day_pk):
                 return make_overview_redirect(request)
 
             elif action == 'interrupt_workout':
-                if session.logs.exists():
-                    session.status = 'interrupted'
-                    session.time_end = timezone.localtime(timezone.now()).time()
-                    session.save()
-                    WorkoutSession.objects.filter(user=request.user, day=day, status='active').update(status='interrupted')
-                else:
-                    session.delete()
-                    WorkoutSession.objects.filter(user=request.user, day=day, status='active').delete()
+                if not transient_session:
+                    if session.logs.exists():
+                        session.status = 'interrupted'
+                        session.time_end = timezone.localtime(timezone.now()).time()
+                        session.save()
+                        others = WorkoutSession.objects.filter(
+                            user=request.user, day=day, status='active'
+                        ).exclude(id=session.id).annotate(_num_logs=Count('logs'))
+                        others.filter(_num_logs__gt=0).update(status='interrupted')
+                        others.filter(_num_logs=0).delete()
+                    else:
+                        session.delete()
+                _purge_empty_active_sessions(request.user)
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)
 
             elif action == 'discard_workout':
-                session.logs.all().delete()
-                session.delete()
-                WorkoutSession.objects.filter(user=request.user, day=day, status='active').delete()
+                if not transient_session:
+                    session.logs.all().delete()
+                    session.delete()
+                # Kill any duplicate active session for this day, plus every
+                # empty active session the user has anywhere - this also mops up
+                # a stray autosave request that lands right after the discard.
+                WorkoutSession.objects.filter(
+                    user=request.user, day=day, status='active'
+                ).delete()
+                _purge_empty_active_sessions(request.user)
                 if session_key in request.session:
                     del request.session[session_key]
                 return make_overview_redirect(request)

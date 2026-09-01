@@ -2018,6 +2018,7 @@
     }
 
     function onFinishWorkoutSubmitted() {
+        if (typeof window.stopWorkoutAutosave === 'function') window.stopWorkoutAutosave();
         try {
             localStorage.removeItem('onyx_workout_progress');
             localStorage.removeItem('onyx_active_rest_timer');
@@ -2751,11 +2752,19 @@
     }
 
     async function autoSaveWorkoutSnapshot() {
+        // The workout is being finished / discarded: do not touch the server.
+        if (window._workoutClosing) return;
         try {
             const payload = collectWorkoutPayload();
             localStorage.setItem('onyx_active_workout_snapshot', JSON.stringify(payload));
 
             if (!navigator.onLine) return;
+
+            // Never hit the server for a workout with no real content: an empty
+            // session must not be persisted just because the page was left open.
+            const hasContent = (payload.completed_sets && payload.completed_sets.length > 0)
+                || (payload.elapsed_seconds || 0) > 60;
+            if (!hasContent) return;
 
             const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
             const formData = new FormData();
@@ -2789,11 +2798,23 @@
     });
 
     // Auto-save interval every 30 seconds
-    setInterval(autoSaveWorkoutSnapshot, 30000);
+    window._workoutClosing = false;
+    window._autoSaveIntervalId = setInterval(autoSaveWorkoutSnapshot, 30000);
     document.addEventListener('htmx:afterSwap', () => { setTimeout(autoSaveWorkoutSnapshot, 500); });
+
+    // Called on finish / interrupt / discard submit: freeze autosave so an
+    // in-flight or scheduled snapshot cannot resurrect the session afterwards.
+    window.stopWorkoutAutosave = function() {
+        window._workoutClosing = true;
+        if (window._autoSaveIntervalId) {
+            clearInterval(window._autoSaveIntervalId);
+            window._autoSaveIntervalId = null;
+        }
+    };
 
     // Full Final Commit handler
     window.onFinishWorkoutSubmitted = function() {
+        if (typeof window.stopWorkoutAutosave === 'function') window.stopWorkoutAutosave();
         const payload = collectWorkoutPayload();
         const finishForm = document.getElementById('finish-workout-review-form') || document.querySelector('form input[value="finish_workout"]')?.closest('form');
         if (finishForm) {
