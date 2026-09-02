@@ -1,5 +1,5 @@
 {% load static i18n %}
-{% if user.is_authenticated %}
+{% if user.is_authenticated and request.resolver_match.url_name != 'change-password' and not user.userprofile.needs_password_change %}
 <!-- TopAppBar (Web & Mobile) -->
 <header class="w-full sticky top-0 z-50 bg-[#08090A]/95 backdrop-blur-md border-b border-[#222429]">
     <div class="w-full max-w-5xl mx-auto flex justify-between items-center px-4 sm:px-6 py-3.5 pt-[max(env(safe-area-inset-top),14px)]">
@@ -54,7 +54,7 @@
 </div>
 
 <!-- BottomNavBar (Mobile & Desktop Unified Floating Dock - Instagram Style) -->
-<nav class="fixed bottom-[17px] sm:bottom-[25px] left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md mb-[env(safe-area-inset-bottom)]">
+<nav id="onyx-bottom-nav" class="fixed bottom-[17px] sm:bottom-[25px] left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md mb-[env(safe-area-inset-bottom)]">
     <div class="bg-[#121316]/95 backdrop-blur-xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.85)] rounded-full px-2 sm:px-3 py-1.5 grid grid-cols-5 items-center h-[68px]">
         <!-- Home (Col 1) -->
         <a class="flex flex-col items-center justify-center py-1 px-2 rounded-full transition-all duration-200 {% if request.resolver_match.view_name == 'core:dashboard' %}bg-white/10 text-[#caf300] font-bold shadow-inner scale-[1.02]{% else %}text-[#8e8e93] hover:text-white hover:bg-white/5{% endif %}" href="{% url 'core:dashboard' %}">
