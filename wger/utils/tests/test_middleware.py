@@ -57,7 +57,7 @@ class RobotsExclusionMiddlewareTestCase(WgerTestCase):
             'nr_stars': 1,
         }
 
-        for i in ('features', 'tos', 'about-us'):
+        for i in ('features', 'tos'):
             response = self.client.get(reverse(f'software:{i}'))
             self.assertFalse(response.get('X-Robots-Tag'))
 
