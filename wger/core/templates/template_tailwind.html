@@ -1391,8 +1391,11 @@
             });
         })();
 
-        // Onyx Offline-First Sync Engine (Idempotent for HTMX partial loads)
-        if (!window.OnyxOfflineSync) {
+        // Onyx Offline-First Sync Engine (Idempotent for HTMX partial loads and repeat executions)
+        (function() {
+            if (typeof window.OnyxOfflineSync !== 'undefined' || typeof OnyxOfflineSync !== 'undefined') {
+                return;
+            }
             window.OnyxOfflineSync = {
                 QUEUE_KEY: 'onyx_offline_sync_queue',
 
@@ -1532,7 +1535,7 @@
                     }
                 }
             });
-        }
+        })();
 
         // Check and prompt native permissions on launch
         // Check and prompt native permissions on launch
