@@ -1,10 +1,13 @@
 package com.onyx.workoutapp;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -38,6 +41,14 @@ public class OnyxLiveService extends Service {
     public static final String ACTION_UPDATE_TIMER = "com.onyx.workoutapp.ACTION_UPDATE_TIMER";
     public static final String ACTION_STOP_ALARM = "com.onyx.workoutapp.ACTION_STOP_ALARM";
 
+    /**
+     * Fired by {@link TimerExpiryAlarmReceiver} from an exact AlarmManager alarm. Backup
+     * path for when the OS froze/killed the service before its CountDownTimer reached
+     * onFinish() (routine on HyperOS after the app is swiped away). Kept byte-identical to
+     * {@link TimerExpiryAlarmReceiver#ACTION_TIMER_EXPIRED}.
+     */
+    public static final String ACTION_ALARM_BACKUP = "com.onyx.workoutapp.ALARM_TIMER_EXPIRED";
+
     public static final String ACTION_WORKOUT_START = "com.onyx.workoutapp.ACTION_WORKOUT_START";
     public static final String ACTION_WORKOUT_UPDATE = "com.onyx.workoutapp.ACTION_WORKOUT_UPDATE";
     public static final String ACTION_WORKOUT_STOP = "com.onyx.workoutapp.ACTION_WORKOUT_STOP";
@@ -55,7 +66,12 @@ public class OnyxLiveService extends Service {
     /** Throwaway foreground anchor used when a cold-recreated service has no live state. */
     private static final int NOTIFICATION_ID_ANCHOR = 1000;
 
+    /** SharedPreferences file that mirrors the live state so a killed service can restore it. */
+    private static final String STATE_PREFS = "onyx_live_service_state";
+    private static final int REQ_EXPIRY_ALARM = 7001;
+
     private NotificationManager notificationManager;
+    private AlarmManager alarmManager;
     private CountDownTimer countDownTimer;
     private MediaPlayer mediaPlayer;
     private Vibrator vibrator;
@@ -100,6 +116,7 @@ public class OnyxLiveService extends Service {
         super.onCreate();
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             VibratorManager vibratorManager = (VibratorManager) getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
@@ -121,14 +138,8 @@ public class OnyxLiveService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent == null || intent.getAction() == null) {
-            // Cold restart with no action: never sit foreground-less, just tear down.
-            stopAllAndService();
-            return START_NOT_STICKY;
-        }
-
-        String action = intent.getAction();
-        Log.d(TAG, "OnyxLiveService onStartCommand: action=" + action);
+        boolean redelivered = (flags & START_FLAG_REDELIVERY) != 0;
+        String action = intent != null ? intent.getAction() : null;
 
         // Satisfy the startForeground() obligation IMMEDIATELY, before any work or early
         // return. A cold-recreated service handed a notification action (PAUSE / RESUME /
@@ -136,6 +147,24 @@ public class OnyxLiveService extends Service {
         // may early-return without ever calling startForeground() -> the OS would kill us
         // with ForegroundServiceDidNotStartInTimeException.
         ensureForegroundAnchor();
+
+        if (redelivered || action == null) {
+            // The OS restarted us after a low-memory / OEM kill: START_REDELIVER_INTENT
+            // re-delivers the last intent (redelivered=true), a plain sticky restart
+            // delivers null. Either way the carried action is stale — rebuild from the
+            // persisted snapshot instead of replaying it.
+            Log.d(TAG, "OnyxLiveService onStartCommand: restart (redelivered=" + redelivered + ", action=" + action + ")");
+            if (restoreStateFromPrefs()) {
+                resumeFromRestoredState();
+            }
+            if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
+                stopAllAndService();
+                return START_NOT_STICKY;
+            }
+            return START_REDELIVER_INTENT;
+        }
+
+        Log.d(TAG, "OnyxLiveService onStartCommand: action=" + action);
 
         try {
             handleAction(action, intent);
@@ -146,9 +175,45 @@ public class OnyxLiveService extends Service {
         // If the action left nothing live to display, drop the (possibly minimal) anchor.
         if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
             stopAllAndService();
+            return START_NOT_STICKY;
         }
 
-        return START_NOT_STICKY;
+        // Something is live -> ask the OS to restart us (and redeliver) if it kills us.
+        // The redelivered intent is ignored on the way back in; state comes from prefs.
+        return START_REDELIVER_INTENT;
+    }
+
+    /**
+     * Re-arms timers / notifications from fields just populated by
+     * {@link #restoreStateFromPrefs()} after an OS kill.
+     */
+    private synchronized void resumeFromRestoredState() {
+        try {
+            if (isTimerRunning && !isPaused) {
+                long left = targetEndTimeMs - System.currentTimeMillis();
+                if (left <= 0) {
+                    // The rest window elapsed while the service was dead.
+                    remainingTimeMs = 0;
+                    isTimerRunning = false;
+                    acquireWakeLock();
+                    triggerTimerFinishedAlarm();
+                    return;
+                }
+                remainingTimeMs = left;
+                acquireWakeLock();
+                updateForegroundState();
+                startInternalCountDown(remainingTimeMs);
+            } else if (isTimerRunning) { // paused
+                acquireWakeLock();
+                updateForegroundState();
+            }
+            if (isWorkoutActive) {
+                acquireWakeLock();
+                updateForegroundState();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "resumeFromRestoredState failed: " + e.getMessage(), e);
+        }
     }
 
     private void ensureForegroundAnchor() {
@@ -194,6 +259,28 @@ public class OnyxLiveService extends Service {
             case ACTION_STOP:
                 stopRestTimer();
                 break;
+            case ACTION_ALARM_BACKUP: {
+                // Exact-alarm backup fired (see TimerExpiryAlarmReceiver). If we were
+                // cold-started by it, our fields are at defaults -> restore first.
+                if (!isTimerRunning && !isAlarmPlaying && !isWorkoutActive) {
+                    restoreStateFromPrefs();
+                }
+                long msLeft = targetEndTimeMs - System.currentTimeMillis();
+                if (isTimerRunning && !isPaused && msLeft <= 1000L) {
+                    Log.d(TAG, "ACTION_ALARM_BACKUP: forcing timer-finished alarm (msLeft=" + msLeft + ")");
+                    if (countDownTimer != null) {
+                        countDownTimer.cancel();
+                        countDownTimer = null;
+                    }
+                    isTimerRunning = false;
+                    acquireWakeLock();
+                    triggerTimerFinishedAlarm();
+                } else {
+                    Log.d(TAG, "ACTION_ALARM_BACKUP: ignored (running=" + isTimerRunning
+                            + ", paused=" + isPaused + ", msLeft=" + msLeft + ")");
+                }
+                break;
+            }
             case ACTION_STOP_ALARM:
                 stopAlarmOnly();
                 if (!isTimerRunning && !isWorkoutActive) {
@@ -279,6 +366,7 @@ public class OnyxLiveService extends Service {
         }
         remainingTimeMs = Math.max(0, targetEndTimeMs - System.currentTimeMillis());
         isPaused = true;
+        cancelExpiryAlarm();
         updateForegroundState();
         OnyxLivePlugin.notifyTimerPaused();
     }
@@ -339,6 +427,7 @@ public class OnyxLiveService extends Service {
         isTimerRunning = false;
         isPaused = false;
         remainingTimeMs = 0;
+        cancelExpiryAlarm();
         stopAlarmOnly();
 
         if (notificationManager != null) {
@@ -356,6 +445,9 @@ public class OnyxLiveService extends Service {
     }
 
     private void startInternalCountDown(long durationMs) {
+        // Belt-and-braces: also arm an exact AlarmManager alarm for the same target time
+        // so the "time's up" alarm still fires if this CountDownTimer is frozen/killed.
+        scheduleExpiryAlarm();
         countDownTimer = new CountDownTimer(durationMs, 500) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -420,6 +512,9 @@ public class OnyxLiveService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Error updating foreground notifications: " + e.getMessage(), e);
         }
+
+        // Mirror the live state so a killed/redelivered service can rebuild it.
+        persistState();
     }
 
     private void cancelQuietly(int id) {
@@ -461,6 +556,7 @@ public class OnyxLiveService extends Service {
             countDownTimer.cancel();
             countDownTimer = null;
         }
+        cancelExpiryAlarm();
         isTimerRunning = false;
         isPaused = false;
         hasActiveOngoingNotification = isWorkoutActive;
@@ -751,6 +847,8 @@ public class OnyxLiveService extends Service {
             countDownTimer.cancel();
             countDownTimer = null;
         }
+        cancelExpiryAlarm();
+        clearPersistedState();
         stopAlarmOnly();
         releaseWakeLock();
 
@@ -773,6 +871,118 @@ public class OnyxLiveService extends Service {
             } catch (Exception ignored) {}
         }
         stopSelf();
+    }
+
+    // ---------------------------------------------------------------------------------
+    // Exact-alarm backup for timer expiry
+    // ---------------------------------------------------------------------------------
+
+    private PendingIntent expiryAlarmPendingIntent() {
+        Intent i = new Intent(this, TimerExpiryAlarmReceiver.class);
+        i.setAction(ACTION_ALARM_BACKUP);
+        return PendingIntent.getBroadcast(this, REQ_EXPIRY_ALARM, i,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private void scheduleExpiryAlarm() {
+        if (alarmManager == null) return;
+        try {
+            if (!isTimerRunning || isPaused || targetEndTimeMs <= System.currentTimeMillis()) {
+                cancelExpiryAlarm();
+                return;
+            }
+            PendingIntent pi = expiryAlarmPendingIntent();
+            boolean canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                    || alarmManager.canScheduleExactAlarms();
+            if (canExact) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetEndTimeMs, pi);
+            } else {
+                // No exact-alarm grant: still far better than nothing on Doze.
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, targetEndTimeMs, pi);
+            }
+            Log.d(TAG, "scheduleExpiryAlarm: +" + (targetEndTimeMs - System.currentTimeMillis())
+                    + "ms (exact=" + canExact + ")");
+        } catch (Exception e) {
+            Log.e(TAG, "scheduleExpiryAlarm failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void cancelExpiryAlarm() {
+        if (alarmManager == null) return;
+        try {
+            alarmManager.cancel(expiryAlarmPendingIntent());
+        } catch (Exception e) {
+            Log.e(TAG, "cancelExpiryAlarm failed: " + e.getMessage(), e);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------
+    // State persistence (survives an OEM / low-memory kill)
+    // ---------------------------------------------------------------------------------
+
+    private void persistState() {
+        try {
+            SharedPreferences.Editor e = getSharedPreferences(STATE_PREFS, MODE_PRIVATE).edit();
+            e.putBoolean("timerRunning", isTimerRunning);
+            e.putBoolean("paused", isPaused);
+            e.putLong("targetEndTimeMs", targetEndTimeMs);
+            e.putLong("totalDurationMs", totalDurationMs);
+            e.putLong("remainingTimeMs", remainingTimeMs);
+            e.putString("title", currentTitle);
+            e.putString("soundUri", customSoundUri);
+            e.putBoolean("workoutActive", isWorkoutActive);
+            e.putString("workoutTitle", workoutTitle);
+            e.putString("exerciseName", currentExerciseName);
+            e.putInt("completedSets", completedSets);
+            e.putInt("totalSets", totalSets);
+            e.putLong("workoutStartedAt", workoutStartedAt);
+            e.putLong("savedAt", System.currentTimeMillis());
+            e.apply();
+        } catch (Exception ex) {
+            Log.e(TAG, "persistState failed: " + ex.getMessage());
+        }
+    }
+
+    /** @return true if an active timer or workout was restored into the fields. */
+    private boolean restoreStateFromPrefs() {
+        try {
+            SharedPreferences p = getSharedPreferences(STATE_PREFS, MODE_PRIVATE);
+            if (!p.contains("savedAt")) return false;
+
+            boolean timerRunning = p.getBoolean("timerRunning", false);
+            boolean workoutActive = p.getBoolean("workoutActive", false);
+            if (!timerRunning && !workoutActive) return false;
+
+            this.isPaused = p.getBoolean("paused", false);
+            this.targetEndTimeMs = p.getLong("targetEndTimeMs", 0L);
+            this.totalDurationMs = p.getLong("totalDurationMs", 0L);
+            this.isTimerRunning = timerRunning;
+            this.remainingTimeMs = isPaused
+                    ? p.getLong("remainingTimeMs", 0L)
+                    : Math.max(0L, targetEndTimeMs - System.currentTimeMillis());
+            this.currentTitle = p.getString("title", "Recupero in corso");
+            this.customSoundUri = p.getString("soundUri", null);
+
+            this.isWorkoutActive = workoutActive;
+            this.workoutTitle = p.getString("workoutTitle", "Sessione di Allenamento");
+            this.currentExerciseName = p.getString("exerciseName", "");
+            this.completedSets = p.getInt("completedSets", 0);
+            this.totalSets = p.getInt("totalSets", 0);
+            this.workoutStartedAt = p.getLong("workoutStartedAt", 0L);
+
+            Log.d(TAG, "restoreStateFromPrefs: timer=" + isTimerRunning + " paused=" + isPaused
+                    + " workout=" + isWorkoutActive + " remainingMs=" + remainingTimeMs);
+            return true;
+        } catch (Exception ex) {
+            Log.e(TAG, "restoreStateFromPrefs failed: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    private void clearPersistedState() {
+        try {
+            getSharedPreferences(STATE_PREFS, MODE_PRIVATE).edit().clear().apply();
+        } catch (Exception ignored) {}
     }
 
     private void acquireWakeLock() {
