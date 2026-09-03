@@ -1145,6 +1145,12 @@
     window.resetTimer = resetTimer;
     window.adjustTimer = adjustTimer;
     window.setTimerPreset = setTimerPreset;
+    // START / Pause button (inline onclick="toggleTimer()") — this script is an IIFE, so the
+    // handler is unreachable unless explicitly exported. Without this, the timer only starts
+    // from a preset (setTimerPreset is exported) or a completed set, never from a bare START.
+    window.toggleTimer = toggleTimer;
+    window.startCountdown = startCountdown;
+    window.pauseCountdown = pauseCountdown;
 
     function resetTimer() {
         stopTimer();
