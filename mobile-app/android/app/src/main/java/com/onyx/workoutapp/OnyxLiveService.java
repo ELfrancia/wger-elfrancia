@@ -174,7 +174,7 @@ public class OnyxLiveService extends Service {
                 resumeTimer();
                 break;
             case ACTION_ADD_TIME:
-                addSecondsToTimer(30);
+                addSecondsToTimer(intent.getIntExtra(EXTRA_DURATION, 30));
                 break;
             case ACTION_STOP:
                 stopRestTimer();

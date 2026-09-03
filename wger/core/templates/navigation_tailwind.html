@@ -1,5 +1,5 @@
 {% load static i18n %}
-{% if user.is_authenticated and request.resolver_match.url_name != 'change-password' and not user.userprofile.needs_password_change %}
+{% if user.is_authenticated and request.resolver_match.url_name != 'change-password' and request.resolver_match.url_name != 'onboarding' and not user.userprofile.needs_password_change and user.userprofile.onboarding_completed %}
 <!-- TopAppBar (Web & Mobile) -->
 <header class="w-full sticky top-0 z-50 bg-[#08090A]/95 backdrop-blur-md border-b border-[#222429]">
     <div class="w-full max-w-5xl mx-auto flex justify-between items-center px-4 sm:px-6 py-3.5 pt-[max(env(safe-area-inset-top),14px)]">
@@ -449,12 +449,18 @@
         if (rawTimer) {
             try {
                 const s = JSON.parse(rawTimer);
-                if (s) {
                     totalDurationMs = (s.durationSeconds || 45) * 1000;
-                    msLeft = s.remainingMs || 0;
-                    if (s.isRunning && s.startedAt) {
-                        const elapsed = Date.now() - s.startedAt;
-                        msLeft = Math.max(0, s.remainingMs - elapsed);
+                    if (s.isRunning) {
+                        if (s.targetEndTime) {
+                            msLeft = Math.max(0, s.targetEndTime - Date.now());
+                        } else if (s.startedAt) {
+                            const elapsed = Date.now() - s.startedAt;
+                            msLeft = Math.max(0, (s.remainingMs || 0) - elapsed);
+                        } else {
+                            msLeft = s.remainingMs || 0;
+                        }
+                    } else {
+                        msLeft = s.remainingMs || 0;
                     }
                     if (s.isRunning && msLeft > 0) {
                         hasActiveTimer = true;
@@ -687,10 +693,17 @@
             try {
                 state = JSON.parse(raw);
                 if (state) {
-                    msLeft = state.remainingMs || 0;
-                    if (state.isRunning && state.startedAt) {
-                        const elapsed = Date.now() - state.startedAt;
-                        msLeft = Math.max(0, state.remainingMs - elapsed);
+                    if (state.isRunning) {
+                        if (state.targetEndTime) {
+                            msLeft = Math.max(0, state.targetEndTime - Date.now());
+                        } else if (state.startedAt) {
+                            const elapsed = Date.now() - state.startedAt;
+                            msLeft = Math.max(0, (state.remainingMs || 0) - elapsed);
+                        } else {
+                            msLeft = state.remainingMs || 0;
+                        }
+                    } else {
+                        msLeft = state.remainingMs || 0;
                     }
                     if (state.isRunning && msLeft > 0) {
                         hasActiveRestTimer = true;

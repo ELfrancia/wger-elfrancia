@@ -1537,7 +1537,135 @@
             });
         })();
 
-        // Check and prompt native permissions on launch
+        // Unified Onyx Native Bridge for Capacitor / Android Timer
+        if (!window.onyxNative) {
+            window.onyxNative = {
+                get available() {
+                    return Boolean(window.AndroidTimer || (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer));
+                },
+                _caps: null,
+                async getCapabilities() {
+                    if (this._caps) return this._caps;
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.getCapabilities === 'function') {
+                        try {
+                            this._caps = await window.Capacitor.Plugins.WorkoutTimer.getCapabilities();
+                            return this._caps;
+                        } catch(e) {}
+                    }
+                    if (window.AndroidTimer && typeof window.AndroidTimer.canPostPromotedNotifications === 'function') {
+                        try {
+                            const canPromote = window.AndroidTimer.canPostPromotedNotifications();
+                            this._caps = {
+                                platform: 'android',
+                                promotedOngoing: canPromote,
+                                notificationsEnabled: window.AndroidTimer.areNotificationsEnabled ? window.AndroidTimer.areNotificationsEnabled() : true
+                            };
+                            return this._caps;
+                        } catch(e) {}
+                    }
+                    this._caps = { platform: 'web', promotedOngoing: false, notificationsEnabled: false };
+                    return this._caps;
+                },
+                restStart(durationSeconds, title, soundUri) {
+                    if (window._suppressNativeTimerCall) return;
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.startTimerWithSound === 'function') {
+                            window.AndroidTimer.startTimerWithSound(durationSeconds, title || 'Recupero in corso', soundUri || null);
+                        } else if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
+                            window.AndroidTimer.startTimer(durationSeconds, title || 'Recupero in corso');
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                            window.Capacitor.Plugins.WorkoutTimer.startTimer({
+                                durationSeconds: durationSeconds,
+                                title: title || 'Recupero in corso',
+                                soundUri: soundUri || null
+                            });
+                        }
+                    } catch(e) {}
+                },
+                restPause() {
+                    if (window._suppressNativeTimerCall) return;
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.pauseTimer === 'function') {
+                            window.AndroidTimer.pauseTimer();
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                            window.Capacitor.Plugins.WorkoutTimer.pauseTimer();
+                        }
+                    } catch(e) {}
+                },
+                restResume() {
+                    if (window._suppressNativeTimerCall) return;
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.resumeTimer === 'function') {
+                            window.AndroidTimer.resumeTimer();
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                            window.Capacitor.Plugins.WorkoutTimer.resumeTimer();
+                        }
+                    } catch(e) {}
+                },
+                restAddSeconds(sec = 30) {
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.addSeconds === 'function') {
+                            window.AndroidTimer.addSeconds(sec);
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                            window.Capacitor.Plugins.WorkoutTimer.addSeconds({ seconds: sec });
+                        }
+                    } catch(e) {}
+                },
+                restStop() {
+                    if (window._suppressNativeTimerCall) return;
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
+                            window.AndroidTimer.stopTimer();
+                            window.AndroidTimer.stopAlarm();
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
+                            window.Capacitor.Plugins.WorkoutTimer.stopTimer();
+                            window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+                        }
+                    } catch(e) {}
+                },
+                workoutStart(title, totalSets, completedSets, currentExerciseName, startedAt, slotBoundaries) {
+                    try {
+                        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland === 'function') {
+                            window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland({
+                                title: title,
+                                totalSets: totalSets,
+                                completedSets: completedSets,
+                                currentExerciseName: currentExerciseName,
+                                startedAt: startedAt,
+                                slotBoundaries: slotBoundaries || null
+                            });
+                        } else if (window.AndroidTimer && typeof window.AndroidTimer.startWorkout === 'function') {
+                            window.AndroidTimer.startWorkout(title, startedAt);
+                        }
+                    } catch(e) {}
+                },
+                workoutUpdate(completedSets, totalSets, currentExerciseName) {
+                    try {
+                        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland === 'function') {
+                            window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland({
+                                completedSets: completedSets,
+                                totalSets: totalSets,
+                                currentExerciseName: currentExerciseName
+                            });
+                        } else if (window.AndroidTimer && typeof window.AndroidTimer.updateProgressWithExercise === 'function') {
+                            window.AndroidTimer.updateProgressWithExercise(completedSets, totalSets, Math.max(0, totalSets - completedSets), currentExerciseName);
+                        } else if (window.AndroidTimer && typeof window.AndroidTimer.updateProgress === 'function') {
+                            window.AndroidTimer.updateProgress(completedSets, totalSets, Math.max(0, totalSets - completedSets));
+                        }
+                    } catch(e) {}
+                },
+                workoutStop() {
+                    try {
+                        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland === 'function') {
+                            window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland();
+                        } else if (window.AndroidTimer && typeof window.AndroidTimer.stopWorkout === 'function') {
+                            window.AndroidTimer.stopWorkout();
+                        }
+                    } catch(e) {}
+                }
+            };
+        }
+
         // Check and prompt native permissions on launch
         async function checkAndPromptPermissions() {
             let enabled = true;

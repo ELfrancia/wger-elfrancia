@@ -692,192 +692,12 @@
     </div>
 </div>
 
-<!-- Custom Timer Input Modal -->
-<div id="custom-timer-modal" onclick="closeCustomTimerModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden opacity-0" role="dialog" aria-modal="true" aria-labelledby="custom-timer-modal-title">
-    <div id="custom-timer-modal-card" onclick="event.stopPropagation()" class="bg-[#121316] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-transform duration-300 scale-95">
-        <!-- Modal Header -->
-        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-[#16171A]">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-[#caf300]/10 border border-[#caf300]/30 flex items-center justify-center text-[#caf300]">
-                    <span class="material-symbols-outlined text-xl">timer_10</span>
-                </div>
-                <div>
-                    <h3 id="custom-timer-modal-title" class="text-sm font-black uppercase tracking-wider text-white font-display">{% translate "Minutaggio Personalizzato" %}</h3>
-                    <p class="text-[10px] text-zinc-400 font-medium">{% translate "Imposta la durata del timer di recupero" %}</p>
-                </div>
-            </div>
-            <button type="button" onclick="closeCustomTimerModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors" aria-label="{% translate 'Chiudi' %}">
-                <span class="material-symbols-outlined text-lg">close</span>
-            </button>
-        </div>
-
-        <!-- Modal Body: Minutes & Seconds Input -->
-        <div class="p-6 flex flex-col gap-4 bg-[#121316]">
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Minutes -->
-                <div class="flex flex-col gap-1.5">
-                    <label for="custom-timer-minutes" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{% translate "Minuti" %}</label>
-                    <input type="number" id="custom-timer-minutes" min="0" max="60" value="1" placeholder="0" class="w-full bg-[#1A1B1E] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-center text-xl font-bold font-mono text-white focus:outline-none focus:ring-1 focus:ring-[#caf300] transition-all">
-                </div>
-
-                <!-- Seconds -->
-                <div class="flex flex-col gap-1.5">
-                    <label for="custom-timer-seconds" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">{% translate "Secondi" %}</label>
-                    <input type="number" id="custom-timer-seconds" min="0" max="59" step="5" value="30" placeholder="0" class="w-full bg-[#1A1B1E] border border-white/10 focus:border-[#caf300] rounded-xl px-4 py-3 text-center text-xl font-bold font-mono text-white focus:outline-none focus:ring-1 focus:ring-[#caf300] transition-all">
-                </div>
-            </div>
-
-            <!-- Quick duration preset chips -->
-            <div class="flex items-center justify-center gap-2 pt-1">
-                <button type="button" onclick="setCustomTimerValues(0, 45)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">45s</button>
-                <button type="button" onclick="setCustomTimerValues(1, 30)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">1m 30s</button>
-                <button type="button" onclick="setCustomTimerValues(2, 30)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">2m 30s</button>
-                <button type="button" onclick="setCustomTimerValues(3, 0)" class="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-zinc-300 font-mono transition-colors">3m 00s</button>
-            </div>
-        </div>
-
-        <!-- Modal Footer Actions -->
-        <div class="px-6 py-4 border-t border-white/10 bg-[#16171A] flex gap-3">
-            <button type="button" onclick="closeCustomTimerModal()" class="flex-1 py-3 rounded-full border border-white/10 hover:bg-white/5 text-zinc-300 font-bold text-xs uppercase tracking-wider transition-all">
-                {% translate "Annulla" %}
-            </button>
-            <button type="button" onclick="applyCustomTimer()" class="flex-1 py-3 rounded-full bg-[#caf300] hover:bg-[#b8dc00] text-black font-black text-xs uppercase tracking-wider shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                <span class="material-symbols-outlined text-base">check</span>
-                {% translate "Avvia Timer" %}
-            </button>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_body %}
 <script>
-    const onyxNative = {
-        get available() {
-            return Boolean(window.AndroidTimer || (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer));
-        },
-        _caps: null,
-        async getCapabilities() {
-            if (this._caps) return this._caps;
-            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.getCapabilities === 'function') {
-                try {
-                    this._caps = await window.Capacitor.Plugins.WorkoutTimer.getCapabilities();
-                    return this._caps;
-                } catch(e) {}
-            }
-            if (window.AndroidTimer && typeof window.AndroidTimer.canPostPromotedNotifications === 'function') {
-                try {
-                    const canPromote = window.AndroidTimer.canPostPromotedNotifications();
-                    this._caps = {
-                        platform: 'android',
-                        promotedOngoing: canPromote,
-                        notificationsEnabled: window.AndroidTimer.areNotificationsEnabled ? window.AndroidTimer.areNotificationsEnabled() : true
-                    };
-                    return this._caps;
-                } catch(e) {}
-            }
-            this._caps = { platform: 'web', promotedOngoing: false, notificationsEnabled: false };
-            return this._caps;
-        },
-        restStart(durationSeconds, title, soundUri) {
-            if (window._suppressNativeTimerCall) return;
-            try {
-                if (window.AndroidTimer && typeof window.AndroidTimer.startTimerWithSound === 'function') {
-                    window.AndroidTimer.startTimerWithSound(durationSeconds, title || 'Recupero in corso', soundUri || null);
-                } else if (window.AndroidTimer && typeof window.AndroidTimer.startTimer === 'function') {
-                    window.AndroidTimer.startTimer(durationSeconds, title || 'Recupero in corso');
-                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                    window.Capacitor.Plugins.WorkoutTimer.startTimer({
-                        durationSeconds: durationSeconds,
-                        title: title || 'Recupero in corso',
-                        soundUri: soundUri || null
-                    });
-                }
-            } catch(e) {}
-        },
-        restPause() {
-            if (window._suppressNativeTimerCall) return;
-            try {
-                if (window.AndroidTimer && typeof window.AndroidTimer.pauseTimer === 'function') {
-                    window.AndroidTimer.pauseTimer();
-                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                    window.Capacitor.Plugins.WorkoutTimer.pauseTimer();
-                }
-            } catch(e) {}
-        },
-        restResume() {
-            if (window._suppressNativeTimerCall) return;
-            try {
-                if (window.AndroidTimer && typeof window.AndroidTimer.resumeTimer === 'function') {
-                    window.AndroidTimer.resumeTimer();
-                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                    window.Capacitor.Plugins.WorkoutTimer.resumeTimer();
-                }
-            } catch(e) {}
-        },
-        restAddSeconds(sec = 30) {
-            try {
-                if (window.AndroidTimer && typeof window.AndroidTimer.addSeconds === 'function') {
-                    window.AndroidTimer.addSeconds(sec);
-                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                    window.Capacitor.Plugins.WorkoutTimer.addSeconds({ seconds: sec });
-                }
-            } catch(e) {}
-        },
-        restStop() {
-            if (window._suppressNativeTimerCall) return;
-            try {
-                if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
-                    window.AndroidTimer.stopTimer();
-                    window.AndroidTimer.stopAlarm();
-                } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                    window.Capacitor.Plugins.WorkoutTimer.stopTimer();
-                    window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
-                }
-            } catch(e) {}
-        },
-        workoutStart(title, totalSets, completedSets, currentExerciseName, startedAt, slotBoundaries) {
-            try {
-                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland === 'function') {
-                    window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland({
-                        title: title,
-                        totalSets: totalSets,
-                        completedSets: completedSets,
-                        currentExerciseName: currentExerciseName,
-                        startedAt: startedAt,
-                        slotBoundaries: slotBoundaries || null
-                    });
-                } else if (window.AndroidTimer && typeof window.AndroidTimer.startWorkout === 'function') {
-                    window.AndroidTimer.startWorkout(title, startedAt);
-                }
-            } catch(e) {}
-        },
-        workoutUpdate(completedSets, totalSets, currentExerciseName) {
-            try {
-                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland === 'function') {
-                    window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland({
-                        completedSets: completedSets,
-                        totalSets: totalSets,
-                        currentExerciseName: currentExerciseName
-                    });
-                } else if (window.AndroidTimer && typeof window.AndroidTimer.updateProgressWithExercise === 'function') {
-                    window.AndroidTimer.updateProgressWithExercise(completedSets, totalSets, Math.max(0, totalSets - completedSets), currentExerciseName);
-                } else if (window.AndroidTimer && typeof window.AndroidTimer.updateProgress === 'function') {
-                    window.AndroidTimer.updateProgress(completedSets, totalSets, Math.max(0, totalSets - completedSets));
-                }
-            } catch(e) {}
-        },
-        workoutStop() {
-            try {
-                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland === 'function') {
-                    window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland();
-                } else if (window.AndroidTimer && typeof window.AndroidTimer.stopWorkout === 'function') {
-                    window.AndroidTimer.stopWorkout();
-                }
-            } catch(e) {}
-        }
-    };
-    window.onyxNative = onyxNative;
+(() => {
+    const onyxNative = window.onyxNative;
 
     function computeWorkoutProgress() {
         const setRows = document.querySelectorAll('.set-row');
@@ -919,7 +739,23 @@
         };
     }
 
-    let defaultDuration = 45; // seconds
+    function getPersistedDuration() {
+        try {
+            const stored = localStorage.getItem('onyx_rest_duration');
+            if (stored) {
+                const val = parseInt(stored, 10);
+                if (val > 0) return val;
+            }
+            const active = localStorage.getItem('onyx_active_rest_timer');
+            if (active) {
+                const s = JSON.parse(active);
+                if (s && s.durationSeconds > 0) return s.durationSeconds;
+            }
+        } catch(e) {}
+        return 45;
+    }
+
+    let defaultDuration = getPersistedDuration();
     let durationSeconds = defaultDuration;
     let remainingMs = durationSeconds * 1000;
     let startedAt = null; // Timestamp (ms) when timer started or resumed
@@ -971,8 +807,9 @@
         if (!isRunning || !startedAt) {
             return Math.max(0, remainingMs);
         }
-        const elapsed = Date.now() - startedAt;
-        return Math.max(0, remainingMs - elapsed);
+        const left = (startedAt + remainingMs) - Date.now();
+        if (left <= 0) return 0;
+        return left;
     }
 
     function formatTime(seconds) {
@@ -1096,7 +933,8 @@
             const state = {
                 durationSeconds: durationSeconds,
                 remainingMs: currentMs,
-                startedAt: isRunning ? Date.now() : null,
+                targetEndTime: isRunning && startedAt ? (startedAt + remainingMs) : null,
+                startedAt: isRunning ? startedAt : null,
                 isRunning: isRunning,
                 hasNotifiedZero: hasNotifiedZero,
                 expiredAt: expiredAtVal || window._timerExpiredAt || (hasNotifiedZero ? Date.now() : null),
@@ -1320,8 +1158,12 @@
         if (!isRunning) {
             durationSeconds = Math.max(5, Math.ceil(newMs / 1000));
             defaultDuration = durationSeconds;
+            try {
+                localStorage.setItem('onyx_rest_duration', durationSeconds.toString());
+            } catch(e) {}
         } else {
             startedAt = Date.now();
+            durationSeconds = Math.max(durationSeconds, Math.ceil(newMs / 1000));
             try {
                 const sec = Math.ceil(remainingMs / 1000);
                 onyxNative.restStart(sec, "Recupero in corso", getSelectedTimerSound());
@@ -1334,20 +1176,43 @@
         }
         updateDisplay();
         saveTimerStateToStorage();
+
+        if (typeof updateGlobalMiniTimer === 'function') updateGlobalMiniTimer();
+        if (typeof updateDynamicNotch === 'function') updateDynamicNotch();
     }
 
-    function setTimerPreset(seconds) {
+    function setTimerPreset(seconds, autoStart = true, skipOverlay = false) {
         unlockAudioContext();
-        if (timerInterval) clearInterval(timerInterval);
-        durationSeconds = seconds;
-        defaultDuration = seconds;
-        remainingMs = seconds * 1000;
-        startedAt = Date.now();
-        isRunning = true;
-        hasNotifiedZero = false;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        durationSeconds = Math.max(5, seconds);
+        defaultDuration = durationSeconds;
+        try {
+            localStorage.setItem('onyx_rest_duration', durationSeconds.toString());
+        } catch(e) {}
+        remainingMs = durationSeconds * 1000;
+
         clearExpiringStyles();
-        saveTimerStateToStorage();
-        startCountdown();
+
+        if (autoStart) {
+            startedAt = Date.now();
+            isRunning = true;
+            hasNotifiedZero = false;
+            saveTimerStateToStorage();
+            startCountdown(skipOverlay);
+        } else {
+            startedAt = null;
+            isRunning = false;
+            hasNotifiedZero = false;
+            saveTimerStateToStorage();
+            resetTimerControls();
+            updateDisplay();
+        }
+
+        if (typeof updateGlobalMiniTimer === 'function') updateGlobalMiniTimer();
+        if (typeof updateDynamicNotch === 'function') updateDynamicNotch();
     }
 
     // ---------------------------------------------------------------
@@ -1408,6 +1273,8 @@
         const card = document.getElementById('custom-timer-modal-card');
         if (!modal || !card) return;
         
+        window._customTimerOpenedFromOverlay = (overlay && !overlay.classList.contains('hidden'));
+
         const effectiveSecs = (isRunning ? Math.ceil(getRemainingTimeMs() / 1000) : durationSeconds) || 45;
         const currentMins = Math.floor(effectiveSecs / 60);
         const currentSecs = effectiveSecs % 60;
@@ -1460,7 +1327,8 @@
         let totalSeconds = (mins * 60) + secs;
         if (totalSeconds <= 0) totalSeconds = 45;
         
-        setTimerPreset(totalSeconds);
+        const skipOverlay = !window._customTimerOpenedFromOverlay;
+        setTimerPreset(totalSeconds, true, skipOverlay);
         closeCustomTimerModal();
     }
 
@@ -1705,7 +1573,14 @@
     let lastTimerTriggerTime = 0;
 
     function handleSetSubmit(form) {
+        // Sanitize comma in decimal inputs before submission
+        form.querySelectorAll('input[name="repetitions"], input[name="weight"], input[name="reps"]').forEach(inp => {
+            if (inp.value) inp.value = inp.value.replace(',', '.');
+        });
+
         const row = form.closest('.set-row');
+        const card = form.closest('.exercise-group');
+        const isTimed = card && (card.querySelector('.mode-tab-time.bg-\\[\\#caf300\\]') || form.querySelector('.unit-badge-sec:not(.hidden)'));
 
         // 1. Trigger GPU-accelerated smooth glow transition
         if (row) {
@@ -1720,7 +1595,7 @@
             startedAt = Date.now();
             hasNotifiedZero = false;
             clearExpiringStyles();
-            startCountdown(true);
+            startCountdown(isTimed ? false : true);
         }
 
         // 3. Optimistic UI updates
@@ -2141,8 +2016,6 @@
         } catch(e) {}
     }
 
-    const totalTimerDisplay = document.getElementById('total-workout-timer');
-
     function formatTotalTime(totalSec) {
         const h = Math.floor(totalSec / 3600).toString().padStart(2, '0');
         const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2, '0');
@@ -2152,12 +2025,36 @@
 
     function updateTotalTimer() {
         const totalSec = Math.max(0, Math.floor((Date.now() - workoutStartTime) / 1000));
-        if (totalTimerDisplay) {
-            totalTimerDisplay.innerText = formatTotalTime(totalSec);
+        const display = document.getElementById('total-workout-timer');
+        if (display) {
+            display.innerText = formatTotalTime(totalSec);
         }
     }
+    window.updateTotalTimer = updateTotalTimer;
 
-    setInterval(updateTotalTimer, 500);
+    if (window._workoutTotalTimerInterval) {
+        clearInterval(window._workoutTotalTimerInterval);
+    }
+    window._workoutTotalTimerInterval = setInterval(updateTotalTimer, 500);
+
+    // Teardown before swap & re-init on load to prevent interruption
+    if (!window._workoutHtmxTimerGuardsAttached) {
+        window._workoutHtmxTimerGuardsAttached = true;
+        document.addEventListener('htmx:beforeSwap', function(evt) {
+            if (evt.detail && evt.detail.target && (evt.detail.target.id === 'active-exercises-section' || evt.detail.target.tagName === 'MAIN')) {
+                if (window._workoutTotalTimerInterval) {
+                    clearInterval(window._workoutTotalTimerInterval);
+                    window._workoutTotalTimerInterval = null;
+                }
+            }
+        });
+        document.addEventListener('htmx:load', function() {
+            updateTotalTimer();
+            if (!window._workoutTotalTimerInterval) {
+                window._workoutTotalTimerInterval = setInterval(updateTotalTimer, 500);
+            }
+        });
+    }
 
     window.addEventListener('pagehide', () => saveTimerStateToStorage());
     window.addEventListener('beforeunload', () => saveTimerStateToStorage());
@@ -2544,6 +2441,10 @@
             if (iconEl) iconEl.innerText = "replay";
             if (labelEl) labelEl.innerText = elapsedSeconds + "s";
 
+            // Auto-trigger rest countdown and enter rest timer screen
+            const restDuration = getPersistedDuration();
+            setTimerPreset(restDuration, true, false);
+
         } else {
             // START THE STOPWATCH!
             unlockAudioContext();
@@ -2605,8 +2506,7 @@
         const input = row.querySelector('.input-set-value');
         const seconds = parseInt(input ? input.value : 30, 10) || 30;
 
-        startCountdown(seconds, (exerciseName ? exerciseName + ' (Tenuta)' : 'Esercizio a Tempo'));
-        openOverlay();
+        setTimerPreset(seconds, true, false);
     }
 
     window.setExerciseMode = setExerciseMode;
@@ -2829,12 +2729,13 @@
         }
 
         // Clean local active session keys upon completion and stop native live activity
-        onyxNative.workoutStop();
+        if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop();
         try {
             localStorage.removeItem('onyx_workout_progress');
             localStorage.removeItem('onyx_active_workout_snapshot');
             localStorage.removeItem('onyx_active_rest_timer');
         } catch(e) {}
     };
+})();
 </script>
 {% endblock %}
