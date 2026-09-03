@@ -9,9 +9,31 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.Log;
-import androidx.core.app.NotificationCompat;
-import java.lang.reflect.Method;
 
+import androidx.core.app.NotificationCompat;
+import androidx.core.graphics.drawable.IconCompat;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Builds every notification the app posts for its "live" surfaces.
+ *
+ * <h3>Android 16 "Live Updates"</h3>
+ * A notification is eligible for the prominent Live Update treatment (status-bar chip +
+ * always-on-display presence) when it:
+ * <ul>
+ *   <li>uses a supported style — here {@link NotificationCompat.ProgressStyle};</li>
+ *   <li>calls {@link NotificationCompat.Builder#setRequestPromotedOngoing(boolean)} (androidx.core 1.17.0+);</li>
+ *   <li>is {@code setOngoing(true)} + {@code setOnlyAlertOnce(true)} with a non-null title;</li>
+ *   <li>declares {@code android.permission.POST_PROMOTED_NOTIFICATIONS} in the manifest.</li>
+ * </ul>
+ * The prominent chip itself only renders on Android 16 QPR1+; on plain API 36 the
+ * notification still posts and behaves as a normal ongoing notification.
+ *
+ * <h3>Xiaomi HyperOS Super Island / Focus notifications</h3>
+ * Delegated to {@link HyperFocusExtras}, which attaches the {@code miui.focus.*} extras.
+ */
 public class IslandNotificationFactory {
 
     private static final String TAG = "OnyxDebug";
@@ -23,6 +45,11 @@ public class IslandNotificationFactory {
     public static final int NOTIFICATION_ID_TIMER = 1001;
     public static final int NOTIFICATION_ID_ALARM = 1002;
     public static final int NOTIFICATION_ID_WORKOUT = 1003;
+
+    /** Onyx accent (lime). */
+    private static final int ACCENT = 0xFFCAF300;
+    /** Dim track colour for spent / upcoming progress segments. */
+    private static final int TRACK_DIM = 0xFF3A3D24;
 
     public static void createNotificationChannels(NotificationManager notificationManager) {
         if (notificationManager == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -84,22 +111,38 @@ public class IslandNotificationFactory {
         return PendingIntent.getService(context, requestCode, intent, flags);
     }
 
-    private static void setPromotedOngoingIfSupported(NotificationCompat.Builder builder, Context context) {
-        if (builder == null || context == null) return;
+    /**
+     * Real (non-reflection) promoted-ongoing request. Safe on every API level: the
+     * androidx.core wrapper is a no-op below Android 16 and simply records the intent
+     * in the compat extras, and the OS ignores it unless the notification is otherwise
+     * eligible + the POST_PROMOTED_NOTIFICATIONS permission is held.
+     */
+    private static void requestPromotedOngoing(NotificationCompat.Builder builder, Context context, String shortCriticalText) {
+        if (builder == null) return;
         try {
-            if (DeviceCapabilities.canPromoteOngoing(context)) {
-                try {
-                    Method m = builder.getClass().getMethod("setRequestPromotedOngoing", boolean.class);
-                    m.invoke(builder, true);
-                } catch (NoSuchMethodException ignored) {
-                    // Method not available in this exact core version, fallback to setOngoing
-                    builder.setOngoing(true);
-                }
+            builder.setRequestPromotedOngoing(true);
+            if (shortCriticalText != null && !shortCriticalText.isEmpty()) {
+                // Text shown inside the collapsed status-bar chip when there is no
+                // chronometer to display.
+                builder.setShortCriticalText(shortCriticalText);
             }
         } catch (Throwable t) {
-            Log.d(TAG, "setPromotedOngoing skipped: " + t.getMessage());
+            Log.d(TAG, "requestPromotedOngoing skipped: " + t.getMessage());
+            builder.setOngoing(true);
         }
     }
+
+    private static IconCompat safeIcon(Context context, int resId) {
+        try {
+            return IconCompat.createWithResource(context, resId);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    // ----------------------------------------------------------------------------------
+    // Rest countdown
+    // ----------------------------------------------------------------------------------
 
     public static Notification buildRestNotification(
             Context context,
@@ -121,7 +164,9 @@ public class IslandNotificationFactory {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_TIMER)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_onyx)
+                .setColor(ACCENT)
+                .setColorized(true)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -135,29 +180,28 @@ public class IslandNotificationFactory {
             builder.setLargeIcon(appIconBitmap);
         }
 
-        setPromotedOngoingIfSupported(builder, context);
-
         builder.setContentTitle(title != null && !title.isEmpty() ? title : "Recupero in corso");
 
-        // Action 1: Play / Pause
+        // ---- Actions -------------------------------------------------------------------
         Intent playPauseIntent = new Intent(context, OnyxLiveService.class);
         playPauseIntent.setAction(isPaused ? OnyxLiveService.ACTION_RESUME : OnyxLiveService.ACTION_PAUSE);
         PendingIntent playPausePendingIntent = serviceActionPendingIntent(context, 10, playPauseIntent);
         int playPauseIcon = isPaused ? android.R.drawable.ic_media_play : android.R.drawable.ic_media_pause;
         String playPauseText = isPaused ? "Riprendi" : "Pausa";
 
-        // Action 2: +30s
         Intent addTimeIntent = new Intent(context, OnyxLiveService.class);
         addTimeIntent.setAction(OnyxLiveService.ACTION_ADD_TIME);
         PendingIntent addTimePendingIntent = serviceActionPendingIntent(context, 11, addTimeIntent);
 
-        // Action 3: Stop
         Intent stopIntent = new Intent(context, OnyxLiveService.class);
         stopIntent.setAction(OnyxLiveService.ACTION_STOP);
         PendingIntent stopPendingIntent = serviceActionPendingIntent(context, 12, stopIntent);
 
-        float ratio = totalDurationMs > 0 ? (float) remainingMs / (float) totalDurationMs : 0f;
-        ratio = Math.max(0.0f, Math.min(1.0f, ratio));
+        // ---- Progress + text ----------------------------------------------------------
+        int totalSec = (int) Math.max(1, Math.round(totalDurationMs / 1000.0));
+        long secLeft = (long) Math.max(0, Math.ceil(remainingMs / 1000.0));
+        int elapsedSec = (int) Math.max(0, Math.min(totalSec, totalSec - secLeft));
+        String mmss = String.format("%02d:%02d", secLeft / 60, secLeft % 60);
 
         if (!isPaused) {
             long now = System.currentTimeMillis();
@@ -173,23 +217,48 @@ public class IslandNotificationFactory {
                        .setShowWhen(false);
             }
         } else {
-            builder.setUsesChronometer(false);
-            builder.setShowWhen(false);
-            long secLeft = (long) Math.max(0, Math.ceil(remainingMs / 1000.0));
-            long m = secLeft / 60;
-            long s = secLeft % 60;
-            builder.setContentText(String.format("In Pausa (%02d:%02d)", m, s));
+            builder.setUsesChronometer(false)
+                   .setShowWhen(false)
+                   .setContentText(String.format("In Pausa (%s)", mmss));
+        }
+
+        // Android 16 ProgressStyle: one segment spanning the full duration, tracker at
+        // the elapsed position so the bar "fills up" as the rest runs out.
+        try {
+            NotificationCompat.ProgressStyle progressStyle = new NotificationCompat.ProgressStyle()
+                    .setProgressSegments(java.util.Collections.singletonList(
+                            new NotificationCompat.ProgressStyle.Segment(totalSec).setColor(ACCENT)))
+                    .setProgress(elapsedSec)
+                    .setProgressIndeterminate(false)
+                    .setStyledByProgress(true);
+            IconCompat tracker = safeIcon(context, R.drawable.ic_stat_onyx);
+            if (tracker != null) {
+                progressStyle.setProgressTrackerIcon(tracker);
+            }
+            builder.setStyle(progressStyle);
+        } catch (Throwable t) {
+            Log.d(TAG, "ProgressStyle (rest) unavailable, falling back: " + t.getMessage());
+            builder.setProgress(totalSec, elapsedSec, false);
         }
 
         builder.addAction(playPauseIcon, playPauseText, playPausePendingIntent);
         builder.addAction(android.R.drawable.ic_input_add, "+30s", addTimePendingIntent);
         builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
 
-        // Apply HyperOS ring
-        HyperFocusExtras.applyRing(builder, context, ratio, null, 0xFFCAF300, true);
+        // Status-bar chip fallback text (chronometer wins when running).
+        requestPromotedOngoing(builder, context, isPaused ? "Pausa " + mmss : "Recupero");
+
+        // Xiaomi HyperOS focus / Super Island payload.
+        float ratio = totalDurationMs > 0 ? (float) remainingMs / (float) totalDurationMs : 0f;
+        HyperFocusExtras.applyRestFocus(builder, context, ratio, targetEndTime, secLeft, isPaused,
+                title, ACCENT);
 
         return builder.build();
     }
+
+    // ----------------------------------------------------------------------------------
+    // Workout progress
+    // ----------------------------------------------------------------------------------
 
     public static Notification buildWorkoutNotification(
             Context context,
@@ -212,7 +281,8 @@ public class IslandNotificationFactory {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_WORKOUT)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_onyx)
+                .setColor(ACCENT)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -226,15 +296,12 @@ public class IslandNotificationFactory {
             builder.setLargeIcon(appIconBitmap);
         }
 
-        setPromotedOngoingIfSupported(builder, context);
-
         builder.setContentTitle(title != null && !title.isEmpty() ? title : "Sessione di Allenamento");
 
         int safeTotal = Math.max(1, totalSets);
         int safeCompleted = Math.max(0, Math.min(safeTotal, completedSets));
         float ratio = (float) safeCompleted / (float) safeTotal;
 
-        // Expanded view shows current exercise name (Decision D4)
         if (currentExerciseName != null && !currentExerciseName.trim().isEmpty()) {
             builder.setContentText(currentExerciseName);
             builder.setSubText(safeCompleted + "/" + safeTotal + " serie");
@@ -242,6 +309,7 @@ public class IslandNotificationFactory {
             builder.setContentText(safeCompleted + "/" + safeTotal + " serie completate");
         }
 
+        // Pre-16 progress bar fallback.
         builder.setProgress(safeTotal, safeCompleted, false);
 
         if (startedAt > 0) {
@@ -251,8 +319,39 @@ public class IslandNotificationFactory {
             builder.setChronometerCountDown(false);
         }
 
-        // Apply HyperOS ring (centerText empty -> pure circle ring per Decision D4)
-        HyperFocusExtras.applyRing(builder, context, ratio, "", 0xFFCAF300, false);
+        // Android 16 ProgressStyle: one segment per set (a segmented "pill" bar) when the
+        // count is reasonable, otherwise a single segment.
+        try {
+            NotificationCompat.ProgressStyle progressStyle = new NotificationCompat.ProgressStyle()
+                    .setProgressIndeterminate(false)
+                    .setStyledByProgress(true);
+
+            if (safeTotal <= 30) {
+                List<NotificationCompat.ProgressStyle.Segment> segments = new ArrayList<>(safeTotal);
+                for (int i = 0; i < safeTotal; i++) {
+                    segments.add(new NotificationCompat.ProgressStyle.Segment(1)
+                            .setColor(i < safeCompleted ? ACCENT : TRACK_DIM));
+                }
+                progressStyle.setProgressSegments(segments);
+            } else {
+                progressStyle.setProgressSegments(java.util.Collections.singletonList(
+                        new NotificationCompat.ProgressStyle.Segment(safeTotal).setColor(ACCENT)));
+            }
+            progressStyle.setProgress(safeCompleted);
+
+            IconCompat tracker = safeIcon(context, R.drawable.ic_stat_onyx);
+            if (tracker != null) {
+                progressStyle.setProgressTrackerIcon(tracker);
+            }
+            builder.setStyle(progressStyle);
+        } catch (Throwable t) {
+            Log.d(TAG, "ProgressStyle (workout) unavailable, falling back: " + t.getMessage());
+        }
+
+        requestPromotedOngoing(builder, context, safeCompleted + "/" + safeTotal);
+
+        HyperFocusExtras.applyWorkoutFocus(builder, context, ratio, safeCompleted, safeTotal,
+                title, currentExerciseName, startedAt, ACCENT);
 
         return builder.build();
     }
@@ -265,7 +364,7 @@ public class IslandNotificationFactory {
      */
     public static Notification buildMinimalAnchor(Context context) {
         return new NotificationCompat.Builder(context, CHANNEL_WORKOUT)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_onyx)
                 .setContentTitle("Onyx")
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -293,7 +392,8 @@ public class IslandNotificationFactory {
         PendingIntent stopAlarmPendingIntent = serviceActionPendingIntent(context, 2, stopAlarmIntent);
 
         NotificationCompat.Builder alarmBuilder = new NotificationCompat.Builder(context, CHANNEL_ALARM)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_onyx)
+                .setColor(ACCENT)
                 .setContentTitle("TEMPO SCADUTO! 🏋️")
                 .setContentText("Il recupero è terminato. Tocca per disattivare l'allarme.")
                 .setContentIntent(contentPendingIntent)
@@ -309,6 +409,10 @@ public class IslandNotificationFactory {
         if (appIconBitmap != null) {
             alarmBuilder.setLargeIcon(appIconBitmap);
         }
+
+        // Keep the "time's up" state prominent on the island too.
+        requestPromotedOngoing(alarmBuilder, context, "Scaduto");
+        HyperFocusExtras.applyAlarmFocus(alarmBuilder, context, ACCENT);
 
         return alarmBuilder.build();
     }

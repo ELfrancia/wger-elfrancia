@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFFFF">
+    <!-- Monochrome status-bar / notification small icon (stopwatch glyph).
+         Android tints this white in the status bar and reuses it for the Android 16
+         promoted-ongoing status chip, so it is a flat silhouette on transparent. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M9,1h6v2h-6z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,4C7.58,4 4,7.58 4,12s3.58,8 8,8 8,-3.58 8,-8c0,-1.85 -0.63,-3.55 -1.68,-4.9l1.4,-1.4c-0.45,-0.53 -0.94,-1.02 -1.47,-1.47l-1.4,1.4C15.55,4.63 13.85,4 12,4zM11,7h2v6h-2V7z" />
+</vector>

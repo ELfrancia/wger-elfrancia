@@ -1,11 +1,12 @@
 package com.onyx.workoutapp;
 
-import android.app.NotificationManager;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.PowerManager;
 import android.util.Log;
+
 import androidx.core.app.NotificationManagerCompat;
+
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +22,7 @@ public class DeviceCapabilities {
     public static boolean isXiaomiHyperOs() {
         String manufacturer = Build.MANUFACTURER != null ? Build.MANUFACTURER.toLowerCase() : "";
         String brand = Build.BRAND != null ? Build.BRAND.toLowerCase() : "";
-        
+
         if (manufacturer.contains("xiaomi") || manufacturer.contains("poco") || manufacturer.contains("redmi") ||
             brand.contains("xiaomi") || brand.contains("poco") || brand.contains("redmi")) {
             return true;
@@ -38,39 +39,42 @@ public class DeviceCapabilities {
         }
     }
 
+    /**
+     * Whether the app may post an Android 16 "Live Update" (promoted ongoing) notification.
+     * Uses the real {@link NotificationManagerCompat#canPostPromotedNotifications()} on
+     * Android 16+ (no reflection needed with androidx.core 1.17.0).
+     */
     public static boolean canPromoteOngoing(Context context) {
         if (context == null) return false;
-        
-        // 1. First ensure notifications are enabled in general
-        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+
+        NotificationManagerCompat nmc = NotificationManagerCompat.from(context);
+        if (!nmc.areNotificationsEnabled()) {
             return false;
         }
 
-        // 2. On Android 16+ (API 36+), check NotificationManager.canPostPromotedNotifications()
         if (isAndroid16Plus()) {
             try {
-                NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                if (nm != null) {
-                    try {
-                        Method canPromoteMethod = nm.getClass().getMethod("canPostPromotedNotifications");
-                        Object result = canPromoteMethod.invoke(nm);
-                        if (result instanceof Boolean) {
-                            return (Boolean) result;
-                        }
-                    } catch (NoSuchMethodException ignored) {
-                        // Method not exposed in this exact API preview, default to true since notifications are enabled
-                        return true;
-                    }
-                }
-                return true;
+                return nmc.canPostPromotedNotifications();
             } catch (Throwable t) {
-                Log.w(TAG, "DeviceCapabilities: Error checking promoted notification status: " + t.getMessage());
+                Log.w(TAG, "canPostPromotedNotifications() threw: " + t.getMessage());
+                // Permission is normal-protection and declared in the manifest; assume OK.
                 return true;
             }
         }
 
-        // On HyperOS 3 / Xiaomi devices with focus notifications, we can still render the custom pill
+        // Pre-16: no promoted chip, but Xiaomi HyperOS still renders the focus island.
         return isXiaomiHyperOs();
+    }
+
+    /** True when the app is exempt from Doze / standby battery restrictions. */
+    public static boolean isIgnoringBatteryOptimizations(Context context) {
+        if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
+        try {
+            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            return pm != null && pm.isIgnoringBatteryOptimizations(context.getPackageName());
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     public static Map<String, Object> getCapabilitiesMap(Context context) {
@@ -80,7 +84,7 @@ public class DeviceCapabilities {
         caps.put("manufacturer", Build.MANUFACTURER != null ? Build.MANUFACTURER : "Unknown");
         caps.put("hyperOsFocus", isXiaomiHyperOs());
         caps.put("isAndroid16Plus", isAndroid16Plus());
-        
+
         boolean notifEnabled = false;
         boolean canPromote = false;
         if (context != null) {
@@ -91,6 +95,7 @@ public class DeviceCapabilities {
         }
         caps.put("notificationsEnabled", notifEnabled);
         caps.put("promotedOngoing", canPromote);
+        caps.put("batteryUnrestricted", isIgnoringBatteryOptimizations(context));
 
         return caps;
     }
