@@ -37,11 +37,19 @@ except Exception as e:
     print(f'Nota cleanup sessioni: {e}')
 " || true
 
-echo "🎨 Compilazione CSS Sass..."
-npm run build:css:sass || true
+# Sass e collectstatic sono gia' eseguiti in fase di build dell'immagine (Dockerfile).
+# Su bind-mount Windows/Docker Desktop sono lentissimi (collectstatic: ~76k file, ore).
+# In sviluppo con DEBUG=True i file statici sono serviti dai finder di Django, quindi
+# collectstatic non e' necessario: imposta SKIP_COLLECTSTATIC=1 / SKIP_SASS=1 (vedi docker-compose.yml).
+if [ "${SKIP_SASS:-0}" != "1" ]; then
+    echo "🎨 Compilazione CSS Sass..."
+    npm run build:css:sass || true
+fi
 
-echo "📦 Raccolta file statici (collectstatic)..."
-python manage.py collectstatic --noinput || true
+if [ "${SKIP_COLLECTSTATIC:-0}" != "1" ]; then
+    echo "📦 Raccolta file statici (collectstatic)..."
+    python manage.py collectstatic --noinput || true
+fi
 
 
 echo "🚀 Avvio server di produzione (Gunicorn)..."
