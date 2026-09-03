@@ -471,6 +471,7 @@
         if (rawTimer) {
             try {
                 const s = JSON.parse(rawTimer);
+                if (s) {
                     totalDurationMs = (s.durationSeconds || 45) * 1000;
                     if (s.isRunning) {
                         if (s.targetEndTime) {
