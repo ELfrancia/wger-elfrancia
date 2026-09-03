@@ -427,18 +427,20 @@
             const isNativePromoted = window.AndroidTimer?.canPostPromotedNotifications ? window.AndroidTimer.canPostPromotedNotifications() : false;
             if (isNativePromoted) {
                 notch.classList.add('hidden', '-translate-y-16', 'opacity-0', 'pointer-events-none');
+                notch.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
                 return;
             }
         }
 
         const path = window.location.pathname || '';
-        if (path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password/reset')) {
+        const isAuthOrOnboarding = path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password') || path.includes('/onboarding') || path.includes('/logout');
+        if (isAuthOrOnboarding) {
             notch.classList.add('-translate-y-16', 'opacity-0', 'pointer-events-none');
             notch.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             return;
         }
 
-        // Check if rest timer is active
+        // Check if rest timer is active: MUST be actively running or freshly expired
         const rawTimer = localStorage.getItem('onyx_active_rest_timer');
         let hasActiveTimer = false;
         let msLeft = 0;
@@ -454,56 +456,60 @@
                         const elapsed = Date.now() - s.startedAt;
                         msLeft = Math.max(0, s.remainingMs - elapsed);
                     }
-                    if (s.isRunning || (msLeft > 0 && !s.hasNotifiedZero)) {
+                    if (s.isRunning && msLeft > 0) {
                         hasActiveTimer = true;
-                    } else if (s.hasNotifiedZero && s.isRunning) {
+                    } else if (msLeft <= 0 && (s.isRunning || s.hasNotifiedZero)) {
                         hasActiveTimer = true;
                     }
                 }
             } catch(e) {}
         }
 
-        // Check if workout session is active
+        // Check if workout session is active: only if serverActiveUrl or we are currently on a workout logging page
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
-        let hasActiveWorkout = Boolean(serverActiveUrl);
-        let workoutData = null;
-        const rawWorkout = localStorage.getItem('onyx_workout_progress');
-        if (rawWorkout) {
-            try {
-                workoutData = JSON.parse(rawWorkout);
-            } catch(e) {}
-        }
-
-        // Check if we are on a workout logging page
         const isWorkoutPage = path.includes('/day/') || !!document.querySelector('.exercise-group');
-        if (isWorkoutPage) {
-            hasActiveWorkout = true;
-            const exerciseCards = document.querySelectorAll('.exercise-group');
-            const totalCount = exerciseCards.length;
-            let completedCount = 0;
-            exerciseCards.forEach(card => {
-                const uncompletedSets = card.querySelectorAll('.set-row[data-completed="false"]');
-                if (uncompletedSets.length === 0 && card.querySelectorAll('.set-row').length > 0) {
-                    completedCount++;
-                }
-            });
-            const remainingCount = Math.max(0, totalCount - completedCount);
-            const setRows = document.querySelectorAll('.set-row');
-            const totalSets = setRows.length;
-            let completedSets = 0;
-            setRows.forEach(r => { if (r.getAttribute('data-completed') === 'true') completedSets++; });
-            workoutData = {
-                total: totalCount,
-                completed: completedCount,
-                remaining: remainingCount,
-                totalSets: totalSets,
-                completedSets: completedSets
-            };
+        let hasActiveWorkout = Boolean(serverActiveUrl) || isWorkoutPage;
+        let workoutData = null;
+
+        if (hasActiveWorkout) {
+            const rawWorkout = localStorage.getItem('onyx_workout_progress');
+            if (rawWorkout) {
+                try {
+                    workoutData = JSON.parse(rawWorkout);
+                } catch(e) {}
+            }
+
+            if (isWorkoutPage) {
+                const exerciseCards = document.querySelectorAll('.exercise-group');
+                const totalCount = exerciseCards.length;
+                let completedCount = 0;
+                exerciseCards.forEach(card => {
+                    const uncompletedSets = card.querySelectorAll('.set-row[data-completed="false"]');
+                    if (uncompletedSets.length === 0 && card.querySelectorAll('.set-row').length > 0) {
+                        completedCount++;
+                    }
+                });
+                const remainingCount = Math.max(0, totalCount - completedCount);
+                const setRows = document.querySelectorAll('.set-row');
+                const totalSets = setRows.length;
+                let completedSets = 0;
+                setRows.forEach(r => { if (r.getAttribute('data-completed') === 'true') completedSets++; });
+                workoutData = {
+                    total: totalCount,
+                    completed: completedCount,
+                    remaining: remainingCount,
+                    totalSets: totalSets,
+                    completedSets: completedSets
+                };
+                try {
+                    localStorage.setItem('onyx_workout_progress', JSON.stringify(workoutData));
+                } catch(e) {}
+            }
+        } else {
+            // Clean up stale workout progress if no active session
             try {
-                localStorage.setItem('onyx_workout_progress', JSON.stringify(workoutData));
+                localStorage.removeItem('onyx_workout_progress');
             } catch(e) {}
-        } else if (workoutData && workoutData.total > 0) {
-            hasActiveWorkout = true;
         }
 
         // If neither timer nor workout active, hide notch
@@ -530,7 +536,7 @@
             if (workoutProgContainer) workoutProgContainer.classList.add('hidden');
             if (restProgContainer) restProgContainer.classList.remove('hidden');
 
-            const secLeft = Math.ceil(msLeft / 1000);
+            const secLeft = Math.max(0, Math.ceil(msLeft / 1000));
             const m = Math.floor(secLeft / 60).toString().padStart(2, '0');
             const s = (secLeft % 60).toString().padStart(2, '0');
             const timeStr = `${m}:${s}`;
@@ -644,7 +650,8 @@
         if (!bubble) return;
 
         const path = window.location.pathname || '';
-        if (path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password/reset')) {
+        const isAuthOrOnboarding = path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password') || path.includes('/onboarding') || path.includes('/logout');
+        if (isAuthOrOnboarding) {
             bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
             bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
             return;
@@ -673,7 +680,8 @@
         let msLeft = 0;
 
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
-        const hasActiveWorkout = Boolean(serverActiveUrl);
+        const isWorkoutPage = path.includes('/day/') || !!document.querySelector('.exercise-group');
+        const hasActiveWorkout = Boolean(serverActiveUrl) || isWorkoutPage;
 
         if (raw) {
             try {
@@ -684,10 +692,11 @@
                         const elapsed = Date.now() - state.startedAt;
                         msLeft = Math.max(0, state.remainingMs - elapsed);
                     }
-                    if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
+                    if (state.isRunning && msLeft > 0) {
+                        hasActiveRestTimer = true;
+                    } else if (msLeft <= 0 && (state.isRunning || state.hasNotifiedZero)) {
                         hasActiveRestTimer = true;
                     } else {
-                        localStorage.removeItem('onyx_active_rest_timer');
                         hasActiveRestTimer = false;
                     }
                 }
@@ -705,7 +714,7 @@
         bubble.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
 
         if (hasActiveRestTimer) {
-            const secLeft = Math.ceil(msLeft / 1000);
+            const secLeft = Math.max(0, Math.ceil(msLeft / 1000));
             const m = Math.floor(secLeft / 60).toString().padStart(2, '0');
             const s = (secLeft % 60).toString().padStart(2, '0');
             const timeStr = `${m}:${s}`;
