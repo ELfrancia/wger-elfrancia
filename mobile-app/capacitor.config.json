@@ -3,9 +3,12 @@
   "appName": "Onyx Workout",
   "webDir": "www",
   "server": {
-    "url": "https://onyx.francescoadreani.dev",
+    "url": "http://10.0.2.2:8000",
     "cleartext": true,
     "allowNavigation": [
+      "10.0.2.2",
+      "10.0.2.2:8000",
+      "localhost",
       "onyx.francescoadreani.dev",
       "*.francescoadreani.dev",
       "workout-app.tail5b9f7a.ts.net",

@@ -35,6 +35,7 @@ public class OnyxLiveService extends Service {
     public static final String ACTION_PAUSE = "com.onyx.workoutapp.ACTION_PAUSE";
     public static final String ACTION_RESUME = "com.onyx.workoutapp.ACTION_RESUME";
     public static final String ACTION_ADD_TIME = "com.onyx.workoutapp.ACTION_ADD_TIME";
+    public static final String ACTION_UPDATE_TIMER = "com.onyx.workoutapp.ACTION_UPDATE_TIMER";
     public static final String ACTION_STOP_ALARM = "com.onyx.workoutapp.ACTION_STOP_ALARM";
 
     public static final String ACTION_WORKOUT_START = "com.onyx.workoutapp.ACTION_WORKOUT_START";
@@ -42,6 +43,7 @@ public class OnyxLiveService extends Service {
     public static final String ACTION_WORKOUT_STOP = "com.onyx.workoutapp.ACTION_WORKOUT_STOP";
 
     public static final String EXTRA_DURATION = "extra_duration_seconds";
+    public static final String EXTRA_REMAINING_SECONDS = "extra_remaining_seconds";
     public static final String EXTRA_TITLE = "extra_title";
     public static final String EXTRA_SOUND_URI = "extra_sound_uri";
     public static final String EXTRA_COMPLETED_SETS = "extra_completed_sets";
@@ -176,6 +178,12 @@ public class OnyxLiveService extends Service {
             case ACTION_ADD_TIME:
                 addSecondsToTimer(intent.getIntExtra(EXTRA_DURATION, 30));
                 break;
+            case ACTION_UPDATE_TIMER: {
+                int durationSeconds = intent.getIntExtra(EXTRA_DURATION, 45);
+                int remainingSeconds = intent.getIntExtra(EXTRA_REMAINING_SECONDS, durationSeconds);
+                updateTimerDuration(durationSeconds, remainingSeconds);
+                break;
+            }
             case ACTION_STOP:
                 stopRestTimer();
                 break;
@@ -280,9 +288,39 @@ public class OnyxLiveService extends Service {
     private synchronized void addSecondsToTimer(int extraSeconds) {
         if (!isTimerRunning) return;
         long currentLeft = isPaused ? remainingTimeMs : Math.max(0, targetEndTimeMs - System.currentTimeMillis());
-        long newTotalMs = currentLeft + (extraSeconds * 1000L);
+        long newRemainingMs = currentLeft + (extraSeconds * 1000L);
         totalDurationMs += (extraSeconds * 1000L);
-        startTimerCountdown((int) (newTotalMs / 1000), currentTitle);
+        updateTimerDuration((int) (totalDurationMs / 1000L), (int) (newRemainingMs / 1000L));
+    }
+
+    private synchronized void updateTimerDuration(int durationSeconds, int remainingSeconds) {
+        Log.d(TAG, "OnyxLiveService: Updating timer to duration=" + durationSeconds + "s, remaining=" + remainingSeconds + "s");
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+            countDownTimer = null;
+        }
+
+        stopAlarmOnly();
+        if (notificationManager != null) {
+            try {
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
+            } catch (Exception ignored) {}
+        }
+
+        this.totalDurationMs = Math.max(1, durationSeconds) * 1000L;
+        this.remainingTimeMs = Math.max(0, remainingSeconds * 1000L);
+        this.targetEndTimeMs = System.currentTimeMillis() + remainingTimeMs;
+        this.isTimerRunning = remainingTimeMs > 0;
+        this.isPaused = false;
+
+        acquireWakeLock();
+        updateForegroundState();
+
+        if (isTimerRunning) {
+            startInternalCountDown(remainingTimeMs);
+        } else {
+            stopRestTimer();
+        }
     }
 
     private synchronized void stopRestTimer() {
@@ -314,7 +352,10 @@ public class OnyxLiveService extends Service {
         countDownTimer = new CountDownTimer(durationMs, 500) {
             @Override
             public void onTick(long millisUntilFinished) {
-                remainingTimeMs = millisUntilFinished;
+                remainingTimeMs = Math.max(0, millisUntilFinished);
+                if (millisUntilFinished <= 0) {
+                    onFinish();
+                }
             }
 
             @Override
@@ -349,6 +390,10 @@ public class OnyxLiveService extends Service {
                             this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
                     );
                     notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
+                } else {
+                    try {
+                        notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
+                    } catch (Exception ignored) {}
                 }
             } else if (isTimerRunning) {
                 Notification timerNotification = IslandNotificationFactory.buildRestNotification(

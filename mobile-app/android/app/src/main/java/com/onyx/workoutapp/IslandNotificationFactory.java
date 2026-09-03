@@ -115,7 +115,7 @@ public class IslandNotificationFactory {
         appIntent.putExtra("open_timer", true);
         PendingIntent contentPendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                NOTIFICATION_ID_TIMER,
                 appIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -206,7 +206,7 @@ public class IslandNotificationFactory {
         appIntent.putExtra("open_workout", true);
         PendingIntent contentPendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                NOTIFICATION_ID_WORKOUT,
                 appIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -283,7 +283,7 @@ public class IslandNotificationFactory {
         appIntent.putExtra("open_timer", true);
         PendingIntent contentPendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                NOTIFICATION_ID_ALARM,
                 appIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );

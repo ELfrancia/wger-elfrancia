@@ -813,8 +813,9 @@
     }
 
     function formatTime(seconds) {
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
+        const safeSec = Math.max(0, Math.floor(seconds || 0));
+        const m = Math.floor(safeSec / 60).toString().padStart(2, '0');
+        const s = (safeSec % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
     }
 
@@ -1166,7 +1167,11 @@
             durationSeconds = Math.max(durationSeconds, Math.ceil(newMs / 1000));
             try {
                 const sec = Math.ceil(remainingMs / 1000);
-                onyxNative.restStart(sec, "Recupero in corso", getSelectedTimerSound());
+                if (onyxNative && typeof onyxNative.restUpdate === 'function') {
+                    onyxNative.restUpdate(durationSeconds, sec);
+                } else if (onyxNative && typeof onyxNative.restStart === 'function') {
+                    onyxNative.restStart(sec, "Recupero in corso", getSelectedTimerSound());
+                }
             } catch(e) {}
         }
         hasNotifiedZero = false;
@@ -1202,6 +1207,11 @@
             hasNotifiedZero = false;
             saveTimerStateToStorage();
             startCountdown(skipOverlay);
+            try {
+                if (onyxNative && typeof onyxNative.restUpdate === 'function') {
+                    onyxNative.restUpdate(durationSeconds, durationSeconds);
+                }
+            } catch(e) {}
         } else {
             startedAt = null;
             isRunning = false;

@@ -46,16 +46,9 @@ public class DeviceCapabilities {
             return false;
         }
 
-        // 2. On Android 16+ (API 36+), check POST_PROMOTED_NOTIFICATIONS or canPostPromotedNotifications()
+        // 2. On Android 16+ (API 36+), check NotificationManager.canPostPromotedNotifications()
         if (isAndroid16Plus()) {
             try {
-                // Check direct permission in PackageManager
-                int perm = context.checkSelfPermission("android.permission.POST_PROMOTED_NOTIFICATIONS");
-                if (perm != PackageManager.PERMISSION_GRANTED) {
-                    return false;
-                }
-
-                // Check NotificationManager.canPostPromotedNotifications() via reflection if available
                 NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                 if (nm != null) {
                     try {
@@ -65,14 +58,14 @@ public class DeviceCapabilities {
                             return (Boolean) result;
                         }
                     } catch (NoSuchMethodException ignored) {
-                        // Method not yet exposed in this exact API preview, permission grant is sufficient
+                        // Method not exposed in this exact API preview, default to true since notifications are enabled
                         return true;
                     }
                 }
                 return true;
             } catch (Throwable t) {
                 Log.w(TAG, "DeviceCapabilities: Error checking promoted notification status: " + t.getMessage());
-                return false;
+                return true;
             }
         }
 

@@ -101,14 +101,29 @@ public class MainActivity extends BridgeActivity {
                 if (soundUri != null && !soundUri.isEmpty()) {
                     serviceIntent.putExtra(OnyxLiveService.EXTRA_SOUND_URI, soundUri);
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent);
-                } else {
-                    startService(serviceIntent);
-                }
+                safeStartService(serviceIntent);
                 Log.d(TAG, "OnyxLiveService started/updated successfully");
             } catch (Exception e) {
                 Log.e(TAG, "Error starting/updating OnyxLiveService: " + e.getMessage(), e);
+            }
+        }
+
+        @JavascriptInterface
+        public void updateTimer(int durationSeconds) {
+            updateNotification(durationSeconds, durationSeconds);
+        }
+
+        @JavascriptInterface
+        public void updateNotification(int durationSeconds, int remainingSeconds) {
+            Log.d(TAG, "AndroidTimer.updateNotification called: duration=" + durationSeconds + ", remaining=" + remainingSeconds);
+            try {
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_UPDATE_TIMER);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_DURATION, durationSeconds);
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_REMAINING_SECONDS, remainingSeconds);
+                safeStartService(serviceIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating notification in OnyxLiveService: " + e.getMessage(), e);
             }
         }
 
@@ -118,7 +133,7 @@ public class MainActivity extends BridgeActivity {
             try {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_PAUSE);
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error pausing OnyxLiveService: " + e.getMessage(), e);
             }
@@ -130,7 +145,7 @@ public class MainActivity extends BridgeActivity {
             try {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_RESUME);
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error resuming OnyxLiveService: " + e.getMessage(), e);
             }
@@ -143,7 +158,7 @@ public class MainActivity extends BridgeActivity {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_ADD_TIME);
                 serviceIntent.putExtra(OnyxLiveService.EXTRA_DURATION, seconds);
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error adding seconds to OnyxLiveService: " + e.getMessage(), e);
             }
@@ -155,7 +170,7 @@ public class MainActivity extends BridgeActivity {
             try {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_STOP);
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error stopping OnyxLiveService: " + e.getMessage(), e);
             }
@@ -167,7 +182,7 @@ public class MainActivity extends BridgeActivity {
             try {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_STOP_ALARM);
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error stopping alarm: " + e.getMessage(), e);
             }
@@ -235,16 +250,35 @@ public class MainActivity extends BridgeActivity {
         setupWebViewBridge();
 
         // Handle open_timer and open_workout notification intents
-        handleOpenTimerIntent(getIntent());
-        handleOpenWorkoutIntent(getIntent());
+        routeNotificationIntent(getIntent());
+    }
+
+    private void safeStartService(Intent intent) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "safeStartService error: " + e.getMessage(), e);
+        }
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        handleOpenTimerIntent(intent);
-        handleOpenWorkoutIntent(intent);
+        routeNotificationIntent(intent);
+    }
+
+    private void routeNotificationIntent(Intent intent) {
+        if (intent == null) return;
+        if (intent.getBooleanExtra("open_timer", false)) {
+            handleOpenTimerIntent(intent);
+        } else if (intent.getBooleanExtra("open_workout", false)) {
+            handleOpenWorkoutIntent(intent);
+        }
     }
 
     private void handleOpenWorkoutIntent(Intent intent) {
@@ -259,7 +293,7 @@ public class MainActivity extends BridgeActivity {
                                 "    if (typeof window.focusActiveWorkoutSession === 'function') {" +
                                 "      window.focusActiveWorkoutSession();" +
                                 "    } else if (window.location.hash.includes('rest-timer')) {" +
-                                "      if (typeof window.closeRestTimerOverlay === 'function') window.closeRestTimerOverlay();" +
+                                "      if (typeof window.closeOverlay === 'function') window.closeOverlay();" +
                                 "    }" +
                                 "  } catch(e) { console.error('[OnyxWorkout] Open workout error:', e); }" +
                                 "})();";
@@ -273,13 +307,15 @@ public class MainActivity extends BridgeActivity {
 
     private void handleOpenTimerIntent(Intent intent) {
         if (intent != null && intent.getBooleanExtra("open_timer", false)) {
-            Log.d(TAG, "handleOpenTimerIntent: open_timer flag detected, executing openOverlay()");
+            Log.d(TAG, "handleOpenTimerIntent: open_timer flag detected, executing navigateToTimerScreen / openOverlay");
             try {
                 WebView webView = getBridge() != null ? getBridge().getWebView() : null;
                 if (webView != null) {
                     String js = "(function() {" +
                                 "  try {" +
-                                "    if (typeof window.openOverlay === 'function') {" +
+                                "    if (typeof window.navigateToTimerScreen === 'function') {" +
+                                "      window.navigateToTimerScreen();" +
+                                "    } else if (typeof window.openOverlay === 'function') {" +
                                 "      window.openOverlay();" +
                                 "    } else {" +
                                 "      sessionStorage.setItem('open_timer_overlay', 'true');" +
@@ -311,9 +347,19 @@ public class MainActivity extends BridgeActivity {
                     String checkAndCloseModalJs =
                         "(function() {" +
                         "  try {" +
+                        "    var restOverlay = document.getElementById('rest-timer-overlay');" +
+                        "    if (restOverlay) {" +
+                        "      var oStyle = window.getComputedStyle(restOverlay);" +
+                        "      var isVis = oStyle.display !== 'none' && oStyle.visibility !== 'hidden' && !restOverlay.classList.contains('hidden');" +
+                        "      if (isVis) {" +
+                        "        if (typeof window.closeOverlay === 'function') { window.closeOverlay(); return 'modal_closed'; }" +
+                        "        restOverlay.classList.add('hidden');" +
+                        "        return 'modal_closed';" +
+                        "      }" +
+                        "    }" +
                         "    var specificIds = [" +
-                        "      'rest-timer-overlay'," +
                         "      'global-timer-options-modal'," +
+                        "      'custom-timer-modal'," +
                         "      'custom-exercise-modal'," +
                         "      'onyx-quick-action-overlay'," +
                         "      'exercise-detail-modal'," +
@@ -327,23 +373,20 @@ public class MainActivity extends BridgeActivity {
                         "        var isVisible = style.display !== 'none' && style.visibility !== 'hidden' && !el.classList.contains('hidden') && parseFloat(style.opacity || '1') > 0;" +
                         "        if (isVisible) {" +
                         "          var closeBtn = el.querySelector('[data-close], .close-btn, .btn-close, button[onclick*=\"close\"], button[onclick*=\"hide\"], .close-modal');" +
-                        "          if (closeBtn) { closeBtn.click(); return true; }" +
-                        "          if (specificIds[i] === 'rest-timer-overlay' && typeof window.closeRestTimerOverlay === 'function') {" +
-                        "            window.closeRestTimerOverlay(); return true;" +
-                        "          }" +
+                        "          if (closeBtn) { closeBtn.click(); return 'modal_closed'; }" +
                         "          if (typeof window.closeModal === 'function') {" +
-                        "            window.closeModal(specificIds[i]); return true;" +
+                        "            window.closeModal(specificIds[i]); return 'modal_closed';" +
                         "          }" +
                         "          el.classList.add('hidden');" +
                         "          el.style.display = 'none';" +
-                        "          return true;" +
+                        "          return 'modal_closed';" +
                         "        }" +
                         "      }" +
                         "    }" +
                         "    var dialogs = document.querySelectorAll('dialog[open]');" +
                         "    if (dialogs && dialogs.length > 0) {" +
                         "      dialogs[dialogs.length - 1].close();" +
-                        "      return true;" +
+                        "      return 'modal_closed';" +
                         "    }" +
                         "    var activeModals = document.querySelectorAll('.modal.active, .modal.show, .modal-open, [data-modal].active, [data-modal].show, .drawer.open, .drawer.active');" +
                         "    for (var j = activeModals.length - 1; j >= 0; j--) {" +
@@ -353,27 +396,31 @@ public class MainActivity extends BridgeActivity {
                         "        var mClose = m.querySelector('[data-close], .close-btn, .btn-close, button[onclick*=\"close\"], button[onclick*=\"hide\"]');" +
                         "        if (mClose) { mClose.click(); }" +
                         "        else { m.classList.remove('active', 'show', 'modal-open', 'open'); m.style.display = 'none'; }" +
-                        "        return true;" +
+                        "        return 'modal_closed';" +
                         "      }" +
+                        "    }" +
+                        "    var path = window.location.pathname || '';" +
+                        "    var isRootOrDashboard = path === '/' || path === '/it/' || path.endsWith('/dashboard/') || path.endsWith('/dashboard');" +
+                        "    if (!isRootOrDashboard && window.history.length > 1) {" +
+                        "      window.history.back();" +
+                        "      return 'navigated_back';" +
                         "    }" +
                         "  } catch (e) {" +
                         "    console.error('[OnyxBackPress] Error checking modal:', e);" +
                         "  }" +
-                        "  return false;" +
+                        "  return 'none';" +
                         "})();";
 
                     webView.evaluateJavascript(checkAndCloseModalJs, value -> {
-                        boolean modalClosed = "true".equalsIgnoreCase(value) || "\"true\"".equalsIgnoreCase(value);
-                        if (modalClosed) {
-                            Log.d(TAG, "Back pressed: modal/overlay closed");
+                        String res = value != null ? value.replace("\"", "").trim() : "none";
+                        if ("modal_closed".equals(res) || "navigated_back".equals(res)) {
+                            Log.d(TAG, "Back pressed: handled by webView (" + res + ")");
+                        } else if (webView.canGoBack()) {
+                            Log.d(TAG, "Back pressed: navigating webView back");
+                            webView.goBack();
                         } else {
-                            if (webView.canGoBack()) {
-                                Log.d(TAG, "Back pressed: navigating webView back");
-                                webView.goBack();
-                            } else {
-                                Log.d(TAG, "Back pressed: on main screen, moving task to back");
-                                moveTaskToBack(true);
-                            }
+                            Log.d(TAG, "Back pressed: on root screen, moving task to back");
+                            moveTaskToBack(true);
                         }
                     });
                 } catch (Exception e) {

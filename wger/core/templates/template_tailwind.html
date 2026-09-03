@@ -1611,6 +1611,19 @@
                         }
                     } catch(e) {}
                 },
+                restUpdate(durationSeconds, remainingSeconds) {
+                    try {
+                        const dur = Math.max(1, parseInt(durationSeconds, 10) || 45);
+                        const rem = remainingSeconds !== undefined ? Math.max(0, parseInt(remainingSeconds, 10)) : dur;
+                        if (window.AndroidTimer && typeof window.AndroidTimer.updateNotification === 'function') {
+                            window.AndroidTimer.updateNotification(dur, rem);
+                        } else if (window.AndroidTimer && typeof window.AndroidTimer.updateTimer === 'function') {
+                            window.AndroidTimer.updateTimer(dur);
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.updateTimer === 'function') {
+                            window.Capacitor.Plugins.WorkoutTimer.updateTimer({ durationSeconds: dur, remainingSeconds: rem });
+                        }
+                    } catch(e) {}
+                },
                 restStop() {
                     if (window._suppressNativeTimerCall) return;
                     try {

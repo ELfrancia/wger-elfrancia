@@ -56,12 +56,35 @@ public class OnyxLivePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void updateTimer(PluginCall call) {
+        int durationSeconds = call.getInt("durationSeconds", 45);
+        int remainingSeconds = call.getInt("remainingSeconds", durationSeconds);
+        try {
+            Context context = getContext();
+            Intent serviceIntent = new Intent(context, OnyxLiveService.class);
+            serviceIntent.setAction(OnyxLiveService.ACTION_UPDATE_TIMER);
+            serviceIntent.putExtra(OnyxLiveService.EXTRA_DURATION, durationSeconds);
+            serviceIntent.putExtra(OnyxLiveService.EXTRA_REMAINING_SECONDS, remainingSeconds);
+            startLiveService(context, serviceIntent);
+            call.resolve();
+        } catch (Exception e) {
+            Log.e(TAG, "OnyxLivePlugin failed to update timer: " + e.getMessage(), e);
+            call.reject("Failed to update timer: " + e.getMessage(), e);
+        }
+    }
+
+    @PluginMethod
+    public void updateNotification(PluginCall call) {
+        updateTimer(call);
+    }
+
+    @PluginMethod
     public void pauseTimer(PluginCall call) {
         try {
             Context context = getContext();
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(OnyxLiveService.ACTION_PAUSE);
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to pause timer: " + e.getMessage(), e);
@@ -75,7 +98,7 @@ public class OnyxLivePlugin extends Plugin {
             Context context = getContext();
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(OnyxLiveService.ACTION_RESUME);
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to resume timer: " + e.getMessage(), e);
@@ -91,7 +114,7 @@ public class OnyxLivePlugin extends Plugin {
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(OnyxLiveService.ACTION_ADD_TIME);
             serviceIntent.putExtra(OnyxLiveService.EXTRA_DURATION, seconds);
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to add seconds: " + e.getMessage(), e);
@@ -105,7 +128,7 @@ public class OnyxLivePlugin extends Plugin {
             Context context = getContext();
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(OnyxLiveService.ACTION_STOP);
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to stop timer: " + e.getMessage(), e);
@@ -119,13 +142,14 @@ public class OnyxLivePlugin extends Plugin {
             Context context = getContext();
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(OnyxLiveService.ACTION_STOP_ALARM);
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to stop alarm: " + e.getMessage(), e);
             call.reject("Failed to stop alarm: " + e.getMessage(), e);
         }
     }
+
 
     // ==========================================
     // WORKOUT ISLAND METHODS (Android 16 / HyperOS)
