@@ -360,16 +360,11 @@ public class OnyxLiveService extends Service {
             @Override
             public void onTick(long millisUntilFinished) {
                 remainingTimeMs = Math.max(0, millisUntilFinished);
-                if (millisUntilFinished <= 0) {
-                    onFinish();
-                }
             }
 
             @Override
             public void onFinish() {
                 Log.d(TAG, "OnyxLiveService: CountDown finished! Triggering alarm.");
-                isTimerRunning = false;
-                isPaused = false;
                 remainingTimeMs = 0;
                 triggerTimerFinishedAlarm();
             }
@@ -394,28 +389,44 @@ public class OnyxLiveService extends Service {
                 );
                 postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT, workoutNotification);
 
+                // Reconcile the timer / alarm slots independently — never let a state
+                // update silently drop the "rest running" or "time's up" notification.
                 if (isTimerRunning) {
                     Notification timerNotification = IslandNotificationFactory.buildRestNotification(
                             this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
                     );
                     notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
+                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
+                } else if (isAlarmPlaying) {
+                    // Rest timer expired mid-workout: keep the alarm notification visible and tappable.
+                    Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
+                    notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
+                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
                 } else {
-                    try {
-                        notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
-                    } catch (Exception ignored) {}
+                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
+                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
                 }
             } else if (isTimerRunning) {
                 Notification timerNotification = IslandNotificationFactory.buildRestNotification(
                         this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
                 );
                 postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
+                cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
             } else if (isAlarmPlaying) {
                 Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
                 postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
+                cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error updating foreground notifications: " + e.getMessage(), e);
         }
+    }
+
+    private void cancelQuietly(int id) {
+        if (notificationManager == null) return;
+        try {
+            notificationManager.cancel(id);
+        } catch (Exception ignored) {}
     }
 
     private void postAsForegroundAnchor(int id, Notification notification) {
@@ -442,6 +453,10 @@ public class OnyxLiveService extends Service {
     }
 
     private synchronized void triggerTimerFinishedAlarm() {
+        // Guard against double-firing (onFinish + a stray manual call): the alarm
+        // is already ringing, don't restart sound/vibration or re-post the notification.
+        if (isAlarmPlaying) return;
+
         if (countDownTimer != null) {
             countDownTimer.cancel();
             countDownTimer = null;
