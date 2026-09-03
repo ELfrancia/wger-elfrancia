@@ -1175,6 +1175,22 @@
     window.startCountdown = startCountdown;
     window.pauseCountdown = pauseCountdown;
 
+    // Every other function called from an inline onclick="" in this template must also be
+    // exported — they all live inside this IIFE. Missing exports here silently no-op the
+    // button (e.g. the "QUIT" workout button -> openExitModal). Function declarations hoist,
+    // so assigning here before their definition below is fine.
+    window.openExitModal = openExitModal;
+    window.closeExitModal = closeExitModal;
+    window.openFinishWorkoutReviewModal = openFinishWorkoutReviewModal;
+    window.closeFinishWorkoutReviewModal = closeFinishWorkoutReviewModal;
+    window.openConditionPhotoModal = openConditionPhotoModal;
+    window.closeConditionPhotoModal = closeConditionPhotoModal;
+    window.submitConditionPhoto = submitConditionPhoto;
+    window.clearSelectedPhoto = clearSelectedPhoto;
+    window.toggleLogRoutineCustomDropdown = toggleLogRoutineCustomDropdown;
+    window.onSelectLogRoutineClick = onSelectLogRoutineClick;
+    window.selectLogRoutineOption = selectLogRoutineOption;
+
     function resetTimer() {
         stopTimer();
     }
