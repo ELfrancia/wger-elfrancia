@@ -697,7 +697,24 @@
 {% block extra_body %}
 <script>
 (() => {
-    const onyxNative = window.onyxNative;
+    // NOTE: window.onyxNative (the native shell bridge) is registered by the base
+    // template, which parses *after* this inline script. Capturing it here would
+    // freeze it as `undefined`, so `onyxNative.available` later threw a TypeError
+    // - which aborted the timer-expiry handler before it could fire the alarm.
+    // Resolve the bridge lazily and forward calls through a small proxy so every
+    // access reads the live object and never throws in a plain browser.
+    const onyxNative = new Proxy({}, {
+        get(_target, prop) {
+            const bridge = window.onyxNative;
+            if (prop === 'available') {
+                return !!(bridge && bridge.available);
+            }
+            if (bridge && typeof bridge[prop] === 'function') {
+                return bridge[prop].bind(bridge);
+            }
+            return bridge ? bridge[prop] : undefined;
+        },
+    });
 
     function computeWorkoutProgress() {
         const setRows = document.querySelectorAll('.set-row');
