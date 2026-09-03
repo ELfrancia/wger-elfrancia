@@ -44,6 +44,26 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Workout session tracking, rest countdown timer and alarm" />
         </service>
+
+        <!-- Exact-alarm backup for the "rest timer expired" event. Fires even if the OS
+             (aggressive on Xiaomi/HyperOS) kills OnyxLiveService before its CountDownTimer
+             reaches 0. The receiver simply re-starts the foreground service with a
+             "timer finished" action so the alarm still rings. -->
+        <receiver
+            android:name=".TimerExpiryAlarmReceiver"
+            android:exported="false" />
+
+        <!-- Re-arm nothing automatically on boot, but allow the OS to deliver BOOT_COMPLETED
+             so a future "resume ongoing session after reboot" feature can hook in. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions -->
@@ -51,7 +71,27 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16 "Live Updates" / promoted ongoing notifications -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Background survival on OEM battery managers (Xiaomi/HyperOS especially) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Exact-alarm backup for the timer-expired alarm. USE_EXACT_ALARM is auto-granted
+         to alarm-clock-class apps (API 33+); SCHEDULE_EXACT_ALARM is the API 31/32
+         fallback and may need a user grant. We hold both and degrade gracefully. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+
+    <!-- Needed to deep-link into MIUI/HyperOS Autostart & battery screens as a graceful
+         fallback when the standard Settings intents are not honoured. -->
+    <queries>
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.miui.powerkeeper" />
+    </queries>
 </manifest>
