@@ -717,4 +717,36 @@ public class MainActivity extends BridgeActivity {
         super.onResume();
         setupWebViewBridge();
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        signalAppVisibility(true);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        signalAppVisibility(false);
+    }
+
+    /**
+     * Tell the notification layer whether the app is on screen. Foreground -> the in-app
+     * notch is visible, so the native promoted island/chip is suppressed to avoid a
+     * duplicate. Background -> the full Live Update / HyperOS island takes over. The
+     * foreground service itself is never started or stopped by this.
+     */
+    private void signalAppVisibility(boolean foreground) {
+        try {
+            IslandNotificationFactory.appInForeground = foreground;
+            if (!OnyxLiveService.isRunning) return;
+            Intent i = new Intent(this, OnyxLiveService.class);
+            i.setAction(foreground
+                    ? OnyxLiveService.ACTION_APP_FOREGROUND
+                    : OnyxLiveService.ACTION_APP_BACKGROUND);
+            safeStartService(i);
+        } catch (Exception e) {
+            Log.e(TAG, "signalAppVisibility(" + foreground + ") failed: " + e.getMessage(), e);
+        }
+    }
 }

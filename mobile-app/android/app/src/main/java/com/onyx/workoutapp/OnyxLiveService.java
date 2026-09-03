@@ -49,6 +49,10 @@ public class OnyxLiveService extends Service {
      */
     public static final String ACTION_ALARM_BACKUP = "com.onyx.workoutapp.ALARM_TIMER_EXPIRED";
 
+    /** Sent by MainActivity.onStart / onStop so the service can promote (bg) or demote (fg) its island. */
+    public static final String ACTION_APP_FOREGROUND = "com.onyx.workoutapp.ACTION_APP_FOREGROUND";
+    public static final String ACTION_APP_BACKGROUND = "com.onyx.workoutapp.ACTION_APP_BACKGROUND";
+
     public static final String ACTION_WORKOUT_START = "com.onyx.workoutapp.ACTION_WORKOUT_START";
     public static final String ACTION_WORKOUT_UPDATE = "com.onyx.workoutapp.ACTION_WORKOUT_UPDATE";
     public static final String ACTION_WORKOUT_STOP = "com.onyx.workoutapp.ACTION_WORKOUT_STOP";
@@ -105,8 +109,16 @@ public class OnyxLiveService extends Service {
     /** Tracks whether an ongoing promoted notification (1001 rest timer or 1003 workout progress) is actively posted. */
     public static volatile boolean hasActiveOngoingNotification = false;
 
+    /** True between onCreate and teardown — lets MainActivity skip fg/bg pings when idle. */
+    public static volatile boolean isRunning = false;
+
+    /**
+     * Reports an ACTIVE PROMOTED ongoing notification: a timer/workout is live AND the app
+     * is backgrounded (so the native island is what the user sees). While the app is in the
+     * foreground this returns false so the web keeps showing its in-app notch instead.
+     */
     public static boolean hasActiveOngoingNotification() {
-        return hasActiveOngoingNotification;
+        return hasActiveOngoingNotification && !IslandNotificationFactory.appInForeground;
     }
 
     private Bitmap appIconBitmap;
@@ -114,6 +126,7 @@ public class OnyxLiveService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        isRunning = true;
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -165,6 +178,19 @@ public class OnyxLiveService extends Service {
         }
 
         Log.d(TAG, "OnyxLiveService onStartCommand: action=" + action);
+
+        // App foreground/background transitions only re-render existing notifications
+        // (promote when bg, demote when fg). They never start or stop the service.
+        if (ACTION_APP_FOREGROUND.equals(action) || ACTION_APP_BACKGROUND.equals(action)) {
+            IslandNotificationFactory.appInForeground = ACTION_APP_FOREGROUND.equals(action);
+            if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
+                updateForegroundState();
+            } else {
+                stopAllAndService();
+                return START_NOT_STICKY;
+            }
+            return START_REDELIVER_INTENT;
+        }
 
         try {
             handleAction(action, intent);
@@ -839,6 +865,7 @@ public class OnyxLiveService extends Service {
 
     private synchronized void stopAllAndService() {
         hasActiveOngoingNotification = false;
+        isRunning = false;
         isTimerRunning = false;
         isPaused = false;
         isWorkoutActive = false;

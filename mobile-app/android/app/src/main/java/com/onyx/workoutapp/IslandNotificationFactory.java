@@ -40,7 +40,10 @@ public class IslandNotificationFactory {
 
     public static final String CHANNEL_TIMER = "onyx_timer_live_channel";
     public static final String CHANNEL_ALARM = "onyx_timer_alarm_channel";
-    public static final String CHANNEL_WORKOUT = "onyx_workout_progress_channel";
+    // v2: bumped from IMPORTANCE_LOW to DEFAULT so the workout progress notification
+    // actually reaches the status bar / HyperOS Focus island. A channel's importance is
+    // immutable once created, hence the new id.
+    public static final String CHANNEL_WORKOUT = "onyx_workout_progress_channel_v2";
 
     public static final int NOTIFICATION_ID_TIMER = 1001;
     public static final int NOTIFICATION_ID_ALARM = 1002;
@@ -50,6 +53,14 @@ public class IslandNotificationFactory {
     private static final int ACCENT = 0xFFCAF300;
     /** Dim track colour for spent / upcoming progress segments. */
     private static final int TRACK_DIM = 0xFF3A3D24;
+
+    /**
+     * Set by {@link OnyxLiveService} from MainActivity's start/stop callbacks. While the
+     * app is on screen the rich in-app "notch" already shows the timer/workout, so we
+     * suppress the promoted status-bar chip / HyperOS island to avoid a visible duplicate.
+     * The (silent) ongoing notification still exists — a foreground service requires one.
+     */
+    public static volatile boolean appInForeground = false;
 
     public static void createNotificationChannels(NotificationManager notificationManager) {
         if (notificationManager == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -82,11 +93,12 @@ public class IslandNotificationFactory {
         alarmChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         notificationManager.createNotificationChannel(alarmChannel);
 
-        // 3. Workout progress live activity channel
+        // 3. Workout progress live activity channel. DEFAULT importance (silenced on the
+        // builder) so it gets a status-bar slot + HyperOS Focus island while backgrounded.
         NotificationChannel workoutChannel = new NotificationChannel(
                 CHANNEL_WORKOUT,
                 "Progresso Allenamento Live",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
         );
         workoutChannel.setDescription("Mostra l'anello di avanzamento delle serie nella Super Island e barra di stato");
         workoutChannel.setSound(null, null);
@@ -94,6 +106,11 @@ public class IslandNotificationFactory {
         workoutChannel.setShowBadge(false);
         workoutChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         notificationManager.createNotificationChannel(workoutChannel);
+
+        // Best-effort cleanup of the pre-v2 low-importance channel.
+        try {
+            notificationManager.deleteNotificationChannel("onyx_workout_progress_channel");
+        } catch (Exception ignored) {}
     }
 
     /**
@@ -119,16 +136,19 @@ public class IslandNotificationFactory {
      */
     private static void requestPromotedOngoing(NotificationCompat.Builder builder, Context context, String shortCriticalText) {
         if (builder == null) return;
+        builder.setOngoing(true);
+        // Foreground: keep it a plain ongoing notification, no chip / island (the in-app
+        // notch is already showing this). Background: request the full Live Update.
+        boolean promote = !appInForeground;
         try {
-            builder.setRequestPromotedOngoing(true);
-            if (shortCriticalText != null && !shortCriticalText.isEmpty()) {
+            builder.setRequestPromotedOngoing(promote);
+            if (promote && shortCriticalText != null && !shortCriticalText.isEmpty()) {
                 // Text shown inside the collapsed status-bar chip when there is no
                 // chronometer to display.
                 builder.setShortCriticalText(shortCriticalText);
             }
         } catch (Throwable t) {
             Log.d(TAG, "requestPromotedOngoing skipped: " + t.getMessage());
-            builder.setOngoing(true);
         }
     }
 
@@ -166,7 +186,7 @@ public class IslandNotificationFactory {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_TIMER)
                 .setSmallIcon(R.drawable.ic_stat_onyx)
                 .setColor(ACCENT)
-                .setColorized(true)
+                .setColorized(!appInForeground)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -283,12 +303,13 @@ public class IslandNotificationFactory {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_WORKOUT)
                 .setSmallIcon(R.drawable.ic_stat_onyx)
                 .setColor(ACCENT)
+                .setColorized(!appInForeground)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_WORKOUT)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setDefaults(0)
                 .setSilent(true);
 
@@ -394,8 +415,13 @@ public class IslandNotificationFactory {
         NotificationCompat.Builder alarmBuilder = new NotificationCompat.Builder(context, CHANNEL_ALARM)
                 .setSmallIcon(R.drawable.ic_stat_onyx)
                 .setColor(ACCENT)
-                .setContentTitle("TEMPO SCADUTO! 🏋️")
+                // Full lime card, black auto-contrast text — mirrors the in-app yellow notch.
+                .setColorized(true)
+                .setContentTitle("TEMPO SCADUTO!")
                 .setContentText("Il recupero è terminato. Tocca per disattivare l'allarme.")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .setBigContentTitle("TEMPO SCADUTO!")
+                        .bigText("Il recupero è terminato. Tocca per disattivare l'allarme."))
                 .setContentIntent(contentPendingIntent)
                 .setFullScreenIntent(contentPendingIntent, true)
                 .setOngoing(true)
@@ -410,8 +436,14 @@ public class IslandNotificationFactory {
             alarmBuilder.setLargeIcon(appIconBitmap);
         }
 
-        // Keep the "time's up" state prominent on the island too.
-        requestPromotedOngoing(alarmBuilder, context, "Scaduto");
+        // The "time's up" alarm is always prominent — even if the app is in the
+        // foreground — so it bypasses the appInForeground suppression above.
+        try {
+            alarmBuilder.setRequestPromotedOngoing(true);
+            alarmBuilder.setShortCriticalText("Scaduto");
+        } catch (Throwable t) {
+            Log.d(TAG, "alarm promoted-ongoing skipped: " + t.getMessage());
+        }
         HyperFocusExtras.applyAlarmFocus(alarmBuilder, context, ACCENT);
 
         return alarmBuilder.build();

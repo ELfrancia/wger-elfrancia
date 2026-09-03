@@ -60,6 +60,7 @@ public class HyperFocusExtras {
             int accentColor
     ) {
         if (!guard(builder, context)) return;
+        if (IslandNotificationFactory.appInForeground) return; // in-app notch covers this
         try {
             String safeTitle = (title != null && !title.isEmpty()) ? title : "Recupero in corso";
             String hex = argb(accentColor);
@@ -122,6 +123,7 @@ public class HyperFocusExtras {
             int accentColor
     ) {
         if (!guard(builder, context)) return;
+        if (IslandNotificationFactory.appInForeground) return; // in-app notch covers this
         try {
             String safeTitle = (title != null && !title.isEmpty()) ? title : "Sessione di Allenamento";
             String hex = argb(accentColor);
@@ -175,28 +177,35 @@ public class HyperFocusExtras {
     ) {
         if (!guard(builder, context)) return;
         try {
-            String hex = argb(accentColor);
+            String hex = argb(accentColor);          // lime
+            String black = "#FF000000";
             JSONObject base = new JSONObject()
                     .put("type", 1)
-                    .put("title", "Tempo scaduto")
+                    .put("title", "TEMPO SCADUTO!")
                     .put("content", "Tocca per disattivare l'allarme")
-                    .put("colorTitle", hex)
-                    .put("colorContent", "#FFFFFFFF");
+                    // Black text on a lime fill — matches the in-app yellow "TEMPO SCADUTO" notch.
+                    .put("colorTitle", black)
+                    .put("colorContent", black)
+                    .put("colorContentBg", hex)
+                    .put("colorBg", hex)
+                    .put("bgColor", hex);
 
             JSONObject paramV2 = new JSONObject()
                     .put("protocol", 1)
                     .put("enableFloat", true)
                     .put("updatable", true)
-                    .put("ticker", "Tempo scaduto")
+                    .put("ticker", "TEMPO SCADUTO!")
+                    .put("colorBg", hex)
+                    .put("bgColor", hex)
                     .put("baseInfo", base)
                     .put("progressInfo", new JSONObject()
                             .put("progress", 100)
-                            .put("colorProgress", hex)
-                            .put("colorProgressEnd", hex)
+                            .put("colorProgress", black)
+                            .put("colorProgressEnd", black)
                             .put("isCCW", false))
                     .put("picInfo", new JSONObject().put("type", 1).put("pic", ICON_NAME));
 
-            attach(builder, context, paramV2, "Tempo scaduto");
+            attach(builder, context, paramV2, "TEMPO SCADUTO!");
         } catch (Throwable t) {
             Log.d(TAG, "applyAlarmFocus skipped: " + t.getMessage());
         }
@@ -234,6 +243,8 @@ public class HyperFocusExtras {
         if (paramV2.has("progressInfo")) root.put("progressInfo", paramV2.getJSONObject("progressInfo"));
         if (paramV2.has("timerInfo")) root.put("timerInfo", paramV2.getJSONObject("timerInfo"));
         if (paramV2.has("picInfo")) root.put("picInfo", paramV2.getJSONObject("picInfo"));
+        if (paramV2.has("colorBg")) root.put("colorBg", paramV2.getString("colorBg"));
+        if (paramV2.has("bgColor")) root.put("bgColor", paramV2.getString("bgColor"));
 
         Bundle extras = new Bundle();
         extras.putString("miui.focus.param", root.toString());
