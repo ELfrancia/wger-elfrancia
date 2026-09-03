@@ -226,12 +226,19 @@ def log_tailwind(request, routine_pk, day_pk):
             """Persist the transient draft the first time an action needs it."""
             nonlocal session, transient_session
             if transient_session:
+                elapsed_val = 0
+                try:
+                    elapsed_val = int(request.POST.get('elapsed_seconds') or 0)
+                except (ValueError, TypeError):
+                    pass
+                now_dt = timezone.localtime(timezone.now())
+                start_time = (now_dt - datetime.timedelta(seconds=elapsed_val)).time() if elapsed_val > 0 else now_dt.time()
                 session = WorkoutSession.objects.create(
                     user=request.user,
                     routine_id=routine_pk,
                     day=day,
                     date=datetime.date.today(),
-                    time_start=timezone.localtime(timezone.now()).time(),
+                    time_start=start_time,
                     status='active',
                 )
                 request.session[session_key] = str(session.id)
@@ -330,7 +337,8 @@ def log_tailwind(request, routine_pk, day_pk):
                 # or fabricate logs: the client keeps the real snapshot in
                 # localStorage. Here we only refresh timing / notes on a session
                 # that is *already* persisted because real sets were logged.
-                if transient_session:
+                # Must never process snapshots after a session is marked finished.
+                if transient_session or (session and session.status == 'finished'):
                     return JsonResponse({'status': 'ok', 'saved_at': timezone.now().isoformat()})
                 payload_str = request.POST.get('snapshot_payload')
                 if payload_str:
@@ -355,6 +363,11 @@ def log_tailwind(request, routine_pk, day_pk):
                     # No session was ever persisted -> nothing was logged.
                     # Finishing an empty workout is a discard.
                     _purge_empty_active_sessions(request.user)
+                    if session_key in request.session:
+                        del request.session[session_key]
+                    return make_overview_redirect(request)
+
+                if session and session.status == 'finished':
                     if session_key in request.session:
                         del request.session[session_key]
                     return make_overview_redirect(request)
@@ -391,8 +404,8 @@ def log_tailwind(request, routine_pk, day_pk):
                             if s_entry_id and ex_id:
                                 try:
                                     s_entry = SlotEntry.objects.get(id=s_entry_id)
-                                    reps_val = float(cs.get('repetitions', 10))
-                                    wt_val = float(cs.get('weight', 0))
+                                    reps_val = float(str(cs.get('repetitions', 10)).replace(',', '.'))
+                                    wt_val = float(str(cs.get('weight', 0)).replace(',', '.'))
                                     WorkoutLog.objects.update_or_create(
                                         session=session,
                                         exercise_id=ex_id,
@@ -658,7 +671,7 @@ def log_tailwind(request, routine_pk, day_pk):
 
             elif action in ('delete_exercise', 'delete_slot'):
                 if slot:
-                    if session:
+                    if session and session.pk:
                         session.logs.filter(
                             django_models.Q(slot_entry__slot=slot) |
                             django_models.Q(exercise_id=exercise_id)
@@ -668,6 +681,26 @@ def log_tailwind(request, routine_pk, day_pk):
                 # Whether or not the slot still existed, the card must go away
                 if request.headers.get('HX-Request'):
                     return HttpResponse("")
+                return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
+
+            elif action == 'replace_exercise':
+                target_exercise_id = request.POST.get('new_exercise_id') or exercise_id
+                if not slot and slot_entry_id:
+                    se = SlotEntry.objects.filter(id=slot_entry_id, slot__day=day).first()
+                    if se:
+                        slot = se.slot
+                if slot and target_exercise_id:
+                    from wger.exercises.models import Exercise
+                    new_ex = get_object_or_404(Exercise, id=target_exercise_id)
+                    if session and session.pk:
+                        session.logs.filter(slot_entry__slot=slot).delete()
+                    slot.entries.update(exercise=new_ex)
+                    reset_routine_cache(day.routine)
+                if request.headers.get('HX-Request'):
+                    redirect_url = reverse('manager:day:overview', kwargs={'routine_pk': routine_pk, 'day_pk': day_pk})
+                    response = HttpResponse()
+                    response['HX-Redirect'] = redirect_url
+                    return response
                 return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
             elif action == 'delete_set_config':
@@ -695,18 +728,16 @@ def log_tailwind(request, routine_pk, day_pk):
                 rir = request.POST.get('rir') or None
 
                 try:
-                    repetitions = int(repetitions)
-                except (TypeError, ValueError):
+                    clean_r = str(repetitions).strip().replace(',', '.') if repetitions is not None else '0'
+                    repetitions = int(Decimal(clean_r))
+                except (DecimalException, TypeError, ValueError):
                     repetitions = 0
 
-                if weight is None or str(weight).strip() in ('', '0'):
+                try:
+                    clean_w = str(weight).strip().replace(',', '.') if weight is not None else '0'
+                    weight = Decimal(clean_w)
+                except (DecimalException, TypeError, ValueError):
                     weight = Decimal('0')
-                else:
-                    try:
-                        clean_w = str(weight).strip().replace(',', '.')
-                        weight = Decimal(clean_w)
-                    except (decimal.DecimalException, ValueError, TypeError):
-                        weight = Decimal('0')
 
                 # Create WorkoutLog entry
                 log_entry = WorkoutLog.objects.create(

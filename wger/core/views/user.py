@@ -1238,9 +1238,11 @@ def update_log_ajax(request):
             return JsonResponse({'status': 'error', 'message': 'Forbidden'}, status=403)
             
         if reps is not None:
-            log.repetitions = int(reps)
+            clean_r = str(reps).strip().replace(',', '.')
+            log.repetitions = int(Decimal(clean_r))
         if weight is not None:
-            log.weight = float(weight)
+            clean_w = str(weight).strip().replace(',', '.')
+            log.weight = Decimal(clean_w)
             
         log.save()
         return JsonResponse({'status': 'success'})
