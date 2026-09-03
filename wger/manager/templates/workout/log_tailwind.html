@@ -1207,11 +1207,6 @@
             hasNotifiedZero = false;
             saveTimerStateToStorage();
             startCountdown(skipOverlay);
-            try {
-                if (onyxNative && typeof onyxNative.restUpdate === 'function') {
-                    onyxNative.restUpdate(durationSeconds, durationSeconds);
-                }
-            } catch(e) {}
         } else {
             startedAt = null;
             isRunning = false;

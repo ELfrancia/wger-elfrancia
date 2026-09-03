@@ -1566,6 +1566,14 @@
                     this._caps = { platform: 'web', promotedOngoing: false, notificationsEnabled: false };
                     return this._caps;
                 },
+                hasActiveOngoingNotification() {
+                    if (window.AndroidTimer && typeof window.AndroidTimer.hasActiveOngoingNotification === 'function') {
+                        try {
+                            return Boolean(window.AndroidTimer.hasActiveOngoingNotification());
+                        } catch(e) {}
+                    }
+                    return false;
+                },
                 restStart(durationSeconds, title, soundUri) {
                     if (window._suppressNativeTimerCall) return;
                     try {

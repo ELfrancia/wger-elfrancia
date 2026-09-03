@@ -234,6 +234,26 @@
     }
 
     function openGlobalTimerOptionsModal() {
+        const rawTimer = localStorage.getItem('onyx_active_rest_timer');
+        let hasActiveRest = false;
+        if (rawTimer) {
+            try {
+                const s = JSON.parse(rawTimer);
+                if (s && (s.isRunning || (s.remainingMs > 0) || s.hasNotifiedZero)) {
+                    hasActiveRest = true;
+                }
+            } catch(e) {}
+        }
+        const serverActiveUrl = "{{ active_session_url|default:'' }}";
+        const path = window.location.pathname || '';
+        const isWorkoutPage = path.includes('/day/') || !!document.querySelector('.exercise-group');
+
+        // If no active rest timer but workout is active outside workout page, tap brings straight to workout!
+        if (!hasActiveRest && serverActiveUrl && !isWorkoutPage) {
+            navigateToWorkoutScreen();
+            return;
+        }
+
         const modal = document.getElementById('global-timer-options-modal');
         const card = document.getElementById('global-timer-options-card');
         if (!modal || !card) return;
@@ -422,10 +442,12 @@
         const notch = document.getElementById('onyx-dynamic-notch');
         if (!notch) return;
 
-        // In native Android app, notch is rendered directly by native OS overlay and HyperOS Super Island Focus Notification
+        // In native Android app, hide web notch ONLY if there is an active ongoing native notification (1001 or 1003)
         if (window.onyxNative && window.onyxNative.available) {
-            const isNativePromoted = window.AndroidTimer?.canPostPromotedNotifications ? window.AndroidTimer.canPostPromotedNotifications() : false;
-            if (isNativePromoted) {
+            const hasOngoing = window.AndroidTimer?.hasActiveOngoingNotification 
+                ? window.AndroidTimer.hasActiveOngoingNotification() 
+                : (window.onyxNative?.hasActiveOngoingNotification ? window.onyxNative.hasActiveOngoingNotification() : false);
+            if (hasOngoing) {
                 notch.classList.add('hidden', '-translate-y-16', 'opacity-0', 'pointer-events-none');
                 notch.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
                 return;
@@ -654,6 +676,18 @@
     function updateGlobalMiniTimer() {
         const bubble = document.getElementById('global-mini-timer-bubble');
         if (!bubble) return;
+
+        // In native Android app, hide web bubble ONLY if there is an active ongoing native notification (1001 or 1003)
+        if (window.onyxNative && window.onyxNative.available) {
+            const hasOngoing = window.AndroidTimer?.hasActiveOngoingNotification 
+                ? window.AndroidTimer.hasActiveOngoingNotification() 
+                : (window.onyxNative?.hasActiveOngoingNotification ? window.onyxNative.hasActiveOngoingNotification() : false);
+            if (hasOngoing) {
+                bubble.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+                bubble.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                return;
+            }
+        }
 
         const path = window.location.pathname || '';
         const isAuthOrOnboarding = path.includes('/login') || path.includes('/accounts/login') || path.includes('/change-password') || path.includes('/register') || path.includes('/password') || path.includes('/onboarding') || path.includes('/logout');
