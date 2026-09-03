@@ -69,10 +69,17 @@ def is_same_gym(user_a, user_b):
     """
     Check whether two users belong to the same gym.
 
-    Returns ``True`` only when both users are members of the same, non-null gym
+    Returns ``True`` only when both users are members of the same, non-null gym.
+    If either user has no profile row, they cannot share a gym: return False.
     """
-    gym_a = user_a.userprofile.gym_id
-    gym_b = user_b.userprofile.gym_id
+    # Django
+    from django.core.exceptions import ObjectDoesNotExist
+
+    try:
+        gym_a = user_a.userprofile.gym_id
+        gym_b = user_b.userprofile.gym_id
+    except ObjectDoesNotExist:
+        return False
     return gym_a is not None and gym_a == gym_b
 
 

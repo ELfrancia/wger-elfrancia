@@ -551,6 +551,28 @@ class GymScopeGuardsTestCase(WgerTestCase):
         self.assertFalse(User.objects.get(pk=self.VICTIM_USER_PK).is_active)
 
 
+class UserEditNoProfileTestCase(WgerTestCase):
+    """
+    Editing a user that has no ``userprofile`` row must not raise a 500.
+    """
+
+    def test_superuser_edits_profileless_user(self):
+        orphan = User.objects.create_user(username='orphan', email='orphan@example.com')
+        UserProfile.objects.filter(user=orphan).delete()
+
+        self.user_login('admin')
+        response = self.client.get(reverse('core:user:edit', kwargs={'pk': orphan.pk}))
+        self.assertIn(response.status_code, (200, 403))
+
+    def test_gym_manager_edits_profileless_user_is_forbidden_not_500(self):
+        orphan = User.objects.create_user(username='orphan', email='orphan@example.com')
+        UserProfile.objects.filter(user=orphan).delete()
+
+        self.user_login('manager1')
+        response = self.client.get(reverse('core:user:edit', kwargs={'pk': orphan.pk}))
+        self.assertEqual(response.status_code, 403)
+
+
 class TrainerLogoutTestCase(WgerTestCase):
     """
     Tests the trainer logout view (switching back to trainer ID)

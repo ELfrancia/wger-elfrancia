@@ -294,6 +294,20 @@ class EditUserTestCase2(WgerEditTestCase):
     )
 
 
+class EditUserTitleTestCase(WgerTestCase):
+    """
+    The edit page title must be translated and then formatted, not the other
+    way round (which would leave the interpolated string untranslatable).
+    """
+
+    def test_title_is_formatted_after_translation(self):
+        self.user_login('admin')
+        user = User.objects.get(pk=2)
+        response = self.client.get(reverse('core:user:edit', kwargs={'pk': 2}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['title'], 'Edit {0}'.format(user))
+
+
 class UserListTestCase(WgerAccessTestCase):
     """
     Test accessing the general user overview

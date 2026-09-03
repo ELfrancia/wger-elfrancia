@@ -146,6 +146,77 @@ class OnboardingWizardTestCase(WgerTestCase):
         self.assertEqual(profile.activity_level, '')
 
 
+class TrainerCreatedMemberOnboardingTestCase(WgerTestCase):
+    """
+    Members created by a trainer/superuser are real humans who will log in and
+    must be sent through the onboarding wizard, just like self sign-ups.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.admin = User.objects.get(username='admin')
+        self.admin.is_superuser = True
+        self.admin.save()
+
+    def test_gym_add_user_view_gates_onboarding(self):
+        self.user_login('admin')
+        response = self.client.post(
+            reverse('gym:gym:add-user', kwargs={'gym_pk': 1}),
+            {
+                'first_name': 'Cletus',
+                'last_name': 'Spuckle',
+                'username': 'cletus',
+                'email': 'cletus@spuckle-megacorp.com',
+                'role': 'user',
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        profile = User.objects.get(username='cletus').userprofile
+        self.assertFalse(profile.onboarding_completed)
+        self.assertTrue(profile.needs_password_change)
+
+    def test_user_create_view_gates_onboarding(self):
+        self.user_login('admin')
+        self.client.post(
+            reverse('core:user:add-user'),
+            {
+                'username': 'brandine',
+                'email': 'brandine@spuckle-megacorp.com',
+                'first_name': 'Brandine',
+                'last_name': 'Spuckle',
+                'password': 'tmpPass12345',
+            },
+        )
+        profile = User.objects.get(username='brandine').userprofile
+        self.assertFalse(profile.onboarding_completed)
+        self.assertTrue(profile.needs_password_change)
+
+    def test_member_reaches_wizard_after_password_change(self):
+        self.user_login('admin')
+        self.client.post(
+            reverse('core:user:add-user'),
+            {
+                'username': 'brandine',
+                'email': 'brandine@spuckle-megacorp.com',
+                'password': 'tmpPass12345',
+            },
+        )
+        self.user_logout()
+
+        member = User.objects.get(username='brandine')
+        member.set_password('brandinebrandine')
+        member.save()
+        # Simulate the member having completed the forced password change
+        profile = member.userprofile
+        profile.needs_password_change = False
+        profile.save()
+
+        self.user_login('brandine')
+        response = self.client.get(reverse('core:dashboard'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('core:onboarding'), response['Location'])
+
+
 class ProfileWeightGoalTestCase(WgerTestCase):
     """
     Tests the personal-data / weight-goal block on the profile page

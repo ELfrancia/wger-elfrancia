@@ -525,7 +525,7 @@ class UserEditView(
         Send some additional data to the template
         """
         context = super(UserEditView, self).get_context_data(**kwargs)
-        context['title'] = _('Edit {0}'.format(self.object))
+        context['title'] = _('Edit {0}').format(self.object)
         return context
 
 
@@ -775,6 +775,7 @@ class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
         profile = user.userprofile
         profile.needs_password_change = True
+        profile.onboarding_completed = False
         profile.notification_language = load_language(translation.get_language())
 
         try:

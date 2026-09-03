@@ -452,12 +452,14 @@ class GymAddUserView(
             )
             user.first_name = form.cleaned_data['first_name']
             user.last_name = form.cleaned_data['last_name']
+            user.save()
             form.instance = user
 
             # Update profile
             user.userprofile.gym = gym
             user.userprofile.birthdate = form.cleaned_data['birthdate']
             user.userprofile.needs_password_change = True
+            user.userprofile.onboarding_completed = False
             user.userprofile.save()
 
             # Register the email with allauth so the member can log in by email
@@ -474,6 +476,8 @@ class GymAddUserView(
                 user.groups.add(Group.objects.get(name='gym_manager'))
             if 'manager' in form.cleaned_data['role']:
                 user.groups.add(Group.objects.get(name='general_gym_manager'))
+
+            self.object = user
 
             self.request.session['gym.user'] = {'user_pk': user.pk, 'password': password}
 
