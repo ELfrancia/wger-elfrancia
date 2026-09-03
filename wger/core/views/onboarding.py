@@ -16,6 +16,7 @@
 import re
 from decimal import (
     Decimal,
+    DecimalException,
     InvalidOperation,
 )
 
@@ -70,7 +71,7 @@ def onboarding(request):
                         date=timezone.localdate(),
                         defaults={'weight': weight},
                     )
-            except (InvalidOperation, ValueError, TypeError):
+            except (DecimalException, InvalidOperation, ValueError, TypeError):
                 pass
 
         # --- Height (cm) -------------------------------------------------
@@ -92,14 +93,27 @@ def onboarding(request):
         first_name = (request.POST.get('first_name') or '').strip()
         last_name = (request.POST.get('last_name') or '').strip()
         email = (request.POST.get('email') or '').strip()
+        user_dirty = False
         if first_name:
             user.first_name = first_name[:150]
+            user_dirty = True
         if last_name:
             user.last_name = last_name[:150]
+            user_dirty = True
         if email and EMAIL_RE.match(email):
             user.email = email
+            user_dirty = True
+            try:
+                from allauth.account.models import EmailAddress
+                EmailAddress.objects.update_or_create(
+                    user=user,
+                    defaults={'email': email, 'primary': True, 'verified': True},
+                )
+            except Exception:
+                pass
 
-        user.save()
+        if user_dirty:
+            user.save()
         _complete(profile)
         messages.success(request, _('Welcome! Your profile is ready.'))
         return redirect('core:dashboard')

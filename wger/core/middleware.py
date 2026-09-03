@@ -223,8 +223,8 @@ class OnboardingRequiredMiddleware(MiddlewareMixin):
 
         path_info = remove_language_code(request.path_info)
 
-        # Never redirect API calls
-        if path_info.startswith('/api/'):
+        # Never redirect API calls or PWA / static assets
+        if path_info.startswith('/api/') or path_info in {'/manifest.json', '/sw.js', '/favicon.ico'}:
             return None
 
         try:

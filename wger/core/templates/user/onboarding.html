@@ -4,7 +4,17 @@
 {% block title %}ONYX - {% translate "Completa il tuo profilo" %}{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-md mx-auto px-4 pt-2 pb-28 flex flex-col min-h-[80vh]">
+<style>
+    /* Hide floating bottom navigation dock, quick actions, notch, and header on onboarding */
+    #onyx-bottom-nav,
+    nav.fixed.bottom-\[17px\],
+    #onyx-quick-action-overlay,
+    #onyx-dynamic-notch,
+    header {
+        display: none !important;
+    }
+</style>
+<div class="w-full max-w-md mx-auto px-4 pt-6 pb-28 flex flex-col min-h-[85vh]">
 
     <!-- Header: progress + skip -->
     <div class="flex items-center justify-between mb-4">
@@ -154,7 +164,7 @@
         nextLabel.textContent = step === TOTAL ? '{% translate "Inizia" %}' : '{% translate "Continua" %}';
     }
 
-    nextBtn.addEventListener('click', function () {
+    function advance() {
         if (step < TOTAL) {
             step++;
             render();
@@ -162,7 +172,19 @@
         } else {
             form.submit();
         }
+    }
+
+    nextBtn.addEventListener('click', function () {
+        advance();
     });
+
+    form.addEventListener('submit', function (e) {
+        if (step < TOTAL) {
+            e.preventDefault();
+            advance();
+        }
+    });
+
     backBtn.addEventListener('click', function () {
         if (step > 1) { step--; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     });

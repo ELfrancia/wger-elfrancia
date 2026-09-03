@@ -686,8 +686,7 @@
         let msLeft = 0;
 
         const serverActiveUrl = "{{ active_session_url|default:'' }}";
-        const isWorkoutPage = path.includes('/day/') || !!document.querySelector('.exercise-group');
-        const hasActiveWorkout = Boolean(serverActiveUrl) || isWorkoutPage;
+        const hasActiveWorkout = Boolean(serverActiveUrl);
 
         if (raw) {
             try {
@@ -705,9 +704,7 @@
                     } else {
                         msLeft = state.remainingMs || 0;
                     }
-                    if (state.isRunning && msLeft > 0) {
-                        hasActiveRestTimer = true;
-                    } else if (msLeft <= 0 && (state.isRunning || state.hasNotifiedZero)) {
+                    if (state.isRunning || msLeft > 0 || state.hasNotifiedZero) {
                         hasActiveRestTimer = true;
                     } else {
                         hasActiveRestTimer = false;
