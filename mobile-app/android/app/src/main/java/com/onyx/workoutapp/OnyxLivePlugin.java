@@ -238,6 +238,45 @@ public class OnyxLivePlugin extends Plugin {
         }
     }
 
+    // ==========================================
+    // BACKGROUND-SURVIVAL / XIAOMI OPTIMIZATION
+    // ==========================================
+
+    @PluginMethod
+    public void isBatteryUnrestricted(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("value", DeviceCapabilities.isIgnoringBatteryOptimizations(getContext()));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestBatteryExemption(PluginCall call) {
+        Context ctx = getActivity() != null ? getActivity() : getContext();
+        boolean launched = XiaomiOptimizationGuide.requestIgnoreBatteryOptimizations(ctx);
+        JSObject ret = new JSObject();
+        ret.put("launched", launched);
+        ret.put("unrestricted", DeviceCapabilities.isIgnoringBatteryOptimizations(getContext()));
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void openXiaomiAutostart(PluginCall call) {
+        Context ctx = getActivity() != null ? getActivity() : getContext();
+        boolean ok = XiaomiOptimizationGuide.openAutostartSettings(ctx);
+        JSObject ret = new JSObject();
+        ret.put("opened", ok);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void openXiaomiBatterySaver(PluginCall call) {
+        Context ctx = getActivity() != null ? getActivity() : getContext();
+        boolean ok = XiaomiOptimizationGuide.openXiaomiBatterySaver(ctx);
+        JSObject ret = new JSObject();
+        ret.put("opened", ok);
+        call.resolve(ret);
+    }
+
     @PluginMethod
     public void getCapabilities(PluginCall call) {
         try {

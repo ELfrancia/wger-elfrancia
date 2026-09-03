@@ -205,6 +205,37 @@ public class MainActivity extends BridgeActivity {
             runOnUiThread(() -> openAppNotificationSettings());
         }
 
+        // --- Background-survival helpers (Xiaomi/HyperOS especially) ------------------
+
+        @JavascriptInterface
+        public boolean isBatteryUnrestricted() {
+            return DeviceCapabilities.isIgnoringBatteryOptimizations(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public boolean isXiaomiDevice() {
+            return DeviceCapabilities.isXiaomiHyperOs();
+        }
+
+        /** Returns true if a system screen was opened (i.e. action still needed). */
+        @JavascriptInterface
+        public boolean requestBatteryExemption() {
+            final boolean[] launched = {false};
+            runOnUiThread(() ->
+                    launched[0] = XiaomiOptimizationGuide.requestIgnoreBatteryOptimizations(MainActivity.this));
+            return launched[0];
+        }
+
+        @JavascriptInterface
+        public void openXiaomiAutostart() {
+            runOnUiThread(() -> XiaomiOptimizationGuide.openAutostartSettings(MainActivity.this));
+        }
+
+        @JavascriptInterface
+        public void openXiaomiBatterySaver() {
+            runOnUiThread(() -> XiaomiOptimizationGuide.openXiaomiBatterySaver(MainActivity.this));
+        }
+
         @JavascriptInterface
         public boolean areNotificationsEnabled() {
             try {
@@ -471,17 +502,10 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void requestBatteryOptimizationExemption() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
-                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                    intent.setData(android.net.Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error requesting battery optimization exemption: " + e.getMessage());
-            }
+        try {
+            XiaomiOptimizationGuide.requestIgnoreBatteryOptimizations(this);
+        } catch (Exception e) {
+            Log.e(TAG, "Error requesting battery optimization exemption: " + e.getMessage());
         }
     }
 
