@@ -860,6 +860,9 @@
         if (overlay) {
             overlay.classList.remove('bg-[#caf300]');
             overlay.classList.add('bg-[#08090A]');
+            // The overlay carries an inline background-color that would override the
+            // Tailwind classes above, so reset it explicitly too.
+            overlay.style.backgroundColor = '#08090A';
         }
         if (overlayTimerDisplay) {
             overlayTimerDisplay.classList.add('text-[#caf300]');
@@ -899,6 +902,9 @@
             if (overlay) {
                 overlay.classList.remove('bg-[#08090A]');
                 overlay.classList.add('bg-[#caf300]');
+                // Inline background-color set on the element wins over the Tailwind
+                // class, so switch it directly to keep the "Tempo Scaduto" screen yellow.
+                overlay.style.backgroundColor = '#caf300';
             }
             if (overlayTimerDisplay) {
                 overlayTimerDisplay.classList.remove('text-[#caf300]');
