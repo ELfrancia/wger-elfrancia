@@ -86,6 +86,13 @@ public class OnyxLiveService extends Service {
     private int[] slotBoundaries = null;
     private long workoutStartedAt = 0;
 
+    /** Tracks whether an ongoing promoted notification (1001 rest timer or 1003 workout progress) is actively posted. */
+    public static volatile boolean hasActiveOngoingNotification = false;
+
+    public static boolean hasActiveOngoingNotification() {
+        return hasActiveOngoingNotification;
+    }
+
     private Bitmap appIconBitmap;
 
     @Override
@@ -378,6 +385,8 @@ public class OnyxLiveService extends Service {
     private synchronized void updateForegroundState() {
         if (notificationManager == null) return;
 
+        hasActiveOngoingNotification = isWorkoutActive || isTimerRunning;
+
         try {
             if (isWorkoutActive) {
                 Notification workoutNotification = IslandNotificationFactory.buildWorkoutNotification(
@@ -439,6 +448,7 @@ public class OnyxLiveService extends Service {
         }
         isTimerRunning = false;
         isPaused = false;
+        hasActiveOngoingNotification = isWorkoutActive;
 
         if (notificationManager != null) {
             try {
@@ -509,6 +519,8 @@ public class OnyxLiveService extends Service {
                 return;
             }
 
+            isAlarmPlaying = true;
+
             if ("gong".equalsIgnoreCase(customSoundUri) ||
                 "boxing".equalsIgnoreCase(customSoundUri) ||
                 "whistle".equalsIgnoreCase(customSoundUri) ||
@@ -545,9 +557,12 @@ public class OnyxLiveService extends Service {
             mediaPlayer.setLooping(true);
             mediaPlayer.prepare();
             mediaPlayer.start();
-            isAlarmPlaying = true;
         } catch (Exception e) {
             Log.e(TAG, "Error playing alarm sound: " + e.getMessage(), e);
+            try {
+                isAlarmPlaying = true;
+                playSynthesizedTone("beep");
+            } catch (Exception ignored) {}
         }
     }
 
@@ -712,6 +727,7 @@ public class OnyxLiveService extends Service {
     }
 
     private synchronized void stopAllAndService() {
+        hasActiveOngoingNotification = false;
         isTimerRunning = false;
         isPaused = false;
         isWorkoutActive = false;

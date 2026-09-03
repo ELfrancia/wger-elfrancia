@@ -1,8 +1,10 @@
 package com.onyx.workoutapp;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.service.notification.StatusBarNotification;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -215,6 +217,30 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public boolean canPostPromotedNotifications() {
             return DeviceCapabilities.canPromoteOngoing(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public boolean hasActiveOngoingNotification() {
+            try {
+                if (OnyxLiveService.hasActiveOngoingNotification()) {
+                    return true;
+                }
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) {
+                    StatusBarNotification[] active = nm.getActiveNotifications();
+                    if (active != null) {
+                        for (StatusBarNotification sbn : active) {
+                            int id = sbn.getId();
+                            if ((id == IslandNotificationFactory.NOTIFICATION_ID_TIMER || id == IslandNotificationFactory.NOTIFICATION_ID_WORKOUT) && sbn.isOngoing()) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "hasActiveOngoingNotification error: " + t.getMessage());
+            }
+            return false;
         }
 
         @JavascriptInterface

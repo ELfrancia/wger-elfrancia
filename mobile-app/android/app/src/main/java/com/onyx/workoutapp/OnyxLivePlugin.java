@@ -1,8 +1,10 @@
 package com.onyx.workoutapp;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.service.notification.StatusBarNotification;
 import android.util.Log;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -248,6 +250,31 @@ public class OnyxLivePlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Failed to query device capabilities: " + e.getMessage(), e);
         }
+    }
+
+    @PluginMethod
+    public void hasActiveOngoingNotification(PluginCall call) {
+        JSObject ret = new JSObject();
+        boolean active = OnyxLiveService.hasActiveOngoingNotification();
+        if (!active) {
+            try {
+                NotificationManager nm = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) {
+                    StatusBarNotification[] notifications = nm.getActiveNotifications();
+                    if (notifications != null) {
+                        for (StatusBarNotification sbn : notifications) {
+                            int id = sbn.getId();
+                            if ((id == IslandNotificationFactory.NOTIFICATION_ID_TIMER || id == IslandNotificationFactory.NOTIFICATION_ID_WORKOUT) && sbn.isOngoing()) {
+                                active = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+        ret.put("value", active);
+        call.resolve(ret);
     }
 
     private void startLiveService(Context context, Intent intent) {
