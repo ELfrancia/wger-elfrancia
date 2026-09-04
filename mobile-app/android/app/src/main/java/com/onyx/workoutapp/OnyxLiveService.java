@@ -154,6 +154,20 @@ public class OnyxLiveService extends Service {
         boolean redelivered = (flags & START_FLAG_REDELIVERY) != 0;
         String action = intent != null ? intent.getAction() : null;
 
+        // A cold-recreated service (process killed by the OS, e.g. after the app is
+        // swiped away on HyperOS) has every state field at its Java default. Restore the
+        // persisted snapshot BEFORE ensureForegroundAnchor() picks what to post: doing the
+        // restore AFTER (the old order) meant the very first startForeground() frame of
+        // this service's lifecycle was always the silent, colorless buildMinimalAnchor(),
+        // with the real (colorized/promoted) notification following a few ms later in the
+        // same onStartCommand(). HyperOS's Super Island latches onto that first frame and
+        // never picks up the same-cycle switch to a different notification id, leaving a
+        // permanent empty black pill instead of the lime "TEMPO SCADUTO" card.
+        if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying
+                && (redelivered || action == null || ACTION_ALARM_BACKUP.equals(action))) {
+            restoreStateFromPrefs();
+        }
+
         // Satisfy the startForeground() obligation IMMEDIATELY, before any work or early
         // return. A cold-recreated service handed a notification action (PAUSE / RESUME /
         // +30s / STOP_ALARM) has all state fields at defaults, so the action handlers below
@@ -167,9 +181,9 @@ public class OnyxLiveService extends Service {
             // delivers null. Either way the carried action is stale — rebuild from the
             // persisted snapshot instead of replaying it.
             Log.d(TAG, "OnyxLiveService onStartCommand: restart (redelivered=" + redelivered + ", action=" + action + ")");
-            if (restoreStateFromPrefs()) {
-                resumeFromRestoredState();
-            }
+            // State was already restored above (before ensureForegroundAnchor); resume
+            // timers / notifications from it now. A no-op if nothing was persisted.
+            resumeFromRestoredState();
             if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
                 stopAllAndService();
                 return START_NOT_STICKY;
@@ -244,7 +258,18 @@ public class OnyxLiveService extends Service {
 
     private void ensureForegroundAnchor() {
         try {
-            if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
+            if (isTimerRunning && !isPaused && targetEndTimeMs > 0
+                    && targetEndTimeMs <= System.currentTimeMillis()) {
+                // Restored state shows the rest window already elapsed while the service
+                // was dead (cold start via ACTION_ALARM_BACKUP or a plain OEM-kill
+                // restart). Skip straight to the alarm-fired state so the very FIRST
+                // startForeground() call of this lifecycle already posts the real
+                // colorized/promoted "TEMPO SCADUTO" notification instead of a stale
+                // countdown card or the silent minimal anchor.
+                isTimerRunning = false;
+                acquireWakeLock();
+                triggerTimerFinishedAlarm();
+            } else if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
                 updateForegroundState();
             } else {
                 postAsForegroundAnchor(NOTIFICATION_ID_ANCHOR, IslandNotificationFactory.buildMinimalAnchor(this));
