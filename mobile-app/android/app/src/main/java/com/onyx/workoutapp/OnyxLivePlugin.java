@@ -152,6 +152,61 @@ public class OnyxLivePlugin extends Plugin {
         }
     }
 
+    /**
+     * Unconditional teardown: timer, alarm, workout island, all three notification ids,
+     * the exact-alarm backup and persisted state — regardless of what's currently
+     * running. Idempotent by design (see OnyxLiveService.ACTION_STOP_ALL); the web calls
+     * this from both the workout-finish path and session reconciliation, so it is
+     * expected to arrive more than once for the same teardown.
+     */
+    @PluginMethod
+    public void stopAll(PluginCall call) {
+        try {
+            Context context = getContext();
+            Intent serviceIntent = new Intent(context, OnyxLiveService.class);
+            serviceIntent.setAction(OnyxLiveService.ACTION_STOP_ALL);
+            startLiveService(context, serviceIntent);
+            call.resolve();
+        } catch (Exception e) {
+            Log.e(TAG, "OnyxLivePlugin failed to stop all: " + e.getMessage(), e);
+            call.reject("Failed to stop all: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Real timer state read synchronously from OnyxLiveService's static mirror — lets the
+     * web resync its own countdown to the actual deadline (source of truth) after a
+     * resume instead of trusting localStorage, which can drift or be stale.
+     */
+    @PluginMethod
+    public void getTimerState(PluginCall call) {
+        JSObject ret = new JSObject();
+        boolean running = OnyxLiveService.sTimerRunning;
+        boolean paused = OnyxLiveService.sPaused;
+        ret.put("isRunning", running);
+        ret.put("isPaused", running && paused);
+        ret.put("isWorkoutActive", OnyxLiveService.sWorkoutActive);
+        if (running) {
+            if (!paused) {
+                long remainingMs = Math.max(0L, OnyxLiveService.sTargetEndTimeMs - System.currentTimeMillis());
+                ret.put("deadlineEpochMs", OnyxLiveService.sTargetEndTimeMs);
+                ret.put("remainingSeconds", (int) Math.ceil(remainingMs / 1000.0));
+            } else {
+                // Paused: there is no live deadline to resync against, only a frozen
+                // remaining duration.
+                ret.put("deadlineEpochMs", JSObject.NULL);
+                ret.put("remainingSeconds", (int) Math.ceil(OnyxLiveService.sRemainingTimeMs / 1000.0));
+            }
+            if (OnyxLiveService.sTitle != null) {
+                ret.put("title", OnyxLiveService.sTitle);
+            }
+        } else {
+            ret.put("deadlineEpochMs", JSObject.NULL);
+            ret.put("remainingSeconds", JSObject.NULL);
+        }
+        call.resolve(ret);
+    }
+
 
     // ==========================================
     // WORKOUT ISLAND METHODS (Android 16 / HyperOS)
@@ -215,7 +270,7 @@ public class OnyxLivePlugin extends Plugin {
         }
 
         try {
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to update workout island: " + e.getMessage(), e);
@@ -230,7 +285,7 @@ public class OnyxLivePlugin extends Plugin {
             Context context = getContext();
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(OnyxLiveService.ACTION_WORKOUT_STOP);
-            context.startService(serviceIntent);
+            startLiveService(context, serviceIntent);
             call.resolve();
         } catch (Exception e) {
             Log.e(TAG, "OnyxLivePlugin failed to stop workout island: " + e.getMessage(), e);

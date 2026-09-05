@@ -37,17 +37,25 @@ public class MainActivity extends BridgeActivity {
     public class AndroidTimerBridge {
         @JavascriptInterface
         public void startWorkout(String title, long startTimestampMs) {
-            Log.d(TAG, "AndroidTimer.startWorkout called: " + title);
+            // Legacy 2-arg entry point (no set count yet available to the caller) — the
+            // island starts and shows "0/total" until the first updateProgress call.
+            // Prefer startWorkout(title, startTimestampMs, totalSets, completedSets) when
+            // the caller already knows the counts (see log_tailwind.html's
+            // initOnyxWorkoutIsland, which computes them from the DOM before this call).
+            startWorkoutWithProgress(title, startTimestampMs, 0, 0);
+        }
+
+        @JavascriptInterface
+        public void startWorkoutWithProgress(String title, long startTimestampMs, int totalSets, int completedSets) {
+            Log.d(TAG, "AndroidTimer.startWorkout called: " + title + " (" + completedSets + "/" + totalSets + ")");
             try {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_WORKOUT_START);
                 serviceIntent.putExtra(OnyxLiveService.EXTRA_TITLE, (title != null && !title.isEmpty()) ? title : "Sessione di Allenamento");
                 serviceIntent.putExtra(OnyxLiveService.EXTRA_STARTED_AT, startTimestampMs > 0 ? startTimestampMs : System.currentTimeMillis());
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent);
-                } else {
-                    startService(serviceIntent);
-                }
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_TOTAL_SETS, Math.max(0, totalSets));
+                serviceIntent.putExtra(OnyxLiveService.EXTRA_COMPLETED_SETS, Math.max(0, completedSets));
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error starting workout in OnyxLiveService: " + e.getMessage(), e);
             }
@@ -59,9 +67,64 @@ public class MainActivity extends BridgeActivity {
             try {
                 Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
                 serviceIntent.setAction(OnyxLiveService.ACTION_WORKOUT_STOP);
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error stopping workout in OnyxLiveService: " + e.getMessage(), e);
+            }
+        }
+
+        /**
+         * Unconditional teardown regardless of current state — see
+         * OnyxLiveService.ACTION_STOP_ALL. Called from the web's session-finish path and
+         * from server-truth reconciliation; safe (and expected) to arrive twice.
+         */
+        @JavascriptInterface
+        public void stopAll() {
+            Log.d(TAG, "AndroidTimer.stopAll called");
+            try {
+                Intent serviceIntent = new Intent(MainActivity.this, OnyxLiveService.class);
+                serviceIntent.setAction(OnyxLiveService.ACTION_STOP_ALL);
+                safeStartService(serviceIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "Error in stopAll: " + e.getMessage(), e);
+            }
+        }
+
+        /**
+         * Synchronous real-timer-state read for the web to resync against after a
+         * resume, instead of trusting its own localStorage. JavascriptInterface methods
+         * can't return a Promise-friendly object, so this returns a JSON string —
+         * callers do JSON.parse(window.AndroidTimer.getTimerState()).
+         */
+        @JavascriptInterface
+        public String getTimerState() {
+            try {
+                org.json.JSONObject ret = new org.json.JSONObject();
+                boolean running = OnyxLiveService.sTimerRunning;
+                boolean paused = OnyxLiveService.sPaused;
+                ret.put("isRunning", running);
+                ret.put("isPaused", running && paused);
+                ret.put("isWorkoutActive", OnyxLiveService.sWorkoutActive);
+                if (running) {
+                    if (!paused) {
+                        long remainingMs = Math.max(0L, OnyxLiveService.sTargetEndTimeMs - System.currentTimeMillis());
+                        ret.put("deadlineEpochMs", OnyxLiveService.sTargetEndTimeMs);
+                        ret.put("remainingSeconds", (int) Math.ceil(remainingMs / 1000.0));
+                    } else {
+                        ret.put("deadlineEpochMs", org.json.JSONObject.NULL);
+                        ret.put("remainingSeconds", (int) Math.ceil(OnyxLiveService.sRemainingTimeMs / 1000.0));
+                    }
+                    if (OnyxLiveService.sTitle != null) {
+                        ret.put("title", OnyxLiveService.sTitle);
+                    }
+                } else {
+                    ret.put("deadlineEpochMs", org.json.JSONObject.NULL);
+                    ret.put("remainingSeconds", org.json.JSONObject.NULL);
+                }
+                return ret.toString();
+            } catch (Exception e) {
+                Log.e(TAG, "getTimerState failed: " + e.getMessage(), e);
+                return "{\"isRunning\":false,\"isPaused\":false,\"isWorkoutActive\":false,\"deadlineEpochMs\":null,\"remainingSeconds\":null}";
             }
         }
 
@@ -81,7 +144,7 @@ public class MainActivity extends BridgeActivity {
                 if (currentExercise != null && !currentExercise.isEmpty()) {
                     serviceIntent.putExtra(OnyxLiveService.EXTRA_CURRENT_EXERCISE, currentExercise);
                 }
-                startService(serviceIntent);
+                safeStartService(serviceIntent);
             } catch (Exception e) {
                 Log.e(TAG, "Error updating workout progress in OnyxLiveService: " + e.getMessage(), e);
             }

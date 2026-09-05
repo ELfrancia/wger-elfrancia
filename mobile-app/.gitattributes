@@ -1,0 +1,4 @@
+# Bundled alarm audio (res/raw) — never line-ending-normalise these.
+*.ogg binary
+*.mp3 binary
+*.wav binary
