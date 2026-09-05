@@ -19,10 +19,20 @@ android {
     signingConfigs {
         release {
             def keystorePropsFile = rootProject.file('keystore.properties')
+            if (!keystorePropsFile.exists()) {
+                keystorePropsFile = file('keystore.properties')
+            }
             if (keystorePropsFile.exists()) {
                 def props = new Properties()
                 keystorePropsFile.withInputStream { stream -> props.load(stream) }
-                storeFile rootProject.file(props['storeFile'])
+                def storeFilePath = props['storeFile']
+                if (storeFilePath) {
+                    def storeFileObj = rootProject.file(storeFilePath)
+                    if (!storeFileObj.exists()) {
+                        storeFileObj = file(storeFilePath)
+                    }
+                    storeFile storeFileObj
+                }
                 storePassword props['storePassword']
                 keyAlias props['keyAlias']
                 keyPassword props['keyPassword']
@@ -37,9 +47,60 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             def keystorePropsFile = rootProject.file('keystore.properties')
+            if (!keystorePropsFile.exists()) {
+                keystorePropsFile = file('keystore.properties')
+            }
             if (keystorePropsFile.exists()) {
                 signingConfig signingConfigs.release
             }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def isReleasePackagingRequested = taskGraph.allTasks.any { task ->
+        task.name in ['packageRelease', 'packageReleaseBundle', 'assembleRelease', 'bundleRelease']
+    }
+    if (isReleasePackagingRequested) {
+        def keystorePropsFile = rootProject.file('keystore.properties')
+        if (!keystorePropsFile.exists()) {
+            keystorePropsFile = file('keystore.properties')
+        }
+        if (!keystorePropsFile.exists()) {
+            throw new GradleException(
+                "\n================================================================================\n" +
+                "[ERRORE FIRMA RELEASE ONYX]\n" +
+                "Impossibile compilare la release: 'keystore.properties' non trovato!\n\n" +
+                "Per produrre una release firmata (APK/AAB):\n" +
+                "1. Genera il keystore con keytool (se non lo hai gia' fatto):\n" +
+                "   keytool -genkeypair -v -keystore onyx-release-key.jks -alias onyx-release-key -keyalg RSA -keysize 2048 -validity 10000\n" +
+                "2. Copia 'mobile-app/android/keystore.properties.example' in 'mobile-app/android/keystore.properties'\n" +
+                "3. Inserisci in 'keystore.properties' il percorso del file keystore (.jks) e le password scelte.\n" +
+                "Dettagli completi in: ISLAND_REMEDIATION_REPORT.md (Sezione 4)\n" +
+                "================================================================================\n"
+            )
+        }
+        def props = new Properties()
+        keystorePropsFile.withInputStream { stream -> props.load(stream) }
+        def storePath = props['storeFile']
+        if (!storePath) {
+            throw new GradleException(
+                "\n[ERRORE FIRMA RELEASE ONYX] Il campo 'storeFile' e' mancante o vuoto in: ${keystorePropsFile.absolutePath}\n"
+            )
+        }
+        def keyFile = rootProject.file(storePath)
+        if (!keyFile.exists()) {
+            keyFile = file(storePath)
+        }
+        if (!keyFile.exists()) {
+            throw new GradleException(
+                "\n================================================================================\n" +
+                "[ERRORE FIRMA RELEASE ONYX]\n" +
+                "Il file keystore specificato in 'storeFile' non esiste!\n" +
+                "Percorso cercato: ${keyFile.absolutePath}\n" +
+                "Verifica il percorso in ${keystorePropsFile.absolutePath} o genera il keystore.\n" +
+                "================================================================================\n"
+            )
         }
     }
 }
