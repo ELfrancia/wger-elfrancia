@@ -27,6 +27,7 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from jwt.algorithms import RSAAlgorithm
 
 # wger
+from wger.utils.cache import build_cache_key_prefix
 from wger.utils.constants import DOWNLOAD_INGREDIENT_WGER
 from wger.version import get_version
 
@@ -424,11 +425,19 @@ LOGGING = {
 #
 # Cache
 #
+# Every cache key is namespaced with the application version (see
+# wger.utils.cache.build_cache_key_prefix). A deploy therefore starts from a
+# logically empty cache and can never read back a payload written by an older
+# serializer. Keep this KEY_PREFIX on every backend defined further down the
+# settings chain (local_dev.py, main.py).
+CACHE_KEY_PREFIX = build_cache_key_prefix()
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'wger-cache',
         'TIMEOUT': 30 * 24 * 60 * 60,  # Cache for a month
+        'KEY_PREFIX': CACHE_KEY_PREFIX,
         'OPTIONS': {
             'MAX_ENTRIES': 10000,
             'CULL_FREQUENCY': 0,

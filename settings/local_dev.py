@@ -74,7 +74,6 @@ AXES_ENABLED = False
 AXES_HANDLER = 'axes.handlers.database.AxesDatabaseHandler'
 
 
-
 # Does not really cache anything
 CACHES_DUMMY = {
     'default': {
@@ -83,31 +82,52 @@ CACHES_DUMMY = {
     }
 }
 
-# High-performance in-memory cache, resets when the server restarts
+# In-memory cache. Fast, but *per process*: with several gunicorn workers each
+# one keeps its own copy and an invalidation done by one worker does not reach
+# the others. Only use it for a single process runserver.
 CACHE_LOCMEM = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'wger-cache',
         'TIMEOUT': 86400,
+        'KEY_PREFIX': CACHE_KEY_PREFIX,
         'OPTIONS': {
             'MAX_ENTRIES': 10000,
             'CULL_FREQUENCY': 0,
-        }
+        },
     }
 }
 
-# Redis cache
+# Shared cache, the only correct choice as soon as more than one process serves
+# requests (gunicorn workers, celery, management commands).
+#
+# IGNORE_EXCEPTIONS makes django_redis return a cache miss instead of raising
+# when redis is unreachable: the site keeps working (slower) rather than
+# returning 500s. Ignored errors are logged.
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/1')
+
 CACHE_REDIS = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://localhost:6379/1',
-        'TIMEOUT': 5000,
-        'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+        'LOCATION': REDIS_URL,
+        'TIMEOUT': 86400,
+        'KEY_PREFIX': CACHE_KEY_PREFIX,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'IGNORE_EXCEPTIONS': True,
+            'SOCKET_CONNECT_TIMEOUT': 2,
+            'SOCKET_TIMEOUT': 2,
+        },
     }
 }
 
+DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 
-# Use Redis if environment variable set, else high-capacity LocMemCache
+# Use Redis when asked for, else the per-process LocMemCache.
+#
+# Keep USE_REDIS=false when running a single process (manage.py runserver);
+# set it to true whenever gunicorn runs with more than one worker, otherwise
+# the cache silently splits per worker and invalidation stops working.
 if os.environ.get('USE_REDIS', 'false').lower() == 'true':
     CACHES = CACHE_REDIS
 else:
@@ -142,7 +162,7 @@ DBCONFIG_SQLITE = {
     'NAME': os.environ.get('DJANGO_DB_DATABASE', BASE_DIR.parent / 'database.sqlite'),
     'OPTIONS': {
         'timeout': 20,
-    }
+    },
 }
 
 DATABASES = {
@@ -161,6 +181,7 @@ except ImportError:
 from django.db.backends.signals import connection_created
 from django.dispatch import receiver
 
+
 @receiver(connection_created)
 def configure_sqlite(sender, connection, **kwargs):
     if connection.vendor == 'sqlite':
@@ -171,5 +192,3 @@ def configure_sqlite(sender, connection, **kwargs):
         cursor.execute('PRAGMA temp_store = MEMORY;')
         cursor.execute('PRAGMA mmap_size = 268435456;')
         cursor.execute('PRAGMA busy_timeout = 20000;')
-
-

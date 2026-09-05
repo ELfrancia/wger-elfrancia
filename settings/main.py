@@ -220,6 +220,8 @@ if os.environ.get('DJANGO_CACHE_BACKEND'):
             'BACKEND': env.str('DJANGO_CACHE_BACKEND'),
             'LOCATION': env.str('DJANGO_CACHE_LOCATION', ''),
             'TIMEOUT': env.int('DJANGO_CACHE_TIMEOUT', 86400),
+            # Namespaced by application version, see settings_global.py
+            'KEY_PREFIX': CACHE_KEY_PREFIX,
             'OPTIONS': {
                 'MAX_ENTRIES': 10000,
                 'CULL_FREQUENCY': 0,
@@ -249,6 +251,13 @@ if os.environ.get('DJANGO_CACHE_BACKEND'):
 
     if CONNECTION_POOL_KWARGS:
         CACHES['default']['OPTIONS']['CONNECTION_POOL_KWARGS'] = CONNECTION_POOL_KWARGS
+
+    # Keep serving (slower) instead of returning 500s when redis is down
+    if client_class:
+        CACHES['default']['OPTIONS'].setdefault('IGNORE_EXCEPTIONS', True)
+        CACHES['default']['OPTIONS'].setdefault('SOCKET_CONNECT_TIMEOUT', 2)
+        CACHES['default']['OPTIONS'].setdefault('SOCKET_TIMEOUT', 2)
+        DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 
 
 #

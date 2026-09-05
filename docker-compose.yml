@@ -10,8 +10,46 @@ services:
       - /app/node_modules
     env_file:
       - .env
+    environment:
+      # Where the shared cache lives. Whether it is actually used is decided by
+      # USE_REDIS in .env (settings/local_dev.py) or by DJANGO_CACHE_BACKEND
+      # (settings/main.py).
+      REDIS_URL: redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
     entrypoint: ["sh", "/app/docker-entrypoint.sh"]
     command: gunicorn wger.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2
 
+  redis:
+    image: redis:7-alpine
+    container_name: workout_redis
+    restart: unless-stopped
+    # Gunicorn runs 4 worker processes. An in-process cache (LocMemCache) is
+    # not shared between them, so each worker keeps its own copy and an
+    # invalidation done by one worker never reaches the other three: a newly
+    # created exercise shows up on some requests and not on others. Redis is
+    # the shared store that makes the cache and its invalidation global.
+    #
+    # Bounded memory with LRU eviction: the cache is disposable, losing an
+    # entry only costs a rebuild. Light RDB snapshots so a container restart
+    # does not force a full cold rebuild.
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly no
+      --save 60 1000
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    expose:
+      - "6379"
 
-
+volumes:
+  redis_data:
