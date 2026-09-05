@@ -20,7 +20,6 @@ from uuid import UUID
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Prefetch
-from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
 # Third Party
@@ -67,6 +66,29 @@ from wger.exercises.views.helper import StreamVerbs
 from wger.utils.cache import CacheKeyMapper
 
 
+class ExerciseGenerationCachePageMixin:
+    """
+    cache_page() for endpoints whose content depends on the exercise data.
+
+    A plain @cache_page stores the whole HTTP response under a key built from
+    the URL and the request headers. There is one entry per filter, ordering,
+    page and Accept-Language combination, so they cannot be enumerated and
+    deleted when the underlying data changes: with a TTL of weeks, editing an
+    exercise left these endpoints answering with the old payload for weeks.
+
+    Passing the current exercise generation as the cache_page key_prefix makes
+    every previously stored response unreachable as soon as anything about an
+    exercise changes, without needing wildcard deletes from the cache backend.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        decorated = cache_page(
+            settings.WGER_SETTINGS['EXERCISE_CACHE_TTL'],
+            key_prefix=CacheKeyMapper.get_exercise_collection_prefix(),
+        )(super().dispatch)
+        return decorated(request, *args, **kwargs)
+
+
 class ExerciseViewSet(ModelViewSet):
     """
     API endpoint for exercise objects.
@@ -74,7 +96,14 @@ class ExerciseViewSet(ModelViewSet):
     For a read-only endpoint with all the information of an exercise, see /api/v2/exerciseinfo/
     """
 
-    queryset = Exercise.with_translations.all()
+    # The m2m fields below are serialized as lists of primary keys. Without the
+    # prefetch each exercise costs three extra queries: listing 100 exercises
+    # took 308 queries, it now takes 8.
+    queryset = Exercise.with_translations.prefetch_related(
+        'muscles',
+        'muscles_secondary',
+        'equipment',
+    )
     serializer_class = ExerciseSerializer
     permission_classes = (CanContributeExercises,)
     throttle_classes = (CreateScopedRateThrottle,)
@@ -293,7 +322,7 @@ class ExerciseSubmissionViewSet(CreateAPIView):
     throttle_scope = 'exercise_create'
 
 
-class EquipmentViewSet(viewsets.ReadOnlyModelViewSet):
+class EquipmentViewSet(ExerciseGenerationCachePageMixin, viewsets.ReadOnlyModelViewSet):
     """
     API endpoint for equipment objects
     """
@@ -302,10 +331,6 @@ class EquipmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = EquipmentSerializer
     ordering_fields = '__all__'
     filterset_fields = ('name',)
-
-    @method_decorator(cache_page(settings.WGER_SETTINGS['EXERCISE_CACHE_TTL']))
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
 
 class DeletionLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -323,7 +348,7 @@ class DeletionLogViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ('model_type',)
 
 
-class ExerciseCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class ExerciseCategoryViewSet(ExerciseGenerationCachePageMixin, viewsets.ReadOnlyModelViewSet):
     """
     API endpoint for exercise categories objects
     """
@@ -333,12 +358,8 @@ class ExerciseCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = '__all__'
     filterset_fields = ('name',)
 
-    @method_decorator(cache_page(settings.WGER_SETTINGS['EXERCISE_CACHE_TTL']))
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
-
-class ExerciseImageViewSet(ModelViewSet):
+class ExerciseImageViewSet(ExerciseGenerationCachePageMixin, ModelViewSet):
     """
     API endpoint for exercise image objects
     """
@@ -353,10 +374,6 @@ class ExerciseImageViewSet(ModelViewSet):
         'license',
         'license_author',
     )
-
-    @method_decorator(cache_page(settings.WGER_SETTINGS['EXERCISE_CACHE_TTL']))
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
     @action(detail=True)
     def thumbnails(self, request, pk):
@@ -513,7 +530,7 @@ class ExerciseAliasViewSet(ModelViewSet):
         )
 
 
-class MuscleViewSet(viewsets.ReadOnlyModelViewSet):
+class MuscleViewSet(ExerciseGenerationCachePageMixin, viewsets.ReadOnlyModelViewSet):
     """
     API endpoint for muscle objects
     """
@@ -522,7 +539,3 @@ class MuscleViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MuscleSerializer
     ordering_fields = '__all__'
     filterset_fields = ('name', 'is_front', 'name_en')
-
-    @method_decorator(cache_page(settings.WGER_SETTINGS['EXERCISE_CACHE_TTL']))
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)

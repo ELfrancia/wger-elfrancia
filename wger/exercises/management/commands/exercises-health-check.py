@@ -23,6 +23,7 @@ from django.db.models import Count
 # wger
 from wger.core.models import Language
 from wger.exercises.models import Exercise
+from wger.utils.cache import reset_exercise_api_cache_many
 from wger.utils.constants import ENGLISH_SHORT_NAME
 
 
@@ -136,7 +137,11 @@ class Command(BaseCommand):
                 )
             )
             if delete:
-                Exercise.objects.filter(variation_group=group['variation_group']).update(
-                    variation_group=None
-                )
+                affected = Exercise.objects.filter(variation_group=group['variation_group'])
+                # queryset.update() emits no signals, so the cached payloads
+                # (variation_group is one of the serialized fields) have to be
+                # invalidated by hand
+                uuids = list(affected.values_list('uuid', flat=True))
+                affected.update(variation_group=None)
+                reset_exercise_api_cache_many(uuids)
                 self.stdout.write('  -> cleaned up')
