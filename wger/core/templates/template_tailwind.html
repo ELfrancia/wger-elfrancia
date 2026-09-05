@@ -22,22 +22,12 @@
     <!-- High-Performance Resource Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
     <link rel="dns-prefetch" href="https://unpkg.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-    <script>
-      (function() {
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-          if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
-          origWarn.apply(console, args);
-        };
-      })();
-    </script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="{% static 'css/tailwind-compiled.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -48,7 +38,7 @@
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=10').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=11').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {
@@ -71,32 +61,6 @@
       // Fullscreen mode disabled: Native status bar and Dynamic Island remain visible
       function toggleAppFullscreen() {}
       window.updateFullscreenUI = function() {};
-
-
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              background: "#08090A", // Premium absolute dark
-              surface: "#101114", // Solid card background
-              "surface-card": "#16171A",
-              "surface-container": "#1D1E22",
-              "surface-container-low": "#161616",
-              "surface-container-high": "#262626",
-              "surface-container-highest": "#333333",
-              primary: "#caf300", // Onyx Lime Green
-              "on-primary": "#000000",
-              secondary: "#94A3B8", // Slate 400
-              outline: "#222429"
-            },
-            fontFamily: {
-              sans: ["Inter", "sans-serif"],
-              display: ["Outfit", "sans-serif"]
-            }
-          }
-        }
-      }
     </script>
     <style>
       html, body {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onyx-cache-v10';
+const CACHE_NAME = 'onyx-cache-v11';
 const STATIC_ASSETS = [
   '/static/images/logos/logo-192.png',
   '/static/images/logos/logo-512.png',
@@ -7,7 +7,7 @@ const STATIC_ASSETS = [
   '/static/audio/beep.mp3',
   '/static/audio/whistle.mp3',
   '/static/audio/alarm.mp3',
-  'https://cdn.tailwindcss.com?plugins=forms,container-queries',
+  '/static/css/tailwind-compiled.css',
   'https://unpkg.com/htmx.org@1.9.10',
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block',
