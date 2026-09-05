@@ -1683,6 +1683,43 @@
                             window.AndroidTimer.stopWorkout();
                         }
                     } catch(e) {}
+                },
+                stopTimer() {
+                    if (window._suppressNativeTimerCall) return;
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
+                            window.AndroidTimer.stopTimer();
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopTimer === 'function') {
+                            window.Capacitor.Plugins.WorkoutTimer.stopTimer();
+                        }
+                    } catch(e) {}
+                },
+                stopAlarm() {
+                    try {
+                        if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
+                            window.AndroidTimer.stopAlarm();
+                        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopAlarm === 'function') {
+                            window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
+                        }
+                    } catch(e) {}
+                },
+                stopAll() {
+                    if (window.AndroidTimer && typeof window.AndroidTimer.stopAll === 'function') {
+                        try {
+                            window.AndroidTimer.stopAll();
+                            return Promise.resolve();
+                        } catch(e) {
+                            return Promise.resolve();
+                        }
+                    }
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopAll === 'function') {
+                        try {
+                            return window.Capacitor.Plugins.WorkoutTimer.stopAll();
+                        } catch(e) {
+                            return Promise.resolve();
+                        }
+                    }
+                    return Promise.resolve();
                 }
             };
         }

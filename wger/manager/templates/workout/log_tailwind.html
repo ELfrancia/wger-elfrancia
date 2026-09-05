@@ -2955,18 +2955,22 @@
     // local state alone - on load and every time the app/tab comes back to
     // the foreground, since that's exactly when a stale background state is
     // most likely to have gone unnoticed.
-    function stopAllNativeLiveActivity() {
+    async function stopAllNativeLiveActivity() {
+        if (window.AndroidTimer && typeof window.AndroidTimer.stopAll === 'function') {
+            try {
+                window.AndroidTimer.stopAll();
+                return;
+            } catch (e) {}
+        }
         try {
             if (typeof onyxNative.stopAll === 'function') {
-                onyxNative.stopAll();
-                return;
+                return await onyxNative.stopAll();
             }
         } catch (e) {}
         // Fallback until the native side exposes a single stop-all: best-effort
         // stop every live activity individually.
         try { if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop(); } catch (e) {}
-        try { if (typeof onyxNative.stopTimer === 'function') onyxNative.stopTimer(); } catch (e) {}
-        try { if (typeof onyxNative.stopAlarm === 'function') onyxNative.stopAlarm(); } catch (e) {}
+        try { if (onyxNative && onyxNative.restStop) onyxNative.restStop(); } catch (e) {}
     }
 
     async function reconcileWorkoutSessionWithServer() {
@@ -3023,7 +3027,7 @@
                 if (restIsLive) {
                     stopNativeWorkoutIslandOnly();
                 } else {
-                    stopAllNativeLiveActivity();
+                    await stopAllNativeLiveActivity();
                 }
             }
         } catch (e) {}
@@ -3077,13 +3081,34 @@
                 'X-CSRFToken': csrf,
                 'HX-Request': 'true'
             }
-        }).then(resp => {
+        }).then(async resp => {
             if (resp.ok) {
                 // Only now that the server has confirmed the session is closed
                 // is it safe to drop local state and tear down all native activity.
                 clearOnyxWorkoutClientState();
-                stopAllNativeLiveActivity();
-                window.location.href = resp.headers.get('HX-Redirect') || "{% url 'weight:overview' %}";
+                const redirectUrl = resp.headers.get('HX-Redirect') || "{% url 'weight:overview' %}";
+                const navigate = () => { window.location.href = redirectUrl; };
+
+                // 1. Synchronous AndroidTimer path: completes before navigation unmounts the page
+                if (window.AndroidTimer && typeof window.AndroidTimer.stopAll === 'function') {
+                    try { window.AndroidTimer.stopAll(); } catch(e) {}
+                    navigate();
+                    return;
+                }
+
+                // 2. Capacitor path: await stopAll() with a short safety timeout so IPC finishes before navigation
+                try {
+                    const teardownPromise = (async () => {
+                        if (typeof onyxNative.stopAll === 'function') {
+                            await onyxNative.stopAll();
+                        } else {
+                            await stopAllNativeLiveActivity();
+                        }
+                    })();
+                    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 400));
+                    await Promise.race([teardownPromise, timeoutPromise]);
+                } catch(e) {}
+                navigate();
             } else {
                 onSaveFailed();
             }
