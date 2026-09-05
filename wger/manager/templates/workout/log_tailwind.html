@@ -433,7 +433,7 @@
         </div>
 
         <!-- Form Body -->
-        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" onsubmit="onFinishWorkoutSubmitted()" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" onsubmit="return onFinishWorkoutSubmitted(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
             {% csrf_token %}
             <input type="hidden" name="action" value="finish_workout">
 
@@ -680,10 +680,10 @@
             </button>
 
             <!-- 3. Interrompi e Scarta (Discard session & exit) -->
-            <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full" onsubmit="onFinishWorkoutSubmitted()">
+            <form method="POST" action="{% url 'manager:day:overview' day.routine.pk day.pk %}" class="w-full" onsubmit="return onFinishWorkoutSubmitted(event)">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="discard_workout">
-                <button type="submit" onclick="onFinishWorkoutSubmitted()" class="w-full py-3 px-4 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <button type="submit" class="w-full py-3 px-4 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-base">delete_forever</span>
                     {% translate "Interrompi e Scarta" %}
                 </button>
@@ -1197,14 +1197,19 @@
     window.handleSetSubmit = handleSetSubmit;
     window.handleSetUncheck = handleSetUncheck;
     window.handleExerciseCheck = handleExerciseCheck;
-    window.setExerciseMode = setExerciseMode;
-    window.toggleSetStopwatch = toggleSetStopwatch;
+    // setExerciseMode / toggleSetStopwatch are exported once, near their
+    // definitions further down, alongside initExerciseModes/startSetCountdown.
 
     // Inline handlers for workout log modals and forms (log_tailwind.html)
     window.toggleSaveAsRoutineDayFields = toggleSaveAsRoutineDayFields;
     window.closeLogRoutineCustomDropdown = closeLogRoutineCustomDropdown;
     window.handlePhotoSelect = handlePhotoSelect;
-    window.onFinishWorkoutSubmitted = onFinishWorkoutSubmitted;
+    // onFinishWorkoutSubmitted is defined and exported once, in the
+    // extra_body IIFE below (it needs collectWorkoutPayload/onyxNative from
+    // that scope) — see the "Full Final Commit handler" near the end of the
+    // file. Do NOT redefine it here: this script block runs before that one,
+    // so a second `window.onFinishWorkoutSubmitted = ...` there always wins
+    // silently and any cleanup added only here would never run.
 
     function resetTimer() {
         stopTimer();
@@ -1954,28 +1959,6 @@
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 250);
-        }
-    }
-
-    function onFinishWorkoutSubmitted() {
-        if (typeof window.stopWorkoutAutosave === 'function') window.stopWorkoutAutosave();
-        try {
-            localStorage.removeItem('onyx_workout_progress');
-            localStorage.removeItem('onyx_active_rest_timer');
-            localStorage.removeItem('onyx_active_rest_timer_paused');
-            if (typeof sessionId !== 'undefined' && sessionId) {
-                localStorage.removeItem(`onyx_workout_start_${sessionId}`);
-            }
-            try {
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('onyx_workout_start_') || key.startsWith('onyx_rest_timer')) {
-                        localStorage.removeItem(key);
-                    }
-                });
-            } catch(e) {}
-        } catch(e) {}
-        if (typeof updateGlobalMiniTimer === 'function') {
-            updateGlobalMiniTimer();
         }
     }
 
@@ -2777,29 +2760,84 @@
         }
     };
 
-    // Full Final Commit handler
-    window.onFinishWorkoutSubmitted = function() {
+    // Full Final Commit handler — shared by "Salva e Chiudi" (finish_workout)
+    // and "Interrompi e Scarta" (discard_workout). Order matters: the server
+    // save must be CONFIRMED before any local/rest-timer state is torn down,
+    // so a dropped connection or a mid-flight OEM kill never turns a session
+    // that is still genuinely 'active' server-side into a client-side ghost
+    // (staying 'active' there is correct in that case — the user may resume
+    // it). The native stop-all always runs in `finally`, independent of the
+    // fetch outcome, so a failed save never leaves a live island/notification
+    // running. The in-flight guard makes a double submit/tap a no-op.
+    let onFinishWorkoutInFlight = false;
+
+    function clearOnyxWorkoutClientState() {
+        try {
+            [localStorage, sessionStorage].forEach(store => {
+                const toRemove = [];
+                for (let i = 0; i < store.length; i++) {
+                    const key = store.key(i);
+                    if (key && (key.startsWith('onyx_workout_') || key.startsWith('onyx_rest_timer') || key.startsWith('onyx_active_rest_timer'))) {
+                        toRemove.push(key);
+                    }
+                }
+                toRemove.forEach(key => store.removeItem(key));
+            });
+        } catch (e) {}
+    }
+
+    window.onFinishWorkoutSubmitted = function(evt) {
+        if (evt && evt.preventDefault) evt.preventDefault();
+        if (onFinishWorkoutInFlight) return false;
+        const form = evt && evt.target;
+        if (!form || form.tagName !== 'FORM') return false;
+        onFinishWorkoutInFlight = true;
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
         if (typeof window.stopWorkoutAutosave === 'function') window.stopWorkoutAutosave();
+
         const payload = collectWorkoutPayload();
-        const finishForm = document.getElementById('finish-workout-review-form') || document.querySelector('form input[value="finish_workout"]')?.closest('form');
-        if (finishForm) {
-            let hidden = finishForm.querySelector('input[name="full_payload"]');
-            if (!hidden) {
-                hidden = document.createElement('input');
-                hidden.type = 'hidden';
-                hidden.name = 'full_payload';
-                finishForm.appendChild(hidden);
-            }
-            hidden.value = JSON.stringify(payload);
+        let hidden = form.querySelector('input[name="full_payload"]');
+        if (!hidden) {
+            hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'full_payload';
+            form.appendChild(hidden);
+        }
+        hidden.value = JSON.stringify(payload);
+
+        const formData = new FormData(form);
+        const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+
+        function onSaveFailed() {
+            onFinishWorkoutInFlight = false;
+            if (submitBtn) submitBtn.disabled = false;
+            alert("{% translate 'Salvataggio non riuscito: controlla la connessione e riprova.' %}");
         }
 
-        // Clean local active session keys upon completion and stop native live activity
-        if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop();
-        try {
-            localStorage.removeItem('onyx_workout_progress');
-            localStorage.removeItem('onyx_active_workout_snapshot');
-            localStorage.removeItem('onyx_active_rest_timer');
-        } catch(e) {}
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrf,
+                'HX-Request': 'true'
+            }
+        }).then(resp => {
+            if (resp.ok) {
+                // Only now that the server has confirmed the session is closed
+                // is it safe to drop local state.
+                clearOnyxWorkoutClientState();
+                window.location.href = resp.headers.get('HX-Redirect') || "{% url 'weight:overview' %}";
+            } else {
+                onSaveFailed();
+            }
+        }).catch(onSaveFailed).finally(() => {
+            try { if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop(); } catch (e) {}
+        });
+
+        return false;
     };
 })();
 </script>
