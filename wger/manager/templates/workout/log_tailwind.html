@@ -872,13 +872,9 @@
         if (overlay) {
             overlay.classList.add('hidden');
         }
-        try {
-            if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
-                window.AndroidTimer.stopAlarm();
-            } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
-                window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
-            }
-        } catch(e) {}
+        if (hasNotifiedZero || window._timerExpiredAt) {
+            silenceNativeAlarm();
+        }
         if (window.location.search.includes('open_timer=true') || window.location.hash === '#rest-timer') {
             const cleanQuery = window.location.search.replace(/[\?&]open_timer=true/, '').replace(/^&/, '?');
             const cleanHash = window.location.hash === '#rest-timer' ? '' : window.location.hash;
@@ -3084,15 +3080,14 @@
         }).then(resp => {
             if (resp.ok) {
                 // Only now that the server has confirmed the session is closed
-                // is it safe to drop local state.
+                // is it safe to drop local state and tear down all native activity.
                 clearOnyxWorkoutClientState();
+                stopAllNativeLiveActivity();
                 window.location.href = resp.headers.get('HX-Redirect') || "{% url 'weight:overview' %}";
             } else {
                 onSaveFailed();
             }
-        }).catch(onSaveFailed).finally(() => {
-            try { if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop(); } catch (e) {}
-        });
+        }).catch(onSaveFailed);
 
         return false;
     };
