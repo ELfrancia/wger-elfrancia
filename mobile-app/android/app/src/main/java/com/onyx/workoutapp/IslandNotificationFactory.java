@@ -137,14 +137,11 @@ public class IslandNotificationFactory {
     private static void requestPromotedOngoing(NotificationCompat.Builder builder, Context context, String shortCriticalText) {
         if (builder == null) return;
         builder.setOngoing(true);
-        // Foreground: keep it a plain ongoing notification, no chip / island (the in-app
-        // notch is already showing this). Background: request the full Live Update.
-        boolean promote = !appInForeground;
         try {
-            builder.setRequestPromotedOngoing(promote);
-            if (promote && shortCriticalText != null && !shortCriticalText.isEmpty()) {
+            builder.setRequestPromotedOngoing(true);
+            if (shortCriticalText != null && !shortCriticalText.isEmpty()) {
                 // Text shown inside the collapsed status-bar chip when there is no
-                // chronometer to display.
+                // chronometer to display or as the critical status text.
                 builder.setShortCriticalText(shortCriticalText);
             }
         } catch (Throwable t) {
@@ -186,7 +183,7 @@ public class IslandNotificationFactory {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_TIMER)
                 .setSmallIcon(R.drawable.ic_stat_onyx)
                 .setColor(ACCENT)
-                .setColorized(!appInForeground)
+                .setColorized(false)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -200,7 +197,7 @@ public class IslandNotificationFactory {
             builder.setLargeIcon(appIconBitmap);
         }
 
-        builder.setContentTitle(title != null && !title.isEmpty() ? title : "Recupero in corso");
+        builder.setContentTitle("ONYX");
 
         // ---- Actions -------------------------------------------------------------------
         Intent playPauseIntent = new Intent(context, OnyxLiveService.class);
@@ -222,11 +219,13 @@ public class IslandNotificationFactory {
         long secLeft = (long) Math.max(0, Math.ceil(remainingMs / 1000.0));
         int elapsedSec = (int) Math.max(0, Math.min(totalSec, totalSec - secLeft));
         String mmss = String.format("%02d:%02d", secLeft / 60, secLeft % 60);
+        String safeTitle = (title != null && !title.isEmpty()) ? title : "Recupero in corso";
 
         if (!isPaused) {
             long now = System.currentTimeMillis();
             if (targetEndTime > now) {
-                builder.setContentText("Tocca per aprire")
+                builder.setContentText(safeTitle)
+                       .setSubText(mmss)
                        .setUsesChronometer(true)
                        .setChronometerCountDown(true)
                        .setWhen(targetEndTime)
@@ -239,7 +238,8 @@ public class IslandNotificationFactory {
         } else {
             builder.setUsesChronometer(false)
                    .setShowWhen(false)
-                   .setContentText(String.format("In Pausa (%s)", mmss));
+                   .setSubText("Pausa (" + mmss + ")")
+                   .setContentText(String.format("In Pausa • %s", safeTitle));
         }
 
         // Android 16 ProgressStyle: one segment spanning the full duration, tracker at
@@ -266,7 +266,7 @@ public class IslandNotificationFactory {
         builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
 
         // Status-bar chip fallback text (chronometer wins when running).
-        requestPromotedOngoing(builder, context, isPaused ? "Pausa " + mmss : "Recupero");
+        requestPromotedOngoing(builder, context, isPaused ? ("Pausa " + mmss) : mmss);
 
         // Xiaomi HyperOS focus / Super Island payload.
         float ratio = totalDurationMs > 0 ? (float) remainingMs / (float) totalDurationMs : 0f;
@@ -303,7 +303,7 @@ public class IslandNotificationFactory {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_WORKOUT)
                 .setSmallIcon(R.drawable.ic_stat_onyx)
                 .setColor(ACCENT)
-                .setColorized(!appInForeground)
+                .setColorized(false)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -317,17 +317,17 @@ public class IslandNotificationFactory {
             builder.setLargeIcon(appIconBitmap);
         }
 
-        builder.setContentTitle(title != null && !title.isEmpty() ? title : "Sessione di Allenamento");
+        builder.setContentTitle("ONYX");
 
         int safeTotal = Math.max(1, totalSets);
         int safeCompleted = Math.max(0, Math.min(safeTotal, completedSets));
         float ratio = (float) safeCompleted / (float) safeTotal;
 
+        builder.setSubText(safeCompleted + "/" + safeTotal + " serie");
         if (currentExerciseName != null && !currentExerciseName.trim().isEmpty()) {
             builder.setContentText(currentExerciseName);
-            builder.setSubText(safeCompleted + "/" + safeTotal + " serie");
         } else {
-            builder.setContentText(safeCompleted + "/" + safeTotal + " serie completate");
+            builder.setContentText(title != null && !title.isEmpty() ? title : "Sessione di Allenamento");
         }
 
         // Pre-16 progress bar fallback.

@@ -3,7 +3,7 @@
   "appName": "Onyx Workout",
   "webDir": "www",
   "server": {
-    "url": "https://onyx.francescoadreani.dev",
+    "url": "http://10.0.2.2:8000",
     "cleartext": true,
     "allowNavigation": [
       "10.0.2.2",

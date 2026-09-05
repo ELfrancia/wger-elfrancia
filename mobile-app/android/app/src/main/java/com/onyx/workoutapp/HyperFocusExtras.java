@@ -60,16 +60,16 @@ public class HyperFocusExtras {
             int accentColor
     ) {
         if (!guard(builder, context)) return;
-        if (IslandNotificationFactory.appInForeground) return; // in-app notch covers this
         try {
             String safeTitle = (title != null && !title.isEmpty()) ? title : "Recupero in corso";
             String hex = argb(accentColor);
             int progressPct = clampPct(Math.round((1f - clamp01(ratioRemaining)) * 100f));
+            String mmss = String.format("%02d:%02d", secondsLeft / 60, secondsLeft % 60);
 
             JSONObject base = new JSONObject()
                     .put("type", 1)
-                    .put("title", safeTitle)
-                    .put("content", isPaused ? "In pausa" : "Recupero in corso")
+                    .put("title", "ONYX")
+                    .put("content", isPaused ? ("In pausa (" + mmss + ")") : safeTitle)
                     .put("colorTitle", "#FFFFFFFF")
                     .put("colorContent", hex);
 
@@ -85,10 +85,12 @@ public class HyperFocusExtras {
                     .put("protocol", 1)
                     .put("enableFloat", true)
                     .put("updatable", true)
-                    .put("ticker", safeTitle)
+                    .put("ticker", "ONYX " + (isPaused ? ("Pausa " + mmss) : mmss))
                     .put("baseInfo", base)
                     .put("progressInfo", progress)
-                    .put("picInfo", pic);
+                    .put("picInfo", pic)
+                    .put("colorBg", "#FF000000")
+                    .put("bgColor", "#FF000000");
 
             if (!isPaused && targetEndTimeMs > System.currentTimeMillis()) {
                 // timerType 1 = count down. HyperOS renders a self-ticking mm:ss.
@@ -100,11 +102,11 @@ public class HyperFocusExtras {
             } else {
                 paramV2.put("timerInfo", new JSONObject().put("timerType", 0));
                 base.put("content", isPaused
-                        ? String.format("In pausa (%02d:%02d)", secondsLeft / 60, secondsLeft % 60)
+                        ? String.format("In pausa (%s)", mmss)
                         : "Tempo scaduto");
             }
 
-            attach(builder, context, paramV2, safeTitle);
+            attach(builder, context, paramV2, "ONYX " + mmss);
         } catch (Throwable t) {
             Log.d(TAG, "applyRestFocus skipped: " + t.getMessage());
         }
@@ -123,20 +125,19 @@ public class HyperFocusExtras {
             int accentColor
     ) {
         if (!guard(builder, context)) return;
-        if (IslandNotificationFactory.appInForeground) return; // in-app notch covers this
         try {
             String safeTitle = (title != null && !title.isEmpty()) ? title : "Sessione di Allenamento";
             String hex = argb(accentColor);
             String content = (currentExerciseName != null && !currentExerciseName.trim().isEmpty())
-                    ? currentExerciseName
+                    ? (currentExerciseName + " (" + completedSets + "/" + totalSets + ")")
                     : (completedSets + "/" + totalSets + " serie");
 
             JSONObject base = new JSONObject()
                     .put("type", 1)
-                    .put("title", safeTitle)
+                    .put("title", "ONYX")
                     .put("content", content)
                     .put("colorTitle", "#FFFFFFFF")
-                    .put("colorContent", "#FFFFFFFF");
+                    .put("colorContent", hex);
 
             JSONObject progress = new JSONObject()
                     .put("progress", clampPct(Math.round(clamp01(ratioDone) * 100f)))
@@ -149,10 +150,12 @@ public class HyperFocusExtras {
                     .put("protocol", 1)
                     .put("enableFloat", true)
                     .put("updatable", true)
-                    .put("ticker", safeTitle)
+                    .put("ticker", "ONYX " + completedSets + "/" + totalSets)
                     .put("baseInfo", base)
                     .put("progressInfo", progress)
-                    .put("picInfo", new JSONObject().put("type", 1).put("pic", ICON_NAME));
+                    .put("picInfo", new JSONObject().put("type", 1).put("pic", ICON_NAME))
+                    .put("colorBg", "#FF000000")
+                    .put("bgColor", "#FF000000");
 
             if (startedAtMs > 0) {
                 // timerType 2 = count up (elapsed).
@@ -163,7 +166,7 @@ public class HyperFocusExtras {
                         .put("colorTimer", "#FFFFFFFF"));
             }
 
-            attach(builder, context, paramV2, safeTitle);
+            attach(builder, context, paramV2, "ONYX " + safeTitle);
         } catch (Throwable t) {
             Log.d(TAG, "applyWorkoutFocus skipped: " + t.getMessage());
         }
