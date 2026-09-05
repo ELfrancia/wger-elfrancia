@@ -840,6 +840,47 @@ def log_tailwind(request, routine_pk, day_pk):
         'session_logs_map': session_logs_map,
         'today_photos_count': session_photos_count,
         'user_routines': user_routines,
+        # WorkoutSession.id is a UUID with a default assigned at instantiation,
+        # so even a transient (never-saved) session has a non-empty `session.id`
+        # in the template. The client needs to know it isn't a real row before
+        # treating a session-status "missing" response as "this was closed".
+        'session_is_transient': transient_session,
+    })
+
+
+@login_required
+def session_status_tailwind(request, routine_pk, day_pk):
+    """
+    Read-only reconciliation endpoint for the workout page.
+
+    The client polls this (page load, tab/app foregrounding) to check
+    whether the session it thinks is open is still 'active' server-side,
+    without doing a full page reload. It never creates or mutates a
+    session - a GET here must be side-effect free so background polling
+    can't itself keep a stale draft alive or race the real POST handlers.
+    """
+    day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk)
+    if day.routine.user != request.user:
+        return HttpResponseForbidden()
+
+    session_id = request.GET.get('session_id')
+    session = None
+    if session_id:
+        try:
+            session = WorkoutSession.objects.filter(
+                id=session_id, user=request.user, day=day,
+            ).first()
+        except Exception:
+            # Malformed UUID in the query string: treat like "no such session".
+            session = None
+
+    if not session:
+        return JsonResponse({'active': False, 'status': 'missing'})
+
+    return JsonResponse({
+        'active': session.status == 'active',
+        'status': session.status,
+        'session_id': session.id,
     })
 
 

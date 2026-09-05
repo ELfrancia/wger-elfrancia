@@ -55,6 +55,11 @@ patterns_days = [
         workout.log_tailwind,
         name='overview',
     ),
+    path(
+        '<int:day_pk>/session-status',
+        workout.session_status_tailwind,
+        name='session-status',
+    ),
 ]
 
 # sub patterns for routines

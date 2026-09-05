@@ -2049,6 +2049,12 @@
 
     // Total Workout Timer Stopwatch (Dynamically synced via Date.now & localStorage)
     const sessionId = "{{ session.id }}";
+    // `session.id` is always a non-empty UUID (Django assigns the field's
+    // default at instantiation), even for a transient session that was never
+    // saved - so it can't be used on its own to tell "a real session exists"
+    // from "nothing has been logged yet". Only a materialized session is
+    // meaningful to reconcile against the server.
+    const sessionIsTransient = {{ session_is_transient|yesno:"true,false" }};
     const localStartKey = `onyx_workout_start_${sessionId}`;
     let workoutStartTime = null;
 
@@ -2784,6 +2790,56 @@
                 toRemove.forEach(key => store.removeItem(key));
             });
         } catch (e) {}
+    }
+
+    // Server-truth reconciliation: this session id may have been closed by a
+    // finish/discard that completed while this tab/app was backgrounded (or
+    // by another tab), in which case the notch/native island here is a ghost
+    // that outlived the session it was tracking. Ask the server - never trust
+    // local state alone - on load and every time the app/tab comes back to
+    // the foreground, since that's exactly when a stale background state is
+    // most likely to have gone unnoticed.
+    function stopAllNativeLiveActivity() {
+        try {
+            if (typeof onyxNative.stopAll === 'function') {
+                onyxNative.stopAll();
+                return;
+            }
+        } catch (e) {}
+        // Fallback until the native side exposes a single stop-all: best-effort
+        // stop every live activity individually.
+        try { if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop(); } catch (e) {}
+        try { if (typeof onyxNative.stopTimer === 'function') onyxNative.stopTimer(); } catch (e) {}
+        try { if (typeof onyxNative.stopAlarm === 'function') onyxNative.stopAlarm(); } catch (e) {}
+    }
+
+    async function reconcileWorkoutSessionWithServer() {
+        if (window._workoutClosing) return;
+        // A transient session was never persisted, so there is nothing on the
+        // server to reconcile against yet - and its `sessionId` is a red
+        // herring (see note above), not evidence a session used to exist.
+        if (sessionIsTransient) return;
+        if (typeof sessionId === 'undefined' || !sessionId) return;
+        try {
+            const url = "{% url 'manager:day:session-status' day.routine.pk day.pk %}?session_id=" + encodeURIComponent(sessionId);
+            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (!data.active) {
+                clearOnyxWorkoutClientState();
+                stopAllNativeLiveActivity();
+            }
+        } catch (e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', () => setTimeout(reconcileWorkoutSessionWithServer, 1500));
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reconcileWorkoutSessionWithServer();
+    });
+    window.addEventListener('pageshow', reconcileWorkoutSessionWithServer);
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App
+        && typeof window.Capacitor.Plugins.App.addListener === 'function') {
+        window.Capacitor.Plugins.App.addListener('resume', reconcileWorkoutSessionWithServer);
     }
 
     window.onFinishWorkoutSubmitted = function(evt) {
