@@ -1983,6 +1983,12 @@
             // Only trigger rest timer if the triggered element was a single set log form
             const triggeredForm = evt.detail.elt;
             if (triggeredForm && triggeredForm.classList.contains('set-log-form')) {
+                // A successful set log always materializes a transient session
+                // server-side - from here on there is something real for
+                // session-status reconciliation to protect (the exact id
+                // doesn't matter: reconciliation asks about user+day, not a
+                // specific id, and adopts whatever the server reports).
+                sessionMaterialized = true;
                 const entryIdInput = triggeredForm.querySelector('input[name="slot_entry_id"]');
                 if (entryIdInput) {
                     clearLocalDraftForSet(entryIdInput.value);
@@ -2048,13 +2054,17 @@
     });
 
     // Total Workout Timer Stopwatch (Dynamically synced via Date.now & localStorage)
-    const sessionId = "{{ session.id }}";
+    let sessionId = "{{ session.id }}";
     // `session.id` is always a non-empty UUID (Django assigns the field's
     // default at instantiation), even for a transient session that was never
     // saved - so it can't be used on its own to tell "a real session exists"
     // from "nothing has been logged yet". Only a materialized session is
-    // meaningful to reconcile against the server.
-    const sessionIsTransient = {{ session_is_transient|yesno:"true,false" }};
+    // meaningful to reconcile against the server. This starts as whatever the
+    // page was rendered with, but a transient session materializes the first
+    // time a set is actually logged without a reload - so it's a `let`,
+    // flipped by the htmx:afterOnLoad handler below, not a frozen snapshot of
+    // the initial render.
+    let sessionMaterialized = !({{ session_is_transient|yesno:"true,false" }});
     const localStartKey = `onyx_workout_start_${sessionId}`;
     let workoutStartTime = null;
 
@@ -2815,17 +2825,31 @@
 
     async function reconcileWorkoutSessionWithServer() {
         if (window._workoutClosing) return;
-        // A transient session was never persisted, so there is nothing on the
-        // server to reconcile against yet - and its `sessionId` is a red
-        // herring (see note above), not evidence a session used to exist.
-        if (sessionIsTransient) return;
-        if (typeof sessionId === 'undefined' || !sessionId) return;
         try {
-            const url = "{% url 'manager:day:session-status' day.routine.pk day.pk %}?session_id=" + encodeURIComponent(sessionId);
+            // Ask about user+day, never about a specific session id: the id
+            // this page rendered with can be a throwaway default on a
+            // transient (unsaved) session, or go stale the moment
+            // materialization assigns a different one (another tab/device,
+            // or this same tab logging its first set). Asking "is there
+            // currently an active session for this day" is self-correcting
+            // across all of that instead of depending on the client having
+            // tracked the right id - it's the same query that drives the
+            // "Riprendi" banner, so the two can never disagree.
+            const url = "{% url 'manager:day:session-status' day.routine.pk day.pk %}";
             const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!resp.ok) return;
+            if (!resp.ok) return; // transport/server error: never act on it
             const data = await resp.json();
-            if (!data.active) {
+            if (data.active) {
+                if (data.session_id) sessionId = data.session_id;
+                sessionMaterialized = true;
+            } else if (sessionMaterialized) {
+                // Only a session we know was real (had actual content, or the
+                // page loaded already tracking a persisted one) can have a
+                // live native island/notification worth stopping. A page that
+                // never had one active in the first place has nothing to
+                // shut down - `initOnyxWorkoutIsland` starting an island
+                // optimistically before the first set is logged is not a
+                // sign that this poll should tear it back down.
                 clearOnyxWorkoutClientState();
                 stopAllNativeLiveActivity();
             }

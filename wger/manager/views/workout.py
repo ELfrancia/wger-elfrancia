@@ -854,33 +854,39 @@ def session_status_tailwind(request, routine_pk, day_pk):
     Read-only reconciliation endpoint for the workout page.
 
     The client polls this (page load, tab/app foregrounding) to check
-    whether the session it thinks is open is still 'active' server-side,
-    without doing a full page reload. It never creates or mutates a
-    session - a GET here must be side-effect free so background polling
-    can't itself keep a stale draft alive or race the real POST handlers.
+    whether it should still consider this day's session active, without
+    doing a full page reload. Deliberately answers "does this user
+    currently have an active session for this day?" - the same user+day+
+    status='active' truth that drives the "Riprendi" banner
+    (context_processor.active_draft_session) - rather than looking up a
+    client-supplied session id. A page can render with a session id that
+    was never real (a transient/unsaved session's id is just a UUID
+    default on the Python instance) or that goes stale the moment
+    materialization assigns a different one; asking about the user+day
+    self-corrects across both instead of depending on the client having
+    tracked the right id. Never creates or mutates a session - a GET here
+    must be side-effect free so background polling can't itself keep a
+    stale draft alive or race the real POST handlers.
     """
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk)
     if day.routine.user != request.user:
         return HttpResponseForbidden()
 
-    session_id = request.GET.get('session_id')
-    session = None
-    if session_id:
-        try:
-            session = WorkoutSession.objects.filter(
-                id=session_id, user=request.user, day=day,
-            ).first()
-        except Exception:
-            # Malformed UUID in the query string: treat like "no such session".
+    cutoff_24h = timezone.now() - datetime.timedelta(hours=24)
+    session = WorkoutSession.objects.filter(
+        user=request.user, day=day, status='active',
+    ).order_by('-date', '-time_start', '-id').first()
+
+    if session:
+        s_dt = datetime.datetime.combine(session.date, session.time_start or datetime.time.min)
+        if timezone.is_naive(s_dt):
+            s_dt = timezone.make_aware(s_dt)
+        if s_dt < cutoff_24h:
             session = None
 
     if not session:
-        return JsonResponse({'active': False, 'status': 'missing'})
+        return JsonResponse({'active': False, 'session_id': None})
 
-    return JsonResponse({
-        'active': session.status == 'active',
-        'status': session.status,
-        'session_id': session.id,
-    })
+    return JsonResponse({'active': True, 'session_id': str(session.pk)})
 
 
