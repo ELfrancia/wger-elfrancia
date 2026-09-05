@@ -12,3 +12,10 @@
 *.woff binary
 *.eot binary
 *.pdf binary
+
+# Audio: with `* text eol=lf` above these would be mangled as text on
+# checkout (a CRLF->LF pass silently drops bytes from the encoded stream)
+*.mp3 binary
+*.ogg binary
+*.wav binary
+*.m4a binary
