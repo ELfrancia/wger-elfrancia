@@ -128,15 +128,15 @@ def sync_exercises(
                 )
 
             translation, translation_created = Translation.objects.update_or_create(
-                exercise=exercise,
-                language_id=language_id,
+                uuid=trans_uuid,
                 defaults={
-                    'uuid': trans_uuid,
+                    'exercise': exercise,
                     'name': name,
                     'description': description,
                     'description_source': description_source,
                     'license_id': license_id,
                     'license_author': license_author,
+                    'language_id': language_id,
                 },
             )
             out = (

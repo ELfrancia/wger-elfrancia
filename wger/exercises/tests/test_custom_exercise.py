@@ -48,12 +48,26 @@ class CustomExerciseTestCase(WgerTestCase):
         self.assertEqual(cal_ex.source, 'custom')
         self.assertEqual(cal_ex.equipment, 'weighted body weight')
         
-        # Check native wger structures
+        # Check native wger structures: custom exercises create translations for both 'it' and 'en'
+        # (commit 44ae33a81) so that exercises remain searchable and visible across UI languages.
         self.assertEqual(Exercise.objects.filter(uuid=cal_ex.id).count(), 1)
-        self.assertEqual(Translation.objects.filter(name='Custom Handstand Push-up').count(), 1)
+        translations = Translation.objects.filter(name='Custom Handstand Push-up')
+        self.assertEqual(translations.count(), 2)
+        self.assertEqual(set(translations.values_list('language__short_name', flat=True)), {'it', 'en'})
+
+        # Verify idempotency: re-posting with the same name updates rather than creates duplicate translations
+        response2 = self.client.post(url, {
+            'name': 'Custom Handstand Push-up',
+            'instructions': 'Get in handstand.\nLower yourself.\nPush up.',
+            'skill_family': 'handstand',
+            'target_muscle': 'shoulders',
+            'weighted': 'on'
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response2.status_code, 200)
+        self.assertEqual(Translation.objects.filter(name='Custom Handstand Push-up').count(), 2)
         
         # Check slot creation on day
-        self.assertEqual(self.day.slots.count(), 1)
+        self.assertEqual(self.day.slots.count(), 2)
 
     def test_create_custom_exercise_standard_post(self):
         url = reverse('manager:routine:add-custom-exercise', kwargs={
@@ -70,3 +84,6 @@ class CustomExerciseTestCase(WgerTestCase):
         
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.day.slots.count(), 1)
+        translations = Translation.objects.filter(name='Custom Planche Push-up')
+        self.assertEqual(translations.count(), 2)
+        self.assertEqual(set(translations.values_list('language__short_name', flat=True)), {'it', 'en'})
