@@ -1,5 +1,5 @@
 {% extends 'template_tailwind.html' %}
-{% load i18n l10n %}
+{% load i18n l10n static %}
 
 {% block title %}Active Workout - Onyx{% endblock %}
 
@@ -820,6 +820,31 @@
         document.addEventListener(evtType, unlockAudioContext, { once: true });
     });
 
+    // Recorded alarm sound for the browser/webview-without-bridge path. Fetched
+    // and decoded once at page open - not at the moment the timer hits zero,
+    // where a slow network would mean the alarm plays late or not at all.
+    // Decoding an AudioBuffer doesn't need the context to be running, so this
+    // doesn't have to wait for the user-gesture unlock above. Falls back to
+    // the synthesized default gong (playSynthesizedSound) if it never loads.
+    let onyxAlarmBuffer = null;
+    async function preloadOnyxAlarmSound() {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const sources = ["{% static 'sounds/onyx_alarm.ogg' %}", "{% static 'sounds/onyx_alarm.mp3' %}"];
+        for (const src of sources) {
+            try {
+                const resp = await fetch(src);
+                if (!resp.ok) continue;
+                const arrayBuffer = await resp.arrayBuffer();
+                onyxAlarmBuffer = await ctx.decodeAudioData(arrayBuffer);
+                return;
+            } catch (e) {
+                // Try the next source (e.g. this browser can't decode ogg).
+            }
+        }
+    }
+    document.addEventListener('DOMContentLoaded', () => setTimeout(preloadOnyxAlarmSound, 200));
+
     function getRemainingTimeMs() {
         if (!isRunning || !startedAt) {
             return Math.max(0, remainingMs);
@@ -1563,6 +1588,26 @@
 
     function playBeepAndVibrate() {
         const chosen = getSelectedTimerSound();
+        // The default alarm gets the recorded onyx_alarm sound in place of the
+        // synthesized gong; every other explicit choice in the sound picker
+        // (boxing/beep/whistle/system_alarm/vibration_only) is left alone -
+        // those are distinct sounds a user picked on purpose, not "the beep".
+        if (chosen === 'gong' && onyxAlarmBuffer) {
+            try {
+                const ctx = getAudioContext();
+                if (ctx) {
+                    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                    const source = ctx.createBufferSource();
+                    source.buffer = onyxAlarmBuffer;
+                    source.connect(ctx.destination);
+                    source.start(0);
+                    if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 350]);
+                    return;
+                }
+            } catch (e) {
+                // Fall through to the synthesized sound below.
+            }
+        }
         playSynthesizedSound(chosen);
     }
 
@@ -1593,6 +1638,7 @@
                 }
             });
             const progressData = {
+                dayId: {{ day.pk|unlocalize }},
                 total: totalExercises,
                 completed: completedExercises,
                 remaining: Math.max(0, totalExercises - completedExercises),
@@ -1980,15 +2026,19 @@
         if (evt.detail.xhr && evt.detail.xhr.status === 200) {
             setTimeout(updateProgressBar, 50);
 
+            // Every htmx action on this page (set log, complete_exercise,
+            // add/replace/delete set, etc.) posts to this same day:overview
+            // view and, being anything other than the four ephemeral actions
+            // (auto_save_snapshot/discard/interrupt/finish - none of which go
+            // through htmx), materializes a transient session server-side.
+            // From here on there is something real for session-status
+            // reconciliation to protect and a real workout to show natively.
+            sessionMaterialized = true;
+            startWorkoutIslandIfNeeded();
+
             // Only trigger rest timer if the triggered element was a single set log form
             const triggeredForm = evt.detail.elt;
             if (triggeredForm && triggeredForm.classList.contains('set-log-form')) {
-                // A successful set log always materializes a transient session
-                // server-side - from here on there is something real for
-                // session-status reconciliation to protect (the exact id
-                // doesn't matter: reconciliation asks about user+day, not a
-                // specific id, and adopts whatever the server reports).
-                sessionMaterialized = true;
                 const entryIdInput = triggeredForm.querySelector('input[name="slot_entry_id"]');
                 if (entryIdInput) {
                     clearLocalDraftForSet(entryIdInput.value);
@@ -2746,7 +2796,18 @@
         } catch(e) {}
     }
 
-    function initOnyxWorkoutIsland() {
+    // The island must only ever claim "a workout is in progress" when one
+    // genuinely is. It used to start unconditionally on every page open,
+    // including a page nothing is ever logged on - a ghost notification
+    // nothing then tears down if the user just leaves. Start it exactly once,
+    // only once a workout is real: on load if the page is resuming an
+    // already-materialized session, or lazily the moment this tab logs the
+    // first set / reconciliation confirms one exists elsewhere.
+    let workoutIslandStarted = false;
+
+    function startWorkoutIslandIfNeeded() {
+        if (workoutIslandStarted) return;
+        workoutIslandStarted = true;
         const progress = computeWorkoutProgress();
         const workoutTitle = document.querySelector('h1')?.innerText?.trim() || "{{ day.description|default:'Allenamento'|escapejs }}";
         const startedAt = Date.now();
@@ -2755,10 +2816,23 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(initOnyxWorkoutIsland, 300);
+        if (sessionMaterialized) {
+            setTimeout(startWorkoutIslandIfNeeded, 300);
+        }
     });
     document.addEventListener('htmx:afterSwap', () => {
         setTimeout(updateProgressBar, 100);
+    });
+
+    // Safety belt, not the mechanism that keeps the island honest: if it
+    // somehow got started without a session ever materializing, don't let it
+    // outlive the page going away. This can't be relied on alone - pagehide
+    // never fires when Android kills the process outright - not starting it
+    // in the first place (above) is what actually guarantees correctness.
+    window.addEventListener('pagehide', () => {
+        if (workoutIslandStarted && !sessionMaterialized) {
+            stopAllNativeLiveActivity();
+        }
     });
 
     // Auto-save interval every 30 seconds
@@ -2842,14 +2916,18 @@
             if (data.active) {
                 if (data.session_id) sessionId = data.session_id;
                 sessionMaterialized = true;
+                // A real workout is running (materialized here, on another
+                // tab, or resumed after backgrounding) - make sure this
+                // page's own island reflects that instead of staying dark.
+                startWorkoutIslandIfNeeded();
             } else if (sessionMaterialized) {
                 // Only a session we know was real (had actual content, or the
                 // page loaded already tracking a persisted one) can have a
                 // live native island/notification worth stopping. A page that
                 // never had one active in the first place has nothing to
-                // shut down - `initOnyxWorkoutIsland` starting an island
-                // optimistically before the first set is logged is not a
-                // sign that this poll should tear it back down.
+                // shut down - the island only ever starts once a workout is
+                // genuinely materialized (see startWorkoutIslandIfNeeded),
+                // never on a bare page open.
                 clearOnyxWorkoutClientState();
                 stopAllNativeLiveActivity();
             }
