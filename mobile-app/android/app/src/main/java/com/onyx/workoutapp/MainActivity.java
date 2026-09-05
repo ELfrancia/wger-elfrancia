@@ -315,6 +315,9 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public boolean hasActiveOngoingNotification() {
+            if (IslandNotificationFactory.appInForeground) {
+                return false;
+            }
             try {
                 if (OnyxLiveService.hasActiveOngoingNotification()) {
                     return true;

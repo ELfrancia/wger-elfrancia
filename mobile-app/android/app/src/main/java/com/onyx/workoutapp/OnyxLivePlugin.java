@@ -349,6 +349,11 @@ public class OnyxLivePlugin extends Plugin {
     @PluginMethod
     public void hasActiveOngoingNotification(PluginCall call) {
         JSObject ret = new JSObject();
+        if (IslandNotificationFactory.appInForeground) {
+            ret.put("active", false);
+            call.resolve(ret);
+            return;
+        }
         boolean active = OnyxLiveService.hasActiveOngoingNotification();
         if (!active) {
             try {

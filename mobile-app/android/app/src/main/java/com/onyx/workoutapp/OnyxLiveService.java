@@ -190,11 +190,12 @@ public class OnyxLiveService extends Service {
     }
 
     /**
-     * Reports an ACTIVE PROMOTED ongoing notification: a timer or workout is actively live
-     * (both in foreground and in background so the native island/chip is active).
+     * Reports an ACTIVE PROMOTED ongoing notification: a timer/workout is live AND the app
+     * is backgrounded (so the native island is what the user sees). While the app is in the
+     * foreground this returns false so the web keeps showing its in-app notch instead.
      */
     public static boolean hasActiveOngoingNotification() {
-        return hasActiveOngoingNotification;
+        return hasActiveOngoingNotification && !IslandNotificationFactory.appInForeground;
     }
 
     private Bitmap appIconBitmap;

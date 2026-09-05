@@ -60,6 +60,7 @@ public class HyperFocusExtras {
             int accentColor
     ) {
         if (!guard(builder, context)) return;
+        if (IslandNotificationFactory.appInForeground) return; // in-app notch covers this
         try {
             String safeTitle = (title != null && !title.isEmpty()) ? title : "Recupero in corso";
             String hex = argb(accentColor);
@@ -125,6 +126,7 @@ public class HyperFocusExtras {
             int accentColor
     ) {
         if (!guard(builder, context)) return;
+        if (IslandNotificationFactory.appInForeground) return; // in-app notch covers this
         try {
             String safeTitle = (title != null && !title.isEmpty()) ? title : "Sessione di Allenamento";
             String hex = argb(accentColor);

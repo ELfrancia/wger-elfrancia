@@ -137,9 +137,12 @@ public class IslandNotificationFactory {
     private static void requestPromotedOngoing(NotificationCompat.Builder builder, Context context, String shortCriticalText) {
         if (builder == null) return;
         builder.setOngoing(true);
+        // Foreground: keep it a plain ongoing notification, no chip / island (the in-app
+        // notch is already showing this). Background: request the full Live Update.
+        boolean promote = !appInForeground;
         try {
-            builder.setRequestPromotedOngoing(true);
-            if (shortCriticalText != null && !shortCriticalText.isEmpty()) {
+            builder.setRequestPromotedOngoing(promote);
+            if (promote && shortCriticalText != null && !shortCriticalText.isEmpty()) {
                 // Text shown inside the collapsed status-bar chip when there is no
                 // chronometer to display or as the critical status text.
                 builder.setShortCriticalText(shortCriticalText);
