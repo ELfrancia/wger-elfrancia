@@ -428,3 +428,36 @@ class WorkoutViewsTestCase(WgerTestCase):
         self.assertFalse(
             WorkoutSession.objects.filter(user=self.user, status='finished').exists()
         )
+
+    def test_previous_session_reference_in_workout_log(self):
+        url = reverse('manager:day:overview', kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk})
+        slot = self.day.slots.first()
+        entry = slot.entries.first()
+
+        # Log a set with recognizable values
+        self.client.post(url, {
+            'slot_id': slot.id,
+            'slot_entry_id': entry.id,
+            'exercise_id': slot.obj.id,
+            'repetitions': 12,
+            'weight': 75,
+        }, HTTP_HX_REQUEST='true')
+
+        # Finish workout
+        finish_res = self.client.post(url, {'action': 'finish_workout'})
+        self.assertEqual(finish_res.status_code, 302)
+
+        # Reopen day page
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('previous_logs_map', response.context)
+        self.assertIn(entry.id, response.context['previous_logs_map'])
+        prev_log = response.context['previous_logs_map'][entry.id]
+        self.assertEqual(int(prev_log.repetitions), 12)
+        self.assertEqual(float(prev_log.weight), 75.0)
+
+        # Verify rendered HTML contains reference and pre-populated values
+        content = response.content.decode('utf-8')
+        self.assertIn('Ultima volta:', content)
+        self.assertIn('75 kg × 12', content)
+

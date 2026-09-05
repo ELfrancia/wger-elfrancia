@@ -85,6 +85,67 @@ def make_overview_redirect(request):
     return redirect('weight:overview')
 
 
+def get_previous_session_logs_map(user, day, current_session=None, transient_session=False):
+    """
+    Returns a dict mapping slot_entry_id -> WorkoutLog from the most recent
+    finished session for this day/user (excluding the current session).
+
+    Aligned by slot_entry and set index so adding/removing sets doesn't shift
+    unrelated sets.
+    """
+    session_qs = WorkoutSession.objects.filter(
+        user=user,
+        day=day,
+        status='finished',
+        logs__isnull=False,
+    )
+    if current_session and getattr(current_session, 'pk', None) and not transient_session:
+        session_qs = session_qs.exclude(pk=current_session.pk)
+
+    last_finished_session = session_qs.distinct().order_by('-date', '-time_start', '-id').first()
+    if not last_finished_session:
+        return {}
+
+    past_logs = list(
+        last_finished_session.logs
+        .select_related('slot_entry', 'slot_entry__slot')
+        .order_by('slot_entry__order', 'date', 'id')
+    )
+
+    result = {}
+    for slot in day.slots.prefetch_related('entries').all():
+        current_entries = list(slot.entries.all())
+        curr_entry_ids = {e.id for e in current_entries}
+        exercise_id = slot.obj.id if slot.obj else None
+
+        slot_past_logs = [
+            l for l in past_logs
+            if (l.slot_entry and l.slot_entry.slot_id == slot.id) or (l.slot_entry_id in curr_entry_ids)
+        ]
+        if not slot_past_logs and exercise_id:
+            slot_past_logs = [l for l in past_logs if l.exercise_id == exercise_id]
+
+        used_log_ids = set()
+
+        # Pass 1: Direct match by slot_entry_id
+        for entry in current_entries:
+            for log in slot_past_logs:
+                if log.slot_entry_id == entry.id and log.id not in used_log_ids:
+                    result[entry.id] = log
+                    used_log_ids.add(log.id)
+                    break
+
+        # Pass 2: Index alignment for entries without direct match
+        for i, entry in enumerate(current_entries):
+            if entry.id not in result and i < len(slot_past_logs):
+                cand_log = slot_past_logs[i]
+                if cand_log.id not in used_log_ids:
+                    result[entry.id] = cand_log
+                    used_log_ids.add(cand_log.id)
+
+    return result
+
+
 @login_required
 def log_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk)
@@ -209,6 +270,14 @@ def log_tailwind(request, routine_pk, day_pk):
 
     if session.user != request.user:
         return HttpResponseForbidden()
+
+    # Previous session logs map for reference values and input pre-population
+    previous_logs_map = get_previous_session_logs_map(
+        user=request.user,
+        day=day,
+        current_session=session,
+        transient_session=transient_session,
+    )
 
     if request.method == 'POST':
         pr_event = None  # populated when a logged set is a new personal record
@@ -535,12 +604,17 @@ def log_tailwind(request, routine_pk, day_pk):
                                     except (decimal.DecimalException, ValueError, TypeError):
                                         weight = None
 
-                                # 2. Fallback to reps_config / weight_config on slot_entry
-                                if reps is None and hasattr(slot_entry, 'reps_config') and slot_entry.reps_config:
+                                # 2. Fallback to previous session log, then reps_config / weight_config on slot_entry
+                                prev_log = previous_logs_map.get(slot_entry.id)
+                                if reps is None and prev_log and prev_log.repetitions is not None:
+                                    reps = int(prev_log.repetitions)
+                                elif reps is None and hasattr(slot_entry, 'reps_config') and slot_entry.reps_config:
                                     if slot_entry.reps_config.reps is not None:
                                         reps = int(slot_entry.reps_config.reps)
 
-                                if weight is None and hasattr(slot_entry, 'weight_config') and slot_entry.weight_config:
+                                if weight is None and prev_log and prev_log.weight is not None:
+                                    weight = prev_log.weight
+                                elif weight is None and hasattr(slot_entry, 'weight_config') and slot_entry.weight_config:
                                     if slot_entry.weight_config.weight is not None:
                                         try:
                                             clean_w = str(slot_entry.weight_config.weight).strip().replace(',', '.')
@@ -793,6 +867,7 @@ def log_tailwind(request, routine_pk, day_pk):
                 'completed_slot_ids': completed_slot_ids,
                 'day': day,
                 'session_logs_map': session_logs_map,
+                'previous_logs_map': previous_logs_map,
             })
             if pr_event:
                 response['HX-Trigger'] = json.dumps({'onyx:pr': pr_event})
@@ -838,6 +913,7 @@ def log_tailwind(request, routine_pk, day_pk):
         'progress_percentage': progress_percentage,
         'elapsed_seconds': elapsed_seconds,
         'session_logs_map': session_logs_map,
+        'previous_logs_map': previous_logs_map,
         'today_photos_count': session_photos_count,
         'user_routines': user_routines,
         # WorkoutSession.id is a UUID with a default assigned at instantiation,
