@@ -1743,11 +1743,38 @@
             const modal = document.getElementById('onyx-permission-prompt-modal');
             if (modal) {
                 modal.classList.add('opacity-0');
+                // "Consenti & Attiva" hands off to an Android settings intent,
+                // which can pause/throttle this WebView before the deferred
+                // setTimeout below ever runs - leaving the modal stuck as a
+                // translucent ghost overlay once the user comes back (seen
+                // sitting in front of the login screen). Hide it synchronously
+                // too so correctness never depends on the fade timer firing.
+                modal.classList.add('hidden');
                 setTimeout(() => modal.classList.add('hidden'), 250);
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => { setTimeout(checkAndPromptPermissions, 1200); });
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkAndPromptPermissions, 1200);
+            // Defensive re-sync: if the prompt was already dismissed this
+            // session but the modal element is still visible (e.g. the app
+            // resumed from the settings hand-off before the dismiss above
+            // finished), force it closed instead of leaving a ghost overlay.
+            if (sessionStorage.getItem('onyx_permission_prompt_dismissed') === 'true') {
+                const modal = document.getElementById('onyx-permission-prompt-modal');
+                if (modal) {
+                    modal.classList.add('hidden', 'opacity-0');
+                }
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            if (sessionStorage.getItem('onyx_permission_prompt_dismissed') !== 'true') return;
+            const modal = document.getElementById('onyx-permission-prompt-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden', 'opacity-0');
+            }
+        });
     </script>
 
     <!-- Dynamic Island / Notification Permission Helper Modal -->
