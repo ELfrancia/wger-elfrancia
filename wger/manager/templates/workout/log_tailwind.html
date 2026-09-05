@@ -891,7 +891,10 @@
     window.openOverlay = openOverlay;
     window.closeOverlay = closeOverlay;
 
-    function clearExpiringStyles() {
+    // Silence a ringing alarm through the native bridge. Split out of
+    // clearExpiringStyles() so the start path can reset the visuals *without*
+    // issuing this call - see startCountdown().
+    function silenceNativeAlarm() {
         try {
             if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
                 window.AndroidTimer.stopAlarm();
@@ -899,6 +902,10 @@
                 window.Capacitor.Plugins.WorkoutTimer.stopAlarm();
             }
         } catch(e) {}
+    }
+
+    function clearExpiringStyles(silenceAlarm = true) {
+        if (silenceAlarm) silenceNativeAlarm();
         if (overlay) {
             overlay.classList.remove('bg-[#caf300]');
             overlay.classList.add('bg-[#08090A]');
@@ -1068,7 +1075,18 @@
         hasNotifiedZero = false;
         window._timerExpiredAt = null;
 
-        clearExpiringStyles();
+        // Reset the expiry visuals but do NOT issue a separate stopAlarm()
+        // here. It used to, and the pair (ACTION_STOP_ALARM immediately
+        // followed by ACTION_START in the same JS turn) is exactly the race
+        // that killed the timer: the service processed the stop first, found
+        // nothing live yet, and tore itself down - taking the start that had
+        // already been accepted with it (numPostedByApp=0, numBlocked=0).
+        // Nothing is lost: the native start silences a ringing alarm itself
+        // (OnyxLiveService.startTimerCountdown() begins with stopAlarmOnly()
+        // and cancels the alarm notification), so the real case this covered
+        // - starting a new rest while the previous one is still ringing - is
+        // handled inside the start instead of alongside it.
+        clearExpiringStyles(false);
         saveTimerStateToStorage();
 
         if (!skipOverlay) {
@@ -2831,7 +2849,14 @@
     // in the first place (above) is what actually guarantees correctness.
     window.addEventListener('pagehide', () => {
         if (workoutIslandStarted && !sessionMaterialized) {
-            stopAllNativeLiveActivity();
+            // Same rule as the reconciliation below: never let a workout
+            // teardown take a live rest timer with it. Synchronous check -
+            // an unload handler cannot await.
+            if (isRestTimerLiveSync()) {
+                stopNativeWorkoutIslandOnly();
+            } else {
+                stopAllNativeLiveActivity();
+            }
         }
     });
 
@@ -2861,19 +2886,70 @@
     // running. The in-flight guard makes a double submit/tap a no-op.
     let onFinishWorkoutInFlight = false;
 
-    function clearOnyxWorkoutClientState() {
+    function clearOnyxWorkoutClientState(preserveRestTimer = false) {
+        const prefixes = ['onyx_workout_'];
+        // The rest timer is not part of the workout session: a countdown can
+        // legitimately outlive the session it happened to start under (see
+        // the teardown below). Only wipe its keys when the whole thing is
+        // really going away.
+        if (!preserveRestTimer) {
+            prefixes.push('onyx_rest_timer', 'onyx_active_rest_timer');
+        }
         try {
             [localStorage, sessionStorage].forEach(store => {
                 const toRemove = [];
                 for (let i = 0; i < store.length; i++) {
                     const key = store.key(i);
-                    if (key && (key.startsWith('onyx_workout_') || key.startsWith('onyx_rest_timer') || key.startsWith('onyx_active_rest_timer'))) {
+                    if (key && prefixes.some(prefix => key.startsWith(prefix))) {
                         toRemove.push(key);
                     }
                 }
                 toRemove.forEach(key => store.removeItem(key));
             });
         } catch (e) {}
+    }
+
+    // Is a rest countdown genuinely alive right now? A paused one counts: it
+    // is still the user's timer and must survive just the same.
+    //
+    // Synchronous variant, for callers that cannot await (pagehide). Reads
+    // this page's own state plus, when present, the AndroidTimer bridge,
+    // whose getTimerState() is synchronous and hands back a JSON *string* -
+    // a @JavascriptInterface method cannot return an object (ISLAND_CONTRACT
+    // 1.2.1).
+    function isRestTimerLiveSync() {
+        if (isRunning && getRemainingTimeMs() > 0) return true;
+        try {
+            if (window.AndroidTimer && typeof window.AndroidTimer.getTimerState === 'function') {
+                const state = JSON.parse(window.AndroidTimer.getTimerState());
+                return Boolean(state && (state.isRunning || state.isPaused));
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    // Full variant: also asks the Capacitor plugin, which answers with a
+    // Promise. Worth the await because the service's mirror is the only thing
+    // that knows about a countdown started before this page reloaded, or by
+    // another tab - `isRunning` here does not. Anything unexpected answers
+    // "no", so a plain browser or an older shell without getTimerState()
+    // behaves exactly as it did before.
+    async function isRestTimerLive() {
+        if (isRestTimerLiveSync()) return true;
+        try {
+            const plugin = window.Capacitor && window.Capacitor.Plugins
+                && window.Capacitor.Plugins.WorkoutTimer;
+            if (plugin && typeof plugin.getTimerState === 'function') {
+                const state = await plugin.getTimerState();
+                return Boolean(state && (state.isRunning || state.isPaused));
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    // Tear down the workout island and nothing else.
+    function stopNativeWorkoutIslandOnly() {
+        try { if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop(); } catch (e) {}
     }
 
     // Server-truth reconciliation: this session id may have been closed by a
@@ -2928,8 +3004,31 @@
                 // shut down - the island only ever starts once a workout is
                 // genuinely materialized (see startWorkoutIslandIfNeeded),
                 // never on a bare page open.
-                clearOnyxWorkoutClientState();
-                stopAllNativeLiveActivity();
+                //
+                // ...but tear down the *workout* only. stopAll() is
+                // deliberately unconditional native-side: it kills the
+                // countdown, the expiry alarm and the persisted timer state
+                // along with the island. A rest timer is not part of the
+                // session - it can perfectly well be running when the server
+                // says the workout ended (finished or discarded from another
+                // tab or device), and this reconciliation runs on every
+                // return to the foreground, so the whole teardown would fire
+                // right in the middle of a recovery and silently kill it.
+                //
+                // Narrowing the teardown rather than skipping the
+                // reconciliation while a rest is in progress: skipping would
+                // leave the ghost island alive for the entire rest - minutes,
+                // exactly what this check exists to prevent - and would just
+                // trade a killed timer for a lying notification. The state
+                // comes from the service's own mirror, not from this page's
+                // copy (see isRestTimerLive).
+                const restIsLive = await isRestTimerLive();
+                clearOnyxWorkoutClientState(restIsLive);
+                if (restIsLive) {
+                    stopNativeWorkoutIslandOnly();
+                } else {
+                    stopAllNativeLiveActivity();
+                }
             }
         } catch (e) {}
     }
