@@ -69,29 +69,44 @@ Follow these exact steps to verify the build on your Xiaomi Poco F6 Pro:
 
 ## 4. Release Keystore Generation Instructions
 
-When ready to produce a signed release APK / AAB for distribution:
+Per produrre una APK di Release firmata pronta per l'installazione o distribuzione:
 
-1. Generate a production keystore (if you do not already have one):
+### A. Generazione del Keystore (Operazione da eseguire una sola volta a mano)
+Apri un terminale nella cartella `mobile-app/android/` ed esegui il comando seguente (disponibile con JDK 17/21):
+```bash
+keytool -genkeypair -v -keystore onyx-release-key.jks -alias onyx-release-key -keyalg RSA -keysize 2048 -validity 10000
+```
+> [!IMPORTANT]
+> **PERCHÉ QUESTO FILE NON VA MAI PERSO:**
+> Il keystore (`onyx-release-key.jks`) e le relative password definiscono l'identità crittografica dell'applicazione Android. Se questo file viene perso o sovrascritto, **non sarà più possibile aggiornare l'app già installata sul telefono** (Android blocca l'aggiornamento se la firma non coincide). L'utente sarebbe costretto a disinstallare l'app e reinstallarla da zero, **perdendo tutti i dati locali, le sessioni e le impostazioni**. Conserva questo file e le password in un luogo sicuro e protetto da backup.
+
+### B. Configurazione `keystore.properties`
+1. Copia il template:
    ```bash
-   keytool -genkey -v -keystore onyx-release-key.keystore -alias onyx -keyalg RSA -keysize 2048 -validity 10000
+   cp mobile-app/android/keystore.properties.example mobile-app/android/keystore.properties
    ```
-2. Create `mobile-app/android/keystore.properties` (this file is gitignored):
+2. Compila `keystore.properties` con le credenziali usate al punto A:
    ```properties
-   storeFile=C:\\path\\to\\onyx-release-key.keystore
-   storePassword=YourKeystorePassword
-   keyAlias=onyx
-   keyPassword=YourKeyPassword
+   storeFile=onyx-release-key.jks
+   storePassword=LaTuaPasswordKeystore
+   keyAlias=onyx-release-key
+   keyPassword=LaTuaPasswordChiave
    ```
-3. Run the automated build:
-   - PowerShell:
-     ```powershell
-     powershell.exe -ExecutionPolicy Bypass -File .\build.ps1
-     ```
-   - Bash:
-     ```bash
-     ./build.sh
-     ```
-4. The release APK will be signed and exported to `mobile-app/dist/OnyxWorkout-release-latest.apk`.
+   *(Nota: `keystore.properties` e i file `.jks`/`.keystore` sono inclusi nel `.gitignore` e non devono mai essere committati nel repository Git).*
+
+### C. Compilazione Release
+Esegui la compilazione release:
+- Via Gradle:
+  ```bash
+  cd mobile-app/android
+  ./gradlew :app:assembleRelease
+  ```
+- Oppure tramite lo script di build:
+  ```powershell
+  powershell.exe -ExecutionPolicy Bypass -File .\build.ps1
+  ```
+L'APK release firmata sarà generata in:
+`mobile-app/android/app/build/outputs/apk/release/app-release.apk` (o esportata in `mobile-app/dist/OnyxWorkout-release-latest.apk`).
 
 ---
 
