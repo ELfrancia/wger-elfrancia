@@ -99,25 +99,24 @@ public class OnyxLiveService extends Service {
     /** Serializes all AudioTrack lifecycle calls (worker thread build/play vs main-thread stop). */
     private final Object audioLock = new Object();
 
-    /** Re-renders the live notification periodically so its ProgressStyle bar tracks the
-     *  real elapsed time instead of freezing at whatever it showed at the last notify()
-     *  call. The chronometer text needs no help (the OS ticks it live from setWhen), only
-     *  the segmented progress bar does. Deliberately not per-second: the bar only needs to
-     *  look alive, and per-second notify() calls burn battery/IPC for no visible gain. */
-    private static final long NOTIFICATION_TICK_MS = 5000L;
+    /** Re-renders the live notification periodically: 1s while in background/island, 5s in foreground. */
+    private static final long TICK_BG_MS = 1000L;
+    private static final long TICK_FG_MS = 5000L;
     private final Handler tickHandler = new Handler(Looper.getMainLooper());
     private final Runnable notificationTicker = new Runnable() {
         @Override
         public void run() {
             if (!isTimerRunning || isPaused) return;
             updateForegroundState();
-            tickHandler.postDelayed(this, NOTIFICATION_TICK_MS);
+            long interval = (!IslandNotificationFactory.appInForeground && isTimerRunning && !isPaused) ? TICK_BG_MS : TICK_FG_MS;
+            tickHandler.postDelayed(this, interval);
         }
     };
 
     private void startNotificationTicker() {
         tickHandler.removeCallbacks(notificationTicker);
-        tickHandler.postDelayed(notificationTicker, NOTIFICATION_TICK_MS);
+        long interval = (!IslandNotificationFactory.appInForeground && isTimerRunning && !isPaused) ? TICK_BG_MS : TICK_FG_MS;
+        tickHandler.postDelayed(notificationTicker, interval);
     }
 
     private void stopNotificationTicker() {
@@ -198,11 +197,48 @@ public class OnyxLiveService extends Service {
         return hasActiveOngoingNotification && !IslandNotificationFactory.appInForeground;
     }
 
+    private static volatile OnyxLiveService sInstance = null;
+
+    public static OnyxLiveService getInstance() {
+        return sInstance;
+    }
+
+    /**
+     * Centralized visibility state manager.
+     * Logs every transition explicitly, updates the volatile flag, and immediately
+     * reconciles the ongoing notification without waiting for the periodic ticker.
+     */
+    public static synchronized void setAppInForeground(boolean foreground, String reason) {
+        boolean previous = IslandNotificationFactory.appInForeground;
+        IslandNotificationFactory.appInForeground = foreground;
+        Log.i(TAG, "APP VISIBILITY TRANSITION: [" + (previous ? "FOREGROUND" : "BACKGROUND")
+                + " -> " + (foreground ? "FOREGROUND" : "BACKGROUND") + "] via " + reason);
+
+        OnyxLiveService instance = sInstance;
+        if (instance != null) {
+            instance.onVisibilityChanged(foreground, reason);
+        }
+    }
+
+    private void onVisibilityChanged(boolean foreground, String reason) {
+        tickHandler.post(() -> {
+            Log.d(TAG, "onVisibilityChanged triggered: foreground=" + foreground + " reason=" + reason
+                    + " (isTimerRunning=" + isTimerRunning + " isPaused=" + isPaused + " isWorkoutActive=" + isWorkoutActive + ")");
+            if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
+                updateForegroundState();
+                if (isTimerRunning && !isPaused) {
+                    startNotificationTicker();
+                }
+            }
+        });
+    }
+
     private Bitmap appIconBitmap;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        sInstance = this;
         isRunning = true;
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -224,6 +260,13 @@ public class OnyxLiveService extends Service {
         }
 
         IslandNotificationFactory.createNotificationChannels(notificationManager);
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        Log.i(TAG, "onTaskRemoved: app swiped away from recents by user!");
+        setAppInForeground(false, "Service.onTaskRemoved");
     }
 
     @Override
@@ -304,10 +347,8 @@ public class OnyxLiveService extends Service {
         // App foreground/background transitions only re-render existing notifications
         // (promote when bg, demote when fg). They never start or stop the service.
         if (ACTION_APP_FOREGROUND.equals(action) || ACTION_APP_BACKGROUND.equals(action)) {
-            IslandNotificationFactory.appInForeground = ACTION_APP_FOREGROUND.equals(action);
-            if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
-                updateForegroundState();
-            } else {
+            setAppInForeground(ACTION_APP_FOREGROUND.equals(action), "Intent." + action);
+            if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
                 stopAllAndService();
                 return START_NOT_STICKY;
             }
@@ -389,7 +430,7 @@ public class OnyxLiveService extends Service {
         }
     }
 
-    private void handleAction(String action, Intent intent) {
+    void handleAction(String action, Intent intent) {
         switch (action) {
             case ACTION_START: {
                 int durationSeconds = intent.getIntExtra(EXTRA_DURATION, 45);
@@ -1314,6 +1355,9 @@ public class OnyxLiveService extends Service {
         // still rings and a restarted service can rebuild its state.
         Log.d(TAG, "onDestroy: releasing local resources only (timer=" + isTimerRunning
                 + " paused=" + isPaused + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying + ")");
+        if (sInstance == this) {
+            sInstance = null;
+        }
         releaseLocalResources();
         super.onDestroy();
     }

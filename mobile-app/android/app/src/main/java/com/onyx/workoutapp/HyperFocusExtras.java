@@ -93,19 +93,61 @@ public class HyperFocusExtras {
                     .put("colorBg", "#FF000000")
                     .put("bgColor", "#FF000000");
 
+            JSONObject timerInfo = null;
             if (!isPaused && targetEndTimeMs > System.currentTimeMillis()) {
-                // timerType 1 = count down. HyperOS renders a self-ticking mm:ss.
-                paramV2.put("timerInfo", new JSONObject()
-                        .put("timerType", 1)
+                // In Xiaomi HyperOS: timerType -1 is countdown timer, 1 is count-up/chronometer
+                long startedAt = System.currentTimeMillis();
+                if (secondsLeft > 0 && ratioRemaining > 0.001f) {
+                    long totalMs = (long) (secondsLeft * 1000L / ratioRemaining);
+                    startedAt = targetEndTimeMs - totalMs;
+                }
+                timerInfo = new JSONObject()
+                        .put("timerType", -1)
                         .put("timerWhen", targetEndTimeMs)
+                        .put("timerTotal", startedAt)
                         .put("timerSystemCurrent", System.currentTimeMillis())
-                        .put("colorTimer", hex));
+                        .put("colorTimer", hex);
+                paramV2.put("timerInfo", timerInfo);
             } else {
                 paramV2.put("timerInfo", new JSONObject().put("timerType", 0));
                 base.put("content", isPaused
                         ? String.format("In pausa (%s)", mmss)
                         : "Tempo scaduto");
             }
+
+            // ChatInfo template (supports native countdown timerInfo in HyperOS)
+            JSONObject chatInfo = new JSONObject()
+                    .put("type", 1)
+                    .put("title", "ONYX")
+                    .put("content", isPaused ? ("In pausa (" + mmss + ")") : safeTitle)
+                    .put("colorTitle", "#FFFFFFFF")
+                    .put("colorContent", hex);
+            if (timerInfo != null) {
+                chatInfo.put("timerInfo", timerInfo);
+            }
+            paramV2.put("chatInfo", chatInfo);
+
+            // Super Island configuration (param_island) for native status-bar pill / capsule
+            JSONObject smallIsland = new JSONObject().put("picInfo", pic);
+            JSONObject bigIsland = new JSONObject();
+            JSONObject leftArea = new JSONObject()
+                    .put("type", 1)
+                    .put("picInfo", pic);
+            bigIsland.put("imageTextInfoLeft", leftArea);
+
+            if (timerInfo != null) {
+                JSONObject sameWidthDigit = new JSONObject()
+                        .put("timerInfo", timerInfo)
+                        .put("showHighlightColor", true);
+                bigIsland.put("sameWidthDigitInfo", sameWidthDigit);
+            }
+
+            JSONObject paramIsland = new JSONObject()
+                    .put("islandProperty", 1)
+                    .put("islandPriority", 2)
+                    .put("smallIslandArea", smallIsland)
+                    .put("bigIslandArea", bigIsland);
+            paramV2.put("param_island", paramIsland);
 
             attach(builder, context, paramV2, "ONYX " + mmss);
         } catch (Throwable t) {
@@ -245,6 +287,8 @@ public class HyperFocusExtras {
         root.put("updatable", true);
         root.put("ticker", ticker);
         if (paramV2.has("baseInfo")) root.put("baseInfo", paramV2.getJSONObject("baseInfo"));
+        if (paramV2.has("chatInfo")) root.put("chatInfo", paramV2.getJSONObject("chatInfo"));
+        if (paramV2.has("param_island")) root.put("param_island", paramV2.getJSONObject("param_island"));
         if (paramV2.has("progressInfo")) root.put("progressInfo", paramV2.getJSONObject("progressInfo"));
         if (paramV2.has("timerInfo")) root.put("timerInfo", paramV2.getJSONObject("timerInfo"));
         if (paramV2.has("picInfo")) root.put("picInfo", paramV2.getJSONObject("picInfo"));
@@ -262,11 +306,12 @@ public class HyperFocusExtras {
                     clamp01(paramV2.getJSONObject("progressInfo").optInt("progress", 0) / 100f));
         }
 
-        // Icon bundle referenced by picInfo.pic == ICON_NAME.
+        // Icon bundle referenced by picInfo.pic == ICON_NAME or prefixed.
         try {
             Icon icon = Icon.createWithResource(context, R.drawable.ic_stat_onyx);
             Bundle pics = new Bundle();
             pics.putParcelable(ICON_NAME, icon);
+            pics.putParcelable("miui.focus.pic_" + ICON_NAME, icon);
             extras.putBundle("miui.focus.pics", pics);
         } catch (Throwable t) {
             Log.d(TAG, "HyperFocus icon bundle skipped: " + t.getMessage());

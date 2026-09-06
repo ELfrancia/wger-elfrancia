@@ -363,6 +363,17 @@ public class MainActivity extends BridgeActivity {
         insetsController.setAppearanceLightStatusBars(false);
         insetsController.show(WindowInsetsCompat.Type.statusBars());
 
+        // Allow activity to turn screen on and show over lock screen during workout sessions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        }
+        getWindow().addFlags(
+            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        );
+
         // Explicitly request Notification permission for Android 13+ (Poco / Xiaomi HyperOS)
         requestNotificationPermission();
 
@@ -385,6 +396,12 @@ public class MainActivity extends BridgeActivity {
             }
         } catch (Exception e) {
             Log.e(TAG, "safeStartService error: " + e.getMessage(), e);
+            // In-process fallback: if the service instance is already alive
+            OnyxLiveService instance = OnyxLiveService.getInstance();
+            if (instance != null && intent != null && intent.getAction() != null) {
+                Log.i(TAG, "safeStartService fallback: dispatching directly to live service instance");
+                instance.handleAction(intent.getAction(), intent);
+            }
         }
     }
 
@@ -397,6 +414,15 @@ public class MainActivity extends BridgeActivity {
 
     private void routeNotificationIntent(Intent intent) {
         if (intent == null) return;
+        if (intent.hasExtra("test_timer_seconds")) {
+            int sec = intent.getIntExtra("test_timer_seconds", 60);
+            Log.i(TAG, "routeNotificationIntent: test_timer_seconds=" + sec);
+            new AndroidTimerBridge().startTimer(sec, "Recupero");
+        }
+        if (intent.getBooleanExtra("test_move_to_back", false)) {
+            Log.i(TAG, "routeNotificationIntent: test_move_to_back requested");
+            moveTaskToBack(true);
+        }
         if (intent.getBooleanExtra("open_timer", false)) {
             handleOpenTimerIntent(intent);
         } else if (intent.getBooleanExtra("open_workout", false)) {
@@ -796,6 +822,12 @@ public class MainActivity extends BridgeActivity {
         signalAppVisibility(false);
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        signalAppVisibility(false);
+    }
+
     /**
      * Tell the notification layer whether the app is on screen. Foreground -> the in-app
      * notch is visible, so the native promoted island/chip is suppressed to avoid a
@@ -804,7 +836,7 @@ public class MainActivity extends BridgeActivity {
      */
     private void signalAppVisibility(boolean foreground) {
         try {
-            IslandNotificationFactory.appInForeground = foreground;
+            OnyxLiveService.setAppInForeground(foreground, "MainActivity.signalAppVisibility");
             if (!OnyxLiveService.isRunning) return;
             Intent i = new Intent(this, OnyxLiveService.class);
             i.setAction(foreground
