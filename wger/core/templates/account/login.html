@@ -1,5 +1,5 @@
 {% extends "template_tailwind.html" %}
-{% load i18n wger_extras %}
+{% load i18n wger_extras socialaccount %}
 
 {% block title %}{% translate "Login" %} - ONYX{% endblock %}
 
@@ -139,18 +139,18 @@
                     </button>
                 {% endif %}
 
-                {% if PASSKEY_LOGIN_ENABLED and use_social_auth %}
-                    <div class="flex items-center gap-4 text-neutral-500 text-xs justify-center font-medium">
-                        <hr class="w-8 border-[#26282e]">
-                        <span>{% translate "or sign in with" %}</span>
-                        <hr class="w-8 border-[#26282e]">
-                    </div>
-                {% endif %}
-
                 {% if use_social_auth %}
-                    <div class="flex flex-col gap-2">
-                        {% include "user/social_login.html" %}
-                    </div>
+                    {% get_providers as socialaccount_providers %}
+                    {% if socialaccount_providers %}
+                        <div class="flex items-center gap-4 text-neutral-500 text-xs justify-center font-medium">
+                            <hr class="flex-1 border-[#26282e]">
+                            <span>{% translate "or sign in with" %}</span>
+                            <hr class="flex-1 border-[#26282e]">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            {% include "user/social_login.html" %}
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         {% endif %}
