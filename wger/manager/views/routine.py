@@ -254,6 +254,7 @@ def update_routine_category_tailwind(request, pk):
 
 
 @login_required
+@require_POST
 def delete_routine_tailwind(request, pk):
     routine = get_object_or_404(Routine, pk=pk, user=request.user)
     routine.delete()
@@ -286,12 +287,14 @@ def add_day_tailwind(request, routine_pk):
 
 
 @login_required
+@require_POST
 def delete_day_tailwind(request, routine_pk, day_pk):
     day = get_object_or_404(Day, pk=day_pk, routine_id=routine_pk, routine__user=request.user)
+    routine_url = day.routine.get_absolute_url()
     day.delete()
     if request.headers.get('HX-Request'):
         response = HttpResponse()
-        response['HX-Redirect'] = day.routine.get_absolute_url()
+        response['HX-Redirect'] = routine_url
         return response
     return redirect('manager:routine:view', pk=routine_pk)
 
@@ -485,12 +488,14 @@ def add_exercise_tailwind(request, routine_pk, day_pk):
 
 
 @login_required
+@require_POST
 def delete_exercise_tailwind(request, routine_pk, day_pk, slot_pk):
     slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
+    routine_url = slot.day.routine.get_absolute_url()
     slot.delete()
     if request.headers.get('HX-Request'):
         response = HttpResponse()
-        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        response['HX-Redirect'] = routine_url
         return response
     return redirect('manager:routine:view', pk=routine_pk)
 
@@ -545,21 +550,24 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
 
 
 @login_required
+@require_POST
 def delete_set_tailwind(request, routine_pk, day_pk, slot_pk, entry_pk):
     slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
     entry = get_object_or_404(SlotEntry, pk=entry_pk, slot=slot)
     
+    routine = slot.day.routine
+    routine_url = routine.get_absolute_url()
     if slot.entries.count() <= 1:
         slot.delete()
     else:
         entry.delete()
         
     from wger.manager.helpers import reset_routine_cache
-    reset_routine_cache(slot.day.routine)
+    reset_routine_cache(routine)
     
     if request.headers.get('HX-Request'):
         response = HttpResponse()
-        response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        response['HX-Redirect'] = routine_url
         return response
     return redirect('manager:routine:view', pk=routine_pk)
 
