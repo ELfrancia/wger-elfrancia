@@ -131,8 +131,8 @@ class RegistrationTestCase(WgerTestCase):
         # Fill in the registration form
         registration_data = {
             'username': 'myusername',
-            'password1': 'quai8fai7Zae',
-            'password2': 'quai8fai7Zae',
+            'password1': 'quai8fai7Zae!',
+            'password2': 'quai8fai7Zae!',
             'email': 'not an email',
             'g-recaptcha-response': 'PASSED',
         }
@@ -264,8 +264,8 @@ class RegistrationTestCase(WgerTestCase):
 
         registration_data = {
             'username': 'newuser',
-            'password1': 'quai8fai7Zae',
-            'password2': 'quai8fai7Zae',
+            'password1': 'quai8fai7Zae!',
+            'password2': 'quai8fai7Zae!',
             'email': 'newuser@example.com',
             'g-recaptcha-response': 'PASSED',
         }

@@ -49,9 +49,13 @@ class NutritionalPlanPdfExportTestCase(WgerTestCase):
                 response['Content-Disposition'], 'attachment; filename=nutritional-plan.pdf'
             )
 
-            # Approximate size
-            self.assertGreater(int(response['Content-Length']), 38000)
-            self.assertLess(int(response['Content-Length']), 42000)
+            # Check PDF validity
+            self.assertTrue(response.content.startswith(b'%PDF'))
+
+            # Approximate size. This used to be ~40 KB, but the PDF now embeds the
+            # OpenSans TrueType faces and the wger logo, so it weighs ~713 KB.
+            self.assertGreater(int(response['Content-Length']), 650000)
+            self.assertLess(int(response['Content-Length']), 780000)
 
         # Create an empty plan
         user = User.objects.get(pk=2)
@@ -71,9 +75,13 @@ class NutritionalPlanPdfExportTestCase(WgerTestCase):
                 response['Content-Disposition'], 'attachment; filename=nutritional-plan.pdf'
             )
 
-            # Approximate size
-            self.assertGreater(int(response['Content-Length']), 38000)
-            self.assertLess(int(response['Content-Length']), 42000)
+            # Check PDF validity
+            self.assertTrue(response.content.startswith(b'%PDF'))
+
+            # Approximate size. Same embedded fonts and logo as above dominate the
+            # file size, so an empty plan is barely smaller: ~712 KB.
+            self.assertGreater(int(response['Content-Length']), 650000)
+            self.assertLess(int(response['Content-Length']), 780000)
 
     def test_export_pdf_anonymous(self):
         """

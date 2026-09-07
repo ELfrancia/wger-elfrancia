@@ -78,7 +78,7 @@ class HeadlessSmokeTestCase(WgerTestCase):
         signup_data = {
             'username': 'headlessnew',
             'email': 'headlessnew@example.com',
-            'password': 'AekaiLe0ga',
+            'password': 'AekaiLe0ga!',
         }
 
         with self.settings(
