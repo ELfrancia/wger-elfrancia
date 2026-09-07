@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 
 # Standard Library
+import logging
 import re
 from decimal import (
     Decimal,
@@ -23,6 +24,7 @@ from decimal import (
 # Django
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.shortcuts import (
     redirect,
     render,
@@ -33,6 +35,7 @@ from django.utils.translation import gettext as _
 # wger
 from wger.weight.models import WeightEntry
 
+logger = logging.getLogger(__name__)
 
 ACTIVITY_LEVELS = {'beginner', 'intermediate', 'advanced'}
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
@@ -101,16 +104,19 @@ def onboarding(request):
             user.last_name = last_name[:150]
             user_dirty = True
         if email and EMAIL_RE.match(email):
-            user.email = email
-            user_dirty = True
-            try:
-                from allauth.account.models import EmailAddress
-                EmailAddress.objects.update_or_create(
-                    user=user,
-                    defaults={'email': email, 'primary': True, 'verified': True},
-                )
-            except Exception:
-                pass
+            from allauth.account.models import EmailAddress
+            if EmailAddress.objects.filter(email__iexact=email).exclude(user=user).exists():
+                messages.error(request, _('An account with this email address already exists.'))
+            else:
+                try:
+                    EmailAddress.objects.update_or_create(
+                        user=user,
+                        defaults={'email': email, 'primary': True, 'verified': False},
+                    )
+                    user.email = email
+                    user_dirty = True
+                except IntegrityError as e:
+                    logger.warning(f"Could not update EmailAddress for user {user.pk}: {e}")
 
         if user_dirty:
             user.save()

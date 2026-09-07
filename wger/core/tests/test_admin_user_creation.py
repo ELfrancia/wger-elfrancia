@@ -80,7 +80,7 @@ class AdminUserCreationTestCase(WgerTestCase):
             'new_password2': 'NewSecurePassword123!',
         }
         response = self.client.post(reverse('core:user:change-password'), change_data)
-        self.assertRedirects(response, reverse('core:user:preferences'))
+        self.assertRedirects(response, reverse('core:dashboard'))
         
         # Verify flag is cleared
         user.refresh_from_db()
