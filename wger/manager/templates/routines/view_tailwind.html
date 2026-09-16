@@ -213,13 +213,13 @@
                                                                                 <!-- Reps & Weight Inputs (Borderless, Auto-saving) -->
                                                                                 <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
                                                                                     <!-- Reps Input -->
-                                                                                    <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                                    <input type="text" inputmode="decimal" name="reps" value="{% if entry.reps_config.reps is not None %}{{ entry.reps_config.reps|floatformat:"-2" }}{% else %}10{% endif %}" required class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
                                                                                     
                                                                                     <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
                                                                                     
                                                                                     <!-- Weight Input -->
                                                                                     <div class="flex items-center gap-1 shrink-0">
-                                                                                        <input type="text" inputmode="decimal" step="any" name="weight" value="{{ entry.weight_config.weight }}" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
+                                                                                        <input type="text" inputmode="decimal" step="any" name="weight" value="{% if entry.weight_config.weight is not None %}{{ entry.weight_config.weight|floatformat:"-2" }}{% else %}0{% endif %}" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
                                                                                         <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
                                                                                     </div>
                                                                                 </div> 
@@ -256,7 +256,7 @@
                                                              <!-- Borderless Reps x Weight Inputs -->
                                                              <div class="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
                                                                  <!-- Reps Input -->
-                                                                 <input type="number" name="reps" placeholder="10" required min="1" max="100" class="clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
+                                                                 <input type="text" inputmode="decimal" name="reps" placeholder="10" required class="clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500" oninput="this.value = this.value.replace(',', '.');">
                                                                  <span class="text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
 
                                                                  <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
@@ -369,13 +369,13 @@
                                                                      <!-- Reps & Weight Inputs (Borderless, Auto-saving) -->
                                                                      <div class="flex items-center justify-center gap-1 sm:gap-2 flex-1 min-w-0">
                                                                          <!-- Reps Input -->
-                                                                         <input type="number" name="reps" value="{{ entry.reps_config.reps }}" required min="1" max="100" class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" onchange="this.form.requestSubmit()">
+                                                                         <input type="text" inputmode="decimal" name="reps" value="{% if entry.reps_config.reps is not None %}{{ entry.reps_config.reps|floatformat:"-2" }}{% else %}10{% endif %}" required class="w-9 sm:w-12 min-w-0 bg-transparent text-white border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
                                                                          
                                                                          <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
                                                                          
                                                                          <!-- Weight Input -->
                                                                          <div class="flex items-center gap-1 shrink-0">
-                                                                             <input type="text" inputmode="decimal" step="any" name="weight" value="{{ entry.weight_config.weight }}" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
+                                                                             <input type="text" inputmode="decimal" step="any" name="weight" value="{% if entry.weight_config.weight is not None %}{{ entry.weight_config.weight|floatformat:"-2" }}{% else %}0{% endif %}" class="w-11 sm:w-14 min-w-0 bg-transparent text-[#caf300] border-0 p-0 text-sm sm:text-base font-black font-mono text-center focus:ring-0" oninput="this.value = this.value.replace(',', '.');" onchange="this.form.requestSubmit()">
                                                                              <span class="text-[9px] sm:text-[10px] font-extrabold uppercase text-[#caf300]/90 select-none">KG</span>
                                                                          </div>
                                                                      </div>   
@@ -413,7 +413,7 @@
                                                         <!-- Borderless Reps x Weight Inputs -->
                                                         <div class="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
                                                             <!-- Reps Input -->
-                                                            <input type="number" name="reps" placeholder="10" required min="1" max="100" class="clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500">
+                                                            <input type="text" inputmode="decimal" name="reps" placeholder="10" required class="clean-input w-9 sm:w-11 bg-transparent text-xs sm:text-sm text-center text-white font-mono font-black border-0 p-0 outline-none focus:outline-none focus:ring-0 placeholder-zinc-500" oninput="this.value = this.value.replace(',', '.');">
                                                             <span class="text-[9px] text-zinc-400 font-extrabold uppercase select-none">REPS</span>
 
                                                             <span class="text-zinc-600 font-black text-xs shrink-0 select-none px-0.5">×</span>
