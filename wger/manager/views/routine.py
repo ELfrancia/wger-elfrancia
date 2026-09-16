@@ -165,6 +165,7 @@ import json
 from django.utils.html import escape
 from django.http import HttpResponse
 from wger.manager.forms import RoutineForm, DayForm, AddExerciseForm, RoutineRenameForm, DayRenameForm
+from wger.manager.views.workout import parse_reps
 from wger.manager.models import Day, Slot, SlotEntry, SetsConfig, RepetitionsConfig, WeightConfig
 from wger.manager.helpers import reset_routine_cache
 
@@ -539,13 +540,8 @@ def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
             _('This exercise has no sets left, add the exercise again.'),
         )
 
-    reps = request.POST.get('reps')
-    try:
-        reps_val = int(Decimal(str(reps).strip().replace(',', '.')))
-    except (decimal.DecimalException, ValueError, TypeError, AttributeError):
-        reps_val = None
-
-    if reps_val is None or reps_val < 1:
+    reps_val = parse_reps(request.POST.get('reps'))
+    if reps_val is None:
         return _add_set_error(request, routine_pk, _('Enter a valid number of repetitions.'))
 
     weight = request.POST.get('weight')

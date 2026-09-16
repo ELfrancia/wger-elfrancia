@@ -209,3 +209,75 @@ class AddSetTestCase(WgerTestCase):
         new_entry = SlotEntry.objects.order_by('-id').first()
         self.assertEqual(new_entry.slot_id, self.slot.pk)
         self.assertEqual(new_entry.reps_config.reps, 9)
+
+    def test_add_set_preserves_decimal_reps(self):
+        """
+        The reps field doubles as seconds in timed-set mode, so "12,5" must be
+        stored as 12.5 - not truncated to 12, and certainly not replaced by 10.
+        """
+        for raw, expected in (('12,5', Decimal('12.50')), ('12.5', Decimal('12.50'))):
+            with self.subTest(raw=raw):
+                self.client.post(self.url, {'reps': raw, 'weight': '20'}, HTTP_HX_REQUEST='true')
+                entry = self.slot.entries.order_by('-order').first()
+                self.assertEqual(entry.reps_config.reps, expected)
+
+    def test_add_set_from_workout_page_preserves_decimal_reps(self):
+        url = reverse(
+            'manager:day:overview',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk},
+        )
+        self.client.post(
+            url,
+            {
+                'action': 'add_set',
+                'slot_id': self.slot.pk,
+                'exercise_id': self.exercise.id,
+                'reps': '12,5',
+                'weight': '20',
+            },
+            HTTP_HX_REQUEST='true',
+        )
+        entry = self.slot.entries.order_by('-order').first()
+        self.assertEqual(entry.reps_config.reps, Decimal('12.50'))
+
+    def test_add_set_from_workout_page_rejects_invalid_reps(self):
+        """
+        A reps value the user typed is never silently swapped for another one.
+        """
+        url = reverse(
+            'manager:day:overview',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk},
+        )
+        initial = self.slot.entries.count()
+        response = self.client.post(
+            url,
+            {
+                'action': 'add_set',
+                'slot_id': self.slot.pk,
+                'exercise_id': self.exercise.id,
+                'reps': 'abc',
+            },
+            HTTP_HX_REQUEST='true',
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn('onyx:set-error', response['HX-Trigger'])
+        self.assertEqual(self.slot.entries.count(), initial)
+
+    def test_add_set_from_workout_page_without_reps_repeats_last_set(self):
+        """No reps posted at all is the bare "+ set" affordance, not an error."""
+        url = reverse(
+            'manager:day:overview',
+            kwargs={'routine_pk': self.routine.pk, 'day_pk': self.day.pk},
+        )
+        last = self.slot.entries.order_by('-order').first()
+        expected = last.reps_config.reps
+        initial = self.slot.entries.count()
+
+        response = self.client.post(
+            url,
+            {'action': 'add_set', 'slot_id': self.slot.pk, 'exercise_id': self.exercise.id},
+            HTTP_HX_REQUEST='true',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.slot.entries.count(), initial + 1)
+        self.assertEqual(self.slot.entries.order_by('-order').first().reps_config.reps, expected)

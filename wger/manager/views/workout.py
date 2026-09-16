@@ -147,6 +147,25 @@ def get_previous_session_logs_map(user, day, current_session=None, transient_ses
     return result
 
 
+def parse_reps(raw):
+    """
+    Parses a posted reps value, or returns None if there is nothing usable.
+
+    Accepts both "12.5" and "12,5": the inputs are inputmode="decimal" and the
+    same field doubles as seconds in the timed-set mode, so a fractional value
+    is legitimate and must survive. RepetitionsConfig.value is a
+    DecimalField(decimal_places=2), so it is stored as typed rather than
+    truncated to an int.
+    """
+    if raw is None or str(raw).strip() == '':
+        return None
+    try:
+        value = Decimal(str(raw).strip().replace(',', '.')).quantize(Decimal('0.01'))
+    except (decimal.DecimalException, ValueError, TypeError):
+        return None
+    return value if value > 0 else None
+
+
 def _add_set_error(request, routine_pk, day_pk, message):
     """
     Reports a rejected "add set" instead of swallowing it.
@@ -693,6 +712,23 @@ def log_tailwind(request, routine_pk, day_pk):
                         _('This exercise has no sets left, add the exercise again.'),
                     )
 
+                req_reps = request.POST.get('repetitions') or request.POST.get('reps')
+                req_weight = request.POST.get('weight')
+
+                # A reps value the user actually typed is never silently
+                # replaced. `isdigit()` used to reject "12.5"/"12,5" — which
+                # the decimal inputs really do produce — and quietly substitute
+                # the previous set's value or 10, so the user got a set they
+                # never asked for and nothing said so.
+                reps_val = parse_reps(req_reps)
+                if req_reps is not None and str(req_reps).strip() != '' and reps_val is None:
+                    return _add_set_error(
+                        request,
+                        routine_pk,
+                        day_pk,
+                        _('Enter a valid number of repetitions.'),
+                    )
+
                 max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
                 slot_entry = SlotEntry.objects.create(
                     slot=slot,
@@ -700,20 +736,8 @@ def log_tailwind(request, routine_pk, day_pk):
                     order=(max_order or 0) + 1,
                 )
 
-                req_reps = request.POST.get('repetitions') or request.POST.get('reps')
-                req_weight = request.POST.get('weight')
-
-                # `isdigit()` alone rejects "12.5"/"12,5", which the inputs do
-                # produce, and silently fell back to a different value.
-                reps_val = None
-                if req_reps is not None and str(req_reps).strip() != '':
-                    try:
-                        reps_val = int(Decimal(str(req_reps).strip().replace(',', '.')))
-                    except (decimal.DecimalException, ValueError, TypeError):
-                        reps_val = None
-                    if reps_val is not None and reps_val < 1:
-                        reps_val = None
-
+                # No reps posted at all is a different thing: that is the bare
+                # "+ set" affordance, which repeats the previous set.
                 if reps_val is None:
                     last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
                     if (
@@ -722,9 +746,9 @@ def log_tailwind(request, routine_pk, day_pk):
                         and last_entry.reps_config
                         and last_entry.reps_config.reps is not None
                     ):
-                        reps_val = int(last_entry.reps_config.reps)
+                        reps_val = last_entry.reps_config.reps
                     else:
-                        reps_val = 10
+                        reps_val = Decimal('10')
 
                 if req_weight is not None and str(req_weight).strip() != '':
                     try:
