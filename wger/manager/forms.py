@@ -152,3 +152,43 @@ class AddExerciseForm(forms.Form):
 
 
 
+
+
+class RenameForm(forms.ModelForm):
+    """
+    Shared base for the inline "rename" widgets: a single, required ``name``
+    field. The model form keeps the max_length of the underlying model, so the
+    server rejects over-long names instead of silently truncating them.
+    """
+
+    class Meta:
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full bg-[#1c1b1b] border border-surface-container-high rounded-2xl p-3 '
+                         'text-primary font-bold focus:outline-none focus:border-primary-fixed',
+                'autocomplete': 'off',
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The model allows a blank name (rest days, unnamed routines), but
+        # renaming to an empty string is never what the user meant.
+        self.fields['name'].required = True
+
+    def clean_name(self):
+        name = (self.cleaned_data.get('name') or '').strip()
+        if not name:
+            raise forms.ValidationError(_('The name cannot be empty.'))
+        return name
+
+
+class RoutineRenameForm(RenameForm):
+    class Meta(RenameForm.Meta):
+        model = Routine
+
+
+class DayRenameForm(RenameForm):
+    class Meta(RenameForm.Meta):
+        model = Day

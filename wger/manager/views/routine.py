@@ -161,9 +161,12 @@ def view_tailwind(request, pk):
 # New Tailwind + HTMX views for Onyx
 from django.shortcuts import redirect
 from django.db import models as django_models
+import json
+from django.utils.html import escape
 from django.http import HttpResponse
-from wger.manager.forms import RoutineForm, DayForm, AddExerciseForm
+from wger.manager.forms import RoutineForm, DayForm, AddExerciseForm, RoutineRenameForm, DayRenameForm
 from wger.manager.models import Day, Slot, SlotEntry, SetsConfig, RepetitionsConfig, WeightConfig
+from wger.manager.helpers import reset_routine_cache
 
 
 @login_required
@@ -501,51 +504,89 @@ def delete_exercise_tailwind(request, routine_pk, day_pk, slot_pk):
 
 
 @login_required
+@require_POST
 def add_set_tailwind(request, routine_pk, day_pk, slot_pk):
-    slot = get_object_or_404(Slot, pk=slot_pk, day_id=day_pk, day__routine_id=routine_pk, day__routine__user=request.user)
-    if request.method == 'POST':
-        reps = request.POST.get('reps')
-        weight = request.POST.get('weight')
-        comment = request.POST.get('comment', '').strip()
-        exercise_id = request.POST.get('exercise_id')
-        
-        target_exercise = None
-        if exercise_id:
-            from wger.exercises.models import Exercise
-            target_exercise = get_object_or_404(Exercise, id=exercise_id)
-        else:
-            first_entry = slot.entries.first()
-            if first_entry:
-                target_exercise = first_entry.exercise
-                
-        if weight is None or str(weight).strip() == '':
-            weight_val = Decimal('0')
-        else:
-            try:
-                clean_w = str(weight).strip().replace(',', '.')
-                weight_val = Decimal(clean_w)
-            except (decimal.DecimalException, ValueError, TypeError):
-                weight_val = Decimal('0')
+    """
+    Adds one set (a SlotEntry plus its default configs) to an existing slot.
 
-        if target_exercise and reps:
-            max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
-            slot_entry = SlotEntry.objects.create(
-                slot=slot,
-                exercise=target_exercise,
-                order=(max_order or 0) + 1,
-                comment=comment
-            )
-            SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-            RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps)
-            WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
-            
-            from wger.manager.helpers import reset_routine_cache
-            reset_routine_cache(slot.day.routine)
-            
+    Every rejection has to be *visible*: answering an htmx POST with a 200 and
+    an HX-Redirect while silently doing nothing just reloads the page with an
+    unchanged list, which is indistinguishable from a dead button.
+    """
+    slot = get_object_or_404(
+        Slot,
+        pk=slot_pk,
+        day_id=day_pk,
+        day__routine_id=routine_pk,
+        day__routine__user=request.user,
+    )
+
+    exercise_id = request.POST.get('exercise_id')
+    comment = request.POST.get('comment', '').strip()
+
+    if exercise_id:
+        target_exercise = get_object_or_404(Exercise, id=exercise_id)
+    else:
+        # The plain (non superset) form posts no exercise_id and relies on the
+        # slot's own exercise.
+        first_entry = slot.entries.first()
+        target_exercise = first_entry.exercise if first_entry else None
+
+    if target_exercise is None:
+        return _add_set_error(
+            request,
+            routine_pk,
+            _('This exercise has no sets left, add the exercise again.'),
+        )
+
+    reps = request.POST.get('reps')
+    try:
+        reps_val = int(Decimal(str(reps).strip().replace(',', '.')))
+    except (decimal.DecimalException, ValueError, TypeError, AttributeError):
+        reps_val = None
+
+    if reps_val is None or reps_val < 1:
+        return _add_set_error(request, routine_pk, _('Enter a valid number of repetitions.'))
+
+    weight = request.POST.get('weight')
+    if weight is None or str(weight).strip() == '':
+        weight_val = Decimal('0')
+    else:
+        try:
+            weight_val = Decimal(str(weight).strip().replace(',', '.'))
+        except (decimal.DecimalException, ValueError, TypeError):
+            weight_val = Decimal('0')
+
+    max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
+    slot_entry = SlotEntry.objects.create(
+        slot=slot,
+        exercise=target_exercise,
+        order=(max_order or 0) + 1,
+        comment=comment,
+    )
+    SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+    RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
+    WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
+
+    reset_routine_cache(slot.day.routine)
+
     if request.headers.get('HX-Request'):
         response = HttpResponse()
         response['HX-Redirect'] = slot.day.routine.get_absolute_url()
+        response['HX-Trigger'] = json.dumps({
+            'onyx:set-added': {'slot': slot.pk, 'entry': slot_entry.pk},
+        })
         return response
+    return redirect('manager:routine:view', pk=routine_pk)
+
+
+def _add_set_error(request, routine_pk, message):
+    """422 for htmx (no swap, no bogus reload), a message otherwise."""
+    if request.headers.get('HX-Request'):
+        response = HttpResponse(escape(message), status=422)
+        response['HX-Trigger'] = json.dumps({'onyx:set-error': {'message': str(message)}})
+        return response
+    messages.error(request, message)
     return redirect('manager:routine:view', pk=routine_pk)
 
 
@@ -1078,3 +1119,71 @@ def exercise_history_stats(request, exercise_pk):
 
     return JsonResponse(payload)
 
+
+#
+# Rename (routine / day)
+#
+# Both endpoints share the same contract so the frontend can drive them with a
+# single htmx snippet:
+#
+#   POST, field "name", 200 + plain HTML fragment (the escaped new name) on
+#   success, 422 + error text on a validation failure. htmx does not swap
+#   non-2xx responses, so a rejected rename leaves the current title untouched.
+#
+
+def _rename_response(request, obj, form, redirect_url, trigger_name):
+    """Render the shared rename response for htmx and classic form posts."""
+    if form.is_valid():
+        form.save()
+        reset_routine_cache(obj.routine if isinstance(obj, Day) else obj)
+
+        if request.headers.get('HX-Request'):
+            response = HttpResponse(escape(obj.name))
+            response['HX-Trigger'] = json.dumps({
+                trigger_name: {'id': obj.pk, 'name': obj.name},
+            })
+            return response
+        return redirect(redirect_url)
+
+    error = ' '.join(form.errors.get('name', [])) or _('Invalid name.')
+    if request.headers.get('HX-Request'):
+        # 422: htmx leaves the DOM alone, the listener can surface the message.
+        response = HttpResponse(escape(error), status=422)
+        response['HX-Trigger'] = json.dumps({'onyx:rename-error': {'message': str(error)}})
+        return response
+
+    messages.error(request, error)
+    return redirect(redirect_url)
+
+
+@login_required
+@require_POST
+def rename_routine_tailwind(request, pk):
+    routine = get_object_or_404(Routine, pk=pk, user=request.user)
+    form = RoutineRenameForm(request.POST, instance=routine)
+    return _rename_response(
+        request,
+        routine,
+        form,
+        reverse('manager:routine:view', kwargs={'pk': routine.pk}),
+        'onyx:routine-renamed',
+    )
+
+
+@login_required
+@require_POST
+def rename_day_tailwind(request, routine_pk, day_pk):
+    day = get_object_or_404(
+        Day,
+        pk=day_pk,
+        routine_id=routine_pk,
+        routine__user=request.user,
+    )
+    form = DayRenameForm(request.POST, instance=day)
+    return _rename_response(
+        request,
+        day,
+        form,
+        reverse('manager:routine:view', kwargs={'pk': routine_pk}),
+        'onyx:day-renamed',
+    )

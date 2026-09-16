@@ -56,6 +56,11 @@ patterns_days = [
         name='overview',
     ),
     path(
+        '<int:day_pk>/rename',
+        routine.rename_day_tailwind,
+        name='rename',
+    ),
+    path(
         '<int:day_pk>/session-status',
         workout.session_status_tailwind,
         name='session-status',
@@ -78,6 +83,11 @@ patterns_routine = [
         '<int:pk>/edit',
         routine.edit_routine_tailwind,
         name='edit',
+    ),
+    path(
+        '<int:pk>/rename',
+        routine.rename_routine_tailwind,
+        name='rename',
     ),
     path(
         '<int:pk>/update-week',

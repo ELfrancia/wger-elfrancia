@@ -11,6 +11,7 @@ from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 from django.utils.translation import gettext as _
 from wger.manager.models import (
     Routine,
@@ -144,6 +145,23 @@ def get_previous_session_logs_map(user, day, current_session=None, transient_ses
                     used_log_ids.add(cand_log.id)
 
     return result
+
+
+def _add_set_error(request, routine_pk, day_pk, message):
+    """
+    Reports a rejected "add set" instead of swallowing it.
+
+    htmx never swaps a non-2xx response, so the card on screen stays exactly as
+    it is and the client can surface the message from the ``onyx:set-error``
+    trigger.
+    """
+    if request.headers.get('HX-Request'):
+        response = HttpResponse(escape(message), status=422)
+        response['HX-Trigger'] = json.dumps({'onyx:set-error': {'message': str(message)}})
+        return response
+
+    messages.error(request, message)
+    return redirect('manager:day:overview', routine_pk=routine_pk, day_pk=day_pk)
 
 
 @login_required
@@ -655,53 +673,72 @@ def log_tailwind(request, routine_pk, day_pk):
                         slot = slot_entry.slot
 
             elif action == 'add_set':
+                from wger.exercises.models import Exercise
+
+                exercise = None
                 if slot:
-                    from wger.exercises.models import Exercise
                     if exercise_id:
                         exercise = get_object_or_404(Exercise, id=exercise_id)
-                    elif slot.obj:
-                        exercise = slot.obj
                     else:
-                        exercise = None
+                        exercise = slot.obj
 
-                    if exercise:
-                        max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
-                        slot_entry = SlotEntry.objects.create(
-                            slot=slot,
-                            exercise=exercise,
-                            order=(max_order or 0) + 1,
-                        )
+                # Without a slot or an exercise there is nothing to attach the
+                # set to. Re-rendering the unchanged card with a 200 would look
+                # exactly like a dead button, so say so instead.
+                if not exercise:
+                    return _add_set_error(
+                        request,
+                        routine_pk,
+                        day_pk,
+                        _('This exercise has no sets left, add the exercise again.'),
+                    )
 
-                        req_reps = request.POST.get('repetitions') or request.POST.get('reps')
-                        req_weight = request.POST.get('weight')
+                max_order = slot.entries.aggregate(django_models.Max('order'))['order__max']
+                slot_entry = SlotEntry.objects.create(
+                    slot=slot,
+                    exercise=exercise,
+                    order=(max_order or 0) + 1,
+                )
 
-                        if req_reps is not None and str(req_reps).isdigit():
-                            reps_val = int(req_reps)
-                        else:
-                            last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
-                            if (
-                                last_entry
-                                and hasattr(last_entry, 'reps_config')
-                                and last_entry.reps_config
-                                and last_entry.reps_config.reps is not None
-                            ):
-                                reps_val = int(last_entry.reps_config.reps)
-                            else:
-                                reps_val = 10
+                req_reps = request.POST.get('repetitions') or request.POST.get('reps')
+                req_weight = request.POST.get('weight')
 
-                        if req_weight is not None and str(req_weight).strip() != '':
-                            try:
-                                clean_w = str(req_weight).strip().replace(',', '.')
-                                weight_val = Decimal(clean_w)
-                            except (decimal.DecimalException, ValueError, TypeError):
-                                weight_val = Decimal('0')
-                        else:
-                            weight_val = Decimal('0')
+                # `isdigit()` alone rejects "12.5"/"12,5", which the inputs do
+                # produce, and silently fell back to a different value.
+                reps_val = None
+                if req_reps is not None and str(req_reps).strip() != '':
+                    try:
+                        reps_val = int(Decimal(str(req_reps).strip().replace(',', '.')))
+                    except (decimal.DecimalException, ValueError, TypeError):
+                        reps_val = None
+                    if reps_val is not None and reps_val < 1:
+                        reps_val = None
 
-                        SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
-                        RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
-                        WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
-                        reset_routine_cache(day.routine)
+                if reps_val is None:
+                    last_entry = slot.entries.exclude(id=slot_entry.id).order_by('-order').first()
+                    if (
+                        last_entry
+                        and hasattr(last_entry, 'reps_config')
+                        and last_entry.reps_config
+                        and last_entry.reps_config.reps is not None
+                    ):
+                        reps_val = int(last_entry.reps_config.reps)
+                    else:
+                        reps_val = 10
+
+                if req_weight is not None and str(req_weight).strip() != '':
+                    try:
+                        clean_w = str(req_weight).strip().replace(',', '.')
+                        weight_val = Decimal(clean_w)
+                    except (decimal.DecimalException, ValueError, TypeError):
+                        weight_val = Decimal('0')
+                else:
+                    weight_val = Decimal('0')
+
+                SetsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=1)
+                RepetitionsConfig.objects.create(slot_entry=slot_entry, iteration=1, value=reps_val)
+                WeightConfig.objects.create(slot_entry=slot_entry, iteration=1, value=weight_val)
+                reset_routine_cache(day.routine)
 
             elif action == 'add_exercise_on_the_fly':
                 from wger.exercises.models import Exercise
