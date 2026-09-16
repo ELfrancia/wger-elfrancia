@@ -400,8 +400,15 @@
             localStorage.removeItem('onyx_active_rest_timer');
         } catch(e) {}
 
+        // Through the facade, not straight at the bridge: the facade is the
+        // single owner of the native live state, so bypassing it here would
+        // leave its cached signature claiming a timer that no longer exists -
+        // and the next update would then be deduped away.  restStop() stops the
+        // alarm and the countdown together and is idempotent.
         try {
-            if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
+            if (window.onyxNative && typeof window.onyxNative.restStop === 'function') {
+                window.onyxNative.restStop();
+            } else if (window.AndroidTimer && typeof window.AndroidTimer.stopAlarm === 'function') {
                 window.AndroidTimer.stopAlarm();
                 window.AndroidTimer.stopTimer();
             } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
@@ -416,8 +423,8 @@
             stopTimer();
         }
 
-        updateGlobalMiniTimer();
-        updateDynamicNotch();
+        // The timer is gone: repaint and let the ticker shut itself down.
+        onyxSyncGlobalTicker();
     }
 
     function handleGlobalTimerModalOption3() {
@@ -878,13 +885,95 @@
         updateDynamicNotch();
     }
 
+    // Is there anything for this scheduler to animate right now?  The nav is
+    // rendered on *every* page, so an unconditional ticker burns CPU (and on
+    // Xiaomi, visibly battery/heat) on pages that have no timer and no session
+    // at all.  Both sources are cheap to read: the rest countdown lives in
+    // localStorage, the active session is a server-rendered constant.
+    function onyxHasLiveActivity() {
+        if (Boolean("{{ active_session_url|default:'' }}")) return true;
+        try {
+            const raw = localStorage.getItem('onyx_active_rest_timer');
+            if (!raw) return false;
+            const s = JSON.parse(raw);
+            if (!s) return false;
+            // A finished-but-unacknowledged timer still owns the bubble (it
+            // renders the flashing 00:00), so hasNotifiedZero counts as live.
+            return Boolean(s.isRunning || s.hasNotifiedZero || (s.remainingMs || 0) > 0);
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Navigation can be re-rendered by partial page updates.  Keep exactly one
     // scheduler alive so a replacement script cannot multiply DOM updates.
-    if (window.globalMiniTimerInterval) {
-        window.clearInterval(window.globalMiniTimerInterval);
+    //
+    // Tick at 1/s, never faster: the display has one-second resolution (mm:ss),
+    // so a 500ms tick did two full DOM passes to render every visible frame.
+    // The tick only *repaints*; it never accumulates elapsed time - every
+    // update recomputes from the absolute timestamps in the stored state
+    // (targetEndTime / startedAt), so ticks missed while suspended cost
+    // nothing and resuming needs no catch-up.
+    function onyxStopGlobalTicker() {
+        if (window.globalMiniTimerInterval) {
+            window.clearInterval(window.globalMiniTimerInterval);
+            window.globalMiniTimerInterval = null;
+        }
     }
-    window.globalMiniTimerInterval = window.setInterval(runGlobalTimersUpdate, 500);
-    document.addEventListener('DOMContentLoaded', runGlobalTimersUpdate);
+
+    function onyxStartGlobalTicker() {
+        // Never run hidden: a background tab/app repainting a bubble nobody
+        // can see is pure battery drain.  The native notification is what
+        // keeps the user informed while backgrounded.
+        if (document.visibilityState === 'hidden') return;
+        if (!onyxHasLiveActivity()) return;
+        if (window.globalMiniTimerInterval) return;
+        window.globalMiniTimerInterval = window.setInterval(runGlobalTimersUpdate, 1000);
+    }
+
+    // Single entry point: repaint once from the current timestamps, then keep
+    // the ticker running only if it is still warranted.
+    function onyxSyncGlobalTicker() {
+        runGlobalTimersUpdate();
+        if (document.visibilityState === 'hidden' || !onyxHasLiveActivity()) {
+            onyxStopGlobalTicker();
+        } else {
+            onyxStartGlobalTicker();
+        }
+    }
+    window.onyxSyncGlobalTicker = onyxSyncGlobalTicker;
+    // Exported so the native app-lifecycle listeners in template_tailwind.html
+    // can suspend the ticker when the app goes to the background.
+    window.onyxStopGlobalTicker = onyxStopGlobalTicker;
+
+    onyxStopGlobalTicker();
+    onyxSyncGlobalTicker();
+    document.addEventListener('DOMContentLoaded', onyxSyncGlobalTicker);
+
+    // Suspend/resume instead of polling.  On resume we repaint immediately so
+    // the bubble is never a stale frame behind while waiting for the next tick.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            onyxStopGlobalTicker();
+        } else {
+            onyxSyncGlobalTicker();
+        }
+    });
+    window.addEventListener('pagehide', onyxStopGlobalTicker);
+    window.addEventListener('pageshow', onyxSyncGlobalTicker);
+    window.addEventListener('focus', onyxSyncGlobalTicker);
+
+    // With no idle polling left, the ticker has to be *told* when a timer
+    // starts or stops.  The onyxNative facade emits this on every live-state
+    // transition (natively bridged or not), which covers same-tab changes;
+    // `storage` covers another tab, and htmx swaps re-render this nav.
+    window.addEventListener('onyx:livestatechange', onyxSyncGlobalTicker);
+    window.addEventListener('storage', (e) => {
+        if (!e.key || e.key === 'onyx_active_rest_timer' || e.key.startsWith('onyx_workout_')) {
+            onyxSyncGlobalTicker();
+        }
+    });
+    document.addEventListener('htmx:load', onyxSyncGlobalTicker);
 
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) {
         try {
@@ -903,8 +992,9 @@
                         } catch(e) {}
                     }
                 }
-                updateGlobalMiniTimer();
-                updateDynamicNotch();
+                // Repaint *and* re-evaluate the ticker: expiry keeps it alive
+                // (flashing 00:00), a stop tears it down.
+                onyxSyncGlobalTicker();
             });
             window.Capacitor.Plugins.WorkoutTimer.addListener('onTimerStopped', () => {
                 if (!window._onyxTimerNativeHandled) {
@@ -912,8 +1002,9 @@
                         localStorage.removeItem('onyx_active_rest_timer');
                     } catch(e) {}
                 }
-                updateGlobalMiniTimer();
-                updateDynamicNotch();
+                // Repaint *and* re-evaluate the ticker: expiry keeps it alive
+                // (flashing 00:00), a stop tears it down.
+                onyxSyncGlobalTicker();
             });
         } catch(e) {}
     }

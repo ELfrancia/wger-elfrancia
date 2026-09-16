@@ -1468,7 +1468,55 @@
 
             window.addEventListener('online', () => window.OnyxOfflineSync.syncPending());
             window.addEventListener('offline', () => window.OnyxOfflineSync.showBanner('offline', 'Dispositivo Offline • I dati vengono salvati localmente'));
-            setInterval(() => { if (navigator.onLine && window.OnyxOfflineSync) window.OnyxOfflineSync.syncPending(); }, 15000);
+
+            // Background network polling is the single worst battery offender in
+            // a WebView app: a 15s wake-up kept firing requests with the screen
+            // off, holding the radio up for a queue that is almost always empty.
+            //
+            // Three guards, all necessary: only while the page is actually
+            // visible, only while online, and only when there is something
+            // queued.  Nothing is lost by suspending - the queue is durable, the
+            // `online` event covers regaining connectivity, and becoming visible
+            // again flushes immediately below.
+            let onyxSyncIntervalId = null;
+
+            function onyxRunPendingSync() {
+                if (document.visibilityState !== 'visible') return;
+                if (!navigator.onLine || !window.OnyxOfflineSync) return;
+                try {
+                    const q = window.OnyxOfflineSync.getQueue();
+                    if (!q || q.length === 0) return;
+                } catch (e) {}
+                window.OnyxOfflineSync.syncPending();
+            }
+
+            function onyxStopSyncPolling() {
+                if (onyxSyncIntervalId) {
+                    clearInterval(onyxSyncIntervalId);
+                    onyxSyncIntervalId = null;
+                }
+            }
+
+            function onyxStartSyncPolling() {
+                if (onyxSyncIntervalId) return;
+                if (document.visibilityState !== 'visible') return;
+                onyxSyncIntervalId = setInterval(onyxRunPendingSync, 15000);
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    // Flush straight away, then resume the slow poll: coming back
+                    // to the foreground is exactly when a queue drained by
+                    // reconnecting while hidden needs to go out.
+                    onyxRunPendingSync();
+                    onyxStartSyncPolling();
+                } else {
+                    onyxStopSyncPolling();
+                }
+            });
+            window.addEventListener('pagehide', onyxStopSyncPolling);
+            window.addEventListener('pageshow', onyxStartSyncPolling);
+            onyxStartSyncPolling();
             document.addEventListener('DOMContentLoaded', () => { if (window.OnyxOfflineSync) window.OnyxOfflineSync.updateBadge(); });
 
             // Global HTMX Offline error interceptor for sets & workouts
@@ -1508,6 +1556,42 @@
                     return Boolean(window.AndroidTimer || (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer));
                 },
                 _caps: null,
+
+                // ---- Single owner of the native live state -------------------
+                // The native side now renders ONE notification (id 1001) whose
+                // content is chosen by priority: expired alarm > rest timer >
+                // workout in progress, with the set count as subText of that
+                // same notification.  So there is exactly one state here too:
+                // every caller goes through this facade, and the facade decides
+                // whether the native side actually needs to hear about it.
+                //
+                // `_live` is the last payload we successfully pushed.  It exists
+                // to swallow duplicate/no-op calls: the nav and the workout page
+                // both react to the same DOM and localStorage changes, so without
+                // dedup they issue concurrent identical updates - wasted IPC, and
+                // exactly the kind of racing update that used to make the
+                // notification flicker or double up.
+                _live: { rest: null, workout: null, restPushedAt: 0 },
+
+                // Tell the rest of the page that the live state changed.  The nav
+                // ticker has no idle polling any more, so this event is what wakes
+                // it up.  Fired even with no native bridge (plain web), because the
+                // web bubble needs the same signal.
+                _emit() {
+                    try {
+                        window.dispatchEvent(new Event('onyx:livestatechange'));
+                    } catch (e) {}
+                },
+
+                // Drop the dedup memory so the next call is guaranteed to reach
+                // the native side.  Needed whenever the native notification may
+                // have been rebuilt behind our back (process death, service
+                // restart, returning to the foreground): a cached signature would
+                // otherwise suppress the very update that re-fills it, leaving a
+                // stale island.
+                resetLiveCache() {
+                    this._live = { rest: null, workout: null, restPushedAt: 0 };
+                },
                 async getCapabilities() {
                     if (this._caps) return this._caps;
                     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.getCapabilities === 'function') {
@@ -1540,6 +1624,9 @@
                 },
                 restStart(durationSeconds, title, soundUri) {
                     if (window._suppressNativeTimerCall) return;
+                    this._live.rest = { duration: durationSeconds };
+                    this._live.restPushedAt = Date.now();
+                    this._emit();
                     try {
                         if (window.AndroidTimer && typeof window.AndroidTimer.startTimerWithSound === 'function') {
                             window.AndroidTimer.startTimerWithSound(durationSeconds, title || 'Recupero in corso', soundUri || null);
@@ -1575,6 +1662,10 @@
                     } catch(e) {}
                 },
                 restAddSeconds(sec = 30) {
+                    // The deadline just moved: forget the cached signature so the
+                    // next restUpdate is not throttled away as a duplicate.
+                    this._live.rest = null;
+                    this._live.restPushedAt = 0;
                     try {
                         if (window.AndroidTimer && typeof window.AndroidTimer.addSeconds === 'function') {
                             window.AndroidTimer.addSeconds(sec);
@@ -1583,10 +1674,28 @@
                         }
                     } catch(e) {}
                 },
+                // Pushed from the workout page's 1/s countdown tick.  The native
+                // notification does NOT need that: it renders the countdown from
+                // the absolute deadline via setUsesChronometer, and re-renders
+                // itself every 5s to keep the progress bar alive (see
+                // ISLAND_CONTRACT §3.4).  So a per-second update here buys the
+                // user nothing and costs a JS->native IPC hop every second for
+                // the whole recovery - and the native side now drops updates
+                // arriving within its 2s anti-stale guard anyway.
+                //
+                // Forward only what actually carries new information: a changed
+                // duration (+30s, a new preset), or a slow keep-alive at most
+                // once every 5s to match the native re-render cadence.
                 restUpdate(durationSeconds, remainingSeconds) {
                     try {
                         const dur = Math.max(1, parseInt(durationSeconds, 10) || 45);
                         const rem = remainingSeconds !== undefined ? Math.max(0, parseInt(remainingSeconds, 10)) : dur;
+                        const now = Date.now();
+                        const prev = this._live.rest;
+                        const durationUnchanged = prev && prev.duration === dur;
+                        if (durationUnchanged && (now - this._live.restPushedAt) < 5000) return;
+                        this._live.rest = { duration: dur };
+                        this._live.restPushedAt = now;
                         if (window.AndroidTimer && typeof window.AndroidTimer.updateNotification === 'function') {
                             window.AndroidTimer.updateNotification(dur, rem);
                         } else if (window.AndroidTimer && typeof window.AndroidTimer.updateTimer === 'function') {
@@ -1598,6 +1707,13 @@
                 },
                 restStop() {
                     if (window._suppressNativeTimerCall) return;
+                    // Idempotent: a second stop with nothing running is a no-op,
+                    // not another round of IPC.  `restPushedAt` is cleared too so
+                    // a later restart is never mistaken for a duplicate.
+                    const wasLive = this._live.rest !== null;
+                    this._live.rest = null;
+                    this._live.restPushedAt = 0;
+                    if (wasLive) this._emit();
                     try {
                         if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
                             window.AndroidTimer.stopTimer();
@@ -1609,6 +1725,19 @@
                     } catch(e) {}
                 },
                 workoutStart(title, totalSets, completedSets, currentExerciseName, startedAt, slotBoundaries) {
+                    // Idempotent start.  The workout page retries this (it polls
+                    // for the DOM to settle before it knows the set counts) and
+                    // the server reconciliation re-asserts it on every return to
+                    // the foreground.  Starting twice used to mean asking the
+                    // native side to build the island again; now a start on an
+                    // already-running island is downgraded to a plain update, so
+                    // there is only ever one notification behind it.
+                    if (this._live.workout !== null) {
+                        this.workoutUpdate(completedSets, totalSets, currentExerciseName);
+                        return;
+                    }
+                    this._live.workout = [completedSets, totalSets, currentExerciseName || ''].join('|');
+                    this._emit();
                     try {
                         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland === 'function') {
                             window.Capacitor.Plugins.WorkoutTimer.startWorkoutIsland({
@@ -1624,7 +1753,18 @@
                         }
                     } catch(e) {}
                 },
+                // The ONLY path that reports set progress.  There is no separate
+                // "sets notification" any more - the count is subText on the
+                // single live notification - so this must never be paired with
+                // another native call to render the same information twice.
                 workoutUpdate(completedSets, totalSets, currentExerciseName) {
+                    const sig = [completedSets, totalSets, currentExerciseName || ''].join('|');
+                    // Identical payload: the nav and the workout page both observe
+                    // the same set checkboxes, so this fires twice for one user
+                    // action.  Push it once.
+                    if (this._live.workout === sig) return;
+                    this._live.workout = sig;
+                    this._emit();
                     try {
                         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland === 'function') {
                             window.Capacitor.Plugins.WorkoutTimer.updateWorkoutIsland({
@@ -1640,6 +1780,14 @@
                     } catch(e) {}
                 },
                 workoutStop() {
+                    // Always forwarded, never short-circuited: on a fresh page
+                    // load `_live.workout` is null while a native island from
+                    // before the reload may well still be up, and that ghost is
+                    // precisely what this call exists to kill.  Only the event is
+                    // conditional.
+                    const wasLive = this._live.workout !== null;
+                    this._live.workout = null;
+                    if (wasLive) this._emit();
                     try {
                         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland === 'function') {
                             window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland();
@@ -1668,6 +1816,15 @@
                     } catch(e) {}
                 },
                 stopAll() {
+                    // Never deduped or short-circuited.  stopAll is unconditional
+                    // and idempotent on the native side by contract
+                    // (ISLAND_CONTRACT §1.2.1) precisely so it can arrive more
+                    // than once - finish, then the server reconciliation - and
+                    // suppressing a repeat here would be the one thing that lets a
+                    // ghost notification survive.  Only the local cache is reset.
+                    const wasLive = this._live.rest !== null || this._live.workout !== null;
+                    this.resetLiveCache();
+                    if (wasLive) this._emit();
                     if (window.AndroidTimer && typeof window.AndroidTimer.stopAll === 'function') {
                         try {
                             window.AndroidTimer.stopAll();
@@ -1687,6 +1844,69 @@
                 }
             };
         }
+
+        // ---- Native app lifecycle -------------------------------------------
+        // Reinforcement only.  The native side owns teardown on task removal
+        // (onTaskRemoved stops everything when no workout/timer/alarm is active,
+        // releases the wakelock, cancels the alarm and the notification) and uses
+        // START_NOT_STICKY when no timer is running, so nothing here is the sole
+        // defence - JS listeners never fire when Android kills the process
+        // outright, which is exactly the case that matters most.
+        (function attachOnyxAppLifecycle() {
+            const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+            if (!App || typeof App.addListener !== 'function') return;
+            if (window._onyxAppLifecycleAttached) return;
+            window._onyxAppLifecycleAttached = true;
+
+            App.addListener('appStateChange', ({ isActive }) => {
+                if (isActive) {
+                    // The native notification may have been rebuilt while we were
+                    // away (service restart, process death).  Drop the dedup
+                    // memory so the next update is guaranteed to reach it instead
+                    // of being swallowed as a duplicate of a state that no longer
+                    // exists.
+                    if (window.onyxNative) window.onyxNative.resetLiveCache();
+                    if (typeof window.onyxSyncGlobalTicker === 'function') window.onyxSyncGlobalTicker();
+                    return;
+                }
+                // Going to the background is deliberately NOT a teardown.  A rest
+                // countdown surviving in the background is the entire point of the
+                // native notification - calling stopAll() here would kill the
+                // feature every time the user checks a message.  Backgrounding
+                // only suspends the web-side tickers; the native side keeps the
+                // single notification alive and accurate on its own.
+                if (typeof window.onyxStopGlobalTicker === 'function') window.onyxStopGlobalTicker();
+            });
+
+            App.addListener('pause', () => {
+                if (typeof window.onyxStopGlobalTicker === 'function') window.onyxStopGlobalTicker();
+            });
+
+            App.addListener('resume', () => {
+                if (window.onyxNative) window.onyxNative.resetLiveCache();
+                if (typeof window.onyxSyncGlobalTicker === 'function') window.onyxSyncGlobalTicker();
+            });
+
+            // Android back button.  Capacitor swallows the default behaviour once
+            // a listener is registered, so navigation has to be driven explicitly.
+            App.addListener('backButton', ({ canGoBack }) => {
+                if (canGoBack) {
+                    window.history.back();
+                    return;
+                }
+                // Backing out of the root exits the app.  Tear the notification
+                // down only when nothing is genuinely live: an active workout or a
+                // running recovery must keep its notification, same rule as
+                // backgrounding.  A leftover island with no live state behind it is
+                // the ghost from symptom (a), and this is a free place to catch it.
+                const live = window.onyxNative && window.onyxNative._live;
+                const somethingLive = Boolean(live && (live.rest !== null || live.workout !== null));
+                if (!somethingLive && window.onyxNative && typeof window.onyxNative.stopAll === 'function') {
+                    try { window.onyxNative.stopAll(); } catch (e) {}
+                }
+                if (typeof App.exitApp === 'function') App.exitApp();
+            });
+        })();
 
         // Check and prompt native permissions on launch
         async function checkAndPromptPermissions() {

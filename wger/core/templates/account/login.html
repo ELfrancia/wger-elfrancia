@@ -188,13 +188,39 @@
         }
     }
 
-    // Clean up any stale timer or workout state on login page
+    // Clean up any stale timer or workout state on login page.
+    //
+    // Being on the login screen means there is no session, so nothing may
+    // legitimately be live - this is one of the few places a full, unconditional
+    // teardown is unambiguously correct.  It previously stopped only the rest
+    // timer and the alarm, and only over the AndroidTimer bridge: a workout
+    // island survived a logout entirely (one of the ways the "allenamento in
+    // corso" notification outlived its workout), and on a Capacitor-only build
+    // nothing was stopped at all.
+    //
+    // stopAll() covers timer + alarm + island in one idempotent call and works
+    // over both bridges; the direct AndroidTimer calls stay as a fallback for
+    // pages where the facade has not been defined.
     try {
-        localStorage.removeItem('onyx_active_rest_timer');
-        localStorage.removeItem('onyx_active_rest_timer_paused');
-        if (window.AndroidTimer) {
-            window.AndroidTimer.stopTimer();
-            window.AndroidTimer.stopAlarm();
+        ['onyx_active_rest_timer', 'onyx_active_rest_timer_paused'].forEach(k => localStorage.removeItem(k));
+        const stale = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('onyx_workout_')) stale.push(key);
+        }
+        stale.forEach(k => localStorage.removeItem(k));
+    } catch(e) {}
+    try {
+        if (window.onyxNative && typeof window.onyxNative.stopAll === 'function') {
+            window.onyxNative.stopAll();
+        } else if (window.AndroidTimer) {
+            if (typeof window.AndroidTimer.stopAll === 'function') {
+                window.AndroidTimer.stopAll();
+            } else {
+                window.AndroidTimer.stopTimer();
+                window.AndroidTimer.stopAlarm();
+                if (typeof window.AndroidTimer.stopWorkout === 'function') window.AndroidTimer.stopWorkout();
+            }
         }
     } catch(e) {}
 </script>
