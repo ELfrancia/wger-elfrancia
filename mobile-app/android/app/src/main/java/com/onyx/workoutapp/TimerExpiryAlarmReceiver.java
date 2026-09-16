@@ -1,5 +1,6 @@
 package com.onyx.workoutapp;
 
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,11 +15,17 @@ import android.util.Log;
  * reaches {@code onFinish()} and the alarm never rings. To make the expiry bullet-proof
  * {@link OnyxLiveService} <em>also</em> schedules an
  * {@code AlarmManager.setExactAndAllowWhileIdle()} for the exact target end time.
- * Whichever fires first wins; the service de-dupes the alarm.
+ * Whichever fires first wins; the service de-dupes on the target timestamp.
  *
- * <p>This receiver just wakes {@link OnyxLiveService} back up with the
+ * <p>This receiver wakes {@link OnyxLiveService} back up with the
  * {@link #ACTION_TIMER_EXPIRED} action and lets the service decide whether the alarm is
  * still relevant (no-op if the timer was already stopped or already expired).
+ *
+ * <p>If the service cannot be started at all — background foreground-service starts are
+ * restricted on Android 12+, and the exact-alarm allowlist window is short and sometimes
+ * simply not granted on HyperOS — we fall back to posting the "TEMPO SCADUTO" card
+ * ourselves, on the same single notification id. Silence is the one outcome that is never
+ * acceptable here; a duplicate is impossible because the id is shared.
  */
 public class TimerExpiryAlarmReceiver extends BroadcastReceiver {
 
@@ -34,6 +41,7 @@ public class TimerExpiryAlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "TimerExpiryAlarmReceiver: exact-alarm backup fired");
+        if (context == null) return;
         try {
             Intent serviceIntent = new Intent(context, OnyxLiveService.class);
             serviceIntent.setAction(ACTION_TIMER_EXPIRED);
@@ -43,7 +51,21 @@ public class TimerExpiryAlarmReceiver extends BroadcastReceiver {
                 context.startService(serviceIntent);
             }
         } catch (Exception e) {
-            Log.e(TAG, "TimerExpiryAlarmReceiver: could not wake OnyxLiveService: " + e.getMessage(), e);
+            Log.e(TAG, "TimerExpiryAlarmReceiver: could not wake OnyxLiveService ("
+                    + e.getMessage() + ") — posting the expiry notification directly", e);
+            postExpiryNotificationDirectly(context);
+        }
+    }
+
+    private void postExpiryNotificationDirectly(Context context) {
+        try {
+            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            IslandNotificationFactory.createNotificationChannels(nm);
+            nm.notify(IslandNotificationFactory.NOTIFICATION_ID_LIVE,
+                    IslandNotificationFactory.buildAlarmFallback(context));
+        } catch (Exception e) {
+            Log.e(TAG, "TimerExpiryAlarmReceiver: direct notification fallback failed: " + e.getMessage(), e);
         }
     }
 }

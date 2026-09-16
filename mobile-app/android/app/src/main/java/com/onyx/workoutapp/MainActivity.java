@@ -328,7 +328,7 @@ public class MainActivity extends BridgeActivity {
                     if (active != null) {
                         for (StatusBarNotification sbn : active) {
                             int id = sbn.getId();
-                            if ((id == IslandNotificationFactory.NOTIFICATION_ID_TIMER || id == IslandNotificationFactory.NOTIFICATION_ID_WORKOUT) && sbn.isOngoing()) {
+                            if (id == IslandNotificationFactory.NOTIFICATION_ID_LIVE && sbn.isOngoing()) {
                                 return true;
                             }
                         }
@@ -370,9 +370,13 @@ public class MainActivity extends BridgeActivity {
         }
         getWindow().addFlags(
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
         );
+        // FLAG_KEEP_SCREEN_ON is NOT set unconditionally any more: it used to keep the
+        // display awake for as long as the app was open, which on a Poco F6 Pro is a
+        // first-order source of heat and battery drain. It is now applied only while a
+        // workout or rest timer is actually running (see applyKeepScreenOn()).
+        applyKeepScreenOn();
 
         // Explicitly request Notification permission for Android 13+ (Poco / Xiaomi HyperOS)
         requestNotificationPermission();
@@ -394,6 +398,9 @@ public class MainActivity extends BridgeActivity {
             } else {
                 startService(intent);
             }
+            // The service applies the new state asynchronously; re-evaluate the
+            // keep-screen-on flag once it has.
+            getWindow().getDecorView().postDelayed(this::applyKeepScreenOn, 500);
         } catch (Exception e) {
             Log.e(TAG, "safeStartService error: " + e.getMessage(), e);
             // In-process fallback: if the service instance is already alive
@@ -808,12 +815,32 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         setupWebViewBridge();
+        applyKeepScreenOn();
     }
 
     @Override
     public void onStart() {
         super.onStart();
         signalAppVisibility(true);
+        applyKeepScreenOn();
+    }
+
+    /**
+     * Keeps the screen awake only while there is a live workout or rest timer — the
+     * situations where the user is looking at the phone propped up on a bench and must
+     * not have it lock. Any other time the normal display timeout applies.
+     */
+    private void applyKeepScreenOn() {
+        try {
+            boolean keepOn = OnyxLiveService.sWorkoutActive || OnyxLiveService.sTimerRunning;
+            if (keepOn) {
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else {
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "applyKeepScreenOn failed: " + e.getMessage());
+        }
     }
 
     @Override
@@ -824,8 +851,23 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         signalAppVisibility(false);
+        // Stop the WebView doing any work in a process that may outlive the Activity
+        // (timers, media, network). Only when we are really going away — a recreate()
+        // after a renderer crash must keep its WebView.
+        if (isFinishing()) {
+            try {
+                WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+                if (webView != null) {
+                    webView.stopLoading();
+                    webView.loadUrl("about:blank");
+                    webView.clearHistory();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "onDestroy WebView cleanup failed: " + e.getMessage());
+            }
+        }
+        super.onDestroy();
     }
 
     /**

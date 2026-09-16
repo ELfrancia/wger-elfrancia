@@ -79,8 +79,13 @@ public class OnyxLiveService extends Service {
     public static final String EXTRA_STARTED_AT = "extra_started_at";
     public static final String EXTRA_SLOT_BOUNDARIES = "extra_slot_boundaries";
 
-    /** Throwaway foreground anchor used when a cold-recreated service has no live state. */
-    private static final int NOTIFICATION_ID_ANCHOR = 1000;
+    /**
+     * THE notification id. There is exactly one, on exactly one channel, for every state
+     * the service can be in (workout in progress / rest timer running / rest timer
+     * expired). Even the throwaway "foreground anchor" posted by a cold-recreated service
+     * with no live state uses it, so a second Onyx notification can never appear.
+     */
+    private static final int NOTIFICATION_ID_ANCHOR = IslandNotificationFactory.NOTIFICATION_ID_LIVE;
 
     /** SharedPreferences file that mirrors the live state so a killed service can restore it. */
     private static final String STATE_PREFS = "onyx_live_service_state";
@@ -124,7 +129,24 @@ public class OnyxLiveService extends Service {
     }
 
     // Rest timer state
+    /**
+     * AUDIO flag only: true while a MediaPlayer/AudioTrack is actually producing sound.
+     * It is deliberately NOT the "the rest timer expired" state — with the
+     * {@code vibration_only} sound mode nothing ever plays, so this stays false. The old
+     * code used this single flag for both meanings, which is why the "tempo scaduto"
+     * notification sometimes never appeared: the expiry handler posted it, then
+     * onStartCommand's "is anything still live?" check read alarm=false, concluded the
+     * service had nothing to show and tore it (and the notification) down milliseconds later.
+     */
     private boolean isAlarmPlaying = false;
+    /** LOGICAL alarm state: the rest window expired and the user hasn't dismissed it yet. */
+    private boolean isAlarmActive = false;
+    /**
+     * targetEndTimeMs the expiry alarm has already been delivered for. Makes delivery
+     * idempotent across the three racing paths (CountDownTimer.onFinish, the exact-alarm
+     * broadcast, and a cold restart that finds an elapsed deadline).
+     */
+    private long alarmDeliveredForTargetMs = 0L;
     private boolean isTimerRunning = false;
     private boolean isPaused = false;
     private long remainingTimeMs = 0;
@@ -165,6 +187,29 @@ public class OnyxLiveService extends Service {
      * returns false while N+1 is pending, so the service survives to serve it.
      */
     private int currentStartId = -1;
+
+    /** When the last explicit ACTION_STOP_ALL was served (0 = never). See {@link #isStaleAfterStopAll}. */
+    private long stopAllAtMs = 0L;
+
+    /** How long "update"-class intents are ignored after an explicit teardown. */
+    private static final long STOP_ALL_GRACE_MS = 2000L;
+
+    /**
+     * True for an intent that can only be a leftover of a session we were just told to
+     * end: it updates or ticks an existing session rather than starting a new one, and it
+     * arrived within {@link #STOP_ALL_GRACE_MS} of an ACTION_STOP_ALL.
+     */
+    private boolean isStaleAfterStopAll(String action) {
+        if (stopAllAtMs == 0L || action == null) return false;
+        if (System.currentTimeMillis() - stopAllAtMs > STOP_ALL_GRACE_MS) {
+            stopAllAtMs = 0L;
+            return false;
+        }
+        return ACTION_WORKOUT_UPDATE.equals(action)
+                || ACTION_UPDATE_TIMER.equals(action)
+                || ACTION_APP_FOREGROUND.equals(action)
+                || ACTION_APP_BACKGROUND.equals(action);
+    }
 
     // ---------------------------------------------------------------------------------
     // Public state mirror — read synchronously by OnyxLivePlugin.getTimerState() and
@@ -224,7 +269,7 @@ public class OnyxLiveService extends Service {
         tickHandler.post(() -> {
             Log.d(TAG, "onVisibilityChanged triggered: foreground=" + foreground + " reason=" + reason
                     + " (isTimerRunning=" + isTimerRunning + " isPaused=" + isPaused + " isWorkoutActive=" + isWorkoutActive + ")");
-            if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
+            if (isTimerRunning || isWorkoutActive || isAlarmActive) {
                 updateForegroundState();
                 if (isTimerRunning && !isPaused) {
                     startNotificationTicker();
@@ -260,13 +305,47 @@ public class OnyxLiveService extends Service {
         }
 
         IslandNotificationFactory.createNotificationChannels(notificationManager);
+        // An upgrade over a live session can leave 1000/1002/1003 on screen forever —
+        // nothing posts them any more, so nothing would ever cancel them either.
+        IslandNotificationFactory.cancelLegacyNotifications(notificationManager);
     }
 
+    /**
+     * The user swiped the app away from recents. Nothing on the JS side runs at this
+     * point (the WebView is gone), so the decision has to be made here.
+     *
+     * <p>If no rest timer is counting and no alarm is ringing, there is nothing this
+     * process needs to stay alive for — including the case of a workout that is still
+     * flagged "active" but that the user has just dismissed. We tear everything down
+     * (notification, exact alarm, wakelock, persisted snapshot) and stop the service, so
+     * the process actually goes away instead of lingering and being restarted forever by
+     * the sticky-service contract. That lingering process, still holding a wakelock and
+     * still ticking its notification, is the "app won't close / phone gets hot" report.
+     *
+     * <p>A live rest countdown is the one exception: it is short, bounded and the whole
+     * point of the feature is that it survives the app being swiped away.
+     */
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
-        Log.i(TAG, "onTaskRemoved: app swiped away from recents by user!");
+        Log.i(TAG, "onTaskRemoved: app swiped away from recents (timer=" + isTimerRunning
+                + " paused=" + isPaused + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive + ")");
         setAppInForeground(false, "Service.onTaskRemoved");
+
+        boolean liveCountdown = isTimerRunning && !isPaused;
+        if (!isWorkoutActive && !liveCountdown && !isAlarmActive) {
+            Log.i(TAG, "onTaskRemoved: no workout, no countdown, no alarm -> full teardown");
+            stopAllAndService(true);
+            return;
+        }
+        // Something legitimate is still running, so the foreground service stays. Make
+        // sure it stays cheap: no wakelock unless a countdown is actually counting, and
+        // no notification ticker for a workout (its notification is event-driven).
+        if (!liveCountdown && !isAlarmActive) {
+            stopNotificationTicker();
+            releaseWakeLock();
+        }
+        persistState();
     }
 
     @Override
@@ -279,7 +358,7 @@ public class OnyxLiveService extends Service {
         isRunning = true;
         Log.d(TAG, "DIAG onStartCommand enter: action=" + action + " redelivered=" + redelivered
                 + " flags(before)=[timer=" + isTimerRunning + " paused=" + isPaused
-                + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying + "]");
+                + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive + "]");
 
         // ACTION_STOP_ALL is the one action allowed to conclude "nothing is here"
         // without ever consulting in-memory or persisted state — it bypasses restore
@@ -290,7 +369,23 @@ public class OnyxLiveService extends Service {
             // Satisfy the startForeground() obligation first: this may have been
             // launched via startForegroundService() with nothing actually live.
             postAsForegroundAnchor(NOTIFICATION_ID_ANCHOR, IslandNotificationFactory.buildMinimalAnchor(this));
-            stopAllAndService();
+            stopAllAtMs = System.currentTimeMillis();
+            stopAllAndService(true);
+            return START_NOT_STICKY;
+        }
+
+        // The web fires workout progress updates constantly, so when the user hits
+        // "termina allenamento" the OS usually still has one or two ACTION_WORKOUT_UPDATE
+        // intents queued behind the ACTION_STOP_ALL. Serving them would re-set
+        // isWorkoutActive=true and re-post the notification we just removed — the exact
+        // "zombie notification" the user sees. Anything that merely UPDATES an existing
+        // session is dropped for a moment after an explicit teardown; a genuinely new
+        // session (ACTION_WORKOUT_START / ACTION_START) is never blocked.
+        if (isStaleAfterStopAll(action)) {
+            Log.i(TAG, "OnyxLiveService onStartCommand: dropping stale " + action
+                    + " queued behind ACTION_STOP_ALL");
+            postAsForegroundAnchor(NOTIFICATION_ID_ANCHOR, IslandNotificationFactory.buildMinimalAnchor(this));
+            stopAllAndService(true);
             return START_NOT_STICKY;
         }
 
@@ -315,7 +410,7 @@ public class OnyxLiveService extends Service {
         // immediately overwrites every restored field anyway, so restoring first is
         // always safe. Any teardown decision made further down now happens only after
         // this honest attempt to find out what's really there.
-        if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
+        if (!isTimerRunning && !isWorkoutActive && !isAlarmActive) {
             restoreStateFromPrefs();
         }
 
@@ -335,11 +430,11 @@ public class OnyxLiveService extends Service {
             // State was already restored above (before ensureForegroundAnchor); resume
             // timers / notifications from it now. A no-op if nothing was persisted.
             resumeFromRestoredState();
-            if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
+            if (!isTimerRunning && !isWorkoutActive && !isAlarmActive) {
                 stopAllAndService();
                 return START_NOT_STICKY;
             }
-            return START_REDELIVER_INTENT;
+            return restartPolicy();
         }
 
         Log.d(TAG, "OnyxLiveService onStartCommand: action=" + action);
@@ -348,11 +443,11 @@ public class OnyxLiveService extends Service {
         // (promote when bg, demote when fg). They never start or stop the service.
         if (ACTION_APP_FOREGROUND.equals(action) || ACTION_APP_BACKGROUND.equals(action)) {
             setAppInForeground(ACTION_APP_FOREGROUND.equals(action), "Intent." + action);
-            if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
+            if (!isTimerRunning && !isWorkoutActive && !isAlarmActive) {
                 stopAllAndService();
                 return START_NOT_STICKY;
             }
-            return START_REDELIVER_INTENT;
+            return restartPolicy();
         }
 
         try {
@@ -362,14 +457,30 @@ public class OnyxLiveService extends Service {
         }
 
         // If the action left nothing live to display, drop the (possibly minimal) anchor.
-        if (!isTimerRunning && !isWorkoutActive && !isAlarmPlaying) {
+        if (!isTimerRunning && !isWorkoutActive && !isAlarmActive) {
             stopAllAndService();
             return START_NOT_STICKY;
         }
 
-        // Something is live -> ask the OS to restart us (and redeliver) if it kills us.
-        // The redelivered intent is ignored on the way back in; state comes from prefs.
-        return START_REDELIVER_INTENT;
+        // Something is live -> see restartPolicy(). The redelivered intent is ignored on
+        // the way back in; state comes from prefs.
+        return restartPolicy();
+    }
+
+    /**
+     * Restart policy.
+     *
+     * <p>Only a live (or ringing) rest countdown is worth resurrecting: it is short,
+     * time-critical, and the persisted snapshot lets a restarted service rebuild it
+     * exactly. A workout session is NOT — it can last an hour, and asking the OS to
+     * restart us for it means the process comes back again and again after every kill and
+     * after the user swipes the app away, which is what kept the app "alive forever" and
+     * draining the battery. For that case we return START_NOT_STICKY and let the process
+     * die for good; the web re-arms the island the next time the user opens the session.
+     */
+    private int restartPolicy() {
+        boolean timeCritical = (isTimerRunning && !isPaused) || isAlarmActive;
+        return timeCritical ? START_REDELIVER_INTENT : START_NOT_STICKY;
     }
 
     /**
@@ -384,20 +495,17 @@ public class OnyxLiveService extends Service {
                     // The rest window elapsed while the service was dead.
                     remainingTimeMs = 0;
                     isTimerRunning = false;
-                    acquireWakeLock();
                     triggerTimerFinishedAlarm();
                     return;
                 }
                 remainingTimeMs = left;
-                acquireWakeLock();
+                acquireTimerWakeLock(remainingTimeMs);
                 updateForegroundState();
                 startInternalCountDown(remainingTimeMs);
-            } else if (isTimerRunning) { // paused
-                acquireWakeLock();
+            } else if (isTimerRunning) { // paused — nothing is counting, so no wakelock
                 updateForegroundState();
             }
-            if (isWorkoutActive) {
-                acquireWakeLock();
+            if (isAlarmActive || isWorkoutActive) {
                 updateForegroundState();
             }
         } catch (Exception e) {
@@ -408,7 +516,7 @@ public class OnyxLiveService extends Service {
     private void ensureForegroundAnchor() {
         try {
             Log.d(TAG, "DIAG ensureForegroundAnchor enter: timer=" + isTimerRunning + " paused=" + isPaused
-                    + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying);
+                    + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive);
             if (isTimerRunning && !isPaused && targetEndTimeMs > 0
                     && targetEndTimeMs <= System.currentTimeMillis()) {
                 // Restored state shows the rest window already elapsed while the service
@@ -418,9 +526,8 @@ public class OnyxLiveService extends Service {
                 // colorized/promoted "TEMPO SCADUTO" notification instead of a stale
                 // countdown card or the silent minimal anchor.
                 isTimerRunning = false;
-                acquireWakeLock();
                 triggerTimerFinishedAlarm();
-            } else if (isTimerRunning || isWorkoutActive || isAlarmPlaying) {
+            } else if (isTimerRunning || isWorkoutActive || isAlarmActive) {
                 updateForegroundState();
             } else {
                 postAsForegroundAnchor(NOTIFICATION_ID_ANCHOR, IslandNotificationFactory.buildMinimalAnchor(this));
@@ -465,7 +572,7 @@ public class OnyxLiveService extends Service {
                 // Exact-alarm backup fired (see TimerExpiryAlarmReceiver). onStartCommand
                 // already restored from prefs on this cold entry if fields were at
                 // defaults; this is just a defensive no-op re-check.
-                if (!isTimerRunning && !isAlarmPlaying && !isWorkoutActive) {
+                if (!isTimerRunning && !isAlarmActive && !isWorkoutActive) {
                     restoreStateFromPrefs();
                 }
                 long msLeft = targetEndTimeMs - System.currentTimeMillis();
@@ -476,7 +583,6 @@ public class OnyxLiveService extends Service {
                         countDownTimer = null;
                     }
                     isTimerRunning = false;
-                    acquireWakeLock();
                     triggerTimerFinishedAlarm();
                 } else {
                     Log.d(TAG, "ACTION_ALARM_BACKUP: ignored (running=" + isTimerRunning
@@ -501,7 +607,10 @@ public class OnyxLiveService extends Service {
                 this.workoutStartedAt = intent.getLongExtra(EXTRA_STARTED_AT, System.currentTimeMillis());
                 this.slotBoundaries = intent.getIntArrayExtra(EXTRA_SLOT_BOUNDARIES);
                 this.isWorkoutActive = true;
-                acquireWakeLock();
+                // Deliberately NO wakelock: a workout runs for an hour and the foreground
+                // service alone keeps the process alive. A PARTIAL_WAKE_LOCK held for that
+                // long is exactly the battery drain / heat this was reported for. Only the
+                // rest countdown (seconds to minutes) takes one.
                 updateForegroundState();
                 break;
             }
@@ -518,12 +627,11 @@ public class OnyxLiveService extends Service {
             }
             case ACTION_WORKOUT_STOP: {
                 this.isWorkoutActive = false;
-                if (notificationManager != null) {
-                    try {
-                        notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT);
-                    } catch (Exception ignored) {}
-                }
-                if (!isTimerRunning && !isAlarmPlaying) {
+                this.workoutStartedAt = 0L;
+                this.completedSets = 0;
+                this.totalSets = 0;
+                this.currentExerciseName = "";
+                if (!isTimerRunning && !isAlarmActive) {
                     stopAllAndService();
                 } else {
                     updateForegroundState();
@@ -537,11 +645,6 @@ public class OnyxLiveService extends Service {
         Log.d(TAG, "OnyxLiveService: Starting/Updating countdown for " + durationSeconds + "s (" + title + ")");
         
         stopAlarmOnly();
-        if (notificationManager != null) {
-            try {
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-            } catch (Exception ignored) {}
-        }
 
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -554,8 +657,9 @@ public class OnyxLiveService extends Service {
         this.targetEndTimeMs = System.currentTimeMillis() + remainingTimeMs;
         this.isTimerRunning = true;
         this.isPaused = false;
+        this.alarmDeliveredForTargetMs = 0L;
 
-        acquireWakeLock();
+        acquireTimerWakeLock(remainingTimeMs);
         updateForegroundState();
 
         startInternalCountDown(remainingTimeMs);
@@ -571,6 +675,7 @@ public class OnyxLiveService extends Service {
         isPaused = true;
         cancelExpiryAlarm();
         stopNotificationTicker();
+        releaseWakeLock();
         updateForegroundState();
         OnyxLivePlugin.notifyTimerPaused();
     }
@@ -579,6 +684,8 @@ public class OnyxLiveService extends Service {
         if (!isTimerRunning || !isPaused) return;
         targetEndTimeMs = System.currentTimeMillis() + remainingTimeMs;
         isPaused = false;
+        alarmDeliveredForTargetMs = 0L;
+        acquireTimerWakeLock(remainingTimeMs);
         updateForegroundState();
         startInternalCountDown(remainingTimeMs);
         OnyxLivePlugin.notifyTimerResumed();
@@ -600,19 +707,15 @@ public class OnyxLiveService extends Service {
         }
 
         stopAlarmOnly();
-        if (notificationManager != null) {
-            try {
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-            } catch (Exception ignored) {}
-        }
 
         this.totalDurationMs = Math.max(1, durationSeconds) * 1000L;
         this.remainingTimeMs = Math.max(0, remainingSeconds * 1000L);
         this.targetEndTimeMs = System.currentTimeMillis() + remainingTimeMs;
         this.isTimerRunning = remainingTimeMs > 0;
         this.isPaused = false;
+        this.alarmDeliveredForTargetMs = 0L;
 
-        acquireWakeLock();
+        acquireTimerWakeLock(remainingTimeMs);
         updateForegroundState();
 
         if (isTimerRunning) {
@@ -634,12 +737,7 @@ public class OnyxLiveService extends Service {
         cancelExpiryAlarm();
         stopAlarmOnly();
         stopNotificationTicker();
-
-        if (notificationManager != null) {
-            try {
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
-            } catch (Exception ignored) {}
-        }
+        releaseWakeLock();
 
         if (!isWorkoutActive) {
             stopAllAndService();
@@ -670,71 +768,61 @@ public class OnyxLiveService extends Service {
     }
 
     /**
-     * Centralized Foreground Service Anchor management:
-     * - Workout active -> 1003 is FGS anchor; 1001 / 1002 posted as secondary.
-     * - No workout, Timer active -> 1001 is FGS anchor.
-     * - No workout, Alarm active -> 1002 is FGS anchor.
+     * Renders THE single live notification.
+     *
+     * <p>One id, one channel, content chosen by state priority:
+     * alarm ringing &gt; rest timer running &gt; workout in progress. Workout context
+     * (sets / exercise) is folded into the timer and alarm renderings. The previous
+     * version posted the workout notification as the foreground anchor and then
+     * {@code notify()}'d the timer or alarm on a second id, which is how the user could
+     * end up looking at three Onyx notifications at once (plus the throwaway 1000 anchor
+     * whenever a cold start lost the race to cancel it).
      */
     private synchronized void updateForegroundState() {
         if (notificationManager == null) return;
         Log.d(TAG, "DIAG updateForegroundState enter: timer=" + isTimerRunning + " paused=" + isPaused
-                + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying);
+                + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive);
 
-        hasActiveOngoingNotification = isWorkoutActive || isTimerRunning;
+        hasActiveOngoingNotification = isWorkoutActive || isTimerRunning || isAlarmActive;
         if (isTimerRunning && !isPaused && targetEndTimeMs > 0) {
             remainingTimeMs = Math.max(0L, targetEndTimeMs - System.currentTimeMillis());
         }
 
         try {
-            if (isWorkoutActive) {
-                Notification workoutNotification = IslandNotificationFactory.buildWorkoutNotification(
-                        this, workoutTitle, currentExerciseName, completedSets, totalSets, slotBoundaries, workoutStartedAt, appIconBitmap
-                );
-                postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT, workoutNotification);
-
-                // Reconcile the timer / alarm slots independently — never let a state
-                // update silently drop the "rest running" or "time's up" notification.
-                if (isTimerRunning) {
-                    Notification timerNotification = IslandNotificationFactory.buildRestNotification(
-                            this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
-                    );
-                    notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
-                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-                } else if (isAlarmPlaying) {
-                    // Rest timer expired mid-workout: keep the alarm notification visible and tappable.
-                    Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
-                    notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
-                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
-                } else {
-                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
-                    cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-                }
-            } else if (isTimerRunning) {
-                Notification timerNotification = IslandNotificationFactory.buildRestNotification(
-                        this, targetEndTimeMs, remainingTimeMs, totalDurationMs, currentTitle, isPaused, appIconBitmap
-                );
-                postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_TIMER, timerNotification);
-                cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-            } else if (isAlarmPlaying) {
-                Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
-                postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
-                cancelQuietly(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
+            if (!isWorkoutActive && !isTimerRunning && !isAlarmActive) {
+                // Nothing to show. Post the minimal anchor on the SAME id (the caller is
+                // about to tear the service down) rather than leaving a stale render up.
+                postAsForegroundAnchor(NOTIFICATION_ID_ANCHOR, IslandNotificationFactory.buildMinimalAnchor(this));
+                return;
             }
+            postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_LIVE,
+                    IslandNotificationFactory.buildLive(this, snapshotLiveState()));
         } catch (Exception e) {
-            Log.e(TAG, "Error updating foreground notifications: " + e.getMessage(), e);
+            Log.e(TAG, "Error updating the live notification: " + e.getMessage(), e);
         }
 
         // Mirror the live state so a killed/redelivered service can rebuild it.
         persistState();
     }
 
-    private void cancelQuietly(int id) {
-        if (notificationManager == null) return;
-        Log.d(TAG, "DIAG cancelQuietly(" + id + ") flags: timer=" + isTimerRunning
-                + " paused=" + isPaused + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying);
-        try {
-            notificationManager.cancel(id);
-        } catch (Exception ignored) {}
+    /** Packs the current fields into the render input for {@link IslandNotificationFactory}. */
+    private IslandNotificationFactory.LiveState snapshotLiveState() {
+        IslandNotificationFactory.LiveState s = new IslandNotificationFactory.LiveState();
+        s.alarmActive = isAlarmActive;
+        s.timerRunning = isTimerRunning;
+        s.timerPaused = isPaused;
+        s.targetEndTimeMs = targetEndTimeMs;
+        s.remainingMs = remainingTimeMs;
+        s.totalDurationMs = totalDurationMs;
+        s.timerTitle = currentTitle;
+        s.workoutActive = isWorkoutActive;
+        s.workoutTitle = workoutTitle;
+        s.exerciseName = currentExerciseName;
+        s.completedSets = completedSets;
+        s.totalSets = totalSets;
+        s.workoutStartedAt = workoutStartedAt;
+        s.appIcon = appIconBitmap;
+        return s;
     }
 
     private void postAsForegroundAnchor(int id, Notification notification) {
@@ -748,22 +836,31 @@ public class OnyxLiveService extends Service {
             }
             if (notificationManager != null) {
                 notificationManager.notify(id, notification);
-                // Once a real anchor is live, drop the throwaway one.
-                if (id != NOTIFICATION_ID_ANCHOR) {
-                    try {
-                        notificationManager.cancel(NOTIFICATION_ID_ANCHOR);
-                    } catch (Exception ignored) {}
-                }
+                IslandNotificationFactory.cancelLegacyNotifications(notificationManager);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error posting foreground anchor notification (" + id + "): " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Delivers the "rest is over" alarm exactly once per deadline.
+     *
+     * <p>Three paths race to call this — {@code CountDownTimer.onFinish()}, the exact
+     * AlarmManager broadcast, and a cold restart that finds an already-elapsed deadline —
+     * and on HyperOS two of them routinely fire for the same timer. Idempotency is keyed
+     * on {@link #targetEndTimeMs} rather than on "is something currently ringing", because
+     * the {@code vibration_only} sound mode never sets the audio flag at all.
+     */
     private synchronized void triggerTimerFinishedAlarm() {
-        // Guard against double-firing (onFinish + a stray manual call): the alarm
-        // is already ringing, don't restart sound/vibration or re-post the notification.
-        if (isAlarmPlaying) return;
+        long deadline = targetEndTimeMs;
+        if (isAlarmActive && deadline != 0 && deadline == alarmDeliveredForTargetMs) {
+            Log.d(TAG, "triggerTimerFinishedAlarm: already delivered for target=" + deadline + " (idempotent no-op)");
+            // Still re-render: a duplicate delivery is also our chance to repair a
+            // notification an OEM kill may have dropped. Same id, so it replaces.
+            updateForegroundState();
+            return;
+        }
 
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -773,27 +870,19 @@ public class OnyxLiveService extends Service {
         stopNotificationTicker();
         isTimerRunning = false;
         isPaused = false;
-        hasActiveOngoingNotification = isWorkoutActive;
+        isAlarmActive = true;
+        alarmDeliveredForTargetMs = deadline;
+        hasActiveOngoingNotification = true;
 
-        if (notificationManager != null) {
-            try {
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
-            } catch (Exception ignored) {}
-        }
+        // The ring is short and bounded — this is the one place a wakelock is justified.
+        acquireTimerWakeLock(ALARM_WAKELOCK_MS);
 
         requestExclusiveAudioFocus();
         playLoopingAlarmSound();
         startAlarmVibration();
 
-        Notification alarmNotification = IslandNotificationFactory.buildAlarmNotification(this, appIconBitmap);
-        if (isWorkoutActive) {
-            // Keep workout as anchor, notify alarm
-            if (notificationManager != null) {
-                notificationManager.notify(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
-            }
-        } else {
-            postAsForegroundAnchor(IslandNotificationFactory.NOTIFICATION_ID_ALARM, alarmNotification);
-        }
+        // ONE notification, same id as the countdown it replaces.
+        updateForegroundState();
 
         // Keep the persisted snapshot in sync with the just-flipped isTimerRunning=false:
         // without this, a process death right after the alarm starts ringing would leave
@@ -1082,26 +1171,42 @@ public class OnyxLiveService extends Service {
     }
 
     private void stopAlarmOnly() {
-        isAlarmPlaying = false;
+        isAlarmActive = false;
+        alarmDeliveredForTargetMs = 0L;
         stopAlarmSound();
         stopAlarmVibration();
         releaseAudioFocus();
-        if (notificationManager != null) {
-            try {
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-            } catch (Exception ignored) {}
-        }
+        releaseWakeLock();
     }
 
     private synchronized void stopAllAndService() {
-        Log.w(TAG, "DIAG stopAllAndService enter (timer=" + isTimerRunning + " paused=" + isPaused
-                + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying + ")",
+        stopAllAndService(false);
+    }
+
+    /**
+     * @param force when true the service stops even if the OS still has a start command
+     *              queued for us ({@code stopSelf()} instead of {@code stopSelfResult()}).
+     *              Used by the explicit end-of-workout paths (ACTION_STOP_ALL,
+     *              onTaskRemoved), where the caller is asserting "nothing should survive
+     *              this" and a queued stale ACTION_WORKOUT_UPDATE must not resurrect the
+     *              notification. The soft variant is kept for the implicit "nothing left
+     *              to show" teardowns, where a pending ACTION_START legitimately wins.
+     */
+    private synchronized void stopAllAndService(boolean force) {
+        Log.w(TAG, "DIAG stopAllAndService enter (force=" + force + " timer=" + isTimerRunning
+                + " paused=" + isPaused
+                + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive + ")",
                 new Throwable("DIAG call site"));
         hasActiveOngoingNotification = false;
         isRunning = false;
         isTimerRunning = false;
         isPaused = false;
         isWorkoutActive = false;
+        isAlarmActive = false;
+        alarmDeliveredForTargetMs = 0L;
+        workoutStartedAt = 0L;
+        remainingTimeMs = 0L;
+        targetEndTimeMs = 0L;
 
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -1125,11 +1230,14 @@ public class OnyxLiveService extends Service {
 
         if (notificationManager != null) {
             try {
-                notificationManager.cancel(NOTIFICATION_ID_ANCHOR);
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_TIMER);
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_ALARM);
-                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_WORKOUT);
+                notificationManager.cancel(IslandNotificationFactory.NOTIFICATION_ID_LIVE);
             } catch (Exception ignored) {}
+            // Anything an older build of the app may still have on screen.
+            IslandNotificationFactory.cancelLegacyNotifications(notificationManager);
+        }
+        if (force) {
+            stopSelf();
+            return;
         }
         // Only stop if no newer start command is already queued for us. stopSelf() would
         // commit the stop unconditionally and destroy whatever that queued command is
@@ -1198,6 +1306,8 @@ public class OnyxLiveService extends Service {
             e.putLong("remainingTimeMs", remainingTimeMs);
             e.putString("title", currentTitle);
             e.putString("soundUri", customSoundUri);
+            e.putBoolean("alarmActive", isAlarmActive);
+            e.putLong("alarmDeliveredForTargetMs", alarmDeliveredForTargetMs);
             e.putBoolean("workoutActive", isWorkoutActive);
             e.putString("workoutTitle", workoutTitle);
             e.putString("exerciseName", currentExerciseName);
@@ -1232,6 +1342,9 @@ public class OnyxLiveService extends Service {
 
             boolean timerRunning = p.getBoolean("timerRunning", false);
             boolean workoutActive = p.getBoolean("workoutActive", false);
+            // An alarm that was ringing when the process died: restore it so the user
+            // still gets the "tempo scaduto" card instead of silence.
+            boolean alarmActive = p.getBoolean("alarmActive", false);
             long workoutStartedAt = p.getLong("workoutStartedAt", 0L);
             long savedTargetEndTimeMs = p.getLong("targetEndTimeMs", 0L);
             long savedAt = p.getLong("savedAt", 0L);
@@ -1253,7 +1366,10 @@ public class OnyxLiveService extends Service {
                     timerRunning = false;
                 }
             }
-            if (!timerRunning && !workoutActive) {
+            if (alarmActive && savedAt > 0 && now - savedAt > STALE_TIMER_MS) {
+                alarmActive = false;
+            }
+            if (!timerRunning && !workoutActive && !alarmActive) {
                 // Confirmed empty (or only a stale workout we're refusing to restore) —
                 // drop whatever the snapshot said so a future restore attempt doesn't
                 // re-evaluate the same stale entry.
@@ -1261,6 +1377,8 @@ public class OnyxLiveService extends Service {
                 return false;
             }
 
+            this.isAlarmActive = alarmActive;
+            this.alarmDeliveredForTargetMs = alarmActive ? p.getLong("alarmDeliveredForTargetMs", 0L) : 0L;
             this.isPaused = p.getBoolean("paused", false);
             this.targetEndTimeMs = p.getLong("targetEndTimeMs", 0L);
             this.totalDurationMs = p.getLong("totalDurationMs", 0L);
@@ -1280,7 +1398,8 @@ public class OnyxLiveService extends Service {
             mirrorPublicState();
 
             Log.d(TAG, "restoreStateFromPrefs: timer=" + isTimerRunning + " paused=" + isPaused
-                    + " workout=" + isWorkoutActive + " remainingMs=" + remainingTimeMs);
+                    + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive
+                    + " remainingMs=" + remainingTimeMs);
             return true;
         } catch (Exception ex) {
             Log.e(TAG, "restoreStateFromPrefs failed: " + ex.getMessage());
@@ -1300,8 +1419,21 @@ public class OnyxLiveService extends Service {
         sWorkoutActive = false;
     }
 
-    private void acquireWakeLock() {
+    /** Hard ceiling on any wakelock we take: a rest timer longer than this isn't a rest timer. */
+    private static final long MAX_WAKELOCK_MS = 30 * 60 * 1000L;
+    /** How long the expiry alarm is allowed to keep the CPU awake while it rings. */
+    private static final long ALARM_WAKELOCK_MS = 2 * 60 * 1000L;
+
+    /**
+     * Takes a PARTIAL_WAKE_LOCK for the duration of the rest countdown (or of the ringing
+     * alarm) and no longer. It is never taken for a workout: the foreground service is
+     * what keeps the process alive, and a wakelock held for a whole training session is
+     * pure battery drain and heat. Always timeout-bounded, so even a lost release path
+     * cannot pin the CPU awake indefinitely.
+     */
+    private synchronized void acquireTimerWakeLock(long durationMs) {
         try {
+            long timeout = Math.min(MAX_WAKELOCK_MS, Math.max(1000L, durationMs + 5000L));
             if (wakeLock == null) {
                 PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
                 if (powerManager != null) {
@@ -1309,21 +1441,28 @@ public class OnyxLiveService extends Service {
                     wakeLock.setReferenceCounted(false);
                 }
             }
-            if (wakeLock != null && !wakeLock.isHeld()) {
-                wakeLock.acquire(30 * 60 * 1000L);
-            }
+            if (wakeLock == null) return;
+            // Re-acquiring a non-reference-counted lock just refreshes its timeout.
+            wakeLock.acquire(timeout);
+            Log.d(TAG, "acquireTimerWakeLock: held for at most " + timeout + "ms");
         } catch (Exception e) {
             Log.e(TAG, "Error acquiring WakeLock: " + e.getMessage(), e);
         }
     }
 
-    private void releaseWakeLock() {
+    private synchronized void releaseWakeLock() {
         try {
             if (wakeLock != null && wakeLock.isHeld()) {
                 wakeLock.release();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error releasing WakeLock: " + e.getMessage(), e);
+        } finally {
+            // Never hold on to a released/expired lock object: a later isHeld() on a
+            // timed-out lock returns false and the old code then simply leaked it.
+            if (wakeLock != null && !wakeLock.isHeld()) {
+                wakeLock = null;
+            }
         }
     }
 
@@ -1354,7 +1493,7 @@ public class OnyxLiveService extends Service {
         // calling stopSelfResult(); an involuntary one must leave it standing so the alarm
         // still rings and a restarted service can rebuild its state.
         Log.d(TAG, "onDestroy: releasing local resources only (timer=" + isTimerRunning
-                + " paused=" + isPaused + " workout=" + isWorkoutActive + " alarm=" + isAlarmPlaying + ")");
+                + " paused=" + isPaused + " workout=" + isWorkoutActive + " alarm=" + isAlarmActive + ")");
         if (sInstance == this) {
             sInstance = null;
         }

@@ -363,7 +363,7 @@ public class OnyxLivePlugin extends Plugin {
                     if (notifications != null) {
                         for (StatusBarNotification sbn : notifications) {
                             int id = sbn.getId();
-                            if ((id == IslandNotificationFactory.NOTIFICATION_ID_TIMER || id == IslandNotificationFactory.NOTIFICATION_ID_WORKOUT) && sbn.isOngoing()) {
+                            if (id == IslandNotificationFactory.NOTIFICATION_ID_LIVE && sbn.isOngoing()) {
                                 active = true;
                                 break;
                             }
