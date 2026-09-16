@@ -1,9 +1,10 @@
 {% extends 'template_tailwind.html' %}
-{% load i18n %}
+{% load i18n l10n %}
 
 {% block title %}{{ routine.name }} - {% translate "Workout Details" %}{% endblock %}
 
 {% block content %}
+{% localize off %}
 <main class="w-full max-w-5xl mx-auto px-4 sm:px-6 mt-2 flex flex-col gap-6 pb-28">
 <!-- Hero Section (Matching Screen 1 cover card format) -->
 <div class="relative w-full h-56 rounded-[2.2rem] overflow-hidden bg-cover bg-center border border-[#222429] shadow-lg mb-5" 
@@ -63,7 +64,12 @@
                 <span class="material-symbols-outlined text-[10px] text-[#caf300] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
             </form>
         </div>
-        <h2 class="text-3xl font-display font-black text-white tracking-tight uppercase">{{ routine.name }}</h2>
+        <div class="flex items-center gap-3">
+            <h2 id="routine-name" class="text-3xl font-display font-black text-white tracking-tight uppercase">{{ routine.name }}</h2>
+            <button type="button" onclick="openRoutineRenameModal()" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-zinc-800/80 text-white flex items-center justify-center hover:bg-black/80 hover:text-primary transition-all duration-200 shrink-0 cursor-pointer" title="{% translate 'Rinomina programma' %}">
+                <span class="material-symbols-outlined text-sm">edit</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -91,7 +97,12 @@
             <!-- Day Header -->
             <div class="flex justify-between items-center border-b border-[#222429]/35 pb-4">
                 <div>
-                    <h2 class="text-xl font-bold font-display text-white tracking-tight">{{ day.name }}</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 id="day-name-{{ day.pk }}" class="text-xl font-bold font-display text-white tracking-tight">{{ day.name }}</h2>
+                        <button type="button" onclick="openDayRenameModal('{{ day.pk }}')" class="w-7 h-7 rounded-full bg-surface-card hover:bg-white/10 border border-outline text-zinc-400 hover:text-primary flex items-center justify-center transition-colors shrink-0 cursor-pointer" title="{% translate 'Rinomina giorno' %}">
+                            <span class="material-symbols-outlined text-xs">edit</span>
+                        </button>
+                    </div>
                     <p class="text-xs text-secondary mt-0.5">{{ day.description|default:"Esercizi e programmazione odierna" }}</p>
                 </div>
                 
@@ -499,7 +510,104 @@
         </div>
     </div>
 </div>
+
+<!-- Routine Rename Modal -->
+<div id="routine-rename-modal" onclick="if(event.target === this) closeRoutineRenameModal()" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div id="routine-rename-card" class="bg-[#14161d] border border-white/10 rounded-3xl w-full max-w-sm p-6 flex flex-col gap-5 shadow-2xl relative transform translate-y-6 transition-all duration-300">
+        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">edit</span>
+                <h3 class="text-white font-black text-base tracking-tight font-display">
+                    {% translate "Rinomina Programma" %}
+                </h3>
+            </div>
+            <button type="button" onclick="closeRoutineRenameModal()" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <form id="routine-rename-form"
+              hx-post="{% url 'manager:routine:rename' routine.pk %}"
+              hx-target="#routine-name"
+              hx-swap="innerHTML"
+              class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div>
+                <label for="routine-name-input" class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                    {% translate "Nome Programma" %}
+                </label>
+                <input type="text"
+                       id="routine-name-input"
+                       name="name"
+                       maxlength="25"
+                       value="{{ routine.name }}"
+                       required
+                       class="w-full bg-[#1c1b1b] border border-white/10 rounded-2xl p-3 text-white font-bold text-base focus:outline-none focus:border-primary transition-colors">
+                <p id="routine-rename-error" class="text-xs text-red-400 mt-2 hidden"></p>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+                <button type="button" onclick="closeRoutineRenameModal()" class="px-4 py-2 rounded-full border border-white/10 text-xs font-bold text-zinc-300 hover:text-white transition-colors cursor-pointer">
+                    {% translate "Annulla" %}
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-full bg-primary text-black text-xs font-black hover:opacity-90 transition-opacity cursor-pointer">
+                    {% translate "Salva" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Day Rename Modals -->
+{% for day in routine.days.all %}
+<div id="day-rename-modal-{{ day.pk }}" onclick="if(event.target === this) closeDayRenameModal('{{ day.pk }}')" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div id="day-rename-card-{{ day.pk }}" class="bg-[#14161d] border border-white/10 rounded-3xl w-full max-w-sm p-6 flex flex-col gap-5 shadow-2xl relative transform translate-y-6 transition-all duration-300">
+        <div class="flex justify-between items-center pb-3 border-b border-white/10">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">edit</span>
+                <h3 class="text-white font-black text-base tracking-tight font-display">
+                    {% translate "Rinomina Giorno" %}
+                </h3>
+            </div>
+            <button type="button" onclick="closeDayRenameModal('{{ day.pk }}')" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <form id="day-rename-form-{{ day.pk }}"
+              hx-post="{% url 'manager:day:rename' day.routine.pk day.pk %}"
+              hx-target="#day-name-{{ day.pk }}"
+              hx-swap="innerHTML"
+              class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div>
+                <label for="day-name-input-{{ day.pk }}" class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                    {% translate "Nome Giorno" %}
+                </label>
+                <input type="text"
+                       id="day-name-input-{{ day.pk }}"
+                       name="name"
+                       maxlength="20"
+                       value="{{ day.name }}"
+                       required
+                       class="w-full bg-[#1c1b1b] border border-white/10 rounded-2xl p-3 text-white font-bold text-base focus:outline-none focus:border-primary transition-colors">
+                <p id="day-rename-error-{{ day.pk }}" class="text-xs text-red-400 mt-2 hidden"></p>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+                <button type="button" onclick="closeDayRenameModal('{{ day.pk }}')" class="px-4 py-2 rounded-full border border-white/10 text-xs font-bold text-zinc-300 hover:text-white transition-colors cursor-pointer">
+                    {% translate "Annulla" %}
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-full bg-primary text-black text-xs font-black hover:opacity-90 transition-opacity cursor-pointer">
+                    {% translate "Salva" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
 </main>
+{% endlocalize %}
 {% endblock %}
 
 {% block extra_body %}
@@ -569,5 +677,140 @@ function toggleNoteField(containerId) {
         }
     }
 }
+
+function openRoutineRenameModal() {
+    const modal = document.getElementById('routine-rename-modal');
+    const card = document.getElementById('routine-rename-card');
+    const input = document.getElementById('routine-name-input');
+    const err = document.getElementById('routine-rename-error');
+    if (err) {
+        err.textContent = '';
+        err.classList.add('hidden');
+    }
+    const currentName = document.getElementById('routine-name');
+    if (input && currentName) {
+        input.value = currentName.textContent.trim();
+    }
+    if (modal && card) {
+        modal.classList.remove('pointer-events-none', 'opacity-0');
+        modal.classList.add('opacity-100');
+        card.classList.remove('translate-y-6');
+        card.classList.add('translate-y-0');
+        if (input) {
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 100);
+        }
+    }
+}
+
+function closeRoutineRenameModal() {
+    const modal = document.getElementById('routine-rename-modal');
+    const card = document.getElementById('routine-rename-card');
+    if (!modal || !card) return;
+    modal.classList.add('pointer-events-none', 'opacity-0');
+    modal.classList.remove('opacity-100');
+    card.classList.add('translate-y-6');
+    card.classList.remove('translate-y-0');
+}
+
+function openDayRenameModal(dayPk) {
+    const modal = document.getElementById(`day-rename-modal-${dayPk}`);
+    const card = document.getElementById(`day-rename-card-${dayPk}`);
+    const input = document.getElementById(`day-name-input-${dayPk}`);
+    const err = document.getElementById(`day-rename-error-${dayPk}`);
+    if (err) {
+        err.textContent = '';
+        err.classList.add('hidden');
+    }
+    const currentName = document.getElementById(`day-name-${dayPk}`);
+    if (input && currentName) {
+        input.value = currentName.textContent.trim();
+    }
+    if (modal && card) {
+        modal.classList.remove('pointer-events-none', 'opacity-0');
+        modal.classList.add('opacity-100');
+        card.classList.remove('translate-y-6');
+        card.classList.add('translate-y-0');
+        if (input) {
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 100);
+        }
+    }
+}
+
+function closeDayRenameModal(dayPk) {
+    const modal = document.getElementById(`day-rename-modal-${dayPk}`);
+    const card = document.getElementById(`day-rename-card-${dayPk}`);
+    if (!modal || !card) return;
+    modal.classList.add('pointer-events-none', 'opacity-0');
+    modal.classList.remove('opacity-100');
+    card.classList.add('translate-y-6');
+    card.classList.remove('translate-y-0');
+}
+
+window.openRoutineRenameModal = openRoutineRenameModal;
+window.closeRoutineRenameModal = closeRoutineRenameModal;
+window.openDayRenameModal = openDayRenameModal;
+window.closeDayRenameModal = closeDayRenameModal;
+
+// Success triggers from backend
+document.body.addEventListener('onyx:routine-renamed', function(evt) {
+    closeRoutineRenameModal();
+    if (evt.detail && evt.detail.name) {
+        document.title = evt.detail.name + ' - Workout Details';
+    }
+});
+
+document.body.addEventListener('onyx:day-renamed', function(evt) {
+    if (evt.detail && evt.detail.id) {
+        closeDayRenameModal(evt.detail.id);
+    }
+});
+
+function displayRenameError(msg) {
+    const routineModal = document.getElementById('routine-rename-modal');
+    if (routineModal && !routineModal.classList.contains('pointer-events-none')) {
+        const err = document.getElementById('routine-rename-error');
+        if (err) {
+            err.textContent = msg;
+            err.classList.remove('hidden');
+        }
+    }
+    document.querySelectorAll('[id^="day-rename-modal-"]').forEach(modal => {
+        if (!modal.classList.contains('pointer-events-none')) {
+            const err = modal.querySelector('[id^="day-rename-error-"]');
+            if (err) {
+                err.textContent = msg;
+                err.classList.remove('hidden');
+            }
+        }
+    });
+}
+
+document.body.addEventListener('onyx:rename-error', function(evt) {
+    const msg = (evt.detail && evt.detail.message) ? evt.detail.message : 'Errore durante la modifica.';
+    displayRenameError(msg);
+});
+
+document.body.addEventListener('htmx:responseError', function(evt) {
+    if (evt.detail && evt.detail.xhr && evt.detail.xhr.status === 422) {
+        const msg = evt.detail.xhr.responseText || 'Errore durante la modifica.';
+        displayRenameError(msg);
+    }
+});
+
+document.addEventListener('keydown', function(evt) {
+    if (evt.key === 'Escape') {
+        closeRoutineRenameModal();
+        document.querySelectorAll('[id^="day-rename-modal-"]').forEach(modal => {
+            const id = modal.id.replace('day-rename-modal-', '');
+            closeDayRenameModal(id);
+        });
+    }
+});
 </script>
 {% endblock %}
