@@ -19,14 +19,28 @@
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'images/logos/logo-512.png' %}">
     <link rel="apple-touch-icon" sizes="512x512" href="{% static 'images/logos/logo-512.png' %}">
 
-    <!-- High-Performance Resource Hints -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!--
+      Resource hints for the CDNs, which are now fallback-only. dns-prefetch
+      rather than preconnect: on the normal path we never talk to them, so
+      paying for a TLS handshake up front would be pure waste.
+    -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     <link rel="dns-prefetch" href="https://unpkg.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <!--
+      Fonts are self-hosted. They used to come from fonts.googleapis.com only,
+      and when that request failed every <span class="material-symbols-outlined">
+      rendered its ligature as literal text: the user saw "add", "check",
+      "fitness_center" where the icons should be. The icon font is preloaded
+      because it is font-display: block, so nothing icon-shaped paints until it
+      arrives.
+    -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="{% static 'fonts/vendor/material-symbols-outlined.woff2' %}">
+    <link rel="stylesheet" href="{% static 'css/vendor/fonts.css' %}"
+          onerror="window.__onyxFontsFailed = true;">
     <link rel="stylesheet" href="{% static 'css/tailwind-compiled.css' %}">
     <!--
       htmx and Chart.js are served from our own /static/. They used to be
@@ -67,6 +81,40 @@
           document.head.appendChild(s);
         });
       })();
+
+      // Fonts fallback. The stylesheet failing is only half the story: it can
+      // load fine while the woff2 behind it does not, and the icon font is the
+      // one that turns every button into the literal word "add" or "check".
+      // So ask the font loader directly instead of trusting the <link>.
+      (function () {
+        var GOOGLE = [
+          'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block',
+          'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap'
+        ];
+        function useGoogleFonts(reason) {
+          if (window.__onyxFontsFellBack) return;
+          window.__onyxFontsFellBack = true;
+          console.warn('[onyx] local fonts unavailable, falling back to Google Fonts:', reason);
+          GOOGLE.forEach(function (href) {
+            var l = document.createElement('link');
+            l.rel = 'stylesheet';
+            l.href = href;
+            document.head.appendChild(l);
+          });
+        }
+
+        if (window.__onyxFontsFailed) {
+          useGoogleFonts('stylesheet did not load');
+          return;
+        }
+        if (!document.fonts || !document.fonts.load) return;
+
+        document.fonts.load('24px "Material Symbols Outlined"').then(function (faces) {
+          if (!faces.length) useGoogleFonts('icon font did not resolve');
+        }).catch(function (err) {
+          useGoogleFonts(err);
+        });
+      })();
     </script>
     <script>
       // Cache lifecycle is owned entirely by sw.js (activate handler). Do NOT
@@ -76,7 +124,7 @@
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=12').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=13').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {

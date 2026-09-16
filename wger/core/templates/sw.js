@@ -1,27 +1,33 @@
 {% load static %}
-const CACHE_NAME = 'onyx-cache-v12';
+const CACHE_NAME = 'onyx-cache-v13';
 
-// Assets the app cannot work without. htmx in particular: without it every
-// hx-post control is inert and the page still *looks* completely normal, so a
-// missing htmx reads as "the buttons are broken". These are same-origin now
-// (they used to be CDN URLs), so caching them cannot fail because of a third
-// party being unreachable.
+// Assets the app cannot work without, and whose absence does not look like an
+// absence. Without htmx every hx-post control is inert while the page still
+// renders perfectly, so it reads as "the buttons are broken". Without the icon
+// font every material-symbols span shows its ligature as literal text - "add",
+// "check", "fitness_center" - so it reads as a broken app rather than a
+// missing font. All of these are same-origin now (they used to be CDN URLs),
+// so caching them can no longer fail because a third party is unreachable.
 const CRITICAL_ASSETS = [
   '{% static "js/vendor/htmx-1.9.10.min.js" %}',
-  '{% static "css/tailwind-compiled.css" %}'
+  '{% static "css/tailwind-compiled.css" %}',
+  '{% static "css/vendor/fonts.css" %}',
+  '{% static "fonts/vendor/material-symbols-outlined.woff2" %}'
 ];
 
 const STATIC_ASSETS = CRITICAL_ASSETS.concat([
   '{% static "js/vendor/chart-4.5.1.min.js" %}',
+  '{% static "fonts/vendor/inter-latin.woff2" %}',
+  '{% static "fonts/vendor/inter-latin-ext.woff2" %}',
+  '{% static "fonts/vendor/outfit-latin.woff2" %}',
+  '{% static "fonts/vendor/outfit-latin-ext.woff2" %}',
   '/static/images/logos/logo-192.png',
   '/static/images/logos/logo-512.png',
   '/static/images/favicon.png',
   '/static/audio/boxing.mp3',
   '/static/audio/beep.mp3',
   '/static/audio/whistle.mp3',
-  '/static/audio/alarm.mp3',
-  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap'
+  '/static/audio/alarm.mp3'
 ]);
 
 self.addEventListener('install', event => {
