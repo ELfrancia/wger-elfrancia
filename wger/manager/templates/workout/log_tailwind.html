@@ -703,6 +703,27 @@
     // - which aborted the timer-expiry handler before it could fire the alarm.
     // Resolve the bridge lazily and forward calls through a small proxy so every
     // access reads the live object and never throws in a plain browser.
+    // The lazy read above was only half the fix: reading a *method* off a
+    // bridge that does not exist yet returned `undefined`, and calling it threw
+    // anyway.  That is not hypothetical - it is exactly what happens on every
+    // page load.  This script sits in {% templatetag openblock %} block extra_body {% templatetag closeblock %}, which the base
+    // template renders at line ~587, while window.onyxNative is defined ~1000
+    // lines further down: at the moment this IIFE runs the bridge is ALWAYS
+    // absent, native shell or plain browser alike.
+    //
+    // The top-level updateProgressBar() call near the end of this IIFE reaches
+    // onyxNative.workoutUpdate(), so the TypeError aborted the rest of the
+    // module - taking with it window.onFinishWorkoutSubmitted, the pagehide
+    // teardown and the server reconciliation, i.e. every path that stops the
+    // native notification when a workout ends.  That is the real reason the
+    // "allenamento in corso" notification outlived the workout.
+    //
+    // So an absent bridge now yields a callable no-op instead of undefined.
+    // Dropping a call made before the bridge exists is safe: the island is
+    // started by startWorkoutIslandIfNeeded(), and updateProgressBar() runs
+    // again on every set change (and once more 100ms later), by which point the
+    // real bridge has been installed.
+    const onyxNativeNoop = function onyxNativeUnavailable() {};
     const onyxNative = new Proxy({}, {
         get(_target, prop) {
             const bridge = window.onyxNative;
@@ -712,7 +733,10 @@
             if (bridge && typeof bridge[prop] === 'function') {
                 return bridge[prop].bind(bridge);
             }
-            return bridge ? bridge[prop] : undefined;
+            if (!bridge) {
+                return onyxNativeNoop;
+            }
+            return bridge[prop];
         },
     });
 
@@ -1128,9 +1152,20 @@
                 saveTimerStateToStorage(window._timerExpiredAt);
             } else {
                 updateDisplay();
-                saveTimerStateToStorage();
+                // Persisting every tick was 4 synchronous localStorage writes a
+                // second for the whole recovery - disk I/O on the main thread,
+                // and the single biggest contributor to the phone heating up.
+                // While hidden there is nothing to repaint and the native
+                // notification is the source of truth (it renders the countdown
+                // from the absolute deadline), so skip the write entirely;
+                // pagehide/beforeunload/visibilitychange already persist state,
+                // and getRemainingTimeMs() recomputes from the timestamp on
+                // return, so nothing is lost.
+                if (document.visibilityState === 'visible') saveTimerStateToStorage();
             }
-        }, 250);
+        // 1/s, not 250ms: the display has one-second resolution, so three out
+        // of every four ticks could not change a single pixel.
+        }, 1000);
     }
 
     function pauseCountdown() {
@@ -2110,6 +2145,49 @@
         }, 4200);
     });
 
+    // Validation failures from the set endpoints arrive as 422 + an
+    // `onyx:set-error` HX-Trigger.  htmx does not swap on a non-2xx, which is
+    // deliberate - the card keeps the values the user typed instead of being
+    // replaced - but it also means nothing at all appears on screen unless this
+    // listener surfaces the message.  Without it a rejected set (a malformed
+    // weight, an empty slot) looked exactly like the button doing nothing.
+    document.body.addEventListener('onyx:set-error', function(evt) {
+        const message = (evt.detail && evt.detail.message)
+            ? String(evt.detail.message)
+            : "{% translate 'Set non salvato: controlla i valori inseriti.' %}";
+
+        let el = document.getElementById('onyx-set-error-toast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'onyx-set-error-toast';
+            el.className = 'fixed left-1/2 -translate-x-1/2 top-4 z-[300] pointer-events-none transition-all duration-300 opacity-0 -translate-y-4';
+            document.body.appendChild(el);
+        }
+        // textContent, not innerHTML: the message is server text echoed back to
+        // the page and must never be parsed as markup.
+        el.innerHTML = `
+            <div class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#121316] border border-red-500/50 shadow-2xl">
+                <span class="material-symbols-outlined text-red-400 text-xl">error</span>
+                <div class="text-left">
+                    <div class="text-xs font-black uppercase tracking-wider text-red-400 font-display">{% translate 'Set non salvato' %}</div>
+                    <div class="text-sm font-bold text-white" data-onyx-set-error-message></div>
+                </div>
+            </div>`;
+        const messageEl = el.querySelector('[data-onyx-set-error-message]');
+        if (messageEl) messageEl.textContent = message;
+
+        requestAnimationFrame(() => {
+            el.classList.remove('opacity-0', '-translate-y-4');
+            el.classList.add('opacity-100', 'translate-y-0');
+        });
+        if (navigator.vibrate) { try { navigator.vibrate(120); } catch (e) {} }
+        clearTimeout(el._hideT);
+        el._hideT = setTimeout(() => {
+            el.classList.add('opacity-0', '-translate-y-4');
+            el.classList.remove('opacity-100', 'translate-y-0');
+        }, 5000);
+    });
+
     // Prevent view transitions if the rest timer overlay is active/visible
     document.body.addEventListener('htmx:beforeTransition', function(evt) {
         if (overlay && !overlay.classList.contains('hidden')) {
@@ -2160,10 +2238,27 @@
     }
     window.updateTotalTimer = updateTotalTimer;
 
-    if (window._workoutTotalTimerInterval) {
-        clearInterval(window._workoutTotalTimerInterval);
+    // 1/s on an hh:mm:ss display, and suspended while hidden.  updateTotalTimer
+    // derives everything from workoutStartTime, an absolute timestamp, so a
+    // suspended stretch needs no catch-up: one call on resume renders the
+    // correct elapsed time however long we were away.
+    function onyxSuspendTotalTimer() {
+        if (window._workoutTotalTimerInterval) {
+            clearInterval(window._workoutTotalTimerInterval);
+            window._workoutTotalTimerInterval = null;
+        }
     }
-    window._workoutTotalTimerInterval = setInterval(updateTotalTimer, 500);
+
+    function onyxResumeTotalTimer() {
+        updateTotalTimer();
+        if (document.visibilityState !== 'visible') return;
+        if (!window._workoutTotalTimerInterval) {
+            window._workoutTotalTimerInterval = setInterval(updateTotalTimer, 1000);
+        }
+    }
+
+    onyxSuspendTotalTimer();
+    onyxResumeTotalTimer();
 
     // Teardown before swap & re-init on load to prevent interruption
     if (!window._workoutHtmxTimerGuardsAttached) {
@@ -2176,16 +2271,23 @@
                 }
             }
         });
-        document.addEventListener('htmx:load', function() {
-            updateTotalTimer();
-            if (!window._workoutTotalTimerInterval) {
-                window._workoutTotalTimerInterval = setInterval(updateTotalTimer, 500);
-            }
-        });
+        document.addEventListener('htmx:load', onyxResumeTotalTimer);
     }
 
     window.addEventListener('pagehide', () => saveTimerStateToStorage());
     window.addEventListener('beforeunload', () => saveTimerStateToStorage());
+
+    // Going hidden is the last chance to persist before the per-tick write is
+    // skipped (see the countdown interval above), and it suspends both the
+    // total-time ticker and any repaint work until the page is visible again.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            saveTimerStateToStorage();
+            onyxSuspendTotalTimer();
+        } else {
+            onyxResumeTotalTimer();
+        }
+    });
 
     // Synchronize rest timer and total workout timer on visibility, pageshow, and focus
     function syncTimersOnResume() {
@@ -2844,7 +2946,20 @@
     // never fires when Android kills the process outright - not starting it
     // in the first place (above) is what actually guarantees correctness.
     window.addEventListener('pagehide', () => {
-        if (workoutIslandStarted && !sessionMaterialized) {
+        // The old gate was `workoutIslandStarted && !sessionMaterialized`, so
+        // once the session materialized - the normal case for a real workout -
+        // this branch never ran at all, precisely when the island was actually
+        // up.
+        //
+        // Removing the negation outright would be wrong in the other direction:
+        // pagehide also fires on an ordinary page change and on backgrounding,
+        // where a live session's island MUST survive.  So tear down only the
+        // case that is unambiguously a ghost - an island with no session behind
+        // it - plus the deliberate close, where _workoutClosing is already set.
+        // Finish/discard and the server reconciliation own the rest.
+        if (!workoutIslandStarted) return;
+        if (sessionMaterialized && !window._workoutClosing) return;
+        {
             // Same rule as the reconciliation below: never let a workout
             // teardown take a live rest timer with it. Synchronous check -
             // an unload handler cannot await.
@@ -2858,7 +2973,19 @@
 
     // Auto-save interval every 30 seconds
     window._workoutClosing = false;
-    window._autoSaveIntervalId = setInterval(autoSaveWorkoutSnapshot, 30000);
+    // No POST with the page hidden: a background snapshot every 30s keeps the
+    // radio up with the screen off for data that is not going anywhere.  The
+    // snapshot is not skipped, only deferred - returning to the foreground
+    // flushes it immediately below.
+    window._autoSaveIntervalId = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        autoSaveWorkoutSnapshot();
+    }, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && !window._workoutClosing) {
+            autoSaveWorkoutSnapshot();
+        }
+    });
     document.addEventListener('htmx:afterSwap', () => { setTimeout(autoSaveWorkoutSnapshot, 500); });
 
     // Called on finish / interrupt / discard submit: freeze autosave so an
@@ -2946,6 +3073,12 @@
     // Tear down the workout island and nothing else.
     function stopNativeWorkoutIslandOnly() {
         try { if (onyxNative && onyxNative.workoutStop) onyxNative.workoutStop(); } catch (e) {}
+        // The island is down, so let it be started again.  Without this the
+        // once-only guard in startWorkoutIslandIfNeeded() stays latched and a
+        // session that legitimately becomes active again on this same page -
+        // reconciliation finding it live after a teardown - would never get its
+        // island back.
+        workoutIslandStarted = false;
     }
 
     // Server-truth reconciliation: this session id may have been closed by a
@@ -2956,6 +3089,9 @@
     // the foreground, since that's exactly when a stale background state is
     // most likely to have gone unnoticed.
     async function stopAllNativeLiveActivity() {
+        // Same reason as stopNativeWorkoutIslandOnly(): release the once-only
+        // guard so a later real session can start its island again.
+        workoutIslandStarted = false;
         if (window.AndroidTimer && typeof window.AndroidTimer.stopAll === 'function') {
             try {
                 window.AndroidTimer.stopAll();
