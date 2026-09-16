@@ -3210,7 +3210,18 @@
             alert("{% translate 'Salvataggio non riuscito: controlla la connessione e riprova.' %}");
         }
 
-        fetch(form.action, {
+        // getAttribute('action'), never form.action: this form carries a hidden
+        // <input name="action"> (finish_workout / discard_workout), and
+        // HTMLFormElement is declared [LegacyOverrideBuiltIns], so a control
+        // named "action" shadows the action IDL attribute.  form.action handed
+        // back the input element, fetch() stringified it, and the POST went to
+        // ".../[object HTMLInputElement]" -> 404 -> onSaveFailed().
+        //
+        // The session was left half-closed (still active, but with time_end
+        // already set) and, worse, clearOnyxWorkoutClientState() and the native
+        // teardown below never ran - so this was the second, independent reason
+        // the "allenamento in corso" notification outlived the workout.
+        fetch(form.getAttribute('action'), {
             method: 'POST',
             body: formData,
             headers: {
