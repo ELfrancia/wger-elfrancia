@@ -1,5 +1,18 @@
-const CACHE_NAME = 'onyx-cache-v11';
-const STATIC_ASSETS = [
+{% load static %}
+const CACHE_NAME = 'onyx-cache-v12';
+
+// Assets the app cannot work without. htmx in particular: without it every
+// hx-post control is inert and the page still *looks* completely normal, so a
+// missing htmx reads as "the buttons are broken". These are same-origin now
+// (they used to be CDN URLs), so caching them cannot fail because of a third
+// party being unreachable.
+const CRITICAL_ASSETS = [
+  '{% static "js/vendor/htmx-1.9.10.min.js" %}',
+  '{% static "css/tailwind-compiled.css" %}'
+];
+
+const STATIC_ASSETS = CRITICAL_ASSETS.concat([
+  '{% static "js/vendor/chart-4.5.1.min.js" %}',
   '/static/images/logos/logo-192.png',
   '/static/images/logos/logo-512.png',
   '/static/images/favicon.png',
@@ -7,12 +20,9 @@ const STATIC_ASSETS = [
   '/static/audio/beep.mp3',
   '/static/audio/whistle.mp3',
   '/static/audio/alarm.mp3',
-  '/static/css/tailwind-compiled.css',
-  'https://unpkg.com/htmx.org@1.9.10',
-  'https://cdn.jsdelivr.net/npm/chart.js',
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap'
-];
+]);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -23,9 +33,15 @@ self.addEventListener('install', event => {
             const response = await fetch(url, { mode: 'cors', cache: 'reload' });
             if (response && response.ok) {
               await cache.put(url, response);
+            } else if (CRITICAL_ASSETS.includes(url)) {
+              console.error('[SW] Critical asset not cached:', url, response && response.status);
             }
           } catch (err) {
-            console.warn('[SW] Cache skip for:', url, err);
+            if (CRITICAL_ASSETS.includes(url)) {
+              console.error('[SW] Critical asset failed:', url, err);
+            } else {
+              console.warn('[SW] Cache skip for:', url, err);
+            }
           }
         })
       );

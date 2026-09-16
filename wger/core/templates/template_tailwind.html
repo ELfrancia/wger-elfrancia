@@ -28,8 +28,46 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="{% static 'css/tailwind-compiled.css' %}">
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!--
+      htmx and Chart.js are served from our own /static/. They used to be
+      loaded from unpkg/jsdelivr only, with no local copy: whenever the CDN was
+      unreachable (no network, app WebView, blocked CDN) htmx simply did not
+      exist and every hx-post control died in complete silence — the plain
+      <form action method="post"> controls kept working, which is why only
+      *some* buttons looked broken. The CDN is now a fallback, never the
+      source, and it is pinned with SRI so a compromised or drifted CDN build
+      cannot execute.
+    -->
+    <script src="{% static 'js/vendor/htmx-1.9.10.min.js' %}"></script>
+    <script src="{% static 'js/vendor/chart-4.5.1.min.js' %}"></script>
+    <script>
+      // Fallback only: if the local file failed to load, pull the exact same
+      // pinned version from the CDN. async=false keeps execution order.
+      (function () {
+        var fallbacks = [
+          {
+            ok: function () { return !!window.htmx; },
+            src: 'https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js',
+            integrity: 'sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC'
+          },
+          {
+            ok: function () { return !!window.Chart; },
+            src: 'https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js',
+            integrity: 'sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ'
+          }
+        ];
+        fallbacks.forEach(function (lib) {
+          if (lib.ok()) return;
+          console.warn('[onyx] local asset missing, falling back to CDN:', lib.src);
+          var s = document.createElement('script');
+          s.src = lib.src;
+          s.integrity = lib.integrity;
+          s.crossOrigin = 'anonymous';
+          s.async = false;
+          document.head.appendChild(s);
+        });
+      })();
+    </script>
     <script>
       // Cache lifecycle is owned entirely by sw.js (activate handler). Do NOT
       // delete caches from here — a stale version string would wipe the SW's
@@ -38,7 +76,7 @@
       // Service Worker Registration for PWA Standalone Mode (Secure Contexts Only)
       if ('serviceWorker' in navigator && window.isSecureContext) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js?v=11').then(function(reg) {
+          navigator.serviceWorker.register('/sw.js?v=12').then(function(reg) {
             reg.update();
             console.log('SW registered successfully:', reg.scope);
           }).catch(function(err) {
