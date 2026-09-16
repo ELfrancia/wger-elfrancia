@@ -1573,6 +1573,62 @@
                 // notification flicker or double up.
                 _live: { rest: null, workout: null, restPushedAt: 0 },
 
+                // Last update that was withheld because the page was hidden, so
+                // it can be replayed on return instead of being lost.
+                _pending: { rest: null, workout: null },
+
+                // When stopAll() last ran.  The service deliberately discards
+                // ACTION_WORKOUT_UPDATE / ACTION_UPDATE_TIMER for 2s after a
+                // stopAll (its isStaleAfterStopAll guard) so that an update
+                // already queued behind the stop cannot resurrect the
+                // notification that was just cancelled.  Updates sent inside
+                // that window would go into the void, so they are not sent - and
+                // above all their signature is NOT cached, or the dedup would
+                // then swallow the first update that really does need to land.
+                _stoppedAt: 0,
+
+                _inStopAllGuard() {
+                    return (Date.now() - this._stoppedAt) < 2000;
+                },
+
+                _isHidden() {
+                    try {
+                        return document.visibilityState === 'hidden';
+                    } catch (e) {
+                        return false;
+                    }
+                },
+
+                // While hidden there is nothing a progress/countdown update can
+                // tell the native side that it does not already know: it renders
+                // the countdown from the absolute deadline and re-renders itself
+                // on its own cadence.  So these updates are withheld rather than
+                // pushed - but withheld, never dropped, or an island could sit on
+                // a stale set count until something else happened to refresh it.
+                //
+                // Only *updates* are ever withheld.  Starts and stops always go
+                // through: a stop arriving while hidden (pagehide, logout,
+                // end-of-workout teardown) is precisely the call that must not be
+                // swallowed.
+                flushPendingLiveUpdates() {
+                    if (this._isHidden()) return;
+                    const rest = this._pending.rest;
+                    const workout = this._pending.workout;
+                    this._pending = { rest: null, workout: null };
+                    // Replay against a cleared signature so the dedup cannot
+                    // mistake the replay for a duplicate of the state it never
+                    // actually pushed.
+                    if (workout) {
+                        this._live.workout = null;
+                        this.workoutUpdate(workout[0], workout[1], workout[2]);
+                    }
+                    if (rest) {
+                        this._live.rest = null;
+                        this._live.restPushedAt = 0;
+                        this.restUpdate(rest[0], rest[1]);
+                    }
+                },
+
                 // Tell the rest of the page that the live state changed.  The nav
                 // ticker has no idle polling any more, so this event is what wakes
                 // it up.  Fired even with no native bridge (plain web), because the
@@ -1694,6 +1750,16 @@
                         const prev = this._live.rest;
                         const durationUnchanged = prev && prev.duration === dur;
                         if (durationUnchanged && (now - this._live.restPushedAt) < 5000) return;
+                        // Just stopped: the service would discard this anyway.
+                        if (this._inStopAllGuard()) return;
+                        // Hidden: hold it.  The workout page's countdown tick
+                        // keeps firing in the background, and every one of those
+                        // would otherwise be a native hop for a countdown the
+                        // notification is already rendering from its deadline.
+                        if (this._isHidden()) {
+                            this._pending.rest = [dur, rem];
+                            return;
+                        }
                         this._live.rest = { duration: dur };
                         this._live.restPushedAt = now;
                         if (window.AndroidTimer && typeof window.AndroidTimer.updateNotification === 'function') {
@@ -1713,6 +1779,7 @@
                     const wasLive = this._live.rest !== null;
                     this._live.rest = null;
                     this._live.restPushedAt = 0;
+                    this._pending.rest = null;   // a stop supersedes a queued update
                     if (wasLive) this._emit();
                     try {
                         if (window.AndroidTimer && typeof window.AndroidTimer.stopTimer === 'function') {
@@ -1763,6 +1830,13 @@
                     // the same set checkboxes, so this fires twice for one user
                     // action.  Push it once.
                     if (this._live.workout === sig) return;
+                    // Just stopped: the service would discard this anyway.
+                    if (this._inStopAllGuard()) return;
+                    // Hidden: hold the newest payload and replay it on return.
+                    if (this._isHidden()) {
+                        this._pending.workout = [completedSets, totalSets, currentExerciseName];
+                        return;
+                    }
                     this._live.workout = sig;
                     this._emit();
                     try {
@@ -1787,6 +1861,7 @@
                     // conditional.
                     const wasLive = this._live.workout !== null;
                     this._live.workout = null;
+                    this._pending.workout = null;   // a stop supersedes a queued update
                     if (wasLive) this._emit();
                     try {
                         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer && typeof window.Capacitor.Plugins.WorkoutTimer.stopWorkoutIsland === 'function') {
@@ -1823,7 +1898,14 @@
                     // suppressing a repeat here would be the one thing that lets a
                     // ghost notification survive.  Only the local cache is reset.
                     const wasLive = this._live.rest !== null || this._live.workout !== null;
+                    this._stoppedAt = Date.now();
                     this.resetLiveCache();
+                    // A stop supersedes anything queued: without this, an update
+                    // withheld while hidden would be replayed on the next
+                    // foreground and ask the native side to re-render an island
+                    // that was deliberately torn down - the exact ghost this call
+                    // exists to kill.
+                    this._pending = { rest: null, workout: null };
                     if (wasLive) this._emit();
                     if (window.AndroidTimer && typeof window.AndroidTimer.stopAll === 'function') {
                         try {
@@ -1845,6 +1927,16 @@
             };
         }
 
+        // Replay withheld updates on every return to the foreground.  Separate
+        // from the Capacitor listeners below on purpose: those only exist inside
+        // the native shell, while visibilitychange fires everywhere (and inside
+        // the shell it is the event that arrives when the WebView itself is
+        // re-shown without a full app resume).
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            if (window.onyxNative) window.onyxNative.flushPendingLiveUpdates();
+        });
+
         // ---- Native app lifecycle -------------------------------------------
         // Reinforcement only.  The native side owns teardown on task removal
         // (onTaskRemoved stops everything when no workout/timer/alarm is active,
@@ -1864,8 +1956,11 @@
                     // away (service restart, process death).  Drop the dedup
                     // memory so the next update is guaranteed to reach it instead
                     // of being swallowed as a duplicate of a state that no longer
-                    // exists.
-                    if (window.onyxNative) window.onyxNative.resetLiveCache();
+                    // exists, then replay whatever was withheld while hidden.
+                    if (window.onyxNative) {
+                        window.onyxNative.resetLiveCache();
+                        window.onyxNative.flushPendingLiveUpdates();
+                    }
                     if (typeof window.onyxSyncGlobalTicker === 'function') window.onyxSyncGlobalTicker();
                     return;
                 }
@@ -1883,7 +1978,10 @@
             });
 
             App.addListener('resume', () => {
-                if (window.onyxNative) window.onyxNative.resetLiveCache();
+                if (window.onyxNative) {
+                    window.onyxNative.resetLiveCache();
+                    window.onyxNative.flushPendingLiveUpdates();
+                }
                 if (typeof window.onyxSyncGlobalTicker === 'function') window.onyxSyncGlobalTicker();
             });
 

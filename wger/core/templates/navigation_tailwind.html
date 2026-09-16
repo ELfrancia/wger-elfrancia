@@ -933,9 +933,22 @@
 
     // Single entry point: repaint once from the current timestamps, then keep
     // the ticker running only if it is still warranted.
+    //
+    // The visibility check comes FIRST and returns without repainting.  This is
+    // not just an optimisation: runGlobalTimersUpdate() reaches the native
+    // bridge (hasActiveOngoingNotification(), twice per pass), and this function
+    // is bound to `storage`, `onyx:livestatechange` and `htmx:load` - all of
+    // which fire in a page that is hidden.  Repainting first would therefore
+    // hop to native from the background, which is exactly what must never
+    // happen: nothing is on screen to update, and native already owns the
+    // notification while we are away.
     function onyxSyncGlobalTicker() {
+        if (document.visibilityState === 'hidden') {
+            onyxStopGlobalTicker();
+            return;
+        }
         runGlobalTimersUpdate();
-        if (document.visibilityState === 'hidden' || !onyxHasLiveActivity()) {
+        if (!onyxHasLiveActivity()) {
             onyxStopGlobalTicker();
         } else {
             onyxStartGlobalTicker();
